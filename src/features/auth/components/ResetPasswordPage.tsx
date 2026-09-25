@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react"
 import { Link, useSearchParams } from "react-router-dom"
+import { Lock, CheckCircle2 } from "lucide-react"
 import { restablecerPassword } from "@/api/authApi"
 import { PasswordInput } from "@/components/ui/PasswordInput"
 
@@ -35,9 +36,9 @@ export function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="w-full max-w-sm space-y-4 rounded-lg border bg-background p-6 shadow-sm">
-        <p className="text-sm">El enlace no contiene un token válido.</p>
-        <Link to="/recuperar-password" className="text-sm text-primary underline">
+      <div className="w-full space-y-4 rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-xl shadow-blue-900/5">
+        <p className="text-sm text-slate-600">El enlace no contiene un token válido.</p>
+        <Link to="/recuperar-password" className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline">
           Solicitar otro enlace
         </Link>
       </div>
@@ -46,11 +47,17 @@ export function ResetPasswordPage() {
 
   if (completado) {
     return (
-      <div className="w-full max-w-sm space-y-4 rounded-lg border bg-background p-6 shadow-sm">
-        <p role="status" className="text-sm">
+      <div className="flex w-full flex-col items-center gap-3 rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-xl shadow-blue-900/5">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+          <CheckCircle2 size={24} />
+        </div>
+        <p role="status" className="text-sm text-slate-600">
           Contraseña actualizada. Ya puedes iniciar sesión.
         </p>
-        <Link to="/login" className="text-sm text-primary underline">
+        <Link
+          to="/login"
+          className="w-full rounded-lg bg-linear-to-r from-blue-600 to-cyan-500 px-4 py-2.5 text-center text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition-opacity hover:opacity-90"
+        >
           Ir al login
         </Link>
       </div>
@@ -60,38 +67,45 @@ export function ResetPasswordPage() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-full max-w-sm space-y-4 rounded-lg border bg-background p-6 shadow-sm"
+      className="w-full space-y-5 rounded-2xl border border-slate-100 bg-white p-8 shadow-xl shadow-blue-900/5"
     >
-      <h1 className="text-xl font-semibold">Nueva contraseña</h1>
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold text-slate-800">Nueva contraseña</h1>
+        <p className="text-sm text-slate-500">Debe tener al menos 8 caracteres.</p>
+      </div>
 
-      <label className="block space-y-2">
-        <span className="text-sm font-medium">Contraseña nueva</span>
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium text-slate-700">Contraseña nueva</label>
         <PasswordInput
+          icon={<Lock size={16} />}
           autoComplete="new-password"
           minLength={8}
           required
           value={nuevaPassword}
           onChange={(e) => setNuevaPassword(e.target.value)}
         />
-      </label>
+      </div>
 
-      <label className="block space-y-2">
-        <span className="text-sm font-medium">Confirmar contraseña</span>
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium text-slate-700">Confirmar contraseña</label>
         <PasswordInput
+          icon={<Lock size={16} />}
           autoComplete="new-password"
           minLength={8}
           required
           value={confirmacion}
           onChange={(e) => setConfirmacion(e.target.value)}
         />
-      </label>
+      </div>
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && (
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+      )}
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+        className="w-full rounded-lg bg-linear-to-r from-blue-600 to-cyan-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition-opacity hover:opacity-90 disabled:opacity-50"
       >
         {loading ? "Guardando..." : "Cambiar contraseña"}
       </button>

@@ -1,9 +1,10 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
+import { User, Lock } from "lucide-react"
 import { login } from "@/api/authApi"
 import { useAuthStore } from "@/features/auth/store/authStore"
 import { PasswordInput } from "@/components/ui/PasswordInput"
-
+import { IconInput } from "@/components/ui/IconInput"
 
 export function LoginPage() {
   const [nombreUsuario, setNombreUsuario] = useState("")
@@ -32,43 +33,49 @@ export function LoginPage() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-full max-w-sm space-y-4 rounded-lg border bg-background p-6 shadow-sm"
+      className="w-full space-y-5 rounded-2xl border border-slate-100 bg-white p-8 shadow-xl shadow-blue-900/5"
     >
-      <h1 className="text-xl font-semibold">Iniciar sesión</h1>
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold text-slate-800">Iniciar sesión</h1>
+        <p className="text-sm text-slate-500">Ingresa tus credenciales para continuar.</p>
+      </div>
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Usuario</label>
-        <input
-          className="w-full rounded-md border px-3 py-2 text-sm"
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium text-slate-700">Usuario</label>
+        <IconInput
+          icon={<User size={16} />}
           value={nombreUsuario}
           onChange={(e) => setNombreUsuario(e.target.value)}
           required
         />
       </div>
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Contraseña</label>
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium text-slate-700">Contraseña</label>
         <PasswordInput
+          icon={<Lock size={16} />}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
       </div>
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && (
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+      )}
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+        className="w-full rounded-lg bg-linear-to-r from-blue-600 to-cyan-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-600/25 transition-opacity hover:opacity-90 disabled:opacity-50"
       >
         {loading ? "Ingresando..." : "Ingresar"}
       </button>
 
       <p className="text-center text-sm">
-      <Link to="/recuperar-password" className="text-primary underline">
-        ¿Olvidaste tu contraseña?
-      </Link>
+        <Link to="/recuperar-password" className="font-medium text-blue-600 hover:text-blue-700 hover:underline">
+          ¿Olvidaste tu contraseña?
+        </Link>
       </p>
     </form>
   )
