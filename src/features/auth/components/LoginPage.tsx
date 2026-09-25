@@ -1,7 +1,8 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { login } from "@/api/authApi"
 import { useAuthStore } from "@/features/auth/store/authStore"
+
 
 export function LoginPage() {
   const [nombreUsuario, setNombreUsuario] = useState("")
@@ -64,6 +65,12 @@ export function LoginPage() {
       >
         {loading ? "Ingresando..." : "Ingresar"}
       </button>
+
+      <p className="text-center text-sm">
+      <Link to="/recuperar-password" className="text-primary underline">
+        ¿Olvidaste tu contraseña?
+      </Link>
+      </p>
     </form>
   )
 }

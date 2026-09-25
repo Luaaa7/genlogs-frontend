@@ -4,6 +4,7 @@ import { AppLayout } from "@/layouts/AppLayout"
 import { ProtectedRoute } from "@/router/ProtectedRoute"
 import { RoleGuard } from "@/router/RoleGuard"
 import { LoginPage } from "@/features/auth/components/LoginPage"
+import { UsuariosPage } from "@/features/usuarios/components/UsuariosPage"
 import { Placeholder } from "@/router/Placeholder"
 
 export const router = createBrowserRouter([
@@ -28,7 +29,7 @@ export const router = createBrowserRouter([
             // Solo administradores pueden entrar a /usuarios
             element: <RoleGuard allowedRoles={["ADMINISTRADOR"]} />,
             children: [
-              { path: "/usuarios", element: <Placeholder nombre="Usuarios" /> },
+              { path: "/usuarios", element: <UsuariosPage /> },
             ],
           },
         ],
