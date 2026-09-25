@@ -56,6 +56,7 @@ export function ForgotPasswordPage() {
               required
               value={correo}
               onChange={(e) => setCorreo(e.target.value)}
+              placeholder="Ingrese su correo"
             />
           </div>
 
