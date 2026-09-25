@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { User, Lock } from "lucide-react"
+import { Mail, Lock } from "lucide-react"
 import { login } from "@/api/authApi"
 import { useAuthStore } from "@/features/auth/store/authStore"
 import { PasswordInput } from "@/components/ui/PasswordInput"
@@ -24,7 +24,7 @@ export function LoginPage() {
       setAuth(data.token, data.nombreUsuario, data.nombreRol)
       navigate("/")
     } catch {
-      setError("Usuario o contraseña incorrectos")
+      setError("Correo o contraseña incorrectos")
     } finally {
       setLoading(false)
     }
@@ -38,12 +38,12 @@ export function LoginPage() {
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-slate-700">Usuario</label>
+        <label className="text-sm font-medium text-slate-700">Correo</label>
         <IconInput
-          icon={<User size={16} />}
+          icon={<Mail size={16} />}
           value={nombreUsuario}
           onChange={(e) => setNombreUsuario(e.target.value)}
-          placeholder="Ingrese su usuario"
+          placeholder="Ingrese su correo"
           required
         />
       </div>
