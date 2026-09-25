@@ -4,13 +4,17 @@ import { AppLayout } from "@/layouts/AppLayout"
 import { ProtectedRoute } from "@/router/ProtectedRoute"
 import { RoleGuard } from "@/router/RoleGuard"
 import { LoginPage } from "@/features/auth/components/LoginPage"
+import { ForgotPasswordPage } from "@/features/auth/components/ForgotPasswordPage"
 import { UsuariosPage } from "@/features/usuarios/components/UsuariosPage"
 import { Placeholder } from "@/router/Placeholder"
 
 export const router = createBrowserRouter([
   {
     element: <AuthLayout />,
-    children: [{ path: "/login", element: <LoginPage /> }],
+    children: [
+      { path: "/login", element: <LoginPage /> },
+      { path: "/recuperar-password", element: <ForgotPasswordPage /> },
+    ],
   },
   {
     element: <ProtectedRoute />,
