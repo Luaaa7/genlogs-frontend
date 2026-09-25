@@ -28,7 +28,7 @@ export function ForgotPasswordPage() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-full space-y-5 rounded-2xl border border-slate-100 bg-white p-8 shadow-xl shadow-blue-900/5"
+      className="w-full space-y-5"
     >
       <div className="space-y-1">
         <h1 className="text-2xl font-bold text-slate-800">Recuperar contraseña</h1>

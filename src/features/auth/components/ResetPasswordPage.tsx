@@ -36,7 +36,7 @@ export function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="w-full space-y-4 rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-xl shadow-blue-900/5">
+      <div className="w-full space-y-4 text-center">
         <p className="text-sm text-slate-600">El enlace no contiene un token válido.</p>
         <Link to="/recuperar-password" className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline">
           Solicitar otro enlace
@@ -47,7 +47,7 @@ export function ResetPasswordPage() {
 
   if (completado) {
     return (
-      <div className="flex w-full flex-col items-center gap-3 rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-xl shadow-blue-900/5">
+      <div className="flex w-full flex-col items-center gap-3 text-center">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
           <CheckCircle2 size={24} />
         </div>
@@ -67,7 +67,7 @@ export function ResetPasswordPage() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-full space-y-5 rounded-2xl border border-slate-100 bg-white p-8 shadow-xl shadow-blue-900/5"
+      className="w-full space-y-5"
     >
       <div className="space-y-1">
         <h1 className="text-2xl font-bold text-slate-800">Nueva contraseña</h1>
