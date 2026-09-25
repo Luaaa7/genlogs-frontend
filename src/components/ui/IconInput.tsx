@@ -1,24 +1,24 @@
-import { forwardRef, type InputHTMLAttributes, type ReactNode } from "react"
+import React from "react";
 
-interface IconInputProps extends InputHTMLAttributes<HTMLInputElement> {
-  icon: ReactNode
+interface IconInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  icon?: React.ReactNode;
 }
 
-export const IconInput = forwardRef<HTMLInputElement, IconInputProps>(
-  ({ icon, className = "", ...props }, ref) => {
-    return (
-      <div className="relative">
-        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+export function IconInput({ icon, placeholder, className = "", ...props }: IconInputProps) {
+  return (
+    <div className="relative flex items-center w-full">
+      {icon && (
+        <span className="absolute left-3.5 text-slate-400 pointer-events-none flex items-center justify-center">
           {icon}
         </span>
-        <input
-          {...props}
-          ref={ref}
-          className={`w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-800 shadow-sm transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${className}`}
-        />
-      </div>
-    )
-  }
-)
-
-IconInput.displayName = "IconInput"
+      )}
+      <input
+        {...props}
+        placeholder={placeholder}
+        className={`w-full rounded-xl border border-slate-200 bg-white py-2.5 text-sm text-slate-800 placeholder:text-slate-400 placeholder:font-light focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all ${
+          icon ? "pl-10 pr-4" : "px-4"
+        } ${className}`}
+      />
+    </div>
+  );
+}

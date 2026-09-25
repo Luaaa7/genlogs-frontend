@@ -43,6 +43,7 @@ export function LoginPage() {
           icon={<User size={16} />}
           value={nombreUsuario}
           onChange={(e) => setNombreUsuario(e.target.value)}
+          placeholder="Ingrese su usuario"
           required
         />
       </div>
@@ -53,6 +54,7 @@ export function LoginPage() {
           icon={<Lock size={16} />}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          placeholder="Ingrese su contraseña"
           required
         />
       </div>

@@ -83,6 +83,7 @@ export function ResetPasswordPage() {
           required
           value={nuevaPassword}
           onChange={(e) => setNuevaPassword(e.target.value)}
+          placeholder="Ingrese su nueva contraseña"
         />
       </div>
 
@@ -95,6 +96,7 @@ export function ResetPasswordPage() {
           required
           value={confirmacion}
           onChange={(e) => setConfirmacion(e.target.value)}
+          placeholder="Repita su nueva contraseña"
         />
       </div>
 
