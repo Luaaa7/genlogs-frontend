@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react"
 import { Link, useSearchParams } from "react-router-dom"
 import { restablecerPassword } from "@/api/authApi"
+import { PasswordInput } from "@/components/ui/PasswordInput"
 
 export function ResetPasswordPage() {
   const [searchParams] = useSearchParams()
@@ -65,12 +66,10 @@ export function ResetPasswordPage() {
 
       <label className="block space-y-2">
         <span className="text-sm font-medium">Contraseña nueva</span>
-        <input
-          type="password"
+        <PasswordInput
           autoComplete="new-password"
           minLength={8}
           required
-          className="w-full rounded-md border px-3 py-2 text-sm"
           value={nuevaPassword}
           onChange={(e) => setNuevaPassword(e.target.value)}
         />
@@ -78,12 +77,10 @@ export function ResetPasswordPage() {
 
       <label className="block space-y-2">
         <span className="text-sm font-medium">Confirmar contraseña</span>
-        <input
-          type="password"
+        <PasswordInput
           autoComplete="new-password"
           minLength={8}
           required
-          className="w-full rounded-md border px-3 py-2 text-sm"
           value={confirmacion}
           onChange={(e) => setConfirmacion(e.target.value)}
         />

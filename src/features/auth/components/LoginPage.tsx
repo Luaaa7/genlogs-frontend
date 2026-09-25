@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { login } from "@/api/authApi"
 import { useAuthStore } from "@/features/auth/store/authStore"
+import { PasswordInput } from "@/components/ui/PasswordInput"
 
 
 export function LoginPage() {
@@ -47,9 +48,7 @@ export function LoginPage() {
 
       <div className="space-y-2">
         <label className="text-sm font-medium">Contraseña</label>
-        <input
-          type="password"
-          className="w-full rounded-md border px-3 py-2 text-sm"
+        <PasswordInput
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
