@@ -8,7 +8,7 @@ export function AuthLayout() {
         {/* Usamos el nombre exacto de la imagen que guardaste */}
         <div className="mb-6 flex flex-col items-center justify-center">
           <img 
-            src="/GENLOGS.PNG" 
+            src="public/GENLOGS.png" 
             alt="GenLogs S.A.C." 
             className="h-12 w-auto object-contain"
           />
