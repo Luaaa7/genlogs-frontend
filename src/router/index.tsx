@@ -1,10 +1,11 @@
-import { createBrowserRouter } from "react-router-dom"
+import { createBrowserRouter, Navigate } from "react-router-dom"
 import { AuthLayout } from "@/layouts/AuthLayout"
 import { AppLayout } from "@/layouts/AppLayout"
 import { ProtectedRoute } from "@/router/ProtectedRoute"
 import { RoleGuard } from "@/router/RoleGuard"
 import { LoginPage } from "@/features/auth/components/LoginPage"
 import { ForgotPasswordPage } from "@/features/auth/components/ForgotPasswordPage"
+import { ResetPasswordPage } from "@/features/auth/components/ResetPasswordPage"
 import { UsuariosPage } from "@/features/usuarios/components/UsuariosPage"
 import { Placeholder } from "@/router/Placeholder"
 import { CatalogoProductosPage } from "@/features/catalogo-repuestos/pages/CatalogoProductosPage"
@@ -18,6 +19,7 @@ export const router = createBrowserRouter([
     children: [
       { path: "/login", element: <LoginPage /> },
       { path: "/recuperar-password", element: <ForgotPasswordPage /> },
+      { path: "/reset-password", element: <ResetPasswordPage /> },
     ],
   },
   {
@@ -47,4 +49,6 @@ export const router = createBrowserRouter([
       },
     ],
   },
+  // Cualquier ruta no definida cae aquí en vez de mostrar el error genérico de react-router.
+  { path: "*", element: <Navigate to="/" replace /> },
 ])
