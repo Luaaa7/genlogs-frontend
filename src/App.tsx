@@ -1,8 +1,14 @@
-import { RouterProvider } from "react-router-dom"
-import { router } from "@/router"
+import { createBrowserRouter } from "react-router-dom";
+import { LoginPage } from "@/features/auth/components/LoginPage";
+import { ForgotPasswordPage } from "@/features/auth/components/ForgotPasswordPage";
 
-function App() {
-  return <RouterProvider router={router} />
-}
-
-export default App
+export const router = createBrowserRouter([
+  {
+    path: "/login",
+    element: <LoginPage />,
+  },
+  {
+    path: "/recuperar-password",
+    element: <ForgotPasswordPage />,
+  },
+]);
