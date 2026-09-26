@@ -12,6 +12,8 @@ import { CatalogoProductosPage } from "@/features/catalogo-repuestos/pages/Catal
 import { ProductoDetallePage } from "@/features/catalogo-repuestos/pages/ProductoDetallePage"
 import { NuevoProductoPage } from "@/features/catalogo-repuestos/pages/NuevoProductoPage"
 import { EditarProductoPage } from "@/features/catalogo-repuestos/pages/EditarProductoPage"
+import { CatalogoServiciosPage } from "@/features/catalogo-servicios/pages/CatalogoServiciosPage"
+import { ReportesPage } from "@/features/reportes/pages/ReportesPage"
 
 export const router = createBrowserRouter([
   {
@@ -35,6 +37,8 @@ export const router = createBrowserRouter([
           { path: "/catalogo-repuestos/nuevo", element: <NuevoProductoPage /> },
           { path: "/catalogo-repuestos/:id", element: <ProductoDetallePage /> },
           { path: "/catalogo-repuestos/:id/editar", element: <EditarProductoPage /> },
+          { path: "/catalogo-servicios", element: <CatalogoServiciosPage /> },
+          { path: "/reportes", element: <ReportesPage /> },
           { path: "/cotizaciones", element: <Placeholder nombre="Cotizaciones" /> },
           { path: "/ordenes-compra", element: <Placeholder nombre="Órdenes de Compra" /> },
           { path: "/facturacion", element: <Placeholder nombre="Facturación" /> },
