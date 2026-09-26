@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import { persist } from "zustand/middleware"
+import { persist, createJSONStorage } from "zustand/middleware"
 
 interface AuthState {
   token: string | null
@@ -10,6 +10,9 @@ interface AuthState {
   hasRole: (rol: string) => boolean
 }
 
+// Por seguridad, la sesión se guarda en sessionStorage (no localStorage):
+// sobrevive a un F5 / recarga de página, pero se borra al cerrar la pestaña
+// o el navegador. Así no queda una sesión abierta en un dispositivo compartido.
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -21,6 +24,9 @@ export const useAuthStore = create<AuthState>()(
       logout: () => set({ token: null, nombreUsuario: null, nombreRol: null }),
       hasRole: (rol) => get().nombreRol?.toLowerCase() === rol.toLowerCase(),
     }),
-    { name: "genlogs-auth" } // clave en localStorage
+    {
+      name: "genlogs-auth",
+      storage: createJSONStorage(() => sessionStorage),
+    }
   )
 )
