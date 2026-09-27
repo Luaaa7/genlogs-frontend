@@ -1,4 +1,4 @@
-import axiosClient from "./axiosClient"
+import { axiosClient } from "./axiosClient";
 import type { UsuarioRequest, UsuarioResponse } from "@/types/usuario"
 
 export async function listarUsuarios(): Promise<UsuarioResponse[]> {
