@@ -23,7 +23,7 @@ export function LoginPage() {
       const data = await login({ nombreUsuario, password })
       
       // ✅ Clave unificada para match con ProtectedRoute y axiosClient
-      const tokenRecibido = data.token || data.accessToken;
+      const tokenRecibido = data.token || data.token;
       if (tokenRecibido) {
         localStorage.setItem("access_token", tokenRecibido)
       }

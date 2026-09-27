@@ -1,4 +1,4 @@
-import axiosClient from "./axiosClient"
+import { axiosClient } from "./axiosClient";
 import type { Rol } from "@/types/usuario"
 
 export async function listarRoles(): Promise<Rol[]> {

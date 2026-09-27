@@ -9,7 +9,6 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  Cell,
 } from "recharts"
 import type { FacturacionHistoricoItem } from "@/types/dashboard.types"
 import { formatCurrency } from "@/lib/formatters/currency"
