@@ -1,4 +1,4 @@
-import axiosClient from "./axiosClient"
+import { axiosClient } from "./axiosClient"
 import type { ReporteRequest } from "@/types/reporte.types"
 
 export async function generarReporte(request: ReporteRequest): Promise<Blob> {

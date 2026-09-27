@@ -1,4 +1,4 @@
-import axiosClient from "./axiosClient"
+import { axiosClient } from './axiosClient';
 import type { Producto, ProductoRequest, ProductoFiltros } from "@/types/producto.types"
 import type { PageResponse } from "@/types/common.types"
 

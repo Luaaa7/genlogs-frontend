@@ -7,6 +7,7 @@ import { LoginPage } from "@/features/auth/components/LoginPage"
 import { ForgotPasswordPage } from "@/features/auth/components/ForgotPasswordPage"
 import { ResetPasswordPage } from "@/features/auth/components/ResetPasswordPage"
 import { UsuariosPage } from "@/features/usuarios/components/UsuariosPage"
+import { DashboardPage } from "@/features/dashboard/pages/DashboardPage"
 import { Placeholder } from "@/router/Placeholder"
 import { CatalogoProductosPage } from "@/features/catalogo-repuestos/pages/CatalogoProductosPage"
 import { ProductoDetallePage } from "@/features/catalogo-repuestos/pages/ProductoDetallePage"
@@ -14,6 +15,10 @@ import { NuevoProductoPage } from "@/features/catalogo-repuestos/pages/NuevoProd
 import { EditarProductoPage } from "@/features/catalogo-repuestos/pages/EditarProductoPage"
 import { CatalogoServiciosPage } from "@/features/catalogo-servicios/pages/CatalogoServiciosPage"
 import { ReportesPage } from "@/features/reportes/pages/ReportesPage"
+import { CotizacionesListPage } from "@/features/cotizaciones/pages/CotizacionesListPage"
+import { NuevaCotizacionPage } from "@/features/cotizaciones/pages/NuevaCotizacionPage"
+import { CotizacionDetallePage } from "@/features/cotizaciones/pages/CotizacionDetallePage"
+import { SolicitudWebPublicPage } from "@/features/solicitudes-web/pages/SolicitudWebPublicPage"
 
 export const router = createBrowserRouter([
   {
@@ -22,6 +27,7 @@ export const router = createBrowserRouter([
       { path: "/login", element: <LoginPage /> },
       { path: "/recuperar-password", element: <ForgotPasswordPage /> },
       { path: "/reset-password", element: <ResetPasswordPage /> },
+      { path: "/solicitud-web", element: <SolicitudWebPublicPage /> },
     ],
   },
   {
@@ -30,20 +36,28 @@ export const router = createBrowserRouter([
       {
         element: <AppLayout />,
         children: [
-          { path: "/", element: <Placeholder nombre="Dashboard" /> },
+          // Redirección de inicio y definición explícita de /dashboard
+          { path: "/", element: <Navigate to="/dashboard" replace /> },
+          { path: "/dashboard", element: <DashboardPage /> },
+          
           { path: "/clientes-proveedores", element: <Placeholder nombre="Clientes y Proveedores" /> },
           { path: "/empresas-mineras", element: <Placeholder nombre="Empresas Mineras" /> },
+          
           { path: "/catalogo-repuestos", element: <CatalogoProductosPage /> },
           { path: "/catalogo-repuestos/nuevo", element: <NuevoProductoPage /> },
           { path: "/catalogo-repuestos/:id", element: <ProductoDetallePage /> },
           { path: "/catalogo-repuestos/:id/editar", element: <EditarProductoPage /> },
+          
           { path: "/catalogo-servicios", element: <CatalogoServiciosPage /> },
           { path: "/reportes", element: <ReportesPage /> },
-          { path: "/cotizaciones", element: <Placeholder nombre="Cotizaciones" /> },
+          
+          { path: "/cotizaciones", element: <CotizacionesListPage /> },
+          { path: "/cotizaciones/nueva", element: <NuevaCotizacionPage /> },
+          { path: "/cotizaciones/:id", element: <CotizacionDetallePage /> },
+          
           { path: "/ordenes-compra", element: <Placeholder nombre="Órdenes de Compra" /> },
           { path: "/facturacion", element: <Placeholder nombre="Facturación" /> },
           {
-            // Solo administradores pueden entrar a /usuarios
             element: <RoleGuard allowedRoles={["ADMINISTRADOR"]} />,
             children: [
               { path: "/usuarios", element: <UsuariosPage /> },
@@ -53,6 +67,5 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  // Cualquier ruta no definida cae aquí en vez de mostrar el error genérico de react-router.
-  { path: "*", element: <Navigate to="/" replace /> },
+  { path: "*", element: <Navigate to="/dashboard" replace /> },
 ])

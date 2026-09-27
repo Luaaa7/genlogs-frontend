@@ -1,4 +1,4 @@
-import axiosClient from "./axiosClient"
+import { axiosClient } from './axiosClient';
 import type { LoginRequest, LoginResponse } from "@/types/auth"
 
 export async function login(data: LoginRequest): Promise<LoginResponse> {

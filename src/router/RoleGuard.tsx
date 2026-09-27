@@ -1,17 +1,18 @@
-import { Navigate, Outlet } from "react-router-dom"
-import { useAuthStore } from "@/features/auth/store/authStore"
+import { Navigate, useLocation } from "react-router-dom"
+import { Outlet } from "react-router-dom"
 
 interface RoleGuardProps {
   allowedRoles: string[]
+  children?: React.ReactNode
 }
 
-export function RoleGuard({ allowedRoles }: RoleGuardProps) {
-  const hasRole = useAuthStore((state) => state.hasRole)
-  const isAllowed = allowedRoles.some((rol) => hasRole(rol))
+export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
+  const location = useLocation()
+  const userRole = localStorage.getItem("user_role") ?? ""
 
-  if (!isAllowed) {
-    return <Navigate to="/" replace />
+  if (!allowedRoles.includes(userRole)) {
+    return <Navigate to="/" state={{ from: location }} replace />
   }
 
-  return <Outlet />
+  return children ? <>{children}</> : <Outlet />
 }
