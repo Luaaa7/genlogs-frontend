@@ -9,7 +9,8 @@ interface IndicadorCardProps {
   subtitle?: string
   trend?: number
   trendLabel?: string
-  variant?: "default" | "highlight"
+  iconBgColor?: string
+  iconColor?: string
 }
 
 function TrendIndicator({ trend, label }: { trend: number; label?: string }) {
@@ -45,25 +46,21 @@ export function IndicadorCard({
   subtitle,
   trend,
   trendLabel,
-  variant = "default",
+  iconBgColor = "bg-primary/10",
+  iconColor = "text-primary",
 }: IndicadorCardProps) {
   return (
-    <div
-      className={cn(
-        "flex items-start gap-4 rounded-lg border border-border p-4 transition-shadow hover:shadow-md",
-        variant === "highlight" && "bg-primary/5 border-primary/20"
-      )}
-    >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-        <Icon className="h-5 w-5" />
+    <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+      <div className="flex items-start justify-between gap-4">
+        <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-full", iconBgColor, iconColor)}>
+          <Icon className="h-5.5 w-5.5" />
+        </div>
+        {trend !== undefined && <TrendIndicator trend={trend} label={trendLabel} />}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex items-baseline justify-between gap-2">
-          <p className="truncate text-xs text-muted-foreground">{label}</p>
-          {trend !== undefined && <TrendIndicator trend={trend} label={trendLabel} />}
-        </div>
-        <p className="text-lg font-semibold truncate">{value}</p>
-        {subtitle && <p className="truncate text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
+        <p className="text-xs font-medium text-muted-foreground leading-tight line-clamp-2">{label}</p>
+        <p className="mt-1.5 text-3xl font-bold text-slate-900 tracking-tight">{value}</p>
+        {subtitle && <p className="mt-1 text-xs text-muted-foreground line-clamp-1">{subtitle}</p>}
       </div>
     </div>
   )
