@@ -1,4 +1,4 @@
-import { Users, DollarSign, FileText, ShoppingCart, TrendingUp, RefreshCw, Plus, BarChart3, ShoppingBag } from "lucide-react"
+import { Users, DollarSign, FileText, ShoppingCart, TrendingUp, RefreshCw, BarChart3 } from "lucide-react"
 import { useDashboardData } from "../hooks/useDashboardData"
 import { IndicadorCard } from "../components/IndicadorCard"
 import { CotizacionesPorEstadoChart } from "../components/CotizacionesPorEstadoChart"

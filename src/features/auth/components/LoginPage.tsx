@@ -30,13 +30,28 @@ export function LoginPage() {
       
       setAuth(tokenRecibido, data.nombreUsuario, data.nombreRol)
       navigate("/dashboard")
-    } catch {
-      // ✅ Fallback seguro en desarrollo si el backend devuelve un error de red o no responde
-      console.warn("Error autenticando con backend. Otorgando sesión demo...")
-      localStorage.setItem("access_token", "mock-token-demo-123")
-      setAuth("mock-token-demo-123", nombreUsuario || "Admin", "ADMINISTRADOR")
-      navigate("/dashboard")
-    } finally {
+    } catch (error: unknown) {
+      if (error && typeof error === "object") {
+        // Validamos si fue un error de tiempo de espera (timeout / servidor durmiéndose)
+        if ("code" in error && (error as { code?: string }).code === "ECONNABorted") {
+          console.error("El servidor tardó demasiado en responder (Cold Start).");
+          setError("El servidor está despertando. Por favor, espera unos segundos y vuelve a intentar.");
+          return;
+        }
+
+        // Validamos si el backend respondió con un mensaje de error específico
+        if ("response" in error) {
+          const err = error as { response?: { data?: { message?: string } } };
+          console.error("Detalle exacto del backend:", err.response?.data);
+          setError(err.response?.data?.message || "Usuario o contraseña incorrectos.");
+          return;
+        }
+      }
+
+      // Fallback para cualquier otro error imprevisto
+      console.error("Error desconocido:", error);
+      setError("Ocurrió un error inesperado al intentar iniciar sesión.");
+    }finally {
       setLoading(false)
     }
   }

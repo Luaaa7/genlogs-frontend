@@ -2,7 +2,7 @@ import axios from "axios"
 
 export const axiosClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? "/api/v1",
-  timeout: 15_000,
+  timeout: 60_000, // 👈 Subido a 60 segundos para los "cold starts" de Render
   headers: {
     "Content-Type": "application/json",
   },
