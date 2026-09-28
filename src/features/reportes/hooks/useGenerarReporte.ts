@@ -15,7 +15,8 @@ export function useGenerarReporte() {
     mutationFn: async (request: ReporteRequest) => {
       const blob = await generarReporte(request)
       const extension = request.formato === "EXCEL" ? "xlsx" : "pdf"
-      const nombreArchivo = `reporte-${NOMBRES_TIPO[request.tipoReporte]}.${extension}`
+      // Incluye el rango para distinguir descargas sucesivas del mismo tipo
+      const nombreArchivo = `reporte-${NOMBRES_TIPO[request.tipoReporte]}-${request.fechaInicio}_${request.fechaFin}.${extension}`
       descargarBlob(blob, nombreArchivo)
     },
   })

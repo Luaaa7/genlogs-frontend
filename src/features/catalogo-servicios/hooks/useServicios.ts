@@ -8,10 +8,10 @@ import {
 } from "@/api/serviciosApi"
 import type { ServicioFormValues } from "@/types/servicio.types"
 
-export function useServicios(idCategoriaServicio?: number) {
+export function useServicios(idCategoriaServicio?: number, soloActivos = true) {
   return useQuery({
-    queryKey: ["servicios", { idCategoriaServicio }],
-    queryFn: () => listarServicios({ idCategoriaServicio }),
+    queryKey: ["servicios", { idCategoriaServicio, soloActivos }],
+    queryFn: () => listarServicios({ idCategoriaServicio, soloActivos }),
   })
 }
 

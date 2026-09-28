@@ -1,5 +1,49 @@
-import { Placeholder } from "@/router/Placeholder"
+import { useState } from 'react';
+import { useProveedores, useCrearProveedor } from '../hooks/useProveedores';
+import { ProveedorForm } from '../components/ProveedorForm';
 
-export function ProveedoresListPage() {
-  return <Placeholder nombre="Listado de Proveedores" />
+export default function ProveedoresListPage() {
+  const { data = [], isLoading, isError } = useProveedores();
+  const crear = useCrearProveedor();
+  const [mostrarForm, setMostrarForm] = useState(false);
+
+  return (
+    <main className="mx-auto max-w-6xl space-y-6 p-6">
+      <header className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Proveedores</h1>
+        <button onClick={() => setMostrarForm((v) => !v)} className="rounded bg-sky-700 px-4 py-2 text-sm font-medium text-white">
+          {mostrarForm ? 'Cerrar' : 'Nuevo proveedor'}
+        </button>
+      </header>
+
+      {mostrarForm && (
+        <div className="rounded border border-slate-200 p-4">
+          <ProveedorForm
+            isSubmitting={crear.isPending}
+            serverError={crear.isError ? 'No se pudo guardar el proveedor. Verifica que el RUC no esté registrado.' : undefined}
+            onSubmit={(d) => crear.mutate(d, { onSuccess: () => setMostrarForm(false) })}
+          />
+        </div>
+      )}
+
+      {isError && <p role="alert" className="text-sm text-red-600">No se pudo cargar la lista de proveedores.</p>}
+      <div className="overflow-x-auto rounded border border-slate-200">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-slate-50 text-slate-600">
+            <tr><th className="p-2">RUC</th><th className="p-2">Razón social</th><th className="p-2">Contacto</th><th className="p-2">Teléfono</th><th className="p-2">Correo</th></tr>
+          </thead>
+          <tbody>
+            {isLoading && <tr><td colSpan={5} className="p-4 text-slate-500">Cargando proveedores…</td></tr>}
+            {!isLoading && data.length === 0 && <tr><td colSpan={5} className="p-4 text-slate-500">Aún no hay proveedores registrados.</td></tr>}
+            {data.map((p) => (
+              <tr key={p.id} className="border-t border-slate-100">
+                <td className="p-2">{p.ruc}</td><td className="p-2 font-medium">{p.razonSocial}</td>
+                <td className="p-2">{p.contactoNombre}</td><td className="p-2">{p.telefono}</td><td className="p-2">{p.email}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </main>
+  );
 }

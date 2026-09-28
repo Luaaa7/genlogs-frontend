@@ -1,9 +1,11 @@
 import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { useQuery } from "@tanstack/react-query"
 import { listarCategoriasServicio } from "@/api/categoriasServicioApi"
 import { listarUnidadesMedida } from "@/api/unidadesMedidaApi"
 import { listarSectoresEconomicos } from "@/api/sectoresEconomicosApi"
 import { FileUploader } from "@/components/ui/FileUploader"
+import { servicioSchema } from "@/lib/validators/servicio.schema"
 import { CategoriaServicioSelector } from "./CategoriaServicioSelector"
 import type { ServicioFormValues } from "@/types/servicio.types"
 
@@ -15,6 +17,7 @@ interface ServicioFormProps {
 
 export function ServicioForm({ valoresIniciales, onSubmit, enviando }: ServicioFormProps) {
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<ServicioFormValues>({
+    resolver: zodResolver(servicioSchema),
     defaultValues: {
       idCategoriaServicio: valoresIniciales?.idCategoriaServicio,
       idUnidadMedida: valoresIniciales?.idUnidadMedida,
@@ -58,7 +61,7 @@ export function ServicioForm({ valoresIniciales, onSubmit, enviando }: ServicioF
       <div>
         <label className="text-sm font-medium">Código de servicio</label>
         <input
-          {...register("codigoServicio", { required: "El código es obligatorio" })}
+          {...register("codigoServicio")}
           className="w-full rounded-md border border-border px-3 py-2 text-sm"
         />
         {errors.codigoServicio && <p className="text-sm text-destructive">{errors.codigoServicio.message}</p>}
@@ -67,7 +70,7 @@ export function ServicioForm({ valoresIniciales, onSubmit, enviando }: ServicioF
       <div>
         <label className="text-sm font-medium">Nombre del servicio</label>
         <input
-          {...register("nombreServicio", { required: "El nombre es obligatorio" })}
+          {...register("nombreServicio")}
           className="w-full rounded-md border border-border px-3 py-2 text-sm"
         />
         {errors.nombreServicio && <p className="text-sm text-destructive">{errors.nombreServicio.message}</p>}
@@ -79,15 +82,18 @@ export function ServicioForm({ valoresIniciales, onSubmit, enviando }: ServicioF
           categorias={categorias}
           isLoading={cargandoCategorias}
           value={watch("idCategoriaServicio")}
-          onChange={(id) => setValue("idCategoriaServicio", id)}
+          onChange={(id) => setValue("idCategoriaServicio", id, { shouldValidate: true })}
           className="w-full rounded-md border border-border px-3 py-2 text-sm"
         />
+        {errors.idCategoriaServicio && (
+          <p className="text-sm text-destructive">{errors.idCategoriaServicio.message}</p>
+        )}
       </div>
 
       <div>
         <label className="text-sm font-medium">Unidad de medida</label>
         <select
-          {...register("idUnidadMedida", { required: true, valueAsNumber: true })}
+          {...register("idUnidadMedida", { valueAsNumber: true })}
           disabled={cargandoUnidades}
           className="w-full rounded-md border border-border px-3 py-2 text-sm"
         >
@@ -98,6 +104,7 @@ export function ServicioForm({ valoresIniciales, onSubmit, enviando }: ServicioF
             </option>
           ))}
         </select>
+        {errors.idUnidadMedida && <p className="text-sm text-destructive">{errors.idUnidadMedida.message}</p>}
       </div>
 
       <div>
@@ -105,9 +112,15 @@ export function ServicioForm({ valoresIniciales, onSubmit, enviando }: ServicioF
         <input
           type="number"
           step="0.5"
-          {...register("duracionEstimadaHoras", { valueAsNumber: true })}
+          {...register("duracionEstimadaHoras", {
+            // Campo vacío => undefined (con valueAsNumber llegaría NaN y fallaría la validación)
+            setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
+          })}
           className="w-full rounded-md border border-border px-3 py-2 text-sm"
         />
+        {errors.duracionEstimadaHoras && (
+          <p className="text-sm text-destructive">{errors.duracionEstimadaHoras.message}</p>
+        )}
       </div>
 
       <div>
@@ -117,6 +130,7 @@ export function ServicioForm({ valoresIniciales, onSubmit, enviando }: ServicioF
           rows={3}
           className="w-full rounded-md border border-border px-3 py-2 text-sm"
         />
+        {errors.descripcion && <p className="text-sm text-destructive">{errors.descripcion.message}</p>}
       </div>
 
       <div>

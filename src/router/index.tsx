@@ -8,6 +8,7 @@ import { ForgotPasswordPage } from "@/features/auth/components/ForgotPasswordPag
 import { ResetPasswordPage } from "@/features/auth/components/ResetPasswordPage"
 import { UsuariosPage } from "@/features/usuarios/components/UsuariosPage"
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage"
+
 import { Placeholder } from "@/router/Placeholder"
 import { CatalogoProductosPage } from "@/features/catalogo-repuestos/pages/CatalogoProductosPage"
 import { ProductoDetallePage } from "@/features/catalogo-repuestos/pages/ProductoDetallePage"
@@ -19,6 +20,9 @@ import { CotizacionesListPage } from "@/features/cotizaciones/pages/Cotizaciones
 import { NuevaCotizacionPage } from "@/features/cotizaciones/pages/NuevaCotizacionPage"
 import { CotizacionDetallePage } from "@/features/cotizaciones/pages/CotizacionDetallePage"
 import { SolicitudWebPublicPage } from "@/features/solicitudes-web/pages/SolicitudWebPublicPage"
+import ClientesListPage from "@/features/clientes-proveedores/pages/ClientesListPage"
+import ClienteDetallePage from "@/features/clientes-proveedores/pages/ClienteDetallePage"
+import ProveedoresListPage from "@/features/clientes-proveedores/pages/ProveedoresListPage"
 
 export const router = createBrowserRouter([
   {
@@ -40,7 +44,11 @@ export const router = createBrowserRouter([
           { path: "/", element: <Navigate to="/dashboard" replace /> },
           { path: "/dashboard", element: <DashboardPage /> },
           
-          { path: "/clientes-proveedores", element: <Placeholder nombre="Clientes y Proveedores" /> },
+          // 2. Rutas de Clientes y Proveedores (reemplazando el Placeholder anterior)
+          { path: "/clientes", element: <ClientesListPage /> },
+          { path: "/clientes/:id", element: <ClienteDetallePage /> },
+          { path: "/proveedores", element: <ProveedoresListPage /> },
+
           { path: "/empresas-mineras", element: <Placeholder nombre="Empresas Mineras" /> },
           
           { path: "/catalogo-repuestos", element: <CatalogoProductosPage /> },

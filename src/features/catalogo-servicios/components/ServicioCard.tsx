@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton"
 import type { Servicio } from "@/types/servicio.types"
 
 interface ServicioCardProps {
@@ -55,6 +56,17 @@ export function ServicioCard({ servicio, onEditar, onDesactivar }: ServicioCardP
           </button>
         )}
       </div>
+    </div>
+  )
+}
+
+export function ServicioCardSkeleton() {
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border border-border p-4" aria-hidden="true">
+      <Skeleton className="h-3 w-20" />
+      <Skeleton className="h-5 w-3/4" />
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-2/3" />
     </div>
   )
 }
