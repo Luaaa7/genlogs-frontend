@@ -1,6 +1,8 @@
-import { Loader2, ShoppingCart } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ShoppingCart } from 'lucide-react'
 import { useOrdenesCompra } from '../hooks/useOrdenesCompra'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
+import { TableSkeletonRows } from '@/components/ui/TableSkeletonRows'
 
 export function OrdenesCompraPage() {
   const { data, isLoading, isError, refetch } = useOrdenesCompra()
@@ -20,25 +22,19 @@ export function OrdenesCompraPage() {
       )}
 
       <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-        <table className="w-full text-left text-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="bg-muted">
             <tr>
               <th className="p-3 font-medium text-muted-foreground">Número</th>
               <th className="p-3 font-medium text-muted-foreground">Cliente</th>
+              <th className="p-3 font-medium text-muted-foreground">Origen</th>
               <th className="p-3 font-medium text-muted-foreground">Emisión</th>
-              <th className="p-3 font-medium text-muted-foreground">Total</th>
               <th className="p-3 font-medium text-muted-foreground">Estado</th>
             </tr>
           </thead>
           <tbody>
-            {isLoading && (
-              <tr>
-                <td colSpan={5} className="p-10 text-center text-muted-foreground">
-                  <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin text-accent" />
-                  Cargando órdenes de compra…
-                </td>
-              </tr>
-            )}
+            {isLoading && <TableSkeletonRows columns={5} />}
             {!isLoading && !isError && ordenes.length === 0 && (
               <tr>
                 <td colSpan={5} className="p-10 text-center text-muted-foreground">
@@ -50,14 +46,25 @@ export function OrdenesCompraPage() {
             {ordenes.map((orden) => (
               <tr key={orden.idOrdenCompra} className="border-t border-border hover:bg-muted/50">
                 <td className="p-3 font-medium text-foreground">{orden.numeroOrdenCompra}</td>
-                <td className="p-3">{orden.cliente ?? orden.idCotizacion}</td>
+                <td className="p-3">{orden.cliente ?? '—'}</td>
+                <td className="p-3">
+                  {/* Vínculo explícito con la cotización de origen — la
+                      lógica de UX del proyecto lo pide como link, no solo
+                      como texto o ID suelto. */}
+                  <Link
+                    to={`/cotizaciones/${orden.idCotizacion}`}
+                    className="text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                  >
+                    Cotización #{orden.idCotizacion}
+                  </Link>
+                </td>
                 <td className="p-3">{orden.fechaRecepcion}</td>
-                <td className="p-3 font-mono">{'—'}</td>
                 <td className="p-3">{orden.estadoCodigo ?? orden.idEstadoOrdenCompra}</td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </section>
   )

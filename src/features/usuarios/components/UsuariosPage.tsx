@@ -1,8 +1,9 @@
 import { useState } from "react"
-import { Loader2, Users as UsersIcon } from "lucide-react"
+import { Users as UsersIcon } from "lucide-react"
 import { UsuarioFormModal } from "./UsuarioFormModal"
 import { useUsuarios } from "../hooks/useUsuarios"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
+import { TableSkeletonRows } from "@/components/ui/TableSkeletonRows"
 
 export function UsuariosPage() {
   const { usuarios, roles, loading, error, agregar, alternarBloqueo, recargar } = useUsuarios()
@@ -54,7 +55,8 @@ export function UsuariosPage() {
       )}
 
       <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-        <table className="w-full text-left text-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="bg-muted">
             <tr>
               <th className="p-3 font-medium text-muted-foreground">Usuario</th>
@@ -66,14 +68,7 @@ export function UsuariosPage() {
             </tr>
           </thead>
           <tbody>
-            {loading && (
-              <tr>
-                <td colSpan={6} className="p-10 text-center text-muted-foreground">
-                  <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin text-accent" />
-                  Cargando usuarios y roles…
-                </td>
-              </tr>
-            )}
+            {loading && <TableSkeletonRows columns={6} />}
             {!loading && !error && usuarios.length === 0 && (
               <tr>
                 <td colSpan={6} className="p-10 text-center text-muted-foreground">
@@ -107,6 +102,7 @@ export function UsuariosPage() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {mostrarFormulario && (

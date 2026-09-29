@@ -2,10 +2,11 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useDebounce } from "use-debounce"
 import { Link } from "react-router-dom"
-import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react"
+import { ChevronLeft, ChevronRight, Package, Plus, Search } from "lucide-react"
 import { listarMarcas } from "@/api/marcasApi"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { useProductos } from "@/hooks/useProductos"
 import { cn } from "@/lib/utils/utils"
 import type { ProductoFiltros } from "@/types/producto.types"
@@ -17,7 +18,7 @@ const TAMANIO_PAGINA = 12
 type CampoBusqueda = "nombre" | "codigo"
 
 const selectClass =
-  "h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+  "h-10 rounded-lg border border-border bg-card px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 
 export function CatalogoProductosPage() {
   const [texto, setTexto] = useState("")
@@ -65,7 +66,7 @@ export function CatalogoProductosPage() {
     <div className="flex flex-col gap-6 p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Catálogo de repuestos</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Catálogo de repuestos</h1>
           {data && (
             <p className="text-sm text-muted-foreground" aria-live="polite">
               {totalElementos === 1 ? "1 producto" : `${totalElementos} productos`}
@@ -80,7 +81,10 @@ export function CatalogoProductosPage() {
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3" role="search">
+      <div
+        className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-sm"
+        role="search"
+      >
         <div className="flex min-w-72 flex-1 items-center gap-2 sm:max-w-xl">
           <select
             aria-label="Buscar por"
@@ -135,18 +139,17 @@ export function CatalogoProductosPage() {
         )}
       </div>
 
-      {isError && (
-        <div role="alert" className="flex flex-wrap items-center gap-3 rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm">
-          <span className="text-destructive">No se pudo cargar el catálogo.</span>
-          <Button type="button" variant="outline" size="sm" onClick={() => refetch()}>
-            Reintentar
-          </Button>
-        </div>
-      )}
+      {isError && <ErrorBanner message="No se pudo cargar el catálogo." onRetry={() => refetch()} />}
 
       {sinResultados && (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border p-10 text-center">
-          <p className="text-sm text-muted-foreground">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-10 text-center shadow-sm">
+          <div className="relative flex h-16 w-16 items-center justify-center">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-accent/15 via-accent/5 to-transparent" />
+            <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-card text-accent shadow-sm ring-1 ring-border/60">
+              <Package className="h-5 w-5" />
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground max-w-xs">
             {hayFiltros
               ? "Ningún producto coincide con los filtros. Prueba con otros criterios."
               : "Aún no hay productos en el catálogo."}

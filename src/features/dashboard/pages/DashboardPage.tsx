@@ -205,12 +205,17 @@ export function DashboardPage() {
           <Link
             key={action.href}
             to={action.href}
-            className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="group relative overflow-hidden flex items-center gap-3 rounded-2xl border border-border/70 bg-card/80 backdrop-blur-xl p-4 shadow-sm transition-all hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <action.icon className="h-4.5 w-4.5" />
+            <div
+              className="pointer-events-none absolute -bottom-6 -left-6 h-20 w-20 rounded-full bg-accent/25 blur-2xl opacity-0 transition-opacity group-hover:opacity-100"
+              aria-hidden="true"
+            />
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm ring-1 ring-white/40">
+              <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-xl bg-gradient-to-b from-white/40 to-transparent" />
+              <action.icon className="relative h-4.5 w-4.5" />
             </div>
-            <span className="text-sm font-medium text-foreground leading-tight">{action.label}</span>
+            <span className="relative text-sm font-medium text-foreground leading-tight">{action.label}</span>
           </Link>
         ))}
       </div>
@@ -224,7 +229,7 @@ export function DashboardPage() {
 
       {/* Gráficos */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-border bg-card shadow-sm">
+        <div className="rounded-2xl border border-border/70 bg-card/80 backdrop-blur-xl shadow-sm">
           <CotizacionesPorEstadoChart data={cotizacionesPorEstado ?? []} className="p-5 h-72" />
           {!hasCotizaciones && (
             <EmptyStateCard
@@ -239,7 +244,7 @@ export function DashboardPage() {
           )}
         </div>
 
-        <div className="rounded-xl border border-border bg-card shadow-sm">
+        <div className="rounded-2xl border border-border/70 bg-card/80 backdrop-blur-xl shadow-sm">
           <FacturacionChart data={facturacionHistorico ?? []} className="p-5 h-72" />
           {!hasFacturacion && (
             <EmptyStateCard
