@@ -4,7 +4,7 @@ import { contactoSchema, type ContactoFormValues } from '../../../lib/validators
 import type { ContactoCliente } from '../../../types/proveedor.types';
 import { useAgregarContacto, useEliminarContacto } from '../hooks/useProveedores';
 
-const input = 'rounded border border-slate-300 p-2 text-sm';
+const input = 'rounded border border-border p-2 text-sm';
 
 export function ContactoClienteList({ clienteId, contactos }: { clienteId: number; contactos: ContactoCliente[] }) {
   const agregar = useAgregarContacto(clienteId);
@@ -20,20 +20,20 @@ export function ContactoClienteList({ clienteId, contactos }: { clienteId: numbe
 
   return (
     <section className="space-y-4">
-      <ul className="divide-y divide-slate-100 rounded border border-slate-200">
-        {contactos.length === 0 && <li className="p-3 text-sm text-slate-500">Aún no hay contactos. Agrega el primero abajo.</li>}
+      <ul className="divide-y divide-border rounded border border-border">
+        {contactos.length === 0 && <li className="p-3 text-sm text-muted-foreground">Aún no hay contactos. Agrega el primero abajo.</li>}
         {contactos.map((c) => (
           <li key={c.id ?? c.idContacto} className="flex items-center justify-between gap-3 p-3 text-sm">
             <div>
               <div className="font-medium">
-                {c.nombre ?? c.nombres} {(c.principal ?? c.esPrincipal) && <span className="ml-1 rounded bg-sky-100 px-1.5 py-0.5 text-xs text-sky-800">Principal</span>}
+                {c.nombre ?? c.nombres} {(c.principal ?? c.esPrincipal) && <span className="ml-1 rounded bg-accent/10 px-1.5 py-0.5 text-xs text-accent">Principal</span>}
               </div>
-              <div className="text-slate-500">{c.cargo} · {c.telefono} · {c.email ?? c.correo}</div>
+              <div className="text-muted-foreground">{c.cargo} · {c.telefono} · {c.email ?? c.correo}</div>
             </div>
             <button
               onClick={() => window.confirm(`¿Eliminar a ${(c.nombre ?? c.nombres)}?`) && eliminar.mutate(c.id ?? c.idContacto)}
               disabled={eliminar.isPending}
-              className="text-red-600 hover:underline"
+              className="text-destructive hover:underline"
             >
               Eliminar contacto
             </button>
@@ -46,13 +46,13 @@ export function ContactoClienteList({ clienteId, contactos }: { clienteId: numbe
           <label key={f} className="text-sm capitalize">
             {f}
             <input {...register(f)} className={`${input} w-full`} />
-            {errors[f] && <span className="text-xs text-red-600">{errors[f]?.message}</span>}
+            {errors[f] && <span className="text-xs text-destructive">{errors[f]?.message}</span>}
           </label>
         ))}
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" {...register('principal')} /> Contacto principal
         </label>
-        <button type="submit" disabled={agregar.isPending} className="rounded bg-sky-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 sm:col-span-2">
+        <button type="submit" disabled={agregar.isPending} className="rounded bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-50 sm:col-span-2">
           {agregar.isPending ? 'Agregando…' : 'Agregar contacto'}
         </button>
       </form>

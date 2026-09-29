@@ -50,20 +50,20 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({
   const totales = calcularTotales();
 
   return (
-    <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+    <div className="space-y-6 bg-card p-6 rounded-lg shadow-sm border border-border">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 className="text-xl font-semibold text-foreground">
             Detalles de Cotización
           </h2>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Agrega productos o servicios a la cotización
           </p>
         </div>
         <button
           type="button"
           onClick={agregarDetalle}
-          className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium"
+          className="inline-flex items-center px-4 py-2 bg-success text-white rounded-lg hover:bg-success/90 transition font-medium"
         >
           <Plus className="w-4 h-4 mr-2" />
           Agregar Línea
@@ -71,8 +71,8 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({
       </div>
 
       {errors.detalles && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-600">
+        <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+          <p className="text-sm text-destructive">
             {typeof errors.detalles.message === 'string'
               ? errors.detalles.message
               : 'Error en los detalles de cotización'}
@@ -83,23 +83,23 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b-2 border-gray-300 bg-gray-50">
-              <th className="px-4 py-3 text-left font-semibold text-gray-700">
+            <tr className="border-b-2 border-border bg-muted">
+              <th className="px-4 py-3 text-left font-semibold text-foreground">
                 Producto/Servicio
               </th>
-              <th className="px-4 py-3 text-center font-semibold text-gray-700">
+              <th className="px-4 py-3 text-center font-semibold text-foreground">
                 Cantidad
               </th>
-              <th className="px-4 py-3 text-right font-semibold text-gray-700">
+              <th className="px-4 py-3 text-right font-semibold text-foreground">
                 Precio Unit.
               </th>
-              <th className="px-4 py-3 text-center font-semibold text-gray-700">
+              <th className="px-4 py-3 text-center font-semibold text-foreground">
                 Margen %
               </th>
-              <th className="px-4 py-3 text-right font-semibold text-gray-700">
+              <th className="px-4 py-3 text-right font-semibold text-foreground">
                 Subtotal
               </th>
-              <th className="px-4 py-3 text-center font-semibold text-gray-700"></th>
+              <th className="px-4 py-3 text-center font-semibold text-foreground"></th>
             </tr>
           </thead>
           <tbody>
@@ -119,13 +119,13 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({
 
       {fields.length === 0 && (
         <div className="text-center py-8">
-          <p className="text-gray-600 mb-4">
+          <p className="text-muted-foreground mb-4">
             No hay detalles. Haz clic en "Agregar Línea" para comenzar.
           </p>
           <button
             type="button"
             onClick={agregarDetalle}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            className="inline-flex items-center px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition"
           >
             <Plus className="w-4 h-4 mr-2" />
             Agregar Primera Línea
@@ -135,22 +135,22 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({
 
       {/* Resumen de totales */}
       {fields.length > 0 && (
-        <div className="mt-8 pt-6 border-t-2 border-gray-200 space-y-3">
+        <div className="mt-8 pt-6 border-t-2 border-border space-y-3">
           <div className="flex justify-end">
             <div className="w-full sm:w-80 space-y-3">
-              <div className="flex justify-between text-gray-700">
+              <div className="flex justify-between text-foreground">
                 <span className="font-medium">Subtotal:</span>
                 <span className="font-semibold">
                   {formatearMoneda(totales.subtotalGeneral, moneda)}
                 </span>
               </div>
-              <div className="flex justify-between text-gray-700">
+              <div className="flex justify-between text-foreground">
                 <span className="font-medium">IGV (18%):</span>
                 <span className="font-semibold">
                   {formatearMoneda(totales.igv, moneda)}
                 </span>
               </div>
-              <div className="flex justify-between text-lg text-gray-900 bg-gray-100 p-3 rounded-lg">
+              <div className="flex justify-between text-lg text-foreground bg-muted p-3 rounded-lg">
                 <span className="font-bold">Total:</span>
                 <span className="font-bold">
                   {formatearMoneda(totales.subtotalGeneral + totales.igv, moneda)}
@@ -191,7 +191,7 @@ const DetalleRow: React.FC<DetalleRowProps> = ({
     : 0;
 
   return (
-    <tr className="border-b border-gray-200 hover:bg-gray-50 transition">
+    <tr className="border-b border-border hover:bg-muted transition">
       {/* Producto/Servicio */}
       <td className="px-4 py-3">
         <Controller
@@ -204,14 +204,14 @@ const DetalleRow: React.FC<DetalleRowProps> = ({
                 value={field.value || ''}
                 type="text"
                 placeholder="Nombre del producto o servicio"
-                className={`w-full px-2 py-1 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-2 py-1 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-accent ${
                   errors?.detalles?.[index]?.producto
-                    ? 'border-red-500'
-                    : 'border-gray-300'
+                    ? 'border-destructive'
+                    : 'border-border'
                 }`}
               />
               {errors?.detalles?.[index]?.producto && (
-                <p className="text-xs text-red-600 mt-1">
+                <p className="text-xs text-destructive mt-1">
                   {errors.detalles[index]?.producto?.message}
                 </p>
               )}
@@ -234,10 +234,10 @@ const DetalleRow: React.FC<DetalleRowProps> = ({
                 onChange={(e) => field.onChange(Number(e.target.value))}
                 min="1"
                 step="1"
-                className={`w-full px-2 py-1 border rounded text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-2 py-1 border rounded text-sm text-center focus:outline-none focus:ring-2 focus:ring-accent ${
                   errors?.detalles?.[index]?.cantidad
-                    ? 'border-red-500'
-                    : 'border-gray-300'
+                    ? 'border-destructive'
+                    : 'border-border'
                 }`}
               />
             </div>
@@ -260,10 +260,10 @@ const DetalleRow: React.FC<DetalleRowProps> = ({
                 min="0"
                 step="0.01"
                 placeholder="0.00"
-                className={`w-full px-2 py-1 border rounded text-sm text-right focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-2 py-1 border rounded text-sm text-right focus:outline-none focus:ring-2 focus:ring-accent ${
                   errors?.detalles?.[index]?.precioUnitario
-                    ? 'border-red-500'
-                    : 'border-gray-300'
+                    ? 'border-destructive'
+                    : 'border-border'
                 }`}
               />
             </div>
@@ -287,13 +287,13 @@ const DetalleRow: React.FC<DetalleRowProps> = ({
                   min="0"
                   max="100"
                   step="0.1"
-                  className={`w-full px-2 py-1 border rounded text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  className={`w-full px-2 py-1 border rounded text-sm text-center focus:outline-none focus:ring-2 focus:ring-accent ${
                     errors?.detalles?.[index]?.margenPorcentaje
-                      ? 'border-red-500'
-                      : 'border-gray-300'
+                      ? 'border-destructive'
+                      : 'border-border'
                   }`}
                 />
-                <span className="ml-1 text-gray-600">%</span>
+                <span className="ml-1 text-muted-foreground">%</span>
               </div>
             </div>
           )}
@@ -301,13 +301,13 @@ const DetalleRow: React.FC<DetalleRowProps> = ({
       </td>
 
       {/* Subtotal */}
-      <td className="px-4 py-3 text-right font-semibold text-gray-900">
+      <td className="px-4 py-3 text-right font-semibold text-foreground">
         <div className="space-y-1">
           <div className="text-sm">
             {formatearMoneda(subtotal, moneda)}
           </div>
           {detalle?.margenPorcentaje && detalle.margenPorcentaje > 0 && (
-            <div className="text-xs text-green-600 font-medium">
+            <div className="text-xs text-success font-medium">
               +{formatearMoneda(totalConMargen - subtotal, moneda)} margen
             </div>
           )}
@@ -319,7 +319,7 @@ const DetalleRow: React.FC<DetalleRowProps> = ({
         <button
           type="button"
           onClick={onRemove}
-          className="inline-flex p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+          className="inline-flex p-2 text-destructive hover:bg-destructive/10 rounded-lg transition"
           title="Eliminar esta línea"
         >
           <Trash2 className="w-4 h-4" />

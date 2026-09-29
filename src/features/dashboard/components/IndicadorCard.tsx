@@ -30,7 +30,7 @@ function TrendIndicator({ trend, label }: { trend: number; label?: string }) {
     <div
       className={cn(
         "flex items-center gap-1 text-xs font-medium",
-        isPositive ? "text-emerald-600" : "text-destructive"
+        isPositive ? "text-success" : "text-destructive"
       )}
     >
       <Icon className="h-3 w-3" />
@@ -50,7 +50,7 @@ export function IndicadorCard({
   iconColor = "text-primary",
 }: IndicadorCardProps) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+    <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md">
       <div className="flex items-start justify-between gap-4">
         <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-full", iconBgColor, iconColor)}>
           <Icon className="h-5.5 w-5.5" />
@@ -59,7 +59,7 @@ export function IndicadorCard({
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-xs font-medium text-muted-foreground leading-tight line-clamp-2">{label}</p>
-        <p className="mt-1.5 text-3xl font-bold text-slate-900 tracking-tight">{value}</p>
+        <p className="mt-1.5 text-3xl font-bold text-foreground tracking-tight font-mono">{value}</p>
         {subtitle && <p className="mt-1 text-xs text-muted-foreground line-clamp-1">{subtitle}</p>}
       </div>
     </div>

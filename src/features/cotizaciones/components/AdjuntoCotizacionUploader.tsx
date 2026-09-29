@@ -111,12 +111,12 @@ export const AdjuntoCotizacionUploader: React.FC<AdjuntoCotizacionUploaderProps>
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+    <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">
+        <h2 className="text-xl font-semibold text-foreground">
           Adjuntos y Documentos
         </h2>
-        <p className="text-sm text-gray-600 mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Carga documentos, imágenes o especificaciones relacionadas con la
           cotización
         </p>
@@ -131,8 +131,8 @@ export const AdjuntoCotizacionUploader: React.FC<AdjuntoCotizacionUploaderProps>
           onDrop={handleDrop}
           className={`border-2 border-dashed rounded-lg p-8 text-center transition ${
             dragActive
-              ? 'border-blue-500 bg-blue-50'
-              : 'border-gray-300 hover:border-gray-400'
+              ? 'border-accent bg-accent/10'
+              : 'border-border hover:border-border'
           }`}
         >
           <input
@@ -147,18 +147,18 @@ export const AdjuntoCotizacionUploader: React.FC<AdjuntoCotizacionUploaderProps>
 
           <div className="flex justify-center mb-3">
             {isCargarPending ? (
-              <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+              <Loader2 className="w-8 h-8 text-accent animate-spin" />
             ) : (
-              <Upload className="w-8 h-8 text-gray-400" />
+              <Upload className="w-8 h-8 text-muted-foreground" />
             )}
           </div>
 
-          <p className="text-gray-900 font-medium mb-1">
+          <p className="text-foreground font-medium mb-1">
             {isCargarPending
               ? 'Cargando archivo...'
               : 'Arrastra archivos aquí o haz clic'}
           </p>
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             Formatos: PDF, Word, Excel, PNG, JPG • Máximo 10 MB
           </p>
 
@@ -166,7 +166,7 @@ export const AdjuntoCotizacionUploader: React.FC<AdjuntoCotizacionUploaderProps>
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isCargarPending}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="inline-flex items-center px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
             <Upload className="w-4 h-4 mr-2" />
             Seleccionar Archivos
@@ -175,32 +175,32 @@ export const AdjuntoCotizacionUploader: React.FC<AdjuntoCotizacionUploaderProps>
       )}
 
       {error && (
-        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="mt-4 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
+          <p className="text-sm text-destructive">{error}</p>
         </div>
       )}
 
       {/* Lista de adjuntos */}
       {adjuntos.length > 0 ? (
         <div className="mt-6 space-y-3">
-          <h3 className="text-sm font-semibold text-gray-900">
+          <h3 className="text-sm font-semibold text-foreground">
             {adjuntos.length} archivo{adjuntos.length !== 1 ? 's' : ''}
           </h3>
           <div className="space-y-2">
             {adjuntos.map((adjunto) => (
               <div
                 key={adjunto.id}
-                className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition"
+                className="flex items-center justify-between p-4 bg-muted border border-border rounded-lg hover:bg-muted transition"
               >
                 <div className="flex items-center flex-1 min-w-0">
                   <span className="text-2xl mr-3">
                     {getIconoArchivo(adjunto.tipoArchivo)}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-medium text-foreground truncate">
                       {adjunto.nombreArchivo}
                     </p>
-                    <p className="text-xs text-gray-600">
+                    <p className="text-xs text-muted-foreground">
                       {formatearTamanioArchivo(adjunto.tamanio)} •{' '}
                       {formatearFecha(adjunto.fechaSubida || new Date())}
                       {adjunto.subidoPor && ` • Por: ${adjunto.subidoPor}`}
@@ -213,7 +213,7 @@ export const AdjuntoCotizacionUploader: React.FC<AdjuntoCotizacionUploaderProps>
                     href={adjunto.urlCloudinary}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                    className="inline-flex p-2 text-accent hover:bg-accent/10 rounded-lg transition"
                     title="Descargar"
                   >
                     <Download className="w-4 h-4" />
@@ -228,7 +228,7 @@ export const AdjuntoCotizacionUploader: React.FC<AdjuntoCotizacionUploaderProps>
                         }
                       }}
                       disabled={isEliminarPending}
-                      className="inline-flex p-2 text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition"
+                      className="inline-flex p-2 text-destructive hover:bg-destructive/10 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition"
                       title="Eliminar"
                     >
                       {isEliminarPending ? (
@@ -244,15 +244,15 @@ export const AdjuntoCotizacionUploader: React.FC<AdjuntoCotizacionUploaderProps>
           </div>
         </div>
       ) : (
-        <div className="mt-6 text-center py-8 bg-gray-50 border border-gray-200 rounded-lg">
-          <File className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <p className="text-gray-600">Sin adjuntos</p>
+        <div className="mt-6 text-center py-8 bg-muted border border-border rounded-lg">
+          <File className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+          <p className="text-muted-foreground">Sin adjuntos</p>
         </div>
       )}
 
       {/* Info */}
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm text-blue-700">
+      <div className="mt-6 p-4 bg-accent/10 border border-accent/30 rounded-lg">
+        <p className="text-sm text-accent">
           <span className="font-semibold">💡 Consejo:</span> Los adjuntos se
           almacenan en Cloudinary y estarán disponibles cuando se comparta la
           cotización.

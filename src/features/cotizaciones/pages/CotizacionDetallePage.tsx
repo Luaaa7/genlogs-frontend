@@ -56,8 +56,8 @@ export const CotizacionDetallePage: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
-          <p className="text-lg text-gray-900 font-semibold">
+          <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
+          <p className="text-lg text-foreground font-semibold">
             ID de cotización inválido
           </p>
         </div>
@@ -68,7 +68,7 @@ export const CotizacionDetallePage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-accent animate-spin" />
       </div>
     );
   }
@@ -77,13 +77,13 @@ export const CotizacionDetallePage: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
-          <p className="text-lg text-gray-900 font-semibold">
+          <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
+          <p className="text-lg text-foreground font-semibold">
             Error al cargar la cotización
           </p>
           <button
             onClick={() => navigate('/cotizaciones')}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="mt-4 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90"
           >
             Volver
           </button>
@@ -105,29 +105,29 @@ export const CotizacionDetallePage: React.FC = () => {
   const totales = calcularTotales();
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4">
+    <div className="min-h-screen bg-muted py-8 px-4">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/cotizaciones')}
-              className="p-2 hover:bg-gray-200 rounded-lg transition"
+              className="p-2 hover:bg-muted rounded-lg transition"
             >
-              <ArrowLeft className="w-5 h-5 text-gray-700" />
+              <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-foreground">
                 {cotizacion.codigo}
               </h1>
-              <p className="text-gray-600 mt-1">
+              <p className="text-muted-foreground mt-1">
                 Cliente: {cotizacion.clienteNombre}
               </p>
             </div>
           </div>
           <button
             onClick={() => navigate(`/cotizaciones/${cotizacion.id}/editar`)}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+            className="inline-flex items-center px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition font-medium"
           >
             <Edit className="w-4 h-4 mr-2" />
             Editar
@@ -135,10 +135,10 @@ export const CotizacionDetallePage: React.FC = () => {
         </div>
 
         {/* Status Bar */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-card rounded-lg shadow-sm border border-border p-6 mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-2">Estado actual</p>
+              <p className="text-sm text-muted-foreground mb-2">Estado actual</p>
               <span
                 className={`inline-block px-4 py-2 rounded-lg font-semibold text-sm ${colorEstadoCotizacion(
                   cotizacion.estadoCotizacion
@@ -151,22 +151,22 @@ export const CotizacionDetallePage: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setShowEstadoSelector(!showEstadoSelector)}
-                className="px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition font-medium text-sm"
+                className="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted transition font-medium text-sm"
               >
                 Cambiar estado
               </button>
 
               {showEstadoSelector && (
-                <div className="absolute right-0 top-full mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 min-w-48">
+                <div className="absolute right-0 top-full mt-2 bg-card border border-border rounded-lg shadow-lg z-10 min-w-48">
                   {Object.values(EstadoCotizacion).map((estado) => (
                     <button
                       key={estado}
                       onClick={() => handleCambiarEstado(estado)}
                       disabled={isChangingState}
-                      className={`w-full text-left px-4 py-2 hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg disabled:opacity-50 transition ${
+                      className={`w-full text-left px-4 py-2 hover:bg-muted first:rounded-t-lg last:rounded-b-lg disabled:opacity-50 transition ${
                         cotizacion.estadoCotizacion === estado
-                          ? 'bg-blue-50 text-blue-600 font-medium'
-                          : 'text-gray-700'
+                          ? 'bg-accent/10 text-accent font-medium'
+                          : 'text-foreground'
                       }`}
                     >
                       {mapearEstadoCotizacion(estado)}
@@ -179,7 +179,7 @@ export const CotizacionDetallePage: React.FC = () => {
             <div className="flex gap-2">
               <button
                 onClick={() => setShowEnvioModal(true)}
-                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium text-sm"
+                className="inline-flex items-center px-4 py-2 bg-success text-white rounded-lg hover:bg-success/90 transition font-medium text-sm"
               >
                 <Send className="w-4 h-4 mr-2" />
                 Enviar
@@ -205,87 +205,87 @@ export const CotizacionDetallePage: React.FC = () => {
           {/* Left Column - Info */}
           <div className="lg:col-span-2 space-y-6">
             {/* General Info */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="bg-card rounded-lg shadow-sm border border-border p-6">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Información General
               </h2>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Cliente</p>
-                  <p className="text-gray-900 font-medium">
+                  <p className="text-sm text-muted-foreground">Cliente</p>
+                  <p className="text-foreground font-medium">
                     {cotizacion.clienteNombre}
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     {cotizacion.clienteEmail}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Condición de Pago</p>
-                  <p className="text-gray-900 font-medium">
+                  <p className="text-sm text-muted-foreground">Condición de Pago</p>
+                  <p className="text-foreground font-medium">
                     {mapearCondicionPago(cotizacion.condicionPago)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Moneda</p>
-                  <p className="text-gray-900 font-medium">
+                  <p className="text-sm text-muted-foreground">Moneda</p>
+                  <p className="text-foreground font-medium">
                     {cotizacion.moneda}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Fecha de Creación</p>
-                  <p className="text-gray-900 font-medium">
+                  <p className="text-sm text-muted-foreground">Fecha de Creación</p>
+                  <p className="text-foreground font-medium">
                     {formatearFecha(cotizacion.fechaCreacion || '')}
                   </p>
                 </div>
               </div>
 
               {cotizacion.observaciones && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <p className="text-sm text-gray-600 mb-2">Observaciones</p>
-                  <p className="text-gray-700">{cotizacion.observaciones}</p>
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-sm text-muted-foreground mb-2">Observaciones</p>
+                  <p className="text-foreground">{cotizacion.observaciones}</p>
                 </div>
               )}
             </div>
 
             {/* Detalles */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="bg-card rounded-lg shadow-sm border border-border p-6">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Detalles de Cotización
               </h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b-2 border-gray-300 bg-gray-50">
-                      <th className="px-4 py-3 text-left font-semibold text-gray-700">
+                    <tr className="border-b-2 border-border bg-muted">
+                      <th className="px-4 py-3 text-left font-semibold text-foreground">
                         Producto/Servicio
                       </th>
-                      <th className="px-4 py-3 text-center font-semibold text-gray-700">
+                      <th className="px-4 py-3 text-center font-semibold text-foreground">
                         Cantidad
                       </th>
-                      <th className="px-4 py-3 text-right font-semibold text-gray-700">
+                      <th className="px-4 py-3 text-right font-semibold text-foreground">
                         Precio Unit.
                       </th>
-                      <th className="px-4 py-3 text-right font-semibold text-gray-700">
+                      <th className="px-4 py-3 text-right font-semibold text-foreground">
                         Subtotal
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {cotizacion.detalles?.map((detalle, idx) => (
-                      <tr key={idx} className="border-b border-gray-200">
-                        <td className="px-4 py-3 text-gray-900">
+                      <tr key={idx} className="border-b border-border">
+                        <td className="px-4 py-3 text-foreground">
                           {detalle.producto || detalle.servicio}
                         </td>
-                        <td className="px-4 py-3 text-center text-gray-900">
+                        <td className="px-4 py-3 text-center text-foreground">
                           {detalle.cantidad}
                         </td>
-                        <td className="px-4 py-3 text-right text-gray-900">
+                        <td className="px-4 py-3 text-right text-foreground">
                           {formatearMoneda(
                             detalle.precioUnitario,
                             cotizacion.moneda
                           )}
                         </td>
-                        <td className="px-4 py-3 text-right font-semibold text-gray-900">
+                        <td className="px-4 py-3 text-right font-semibold text-foreground">
                           {formatearMoneda(
                             detalle.subtotal,
                             cotizacion.moneda
@@ -315,26 +315,26 @@ export const CotizacionDetallePage: React.FC = () => {
           {/* Right Column - Summary */}
           <div className="space-y-6">
             {/* Totales */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="bg-card rounded-lg shadow-sm border border-border p-6">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Resumen Financiero
               </h2>
               <div className="space-y-3">
-                <div className="flex justify-between py-2 border-b border-gray-200">
-                  <span className="text-gray-700">Subtotal:</span>
-                  <span className="font-semibold text-gray-900">
+                <div className="flex justify-between py-2 border-b border-border">
+                  <span className="text-foreground">Subtotal:</span>
+                  <span className="font-semibold text-foreground">
                     {formatearMoneda(totales.subtotal, cotizacion.moneda)}
                   </span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-gray-200">
-                  <span className="text-gray-700">IGV (18%):</span>
-                  <span className="font-semibold text-gray-900">
+                <div className="flex justify-between py-2 border-b border-border">
+                  <span className="text-foreground">IGV (18%):</span>
+                  <span className="font-semibold text-foreground">
                     {formatearMoneda(totales.igv, cotizacion.moneda)}
                   </span>
                 </div>
-                <div className="flex justify-between py-3 px-3 rounded-lg bg-blue-50">
-                  <span className="font-bold text-gray-900">Total:</span>
-                  <span className="font-bold text-blue-600 text-lg">
+                <div className="flex justify-between py-3 px-3 rounded-lg bg-accent/10">
+                  <span className="font-bold text-foreground">Total:</span>
+                  <span className="font-bold text-accent text-lg">
                     {formatearMoneda(totales.total, cotizacion.moneda)}
                   </span>
                 </div>
@@ -342,23 +342,23 @@ export const CotizacionDetallePage: React.FC = () => {
             </div>
 
             {/* Quick Stats */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Detalles</h3>
+            <div className="bg-card rounded-lg shadow-sm border border-border p-6 space-y-4">
+              <h3 className="text-lg font-semibold text-foreground">Detalles</h3>
               <div>
-                <p className="text-sm text-gray-600">Líneas</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm text-muted-foreground">Líneas</p>
+                <p className="text-2xl font-bold text-foreground">
                   {cotizacion.detalles?.length || 0}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Adjuntos</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm text-muted-foreground">Adjuntos</p>
+                <p className="text-2xl font-bold text-foreground">
                   {cotizacion.adjuntos?.length || 0}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Historial</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm text-muted-foreground">Historial</p>
+                <p className="text-2xl font-bold text-foreground">
                   {cotizacion.seguimientos?.length || 0}
                 </p>
               </div>

@@ -59,7 +59,7 @@ export function EditarProductoPage() {
       </div>
 
       {aviso && (
-        <p role="status" className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-700">
+        <p role="status" className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-warning">
           {aviso}
         </p>
       )}

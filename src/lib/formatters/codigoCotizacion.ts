@@ -122,13 +122,13 @@ export function mapearEstadoCotizacion(estado: string): string {
  */
 export function colorEstadoCotizacion(estado: string): string {
   const coloresMap: Record<string, string> = {
-    BORRADOR: 'bg-gray-100 text-gray-800',
-    ENVIADA: 'bg-blue-100 text-blue-800',
-    APROBADA: 'bg-green-100 text-green-800',
-    RECHAZADA: 'bg-red-100 text-red-800',
-    CADUCADA: 'bg-yellow-100 text-yellow-800',
+    BORRADOR: 'bg-muted text-muted-foreground',
+    ENVIADA: 'bg-accent/10 text-accent',
+    APROBADA: 'bg-success/10 text-success',
+    RECHAZADA: 'bg-destructive/10 text-destructive',
+    CADUCADA: 'bg-warning/10 text-warning',
   };
-  return coloresMap[estado] || 'bg-gray-100 text-gray-800';
+  return coloresMap[estado] || 'bg-muted text-muted-foreground';
 }
 
 /**
