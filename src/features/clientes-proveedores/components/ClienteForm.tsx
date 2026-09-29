@@ -3,9 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { clienteSchema, type ClienteFormValues } from '../../../lib/validators/rucDni.schema';
 import type { ClienteRequest } from '../../../types/cliente.types';
 import { VinculoProveedorToggle } from './VinculoProveedorToggle';
-
-export const REGIONES = ['Lima', 'Ica', 'Arequipa', 'La Libertad', 'Piura', 'Cusco', 'Junín'];
-export const SECTORES = ['Minería', 'Agroindustria', 'Construcción', 'Comercio', 'Transporte', 'Servicios'];
+import { REGIONES, SECTORES } from '../constants/clientes.constants';
 
 interface Props {
   onSubmit: (data: ClienteRequest) => void;

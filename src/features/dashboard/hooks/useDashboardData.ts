@@ -61,10 +61,8 @@ export function useDashboardData(filtros: DashboardFiltros = {}, periodo: Factur
   const facturacionHistorico = useFacturacionHistorico(periodo)
   const cotizacionesPorEstado = useCotizacionesPorEstado()
 
-  // Solo loading si TODOS están cargando
-  const isLoading = indicadores.isLoading && facturacionHistorico.isLoading && cotizacionesPorEstado.isLoading
-  // Error solo si TODOS fallaron (y no son placeholder data)
-  const isError = indicadores.isError && facturacionHistorico.isError && cotizacionesPorEstado.isError
+ const isLoading = indicadores.isLoading || facturacionHistorico.isLoading || cotizacionesPorEstado.isLoading
+  const isError = indicadores.isError || facturacionHistorico.isError || cotizacionesPorEstado.isError
   const error = indicadores.error || facturacionHistorico.error || cotizacionesPorEstado.error
 
   return {

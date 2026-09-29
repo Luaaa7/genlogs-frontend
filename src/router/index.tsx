@@ -40,11 +40,10 @@ export const router = createBrowserRouter([
       {
         element: <AppLayout />,
         children: [
-          // Redirección de inicio y definición explícita de /dashboard
           { path: "/", element: <Navigate to="/dashboard" replace /> },
           { path: "/dashboard", element: <DashboardPage /> },
           
-          // 2. Rutas de Clientes y Proveedores (reemplazando el Placeholder anterior)
+          // Clientes y Proveedores
           { path: "/clientes", element: <ClientesListPage /> },
           { path: "/clientes/:id", element: <ClienteDetallePage /> },
           { path: "/proveedores", element: <ProveedoresListPage /> },

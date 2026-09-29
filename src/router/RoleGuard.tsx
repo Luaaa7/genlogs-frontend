@@ -11,7 +11,7 @@ export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
   const userRole = localStorage.getItem("user_role") ?? ""
 
   if (!allowedRoles.includes(userRole)) {
-    return <Navigate to="/" state={{ from: location }} replace />
+   return <Navigate to="/dashboard" state={{ from: location }} replace />
   }
 
   return children ? <>{children}</> : <Outlet />

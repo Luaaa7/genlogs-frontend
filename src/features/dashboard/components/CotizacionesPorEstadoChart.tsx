@@ -8,7 +8,7 @@ import {
 } from "recharts"
 import type { CotizacionEstadoItem } from "@/types/dashboard.types"
 import { formatNumber, formatPercentage } from "@/lib/formatters/currency"
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils/utils"
 
 interface CotizacionesPorEstadoChartProps {
   data: CotizacionEstadoItem[]

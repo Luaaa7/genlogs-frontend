@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { Cliente, FiltrosCliente } from '../../../types/cliente.types';
-import { REGIONES, SECTORES } from './ClienteForm';
+import { REGIONES, SECTORES } from '../constants/clientes.constants';
 
 interface Props {
   clientes: Cliente[];

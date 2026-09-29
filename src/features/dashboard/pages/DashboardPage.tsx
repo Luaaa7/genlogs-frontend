@@ -6,7 +6,7 @@ import { FacturacionChart } from "../components/FacturacionChart"
 import { EmptyStateCard } from "../components/EmptyStateCard"
 import { formatCurrency, formatPercentage } from "@/lib/formatters/currency"
 import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils/utils"
 
 function IndicadorSkeleton() {
   return (

@@ -8,4 +8,15 @@ export const TAMANIO_MAXIMO_BYTES = {
   documento: 10 * 1024 * 1024,
 } as const
 
+/** Etiquetas legibles para mostrar en el dropzone. */
+export const EXTENSIONES_LEGIBLES: Record<string, string> = {
+  "image/jpeg": "JPG",
+  "image/png": "PNG",
+  "image/webp": "WEBP",
+  "application/pdf": "PDF",
+}
+
+/** Cantidad de subidas simultáneas hacia el backend. */
+export const SUBIDAS_SIMULTANEAS = 3
+
 export type TipoArchivo = keyof typeof MIME_TYPES_PERMITIDOS

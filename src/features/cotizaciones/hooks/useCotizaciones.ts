@@ -1,12 +1,17 @@
-// src/features/cotizaciones/hooks/useCotizaciones.ts
+
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { cotizacionesApi } from '@/api/cotizacionesApi';
 import type { Cotizacion, CotizacionesListResponse, CotizacionesFilterParams } from '@/types/cotizacion.types';
 
-/**
- * Hook para listar cotizaciones con filtros y paginación
- */
+const emptyCotizacionesResponse: CotizacionesListResponse = {
+  content: [],
+  totalElements: 0,
+  totalPages: 0,
+  currentPage: 0,
+  pageSize: 10,
+};
+
 export function useCotizaciones(
   filtros?: CotizacionesFilterParams
 ): UseQueryResult<CotizacionesListResponse> {
@@ -17,12 +22,12 @@ export function useCotizaciones(
     gcTime: 1000 * 60 * 30,
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    // FIX: initialData para evitar undefined en data.content
+    initialData: emptyCotizacionesResponse,
   });
 }
 
-/**
- * Hook para obtener una cotización específica por ID
- */
+
 export function useCotizacion(
   id: number | null | undefined
 ): UseQueryResult<Cotizacion> {
@@ -36,9 +41,7 @@ export function useCotizacion(
   });
 }
 
-/**
- * Hook para obtener estadísticas de cotizaciones
- */
+
 export function useCotizacionesEstadisticas() {
   return useQuery({
     queryKey: ['cotizaciones-estadisticas'],

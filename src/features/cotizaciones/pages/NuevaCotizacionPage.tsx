@@ -9,17 +9,16 @@ import { useCrearCotizacion } from '../hooks/useCrearCotizacion';
 import { CotizacionForm } from '../components/CotizacionForm';
 import { CotizacionDetalleForm } from '../components/CotizacionDetalleForm';
 import { ArrowLeft, Save, Loader2, CheckCircle } from 'lucide-react';
+import { useClientes } from '@/features/clientes-proveedores/hooks/useClientes';
 
-// Mock - Reemplazar con hook que obtenga clientes del API
-const MOCK_CLIENTES = [
-  { id: 1, nombre: 'Shougang Hierro Perú', email: 'contact@shougang.pe', empresa: 'Shougang' },
-  { id: 2, nombre: 'Hemco Mining', email: 'info@hemco.pe', empresa: 'Hemco' },
-  { id: 3, nombre: 'Southern Perú', email: 'orders@southern.pe', empresa: 'Southern' },
-];
+
 
 export const NuevaCotizacionPage: React.FC = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState<'info' | 'detalles' | 'success'>('info');
+  
+  // FIX: Usar hook real en lugar de mock
+  const { data: clientes = [], isLoading: cargandoClientes } = useClientes({});
 
   const methods = useForm<CrearCotizacionFormData>({
     resolver: zodResolver(crearCotizacionSchema),
@@ -135,10 +134,7 @@ export const NuevaCotizacionPage: React.FC = () => {
         <FormProvider<CrearCotizacionFormData> {...methods}>
           <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
             {step === 'info' && (
-              <CotizacionForm
-                clientes={MOCK_CLIENTES}
-                isLoadingClientes={false}
-              />
+             <CotizacionForm clientes={clientes} isLoadingClientes={cargandoClientes} />
             )}
 
             {step === 'detalles' && (

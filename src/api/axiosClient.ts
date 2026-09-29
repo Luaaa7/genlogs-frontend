@@ -1,8 +1,14 @@
 import axios from "axios"
 
+const getApiBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL ?? import.meta.env.VITE_API_BASE_URL
+  if (envUrl) return envUrl.replace(/\/+$/, "")
+  return "/api/v1"
+}
+
 export const axiosClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "/api/v1",
-  timeout: 60_000, // 👈 Subido a 60 segundos para los "cold starts" de Render
+  baseURL: getApiBaseUrl(),
+  timeout: 15_000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -28,7 +34,7 @@ axiosClient.interceptors.response.use(
         const refreshToken = localStorage.getItem("refresh_token")
         if (refreshToken) {
           const { data } = await axios.post(
-            `${import.meta.env.VITE_API_URL ?? "/api/v1"}/auth/refresh`,
+            `${getApiBaseUrl()}/auth/refresh`,
             { refreshToken },
             { headers: { "Content-Type": "application/json" } }
           )
@@ -50,3 +56,5 @@ axiosClient.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+export const http = axiosClient

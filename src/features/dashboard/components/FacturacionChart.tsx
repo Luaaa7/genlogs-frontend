@@ -12,7 +12,7 @@ import {
 } from "recharts"
 import type { FacturacionHistoricoItem } from "@/types/dashboard.types"
 import { formatCurrency } from "@/lib/formatters/currency"
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils/utils"
 
 interface FacturacionChartProps {
   data: FacturacionHistoricoItem[]
