@@ -1,7 +1,4 @@
-// src/api/cotizacionesApi.ts
-
-import type { AxiosInstance } from "axios"
-import { axiosClient } from "./axiosClient"
+import { axiosClient } from "@/api/axiosClient"
 import type {
   Cotizacion,
   CreateCotizacionRequest,

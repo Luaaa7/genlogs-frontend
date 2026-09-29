@@ -1,17 +1,10 @@
-// src/features/cotizaciones/components/CotizacionForm.tsx
-
+import type { Cliente } from "@/types/cliente.types";
 import React from 'react';
 import { useFormContext, Controller } from 'react-hook-form';
 import type { CrearCotizacionFormData } from "@/lib/validators/cotizacion.schema";
 import { CondicionPago, Moneda } from '@/types/cotizacion.types';
 import { mapearCondicionPago } from '@/lib/formatters/codigoCotizacion';
 
-interface Cliente {
-  id: number;
-  nombre: string;
-  email: string;
-  empresa?: string;
-}
 
 interface CotizacionFormProps {
   clientes: Cliente[];
@@ -49,20 +42,18 @@ export const CotizacionForm: React.FC<CotizacionFormProps> = ({
               value={field.value ? String(field.value) : ''}
               onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
               disabled={isLoadingClientes}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${
-                errors.clienteId
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${errors.clienteId
                   ? 'border-red-500 bg-red-50'
                   : 'border-gray-300 bg-white'
-              }`}
+                }`}
             >
               <option value="">-- Selecciona un cliente --</option>
               {isLoadingClientes ? (
                 <option disabled>Cargando clientes...</option>
               ) : (
-                clientes.map((cliente) => (
+                clientes?.map((cliente) => (
                   <option key={cliente.id} value={cliente.id}>
-                    {cliente.nombre}
-                    {cliente.empresa ? ` (${cliente.empresa})` : ''}
+                    {cliente.razonSocial || cliente.nombreComercial} - {cliente.numeroDocumento}
                   </option>
                 ))
               )}

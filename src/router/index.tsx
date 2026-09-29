@@ -23,6 +23,8 @@ import { SolicitudWebPublicPage } from "@/features/solicitudes-web/pages/Solicit
 import ClientesListPage from "@/features/clientes-proveedores/pages/ClientesListPage"
 import ClienteDetallePage from "@/features/clientes-proveedores/pages/ClienteDetallePage"
 import ProveedoresListPage from "@/features/clientes-proveedores/pages/ProveedoresListPage"
+import { ProformaDetallePage } from "@/features/proformas/pages/ProformaDetallePage"
+import { ProformasListPage } from "@/features/proformas/pages/ProformaListPage"
 
 export const router = createBrowserRouter([
   {
@@ -64,6 +66,8 @@ export const router = createBrowserRouter([
           
           { path: "/ordenes-compra", element: <Placeholder nombre="Órdenes de Compra" /> },
           { path: "/facturacion", element: <Placeholder nombre="Facturación" /> },
+             { path: "/proformas", element: <ProformasListPage /> },
+   { path: "/proformas/:id", element: <ProformaDetallePage /> },
           {
             element: <RoleGuard allowedRoles={["ADMINISTRADOR"]} />,
             children: [

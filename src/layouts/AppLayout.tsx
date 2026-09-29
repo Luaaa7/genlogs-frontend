@@ -10,10 +10,11 @@ export function AppLayout() {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
 
-  // Rutas ordenadas: Dashboard -> Cotizaciones -> Clientes -> Proveedores
-  const mainNavItems = [
+ 
+const mainNavItems = [
     { label: 'Dashboard', path: '/dashboard' },
     { label: 'Cotizaciones', path: '/cotizaciones' },
+    { label: 'Proformas', path: '/proformas' }, // <-- NUEVO
     { label: 'Clientes', path: '/clientes' },
     { label: 'Proveedores', path: '/proveedores' },
   ];
@@ -76,7 +77,7 @@ export function AppLayout() {
             >
               Dashboard
             </Link>
-            <Link
+           <Link
               to="/cotizaciones"
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 location.pathname.startsWith('/cotizaciones')
@@ -86,6 +87,20 @@ export function AppLayout() {
             >
               Cotizaciones
             </Link>
+            
+            {/* <-- NUEVO ENLACE DE PROFORMAS --> */}
+            <Link
+              to="/proformas"
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                location.pathname.startsWith('/proformas')
+                  ? 'bg-primary text-primary-foreground font-semibold'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              Proformas
+            </Link>
+            {/* <--------------------------------> */}
+
             <Link
               to="/clientes"
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
@@ -159,8 +174,8 @@ export function AppLayout() {
                 </div>
 
                 <nav className="space-y-1">
-                  {/* Módulos Principales (Dashboard, Cotizaciones) */}
-                  {mainNavItems.slice(0, 2).map((item) => {
+                 {/* Módulos Principales (Dashboard, Cotizaciones, Proformas) */}
+                  {mainNavItems.slice(0, 3).map((item) => {
                     const isActive = location.pathname.startsWith(item.path);
                     return (
                       <Link
@@ -179,7 +194,7 @@ export function AppLayout() {
                   })}
 
                   {/* 1. Clientes y Proveedores Primero */}
-                  {mainNavItems.slice(2).map((item) => {
+                  {mainNavItems.slice(3).map((item) => { 
                     const isActive = location.pathname.startsWith(item.path);
                     return (
                       <Link

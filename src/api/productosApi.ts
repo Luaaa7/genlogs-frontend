@@ -1,4 +1,5 @@
-import axios from "axios"
+import axios from "axios";
+import { axiosClient } from "@/api/axiosClient";
 import { http } from "./http"
 import type {
   DocumentoNuevo,
@@ -8,7 +9,18 @@ import type {
   ProductoRequest,
 } from "@/types/producto.types"
 import type { PageResponse } from "@/types/common.types"
-import { limpiarFiltros } from "@/lib/utils/pagination"
+
+/** Quita filtros vacíos para no enviar `?nombre=` al backend. */
+function limpiarFiltros(filtros: ProductoFiltros): ProductoFiltros {
+  const limpio: ProductoFiltros = {}
+  if (filtros.codigo?.trim()) limpio.codigo = filtros.codigo.trim()
+  if (filtros.nombre?.trim()) limpio.nombre = filtros.nombre.trim()
+  if (filtros.idCategoriaProducto) limpio.idCategoriaProducto = filtros.idCategoriaProducto
+  if (filtros.idMarca) limpio.idMarca = filtros.idMarca
+  limpio.page = filtros.page ?? 0
+  limpio.size = filtros.size ?? 12
+  return limpio
+}
 
 export async function listarProductos(filtros: ProductoFiltros = {}): Promise<PageResponse<Producto>> {
   const { data } = await http.get<PageResponse<Producto>>("/productos", {
@@ -23,21 +35,21 @@ export async function obtenerProducto(id: number): Promise<Producto> {
 }
 
 export async function crearProducto(payload: ProductoRequest): Promise<Producto> {
-  const { data } = await http.post<Producto>("/productos", payload)
+  const { data } = await axiosClient.post<Producto>("/productos", payload)
   return data
 }
 
 export async function actualizarProducto(id: number, payload: ProductoRequest): Promise<Producto> {
-  const { data } = await http.put<Producto>(`/productos/${id}`, payload)
+  const { data } = await axiosClient.put<Producto>(`/productos/${id}`, payload)
   return data
 }
 
 export async function eliminarProducto(id: number): Promise<void> {
-  await http.delete(`/productos/${id}`)
+  await axiosClient.delete(`/productos/${id}`)
 }
 
 export async function agregarImagenProducto(idProducto: number, imagen: ImagenNueva): Promise<void> {
-  await http.post(`/productos/${idProducto}/imagenes`, {
+  await axiosClient.post(`/productos/${idProducto}/imagenes`, {
     urlImagen: imagen.url,
     esPrincipal: imagen.esPrincipal,
   })
@@ -47,7 +59,7 @@ export async function agregarDocumentoProducto(
   idProducto: number,
   documento: DocumentoNuevo
 ): Promise<void> {
-  await http.post(`/productos/${idProducto}/documentos`, {
+  await axiosClient.post(`/productos/${idProducto}/documentos`, {
     tipoDocumento: documento.tipoDocumento,
     nombreDocumento: documento.nombreDocumento,
     urlDocumento: documento.url,
