@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 
@@ -55,6 +54,7 @@ const mainNavItems = [
                 ) : (
                   <path
                     fillRule="evenodd"
+                    clipRule="evenodd"
                     d="M4 5h16a1 1 0 010 2H4a1 1 0 110-2zm0 6h16a1 1 0 010 2H4a1 1 0 010-2zm0 6h16a1 1 0 010 2H4a1 1 0 010-2z"
                   />
                 )}
@@ -72,7 +72,7 @@ const mainNavItems = [
               to="/dashboard"
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 location.pathname.startsWith('/dashboard')
-                  ? 'bg-primary text-primary-foreground font-semibold'
+                  ? 'bg-blue-600 text-white font-semibold'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
@@ -82,7 +82,7 @@ const mainNavItems = [
               to="/cotizaciones"
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 location.pathname.startsWith('/cotizaciones')
-                  ? 'bg-primary text-primary-foreground font-semibold'
+                  ? 'bg-blue-600 text-white font-semibold'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
@@ -94,7 +94,7 @@ const mainNavItems = [
               to="/ordenes-compra"
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 location.pathname.startsWith('/ordenes-compra')
-                  ? 'bg-primary text-primary-foreground font-semibold'
+                  ? 'bg-blue-600 text-white font-semibold'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
@@ -105,7 +105,7 @@ const mainNavItems = [
               to="/clientes"
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 location.pathname.startsWith('/clientes')
-                  ? 'bg-primary text-primary-foreground font-semibold'
+                  ? 'bg-blue-600 text-white font-semibold'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
@@ -115,7 +115,7 @@ const mainNavItems = [
               to="/proveedores"
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 location.pathname.startsWith('/proveedores')
-                  ? 'bg-primary text-primary-foreground font-semibold'
+                  ? 'bg-blue-600 text-white font-semibold'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
@@ -127,7 +127,7 @@ const mainNavItems = [
               <button
                 className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center space-x-1 transition-colors ${
                   isCatalogoActive
-                    ? 'bg-primary text-primary-foreground font-semibold'
+                    ? 'bg-blue-600 text-white font-semibold'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
@@ -184,7 +184,7 @@ const mainNavItems = [
                         onClick={closeMenu}
                         className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                           isActive
-                            ? 'bg-primary text-primary-foreground font-semibold'
+                            ? 'bg-blue-600 text-white font-semibold'
                             : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                         }`}
                       >
@@ -203,7 +203,7 @@ const mainNavItems = [
                         onClick={closeMenu}
                         className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                           isActive
-                            ? 'bg-primary text-primary-foreground font-semibold'
+                            ? 'bg-blue-600 text-white font-semibold'
                             : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                         }`}
                       >
@@ -218,7 +218,7 @@ const mainNavItems = [
                       onClick={() => setIsCatalogoOpen(!isCatalogoOpen)}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                         isCatalogoActive
-                          ? 'bg-primary/10 text-primary font-semibold'
+                          ? 'bg-blue-600/10 text-blue-600 font-semibold'
                           : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                       }`}
                     >
@@ -245,7 +245,7 @@ const mainNavItems = [
                               onClick={closeMenu}
                               className={`block px-3 py-1.5 rounded-md text-sm transition-colors ${
                                 isSubActive
-                                  ? 'bg-primary text-primary-foreground font-semibold'
+                                  ? 'bg-blue-600 text-white font-semibold'
                                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                               }`}
                             >
@@ -267,7 +267,7 @@ const mainNavItems = [
                         onClick={closeMenu}
                         className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                           isActive
-                            ? 'bg-primary text-primary-foreground font-semibold'
+                            ? 'bg-blue-600 text-white font-semibold'
                             : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                         }`}
                       >

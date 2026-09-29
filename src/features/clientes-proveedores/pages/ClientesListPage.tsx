@@ -17,7 +17,7 @@ export default function ClientesListPage() {
     <main className="mx-auto max-w-6xl space-y-6 p-6">
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Clientes</h1>
-        <button onClick={() => setMostrarForm((v) => !v)} className="rounded bg-sky-700 px-4 py-2 text-sm font-medium text-white">
+        <button onClick={() => setMostrarForm((v) => !v)} className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:from-blue-700 hover:to-cyan-600 transition-all">
           {mostrarForm ? 'Cerrar' : 'Nuevo cliente'}
         </button>
       </header>
