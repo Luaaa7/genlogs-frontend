@@ -42,7 +42,7 @@ export function ServicioCard({ servicio, onEditar, onDesactivar }: ServicioCardP
         {onEditar && (
           <button
             onClick={() => onEditar(servicio)}
-            className="rounded-md border border-border px-3 py-1.5 text-sm"
+            className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
           >
             Editar
           </button>
@@ -50,7 +50,7 @@ export function ServicioCard({ servicio, onEditar, onDesactivar }: ServicioCardP
         {onDesactivar && !inactivo && (
           <button
             onClick={() => onDesactivar(servicio)}
-            className="rounded-md border border-destructive px-3 py-1.5 text-sm text-destructive"
+            className="rounded-md border border-destructive px-3 py-1.5 text-sm text-destructive hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
           >
             Desactivar
           </button>

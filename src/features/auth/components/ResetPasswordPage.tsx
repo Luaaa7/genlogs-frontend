@@ -38,7 +38,7 @@ export function ResetPasswordPage() {
     return (
       <div className="w-full space-y-4 text-center">
         <p className="text-sm text-muted-foreground">El enlace no contiene un token válido.</p>
-        <Link to="/recuperar-password" className="text-sm font-medium text-accent hover:text-accent hover:underline">
+        <Link to="/recuperar-password" className="text-sm font-medium text-accent hover:text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded">
           Solicitar otro enlace
         </Link>
       </div>
@@ -56,7 +56,7 @@ export function ResetPasswordPage() {
         </p>
         <Link
           to="/login"
-          className="w-full rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2.5 text-center text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition-opacity hover:opacity-90"
+          className="w-full rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2.5 text-center text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           Ir al login
         </Link>

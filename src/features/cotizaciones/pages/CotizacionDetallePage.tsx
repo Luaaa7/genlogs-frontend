@@ -5,9 +5,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useCotizacion } from '../hooks/useCotizaciones';
 import { useCambiarEstado } from '../hooks/useCambiarEstado';
 import { useDescargarPDF } from '../hooks/useCotizacionesMutations';
+import { useOrdenesCompra } from '@/features/ordenes-compra/hooks/useOrdenesCompra';
+import { useFacturas } from '@/features/facturacion/hooks/useFacturacion';
 import { SeguimientoTimeline } from '../components/SeguimientoTimeline';
 import { AdjuntoCotizacionUploader } from '../components/AdjuntoCotizacionUploader';
 import { ConfirmacionEnvioModal } from '../components/ConfirmacionEnvioModal';
+import { PipelineBreadcrumb, type PipelineStep } from '@/components/ui/PipelineBreadcrumb';
 import { EstadoCotizacion } from '@/types/cotizacion.types';
 import {
   formatearMoneda,
@@ -35,6 +38,18 @@ export const CotizacionDetallePage: React.FC = () => {
     useCambiarEstado(cotizacionId || 0);
   const { mutate: descargarPDF, isPending: isDownloadingPDF } =
     useDescargarPDF(cotizacionId || 0);
+
+  // Para el breadcrumb "Cotización → Orden de Compra → Factura": se busca si
+  // ya existe una orden generada a partir de esta cotización, y si esa orden
+  // ya tiene una factura. Aún no hay pantallas de detalle para Orden/Factura,
+  // así que solo se enlaza lo que ya se puede abrir (la cotización misma);
+  // los otros pasos se muestran como estado, no como link, hasta que existan.
+  const { data: ordenesData } = useOrdenesCompra();
+  const ordenGenerada = ordenesData?.content?.find((o) => o.idCotizacion === cotizacionId);
+  const { data: facturasData } = useFacturas();
+  const facturaGenerada = facturasData?.content?.find(
+    (f) => f.idOrdenCompra === ordenGenerada?.idOrdenCompra
+  );
   const [showEnvioModal, setShowEnvioModal] = useState(false);
   const [showEstadoSelector, setShowEstadoSelector] = useState(false);
 
@@ -104,9 +119,28 @@ export const CotizacionDetallePage: React.FC = () => {
 
   const totales = calcularTotales();
 
+  const pasosPipeline: PipelineStep[] = [
+    { label: `Cotización ${cotizacion.codigo}`, status: 'current' },
+    {
+      label: ordenGenerada ? `Orden ${ordenGenerada.numeroOrdenCompra}` : 'Orden de compra',
+      status: ordenGenerada ? 'completed' : 'pending',
+      href: ordenGenerada ? '/ordenes-compra' : undefined,
+    },
+    {
+      label: facturaGenerada ? `Factura ${facturaGenerada.codigoComprobante}` : 'Facturación',
+      status: facturaGenerada ? 'completed' : 'pending',
+      href: facturaGenerada ? '/facturacion' : undefined,
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-muted py-8 px-4">
       <div className="max-w-5xl mx-auto">
+        {/* Breadcrumb del pipeline de negocio */}
+        <div className="mb-4">
+          <PipelineBreadcrumb steps={pasosPipeline} />
+        </div>
+
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-4">

@@ -1,14 +1,17 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { contactoSchema, type ContactoFormValues } from '../../../lib/validators/rucDni.schema';
 import type { ContactoCliente } from '../../../types/proveedor.types';
 import { useAgregarContacto, useEliminarContacto } from '../hooks/useProveedores';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 const input = 'rounded border border-border p-2 text-sm';
 
 export function ContactoClienteList({ clienteId, contactos }: { clienteId: number; contactos: ContactoCliente[] }) {
   const agregar = useAgregarContacto(clienteId);
   const eliminar = useEliminarContacto(clienteId);
+  const [contactoAEliminar, setContactoAEliminar] = useState<ContactoCliente | null>(null);
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ContactoFormValues>({
     resolver: zodResolver(contactoSchema),
     defaultValues: { principal: false },
@@ -31,9 +34,9 @@ export function ContactoClienteList({ clienteId, contactos }: { clienteId: numbe
               <div className="text-muted-foreground">{c.cargo} · {c.telefono} · {c.email ?? c.correo}</div>
             </div>
             <button
-              onClick={() => window.confirm(`¿Eliminar a ${(c.nombre ?? c.nombres)}?`) && eliminar.mutate(c.id ?? c.idContacto)}
+              onClick={() => setContactoAEliminar(c)}
               disabled={eliminar.isPending}
-              className="text-destructive hover:underline"
+              className="text-destructive hover:underline disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
             >
               Eliminar contacto
             </button>
@@ -52,10 +55,34 @@ export function ContactoClienteList({ clienteId, contactos }: { clienteId: numbe
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" {...register('principal')} /> Contacto principal
         </label>
-        <button type="submit" disabled={agregar.isPending} className="rounded bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-50 sm:col-span-2">
+        <button
+          type="submit"
+          disabled={agregar.isPending}
+          className="rounded bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:col-span-2 transition-colors"
+        >
           {agregar.isPending ? 'Agregando…' : 'Agregar contacto'}
         </button>
       </form>
+
+      <ConfirmDialog
+        open={contactoAEliminar !== null}
+        title="Eliminar contacto"
+        description={
+          contactoAEliminar
+            ? `¿Eliminar a ${contactoAEliminar.nombre ?? contactoAEliminar.nombres}? Esta acción no se puede deshacer.`
+            : ''
+        }
+        confirmLabel="Eliminar"
+        variant="destructive"
+        isLoading={eliminar.isPending}
+        onConfirm={() => {
+          if (!contactoAEliminar) return;
+          eliminar.mutate(contactoAEliminar.id ?? contactoAEliminar.idContacto, {
+            onSuccess: () => setContactoAEliminar(null),
+          });
+        }}
+        onCancel={() => setContactoAEliminar(null)}
+      />
     </section>
   );
 }

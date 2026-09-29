@@ -55,7 +55,7 @@ export function EditarProductoPage() {
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Volver al producto
         </Link>
-        <h1 className="text-2xl font-bold">Editar producto</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Editar producto</h1>
       </div>
 
       {aviso && (
