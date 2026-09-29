@@ -1,7 +1,7 @@
 // src/features/cotizaciones/pages/NuevaCotizacionPage.tsx
 
 import React, { useState } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, useWatch, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import { crearCotizacionSchema, type CrearCotizacionFormData } from '@/lib/validators/cotizacion.schema';
@@ -35,7 +35,7 @@ export const NuevaCotizacionPage: React.FC = () => {
   const { mutate: crearCotizacion, isPending, isSuccess, data: cotizacionCreada } =
     useCrearCotizacion();
 
-  const moneda = methods.watch('moneda');
+const moneda = useWatch({ control: methods.control, name: 'moneda' });
 
   const handlePrimerPaso = async () => {
     const isValid = await methods.trigger(['clienteId', 'condicionPago', 'moneda'] as const);
