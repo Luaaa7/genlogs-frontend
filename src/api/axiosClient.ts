@@ -1,9 +1,16 @@
 import axios from "axios"
 
+// Si nadie configuró VITE_API_URL (falta el .env.local), apuntamos al
+// backend real desplegado en Render en vez de a una ruta relativa rota
+// (antes caía en "/api/v1", que ni siquiera es el prefijo real del backend
+// y termina pegándole al propio Vite dev server -> 404 disfrazado de
+// "usuario o contraseña incorrectos").
+const DEFAULT_API_URL = "https://genlogs-backend-bkuv.onrender.com/api"
+
 const getApiBaseUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL ?? import.meta.env.VITE_API_BASE_URL
   if (envUrl) return envUrl.replace(/\/+$/, "")
-  return "/api/v1"
+  return DEFAULT_API_URL
 }
 
 export const axiosClient = axios.create({
@@ -22,12 +29,33 @@ axiosClient.interceptors.request.use((config) => {
   return config
 })
 
+function cerrarSesionInvalida(motivo: string) {
+  // eslint-disable-next-line no-console
+  console.warn(`[AUTH] Cerrando sesión: ${motivo}`)
+  // Limpia tanto la clave que lee axios/ProtectedRoute (localStorage) como la
+  // que persiste el estado de Zustand (sessionStorage "genlogs-auth"), para
+  // no dejar una sesión a medias que vuelva a mandarnos al Dashboard roto.
+  localStorage.removeItem("access_token")
+  localStorage.removeItem("refresh_token")
+  sessionStorage.removeItem("genlogs-auth")
+  if (window.location.pathname !== "/login") {
+    window.location.href = "/login"
+  }
+}
+
 axiosClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config
+    const status = error.response?.status
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Solo el 401 significa "tu token no sirve" -> ahí sí vale la pena
+    // refrescar o cerrar sesión. Un 403 puede ser simplemente "no tienes
+    // permiso para esto puntual" con una sesión por lo demás válida, así que
+    // NO debe desloguear: cada pantalla ya maneja su propio estado de error.
+    if (status === 401 && !originalRequest._retry) {
+      // eslint-disable-next-line no-console
+      console.warn(`[AUTH] 401 recibido en ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`)
       originalRequest._retry = true
 
       try {
@@ -46,11 +74,13 @@ axiosClient.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${accessToken}`
           return axiosClient(originalRequest)
         }
+        cerrarSesionInvalida("401 sin refresh_token disponible")
       } catch {
-        localStorage.removeItem("access_token")
-        localStorage.removeItem("refresh_token")
-        window.location.href = "/login"
+        cerrarSesionInvalida("falló el intento de refrescar el token")
       }
+    } else if (status === 403) {
+      // eslint-disable-next-line no-console
+      console.warn(`[AUTH] 403 recibido en ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url} (no desloguea, solo informativo)`)
     }
 
     return Promise.reject(error)
