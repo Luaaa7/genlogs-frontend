@@ -1,280 +1,229 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Menu, X, ChevronDown } from 'lucide-react';
+import logoGenlogs from '../assets/GENLOGS.png';
+
+type NavItem = { label: string; path: string };
+
+const mainNavItems: NavItem[] = [
+  { label: 'Dashboard', path: '/dashboard' },
+  { label: 'Cotizaciones', path: '/cotizaciones' },
+  { label: 'Órdenes de compra', path: '/ordenes-compra' },
+  { label: 'Clientes', path: '/clientes' },
+  { label: 'Proveedores', path: '/proveedores' },
+];
+
+const secondaryNavItems: NavItem[] = [
+  { label: 'Facturación', path: '/facturacion' },
+  { label: 'Empresas mineras', path: '/empresas-mineras' },
+  { label: 'Reportes', path: '/reportes' },
+  { label: 'Usuarios', path: '/usuarios' },
+];
+
+const catalogoSubItems: NavItem[] = [
+  { label: 'Repuestos', path: '/catalogo-repuestos' },
+  { label: 'Servicios', path: '/catalogo-servicios' },
+];
+
+/** Clase única para todo item de navegación activo/inactivo — nunca se
+ *  redefine por pantalla, para que el estado "seleccionado" se vea y se
+ *  comporte igual en el drawer móvil, el nav de escritorio y el dropdown. */
+function navLinkClass(isActive: boolean, dense = false) {
+  const base = `block rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+    dense ? 'px-3 py-1.5' : 'px-3 py-2'
+  }`;
+  return isActive
+    ? `${base} bg-accent text-accent-foreground font-semibold`
+    : `${base} text-muted-foreground hover:bg-muted hover:text-foreground`;
+}
 
 export function AppLayout() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCatalogoOpen, setIsCatalogoOpen] = useState(false);
+  const [isMobileCatalogoOpen, setIsMobileCatalogoOpen] = useState(false);
+  const catalogoRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const toggleMenu = () => setIsMenuOpen((v) => !v);
   const closeMenu = () => setIsMenuOpen(false);
 
- 
-const mainNavItems = [
-    { label: 'Dashboard', path: '/dashboard' },
-    { label: 'Cotizaciones', path: '/cotizaciones' },
-    { label: 'Clientes', path: '/clientes' },
-    { label: 'Proveedores', path: '/proveedores' },
-  ];
+  const isCatalogoActive =
+    location.pathname.startsWith('/catalogo-repuestos') ||
+    location.pathname.startsWith('/catalogo-servicios');
 
-  const secondaryNavItems = [
-    { label: 'Órdenes de compra', path: '/ordenes-compra' },
-    { label: 'Facturación', path: '/facturacion' },
-    { label: 'Empresas mineras', path: '/empresas-mineras' },
-    { label: 'Reportes', path: '/reportes' },
-    { label: 'Usuarios', path: '/usuarios' },
-  ];
+  // El dropdown de Catálogo se abre/cierra con click (no solo hover), para
+  // que funcione igual con mouse, teclado y pantallas táctiles (una tablet
+  // en ancho "desktop" no tiene hover y antes se quedaba sin poder abrirlo).
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (catalogoRef.current && !catalogoRef.current.contains(e.target as Node)) {
+        setIsCatalogoOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-  const catalogoSubItems = [
-    { label: 'Repuestos', path: '/catalogo-repuestos' },
-    { label: 'Servicios', path: '/catalogo-servicios' },
-  ];
-
-  const isCatalogoActive = location.pathname.startsWith('/catalogo-repuestos') || location.pathname.startsWith('/catalogo-servicios');
+  // Bloquea el scroll del body mientras el drawer móvil está abierto.
+  useEffect(() => {
+    document.body.style.overflow = isMenuOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMenuOpen]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans antialiased text-foreground">
-      {/* Navbar Superior */}
+      {/* Navbar superior */}
       <header className="bg-card border-b border-border sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            {/* Botón Hamburguesa */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            {/* Botón hamburguesa — visible hasta el breakpoint lg */}
             <button
               onClick={toggleMenu}
-              className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
-              aria-label="Abrir menú de navegación"
+              className="lg:hidden p-2 -ml-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors shrink-0"
+              aria-label={isMenuOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'}
+              aria-expanded={isMenuOpen}
             >
-              <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
-                {isMenuOpen ? (
-                  <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M18.293 5.293a1 1 0 011.414 1.414L13.414 12l5.293 5.293a1 1 0 01-1.414 1.414L12 13.414l-5.293 5.293a1 1 0 01-1.414-1.414L10.586 12 5.293 6.707a1 1 0 011.414-1.414L12 10.586l5.293-5.293z"
-                  />
-                ) : (
-                  <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M4 5h16a1 1 0 010 2H4a1 1 0 110-2zm0 6h16a1 1 0 010 2H4a1 1 0 010-2zm0 6h16a1 1 0 010 2H4a1 1 0 010-2z"
-                  />
-                )}
-              </svg>
+              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
 
-            <Link to="/dashboard" className="text-xl font-bold tracking-tight text-foreground">
-              GenLogs ERP
+            <Link to="/dashboard" className="flex items-center gap-2 min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md">
+              <img src={logoGenlogs} alt="" className="h-8 w-8 object-contain shrink-0" />
+              <span className="text-lg sm:text-xl font-bold tracking-tight text-foreground truncate">
+                GenLogs <span className="hidden sm:inline">ERP</span>
+              </span>
             </Link>
           </div>
 
-          {/* Navegación Directa Superior en Pantallas Grandes */}
-          <nav className="hidden md:flex items-center space-x-1">
-            <Link
-              to="/dashboard"
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                location.pathname.startsWith('/dashboard')
-                  ? 'bg-blue-600 text-white font-semibold'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              }`}
-            >
-              Dashboard
-            </Link>
-           <Link
-              to="/cotizaciones"
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                location.pathname.startsWith('/cotizaciones')
-                  ? 'bg-blue-600 text-white font-semibold'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              }`}
-            >
-              Cotizaciones
-            </Link>
-            
-            {/* Módulo V8: orden de compra */}
-            <Link
-              to="/ordenes-compra"
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                location.pathname.startsWith('/ordenes-compra')
-                  ? 'bg-blue-600 text-white font-semibold'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              }`}
-            >
-              Órdenes de compra
-            </Link>
+          {/* Navegación de escritorio — desde lg (1024px) para evitar que
+              los ~7 items se aprieten en tablets (md, 768-1024px) */}
+          <nav className="hidden lg:flex items-center gap-1">
+            {mainNavItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={navLinkClass(location.pathname.startsWith(item.path), true)}
+              >
+                {item.label}
+              </Link>
+            ))}
 
-            <Link
-              to="/clientes"
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                location.pathname.startsWith('/clientes')
-                  ? 'bg-blue-600 text-white font-semibold'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              }`}
-            >
-              Clientes
-            </Link>
-            <Link
-              to="/proveedores"
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                location.pathname.startsWith('/proveedores')
-                  ? 'bg-blue-600 text-white font-semibold'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              }`}
-            >
-              Proveedores
-            </Link>
-
-            {/* Dropdown de Catálogo en Navbar */}
-            <div className="relative group">
+            {/* Dropdown de Catálogo — click, no hover, para funcionar en táctil */}
+            <div className="relative" ref={catalogoRef}>
               <button
-                className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center space-x-1 transition-colors ${
-                  isCatalogoActive
-                    ? 'bg-blue-600 text-white font-semibold'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
+                onClick={() => setIsCatalogoOpen((v) => !v)}
+                aria-expanded={isCatalogoOpen}
+                aria-haspopup="menu"
+                className={`${navLinkClass(isCatalogoActive, true)} flex items-center gap-1`}
               >
                 <span>Catálogo</span>
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
+                <ChevronDown className={`w-4 h-4 transition-transform ${isCatalogoOpen ? 'rotate-180' : ''}`} />
               </button>
-              <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-md shadow-lg py-1 hidden group-hover:block z-50">
-                {catalogoSubItems.map((subItem) => (
-                  <Link
-                    key={subItem.path}
-                    to={subItem.path}
-                    className="block px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-                  >
-                    {subItem.label}
-                  </Link>
-                ))}
-              </div>
+              {isCatalogoOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-md shadow-lg py-1 z-50"
+                >
+                  {catalogoSubItems.map((subItem) => (
+                    <Link
+                      key={subItem.path}
+                      to={subItem.path}
+                      role="menuitem"
+                      onClick={() => setIsCatalogoOpen(false)}
+                      className={navLinkClass(location.pathname.startsWith(subItem.path))}
+                    >
+                      {subItem.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           </nav>
         </div>
       </header>
 
       <div className="flex flex-1 relative">
-        {/* Drawer / Menú Lateral Hamburguesa */}
+        {/* Drawer lateral (móvil y tablet, hasta lg) */}
         {isMenuOpen && (
           <>
             <div
-              className="fixed inset-0 bg-black/40 z-40 transition-opacity"
+              className="fixed inset-0 bg-black/40 z-40 transition-opacity lg:hidden"
               onClick={closeMenu}
+              aria-hidden="true"
             />
 
-            <aside className="fixed top-0 left-0 w-72 h-full bg-card border-r border-border text-card-foreground z-50 p-5 shadow-lg flex flex-col justify-between transform transition-transform duration-300 ease-in-out overflow-y-auto">
+            <aside
+              className="fixed top-0 left-0 w-[85vw] max-w-72 h-full bg-card border-r border-border text-card-foreground z-50 p-5 shadow-lg flex flex-col justify-between overflow-y-auto lg:hidden"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Menú de módulos"
+            >
               <div>
                 <div className="flex items-center justify-between mb-6 pb-3 border-b border-border">
-                  <span className="text-base font-semibold text-foreground">Menú de Módulos</span>
+                  <span className="text-base font-semibold text-foreground">Menú de módulos</span>
                   <button
                     onClick={closeMenu}
-                    className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+                    aria-label="Cerrar menú"
                   >
-                    ✕
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
 
                 <nav className="space-y-1">
-                 {/* Módulos principales V8 */}
-                  {mainNavItems.slice(0, 2).map((item) => {
-                    const isActive = location.pathname.startsWith(item.path);
-                    return (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        onClick={closeMenu}
-                        className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                          isActive
-                            ? 'bg-blue-600 text-white font-semibold'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        }`}
-                      >
-                        {item.label}
-                      </Link>
-                    );
-                  })}
+                  {mainNavItems.map((item) => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={closeMenu}
+                      className={navLinkClass(location.pathname.startsWith(item.path))}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
 
-                  {/* 1. Clientes y Proveedores Primero */}
-                  {mainNavItems.slice(2).map((item) => { 
-                    const isActive = location.pathname.startsWith(item.path);
-                    return (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        onClick={closeMenu}
-                        className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                          isActive
-                            ? 'bg-blue-600 text-white font-semibold'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        }`}
-                      >
-                        {item.label}
-                      </Link>
-                    );
-                  })}
-
-                  {/* 2. Catálogo como Acordeón / Sublista Elegible */}
+                  {/* Catálogo como acordeón */}
                   <div>
                     <button
-                      onClick={() => setIsCatalogoOpen(!isCatalogoOpen)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                        isCatalogoActive
-                          ? 'bg-blue-600/10 text-blue-600 font-semibold'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
+                      onClick={() => setIsMobileCatalogoOpen((v) => !v)}
+                      aria-expanded={isMobileCatalogoOpen}
+                      className={`w-full flex items-center justify-between ${navLinkClass(isCatalogoActive)}`}
                     >
                       <span>Catálogo</span>
-                      <svg
-                        className={`w-4 h-4 transition-transform duration-200 fill-current ${
-                          isCatalogoOpen || isCatalogoActive ? 'rotate-180' : ''
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          isMobileCatalogoOpen || isCatalogoActive ? 'rotate-180' : ''
                         }`}
-                        viewBox="0 0 20 20"
-                      >
-                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
+                      />
                     </button>
 
-                    {/* Sublista: Repuestos y Servicios */}
-                    {(isCatalogoOpen || isCatalogoActive) && (
+                    {(isMobileCatalogoOpen || isCatalogoActive) && (
                       <div className="ml-4 mt-1 space-y-1 border-l-2 border-border pl-2">
-                        {catalogoSubItems.map((subItem) => {
-                          const isSubActive = location.pathname.startsWith(subItem.path);
-                          return (
-                            <Link
-                              key={subItem.path}
-                              to={subItem.path}
-                              onClick={closeMenu}
-                              className={`block px-3 py-1.5 rounded-md text-sm transition-colors ${
-                                isSubActive
-                                  ? 'bg-blue-600 text-white font-semibold'
-                                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                              }`}
-                            >
-                              {subItem.label}
-                            </Link>
-                          );
-                        })}
+                        {catalogoSubItems.map((subItem) => (
+                          <Link
+                            key={subItem.path}
+                            to={subItem.path}
+                            onClick={closeMenu}
+                            className={navLinkClass(location.pathname.startsWith(subItem.path))}
+                          >
+                            {subItem.label}
+                          </Link>
+                        ))}
                       </div>
                     )}
                   </div>
 
-                  {/* Resto de módulos */}
-                  {secondaryNavItems.map((item) => {
-                    const isActive = location.pathname.startsWith(item.path);
-                    return (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        onClick={closeMenu}
-                        className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                          isActive
-                            ? 'bg-blue-600 text-white font-semibold'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        }`}
-                      >
-                        {item.label}
-                      </Link>
-                    );
-                  })}
+                  {secondaryNavItems.map((item) => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={closeMenu}
+                      className={navLinkClass(location.pathname.startsWith(item.path))}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
                 </nav>
               </div>
 
@@ -285,8 +234,22 @@ const mainNavItems = [
           </>
         )}
 
-        {/* Contenido Principal */}
-        <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
+        {/* Barra secundaria de escritorio (lg+): los módulos que no caben
+            en el nav superior, siempre visibles sin abrir el drawer */}
+        <nav className="hidden lg:flex flex-col gap-1 w-56 shrink-0 border-r border-border bg-card p-4">
+          {secondaryNavItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={navLinkClass(location.pathname.startsWith(item.path))}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Contenido principal */}
+        <main className="flex-1 p-4 sm:p-6 max-w-7xl mx-auto w-full min-w-0">
           <Outlet />
         </main>
       </div>

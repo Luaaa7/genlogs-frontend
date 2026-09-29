@@ -50,28 +50,28 @@ const moneda = useWatch({ control: methods.control, name: 'moneda' });
 
   if (step === 'success' && isSuccess && cotizacionCreada) {
     return (
-      <div className="min-h-screen bg-gray-100 py-8 px-4 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-xl p-8 text-center max-w-md">
+      <div className="min-h-screen bg-muted py-8 px-4 flex items-center justify-center">
+        <div className="bg-card rounded-lg shadow-xl p-8 text-center max-w-md">
           <div className="flex justify-center mb-4">
-            <div className="bg-green-100 p-4 rounded-full">
-              <CheckCircle className="w-12 h-12 text-green-600" />
+            <div className="bg-success/10 p-4 rounded-full">
+              <CheckCircle className="w-12 h-12 text-success" />
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold text-foreground mb-2">
             ¡Cotización Creada!
           </h2>
-          <p className="text-gray-600 mb-2">
+          <p className="text-muted-foreground mb-2">
             La cotización <span className="font-semibold">{cotizacionCreada.codigo}</span> ha sido
             creada exitosamente
           </p>
-          <p className="text-sm text-gray-500 mb-6">
+          <p className="text-sm text-muted-foreground mb-6">
             Total: {cotizacionCreada.moneda} {cotizacionCreada.total.toFixed(2)}
           </p>
 
           <div className="flex gap-3">
             <button
               onClick={() => navigate('/cotizaciones')}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
+              className="flex-1 px-4 py-2 border border-border text-foreground rounded-lg hover:bg-muted transition font-medium"
             >
               Ver Todas
             </button>
@@ -79,7 +79,7 @@ const moneda = useWatch({ control: methods.control, name: 'moneda' });
               onClick={() =>
                 navigate(`/cotizaciones/${cotizacionCreada.id}`)
               }
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+              className="flex-1 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition font-medium"
             >
               Ver Detalles
             </button>
@@ -90,21 +90,21 @@ const moneda = useWatch({ control: methods.control, name: 'moneda' });
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4">
+    <div className="min-h-screen bg-muted py-8 px-4">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="mb-8 flex items-center gap-4">
           <button
             onClick={() => navigate('/cotizaciones')}
-            className="p-2 hover:bg-gray-200 rounded-lg transition"
+            className="p-2 hover:bg-muted rounded-lg transition"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
+            <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-foreground">
               Nueva Cotización
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-muted-foreground mt-1">
               {step === 'info'
                 ? 'Paso 1: Información General'
                 : 'Paso 2: Detalles de Productos y Servicios'}
@@ -117,15 +117,15 @@ const moneda = useWatch({ control: methods.control, name: 'moneda' });
           <div
             className={`flex-1 h-2 rounded-full transition ${
               step === 'info' || step === 'detalles'
-                ? 'bg-blue-600'
-                : 'bg-green-600'
+                ? 'bg-accent'
+                : 'bg-success'
             }`}
           />
           <div
             className={`flex-1 h-2 rounded-full transition ${
               step === 'detalles' || step === 'success'
-                ? 'bg-blue-600'
-                : 'bg-gray-300'
+                ? 'bg-accent'
+                : 'bg-muted'
             }`}
           />
         </div>
@@ -147,7 +147,7 @@ const moneda = useWatch({ control: methods.control, name: 'moneda' });
                 <button
                   type="button"
                   onClick={() => setStep('info')}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
+                  className="px-6 py-3 border border-border text-foreground rounded-lg hover:bg-muted transition font-medium"
                 >
                   Atrás
                 </button>
@@ -157,7 +157,7 @@ const moneda = useWatch({ control: methods.control, name: 'moneda' });
                 <button
                   type="button"
                   onClick={handlePrimerPaso}
-                  className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                  className="flex-1 px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent/90 transition font-medium"
                 >
                   Siguiente
                 </button>
@@ -167,7 +167,7 @@ const moneda = useWatch({ control: methods.control, name: 'moneda' });
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="flex-1 inline-flex items-center justify-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
+                  className="flex-1 inline-flex items-center justify-center px-6 py-3 bg-success text-white rounded-lg hover:bg-success/90 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
                 >
                   {isPending ? (
                     <>
@@ -187,8 +187,8 @@ const moneda = useWatch({ control: methods.control, name: 'moneda' });
         </FormProvider>
 
         {/* Info Box */}
-        <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-700">
+        <div className="mt-8 p-4 bg-accent/10 border border-accent/30 rounded-lg">
+          <p className="text-sm text-accent">
             <span className="font-semibold">💡 Consejo:</span> Puedes guardar
             como borrador y continuar más tarde. Los datos se guardarán
             automáticamente en el navegador.
