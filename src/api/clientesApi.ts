@@ -1,10 +1,14 @@
-import { http } from './http';
-import type { Cliente, ClienteRequest, FiltrosCliente } from '../types/cliente.types';
-import { extractArray, limpiarFiltros } from '@/lib/utils/pagination';
+import { axiosClient } from './axiosClient'
+import type { Cliente, ClienteRequest, FiltrosCliente } from '../types/cliente.types'
+import type { PageResponse } from '@/types/common.types'
 
+const RECURSO = '/clientes'
 export const clientesApi = {
-  listar: (filtros: FiltrosCliente = {}) =>
-    http.get<unknown>('/api/clientes', { params: limpiarFiltros(filtros as Record<string, unknown>) }).then((r) => extractArray<Cliente>(r.data)),
-  obtener: (id: number) => http.get<Cliente>(`/api/clientes/${id}`).then((r) => r.data),
-  crear: (data: ClienteRequest) => http.post<Cliente>('/api/clientes', data).then((r) => r.data),
-};
+  listar: async (filtros: FiltrosCliente = {}): Promise<Cliente[]> => {
+    const { data } = await axiosClient.get<PageResponse<Cliente> | Cliente[]>(RECURSO, { params: filtros })
+    return Array.isArray(data) ? data : data.content ?? []
+  },
+  obtener: (id: number) => axiosClient.get<Cliente>(`${RECURSO}/${id}`).then((r) => r.data),
+  crear: (data: ClienteRequest) => axiosClient.post<Cliente>(RECURSO, data).then((r) => r.data),
+  actualizar: (id: number, data: ClienteRequest) => axiosClient.put<Cliente>(`${RECURSO}/${id}`, data).then((r) => r.data),
+}

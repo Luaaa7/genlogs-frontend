@@ -15,7 +15,7 @@ export function ContactoClienteList({ clienteId, contactos }: { clienteId: numbe
   });
 
   const onSubmit = handleSubmit((v) =>
-    agregar.mutate({ ...v, principal: !!v.principal }, { onSuccess: () => reset() }),
+    agregar.mutate({ ...v, nombres: v.nombre, correo: v.email, esPrincipal: !!v.principal }, { onSuccess: () => reset() }),
   );
 
   return (
@@ -23,15 +23,15 @@ export function ContactoClienteList({ clienteId, contactos }: { clienteId: numbe
       <ul className="divide-y divide-slate-100 rounded border border-slate-200">
         {contactos.length === 0 && <li className="p-3 text-sm text-slate-500">Aún no hay contactos. Agrega el primero abajo.</li>}
         {contactos.map((c) => (
-          <li key={c.id} className="flex items-center justify-between gap-3 p-3 text-sm">
+          <li key={c.id ?? c.idContacto} className="flex items-center justify-between gap-3 p-3 text-sm">
             <div>
               <div className="font-medium">
-                {c.nombre} {c.principal && <span className="ml-1 rounded bg-sky-100 px-1.5 py-0.5 text-xs text-sky-800">Principal</span>}
+                {c.nombre ?? c.nombres} {(c.principal ?? c.esPrincipal) && <span className="ml-1 rounded bg-sky-100 px-1.5 py-0.5 text-xs text-sky-800">Principal</span>}
               </div>
-              <div className="text-slate-500">{c.cargo} · {c.telefono} · {c.email}</div>
+              <div className="text-slate-500">{c.cargo} · {c.telefono} · {c.email ?? c.correo}</div>
             </div>
             <button
-              onClick={() => window.confirm(`¿Eliminar a ${c.nombre}?`) && eliminar.mutate(c.id)}
+              onClick={() => window.confirm(`¿Eliminar a ${(c.nombre ?? c.nombres)}?`) && eliminar.mutate(c.id ?? c.idContacto)}
               disabled={eliminar.isPending}
               className="text-red-600 hover:underline"
             >

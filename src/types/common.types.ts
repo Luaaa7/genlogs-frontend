@@ -12,8 +12,10 @@ export interface PageResponse<T> {
   content: T[]
   totalElements: number
   totalPages: number
-  page: number
-  size: number
+  page?: number
+  size?: number
+  number?: number
+  pageSize?: number
 }
 
 export interface ApiError {

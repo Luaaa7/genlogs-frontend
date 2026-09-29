@@ -1,22 +1,8 @@
-export interface Proveedor {
-  id: number;
-  ruc: string;
-  razonSocial: string;
-  contactoNombre: string;
-  telefono: string;
-  email: string;
-  direccion: string;
-}
-
-export type ProveedorRequest = Omit<Proveedor, 'id'>;
-
-export interface ContactoCliente {
-  id: number;
-  nombre: string;
-  cargo: string;
-  telefono: string;
-  email: string;
-  principal: boolean;
-}
-
-export type ContactoClienteRequest = Omit<ContactoCliente, 'id'>;
+import type { ContactoTercero, ContactoTerceroInput, Tercero, TerceroInput } from './tercero.types'
+export interface Proveedor { idProveedor: number; id?: number; idTercero: number; situacion: string; status: 'A' | 'I'; tercero: Tercero; contactos: ContactoTercero[] }
+export interface ProveedorInput { tercero: TerceroInput; situacion?: string }
+export type ProveedorRequest = ProveedorInput
+export type ContactoProveedor = ContactoTercero
+export type ContactoProveedorRequest = ContactoTerceroInput
+export type ContactoCliente = ContactoTercero
+export type ContactoClienteRequest = ContactoTerceroInput

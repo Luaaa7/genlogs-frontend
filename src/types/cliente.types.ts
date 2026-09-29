@@ -1,23 +1,23 @@
-import type { ContactoCliente } from './proveedor.types';
-
-export type TipoDocumento = 'DNI' | 'RUC';
+import type { EmpresaMinera } from './empresaMinera.types'
+import type { ContactoTercero, Tercero, TerceroInput } from './tercero.types'
 
 export interface Cliente {
-  id: number;
-  tipoDocumento: TipoDocumento;
-  numeroDocumento: string;
-  razonSocial: string;
-  nombreComercial: string;
-  sectorEconomico: string;
-  region: string;
-  idProveedor?: number | null;
-  contactos: ContactoCliente[];
+  idCliente: number
+  /** Alias de lectura para componentes antiguos; el ID canónico es idCliente. */
+  id: number
+  idTercero: number
+  idSectorEconomico: number
+  situacion: string
+  status: 'A' | 'I'
+  tercero: Tercero
+  contactos: ContactoTercero[]
+  empresasMineras: EmpresaMinera[]
 }
 
-export type ClienteRequest = Omit<Cliente, 'id' | 'contactos'>;
-
-export interface FiltrosCliente {
-  documento?: string;
-  region?: string;
-  sector?: string;
+export interface ClienteInput {
+  tercero: TerceroInput
+  idSectorEconomico: number
+  situacion?: string
 }
+export type ClienteRequest = ClienteInput
+export interface FiltrosCliente { documento?: string; razonSocial?: string; idSectorEconomico?: number; situacion?: string; page?: number; size?: number }

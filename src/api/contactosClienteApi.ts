@@ -1,11 +1,11 @@
-import { http } from './http';
-import type { ContactoCliente, ContactoClienteRequest } from '../types/proveedor.types';
+import { axiosClient } from './axiosClient'
+import type { ContactoCliente, ContactoClienteRequest } from '../types/proveedor.types'
 
 export const contactosClienteApi = {
   agregar: (clienteId: number, data: ContactoClienteRequest) =>
-    http
-      .post<ContactoCliente>(`/api/clientes/${clienteId}/contactos`, data)
+    axiosClient
+      .post<ContactoCliente>(`/clientes/${clienteId}/contactos`, data)
       .then((r) => r.data),
   eliminar: (clienteId: number, contactoId: number) =>
-    http.delete<void>(`/api/clientes/${clienteId}/contactos/${contactoId}`),
-};
+    axiosClient.delete<void>(`/clientes/${clienteId}/contactos/${contactoId}`),
+}

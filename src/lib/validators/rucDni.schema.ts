@@ -1,46 +1,10 @@
-import { z } from 'zod';
-
-export const dniSchema = z.string().regex(/^\d{8}$/, 'El DNI debe tener 8 dígitos');
-export const rucSchema = z.string().regex(/^\d{11}$/, 'El RUC debe tener 11 dígitos');
-
-export const clienteSchema = z
-  .object({
-    tipoDocumento: z.enum(['DNI', 'RUC']),
-    numeroDocumento: z.string().min(1, 'Ingresa el número de documento'),
-    razonSocial: z.string().min(2, 'Ingresa la razón social'),
-    nombreComercial: z.string().optional().default(''),
-    sectorEconomico: z.string().min(1, 'Selecciona un sector'),
-    region: z.string().min(1, 'Selecciona una región'),
-    idProveedor: z.number().nullable().optional(),
-  })
-  .superRefine((v, ctx) => {
-    const res = (v.tipoDocumento === 'DNI' ? dniSchema : rucSchema).safeParse(v.numeroDocumento);
-    if (!res.success) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['numeroDocumento'],
-        message: res.error.issues[0].message,
-      });
-    }
-  });
-
-export const proveedorSchema = z.object({
-  ruc: rucSchema,
-  razonSocial: z.string().min(2, 'Ingresa la razón social'),
-  contactoNombre: z.string().min(2, 'Ingresa el nombre del contacto'),
-  telefono: z.string().regex(/^\+?\d{7,15}$/, 'Teléfono no válido'),
-  email: z.string().email('Correo no válido'),
-  direccion: z.string().min(3, 'Ingresa la dirección'),
-});
-
-export const contactoSchema = z.object({
-  nombre: z.string().min(2, 'Ingresa el nombre'),
-  cargo: z.string().min(2, 'Ingresa el cargo'),
-  telefono: z.string().regex(/^\+?\d{7,15}$/, 'Teléfono no válido'),
-  email: z.string().email('Correo no válido'),
-  principal: z.boolean().default(false),
-});
-
-export type ClienteFormValues = z.input<typeof clienteSchema>;
-export type ProveedorFormValues = z.infer<typeof proveedorSchema>;
-export type ContactoFormValues = z.input<typeof contactoSchema>;
+import { z } from 'zod'
+export const dniSchema = z.string().regex(/^\d{8}$/, 'El DNI debe tener 8 dígitos')
+export const rucSchema = z.string().regex(/^\d{11}$/, 'El RUC debe tener 11 dígitos')
+export const terceroSchema = z.object({ idTipoDocumento: z.number().int().positive('Selecciona el tipo de documento'), idDistrito: z.number().int().positive('Selecciona el distrito'), numeroDocumento: z.string().min(1), razonSocial: z.string().min(2), direccion: z.string().optional(), telefono: z.string().optional(), correo: z.union([z.string().email('Correo no válido'), z.literal('')]).optional() }).superRefine((v, ctx) => { if (v.idTipoDocumento === 1 && !/^\d{11}$/.test(v.numeroDocumento)) ctx.addIssue({ code: 'custom', path: ['numeroDocumento'], message: 'El RUC debe tener 11 dígitos' }); if (v.idTipoDocumento === 2 && !/^\d{8}$/.test(v.numeroDocumento)) ctx.addIssue({ code: 'custom', path: ['numeroDocumento'], message: 'El DNI debe tener 8 dígitos' }) })
+export const clienteSchema = z.object({ tercero: terceroSchema, idSectorEconomico: z.number().int().positive('Selecciona el sector'), situacion: z.string().default('ACTIVO') })
+export const proveedorSchema = z.object({ tercero: terceroSchema, situacion: z.string().default('ACTIVO') })
+export const contactoSchema = z.object({ nombre: z.string().min(2), cargo: z.string().optional(), telefono: z.string().optional(), email: z.string().email().optional().or(z.literal('')), principal: z.boolean().default(false) })
+export type ClienteFormValues = z.input<typeof clienteSchema>
+export type ProveedorFormValues = z.input<typeof proveedorSchema>
+export type ContactoFormValues = z.input<typeof contactoSchema>
