@@ -31,26 +31,29 @@ export function LoginPage() {
       setAuth(tokenRecibido, data.nombreUsuario, data.nombreRol)
       navigate("/dashboard")
     } catch (error: unknown) {
-      if (error && typeof error === "object") {
-        // Validamos si fue un error de tiempo de espera (timeout / servidor durmiéndose)
-        if ("code" in error && (error as { code?: string }).code === "ECONNABORTED") {
-          console.error("El servidor tardó demasiado en responder (Cold Start).");
-          setError("El servidor está despertando. Por favor, espera unos segundos y vuelve a intentar.");
-          return;
-        }
-
-        // Validamos si el backend respondió con un mensaje de error específico
-        if ("response" in error) {
-          const err = error as { response?: { data?: { message?: string } } };
-          console.error("Detalle exacto del backend:", err.response?.data);
-          setError(err.response?.data?.message || "Usuario o contraseña incorrectos.");
-          return;
-        }
+      const err = error as {
+        code?: string
+        response?: { status?: number; data?: { message?: string; error?: string } }
       }
 
-      // Fallback para cualquier otro error imprevisto
-      console.error("Error desconocido:", error);
-      setError("Ocurrió un error inesperado al intentar iniciar sesión.");
+      // 1) Timeout: el servidor de Render gratuito tarda en despertar.
+      if (err.code === "ECONNABORTED") {
+        setError("El servidor está despertando. Espera unos segundos y vuelve a intentar.")
+        return
+      }
+
+      // 2) Sin respuesta: servidor caído, URL incorrecta o bloqueo por CORS.
+      if (!err.response) {
+        console.error("Sin respuesta del servidor (revisa VITE_API_URL y CORS):", error)
+        setError("No se pudo conectar con el servidor. Verifica tu conexión o inténtalo más tarde.")
+        return
+      }
+
+      // 3) El backend respondió con un mensaje.
+      const data = err.response.data
+      console.error("Respuesta del backend:", err.response.status, data)
+      setError(data?.message || data?.error || "Usuario o contraseña incorrectos.")
+      return
     }finally {
       setLoading(false)
     }
@@ -92,7 +95,7 @@ export function LoginPage() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/25 transition-opacity hover:opacity-90 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="w-full rounded-lg bg-linear-to-r from-primary to-accent px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/25 transition-opacity hover:opacity-90 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {loading ? "Ingresando..." : "Ingresar"}
       </button>

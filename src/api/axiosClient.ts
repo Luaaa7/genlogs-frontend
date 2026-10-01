@@ -15,7 +15,7 @@ const getApiBaseUrl = () => {
 
 export const axiosClient = axios.create({
   baseURL: getApiBaseUrl(),
-  timeout: 15_000,
+  timeout: 60_000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -30,7 +30,6 @@ axiosClient.interceptors.request.use((config) => {
 })
 
 function cerrarSesionInvalida(motivo: string) {
-  // eslint-disable-next-line no-console
   console.warn(`[AUTH] Cerrando sesión: ${motivo}`)
   // Limpia tanto la clave que lee axios/ProtectedRoute (localStorage) como la
   // que persiste el estado de Zustand (sessionStorage "genlogs-auth"), para
@@ -54,7 +53,6 @@ axiosClient.interceptors.response.use(
     // permiso para esto puntual" con una sesión por lo demás válida, así que
     // NO debe desloguear: cada pantalla ya maneja su propio estado de error.
     if (status === 401 && !originalRequest._retry) {
-      // eslint-disable-next-line no-console
       console.warn(`[AUTH] 401 recibido en ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`)
       originalRequest._retry = true
 
@@ -79,7 +77,6 @@ axiosClient.interceptors.response.use(
         cerrarSesionInvalida("falló el intento de refrescar el token")
       }
     } else if (status === 403) {
-      // eslint-disable-next-line no-console
       console.warn(`[AUTH] 403 recibido en ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url} (no desloguea, solo informativo)`)
     }
 
