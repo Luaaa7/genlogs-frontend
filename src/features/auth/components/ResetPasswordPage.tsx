@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { Link, useSearchParams } from "react-router-dom"
 import axios from "axios"
-import { Lock, CheckCircle2, Clock, AlertTriangle, Loader2, User } from "lucide-react"
+import { Lock, CheckCircle2, Clock, AlertTriangle, Loader2 } from "lucide-react"
 import { restablecerPassword, validarTokenReset } from "@/api/authApi"
 import { PasswordInput } from "@/components/ui/PasswordInput"
 
@@ -11,7 +11,7 @@ const linkClass =
   "text-sm font-medium text-accent hover:text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
 
 const botonClass =
-  "w-full rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2.5 text-center text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+  "w-full rounded-lg bg-linear-to-r from-primary to-accent px-4 py-2.5 text-center text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 
 function formatearTiempo(totalSegundos: number): string {
   const min = Math.floor(totalSegundos / 60)
@@ -37,7 +37,6 @@ export function ResetPasswordPage() {
   const token = searchParams.get("token") ?? ""
 
   const [estado, setEstado] = useState<Estado>(token ? "validando" : "invalido")
-  const [nombreUsuario, setNombreUsuario] = useState("")
   const [segundos, setSegundos] = useState(0)
 
   const [nuevaPassword, setNuevaPassword] = useState("")
@@ -53,7 +52,6 @@ export function ResetPasswordPage() {
     validarTokenReset(token)
       .then((info) => {
         if (cancelado) return
-        setNombreUsuario(info.nombreUsuario)
         setSegundos(info.segundosRestantes)
         setEstado(info.segundosRestantes > 0 ? "valido" : "invalido")
       })
@@ -149,8 +147,7 @@ export function ResetPasswordPage() {
           <CheckCircle2 size={24} />
         </div>
         <p role="status" className="text-sm text-muted-foreground">
-          Contraseña actualizada. Inicia sesión con el usuario{" "}
-          <strong className="text-foreground">{nombreUsuario}</strong> y tu nueva contraseña.
+          Contraseña actualizada. Ya puedes iniciar sesión con tu nueva contraseña.
         </p>
         <Link to="/login" className={botonClass}>
           Ir al login
@@ -166,12 +163,6 @@ export function ResetPasswordPage() {
       <div className="space-y-1">
         <h1 className="text-2xl font-bold text-foreground">Nueva contraseña</h1>
         <p className="text-sm text-muted-foreground">Debe tener al menos 8 caracteres.</p>
-      </div>
-
-      <div className="flex items-center gap-2 rounded-lg bg-muted/60 px-3 py-2 text-sm">
-        <User size={16} className="text-muted-foreground" aria-hidden="true" />
-        <span className="text-muted-foreground">Usuario:</span>
-        <strong className="text-foreground">{nombreUsuario}</strong>
       </div>
 
       <div

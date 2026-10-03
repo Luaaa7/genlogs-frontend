@@ -2,7 +2,6 @@ import { axiosClient } from './axiosClient';
 import type { LoginRequest, LoginResponse } from "@/types/auth"
 
 export interface TokenResetInfo {
-  nombreUsuario: string
   segundosRestantes: number
 }
 
