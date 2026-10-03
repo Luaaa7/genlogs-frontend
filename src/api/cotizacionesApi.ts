@@ -48,7 +48,7 @@ export const cotizacionesApi = {
     id: number,
     data: UpdateEstadoCotizacionRequest
   ): Promise<Cotizacion> {
-    const response = await axiosClient.put<Cotizacion>(`/cotizaciones/${id}/estado`, data)
+    const response = await axiosClient.patch<Cotizacion>(`/cotizaciones/${id}/estado`, data)
     return response.data
   },
 
