@@ -63,22 +63,22 @@ export const CotizacionesListPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muted py-8 px-4">
+    <div className="min-h-screen bg-muted py-6 px-4 sm:py-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Cotizaciones</h1>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Cotizaciones</h1>
               <p className="text-muted-foreground mt-1">
                 Gestiona tus cotizaciones y seguimiento de clientes
               </p>
             </div>
             <button
               onClick={() => navigate('/cotizaciones/nueva')}
-              className="inline-flex items-center px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent/90 transition font-semibold"
+              className="inline-flex w-full sm:w-auto shrink-0 items-center justify-center whitespace-nowrap px-4 py-2.5 text-sm sm:px-6 sm:py-3 sm:text-base bg-accent text-white rounded-lg hover:bg-accent/90 transition font-semibold"
             >
-              <Plus className="w-5 h-5 mr-2" />
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Nueva Cotización
             </button>
           </div>
