@@ -6,94 +6,54 @@ import { useTheme } from "@/hooks/useTheme"
 /**
  * Layout compartido por Login / Recuperar contraseña / Reset de contraseña.
  *
- * Diseño "hero" de dos paneles (principio de UX: el login es parte del
- * "Shell" del sistema, no una pantalla operativa, así que aquí sí vive el
- * glassmorfismo — ver logica-ux-modulos-genlogs.md):
- *  - Panel izquierdo (solo desktop): mensaje de marca + manchas de color
- *    difuminadas, igual que el fondo de AppLayout.
- *  - Panel derecho: el formulario, en una card con blur. Cada pantalla
- *    (Recuperar / Nueva contraseña) trae su propio "Volver al inicio de sesión".
+ * Una sola columna centrada: logo en sus colores originales, la card del
+ * formulario y las garantías de acceso debajo. Sin panel de marca, degradados
+ * ni manchas: el login es una herramienta de trabajo, igual que el resto del
+ * ERP. Cada pantalla (Recuperar / Nueva contraseña) trae su propio
+ * "Volver al inicio de sesión".
  */
 export function AuthLayout() {
   const { tema, alternarTema } = useTheme()
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-background lg:flex-row">
-      {/* Panel izquierdo: hero de marca (oculto en mobile para no competir con el formulario) */}
-      <div className="relative hidden overflow-hidden bg-gradient-to-br from-[#0F172A] via-[#1E3A5F] to-[#2E6BA8] lg:flex lg:w-1/2 lg:flex-col lg:justify-between lg:p-12">
-        {/* Manchas de color difuminadas, mismo lenguaje visual que AppLayout */}
-        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -top-24 -left-20 h-80 w-80 rounded-full bg-accent/25 blur-3xl" />
-          <div className="absolute top-1/2 -right-24 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
-          <div className="absolute bottom-0 left-1/4 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
-        </div>
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-muted/60 px-4 py-10 sm:px-6 dark:bg-background">
+      <button
+        type="button"
+        onClick={alternarTema}
+        aria-label={tema === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
+        className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:right-6 sm:top-6"
+      >
+        {tema === "dark" ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
+      </button>
 
-        {/* Placa blanca: el logo conserva sus azules originales, que sobre el
-            degradado oscuro no tendrían contraste. Lleva a /login (y no a
-            "/", que sin sesión rebota al mismo login): útil desde Recuperar
-            y Nueva contraseña. */}
+      <div className="w-full max-w-sm">
+        {/* Lleva a /login (y no a "/", que sin sesión rebota al mismo login):
+            útil desde Recuperar y Nueva contraseña. GENLOGS.png trae margen
+            transparente arriba y abajo; el margen negativo lo compensa. */}
         <Link
           to="/login"
-          className="relative w-fit overflow-hidden rounded-xl bg-white px-4 py-2.5 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1E3A5F]"
+          className="mx-auto mb-4 block w-fit rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background"
         >
-          {/* GENLOGS.png trae ~20% de margen transparente arriba/abajo y ~10% a
-              los lados: los márgenes negativos lo recortan para que el logo
-              llene la placa en vez de verse pequeño. */}
           <img
             src={logoGenlogs}
             alt="GenLogs S.A.C."
             width={192}
             height={80}
-            className="-mx-4 -my-4 h-20 w-auto max-w-none object-contain"
+            className="-my-3 h-24 w-auto object-contain dark:brightness-0 dark:invert"
           />
         </Link>
 
-        <div className="relative space-y-4">
-          <h2 className="text-3xl font-semibold leading-tight text-white xl:text-4xl">
-            Gestión comercial para la industria minera, en un solo lugar
-          </h2>
-          <p className="max-w-md text-sm text-white/70">
-            Cotizaciones, órdenes de compra y facturación de GENLOGS S.A.C.,
-            centralizadas con trazabilidad completa de cada operación.
-          </p>
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
+          <Outlet />
         </div>
 
-        <div className="relative flex flex-wrap gap-4 text-xs text-white/70">
+        <div className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
-            <Lock size={14} /> Conexión cifrada
+            <Lock size={14} aria-hidden="true" /> Conexión cifrada
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <ShieldCheck size={14} /> Acceso restringido por rol
+            <ShieldCheck size={14} aria-hidden="true" /> Acceso restringido por rol
           </span>
-        </div>
-      </div>
-
-      {/* Panel derecho: formulario */}
-      <div className="relative flex flex-1 items-center justify-center p-4 sm:p-6">
-        <button
-          type="button"
-          onClick={alternarTema}
-          aria-label={tema === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
-          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-card/70 backdrop-blur-xl text-foreground hover:bg-card/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors sm:right-6 sm:top-6"
-        >
-          {tema === "dark" ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
-        </button>
-
-        <div className="w-full max-w-sm">
-          <div className="rounded-2xl border border-border/70 bg-card/80 backdrop-blur-xl p-6 shadow-xl shadow-black/10 sm:p-8">
-            {/* Logo solo visible en mobile, donde el panel hero está oculto */}
-            <div className="mb-6 flex flex-col items-center justify-center lg:hidden">
-              <img
-                src={logoGenlogs}
-                alt="GenLogs S.A.C."
-                width={192}
-                height={80}
-                className="h-24 w-auto object-contain dark:brightness-0 dark:invert"
-              />
-            </div>
-
-            <Outlet />
-          </div>
         </div>
       </div>
     </div>
