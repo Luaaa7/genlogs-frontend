@@ -1,5 +1,5 @@
 import { Link, Outlet } from "react-router-dom"
-import { Sun, Moon, ShieldCheck, Lock, ArrowLeft } from "lucide-react"
+import { Sun, Moon, ShieldCheck, Lock } from "lucide-react"
 import logoGenlogs from "../assets/GENLOGS.png"
 import { useTheme } from "@/hooks/useTheme"
 
@@ -11,8 +11,8 @@ import { useTheme } from "@/hooks/useTheme"
  * glassmorfismo — ver logica-ux-modulos-genlogs.md):
  *  - Panel izquierdo (solo desktop): mensaje de marca + manchas de color
  *    difuminadas, igual que el fondo de AppLayout.
- *  - Panel derecho: el formulario, en una card con blur, con un enlace
- *    explícito para volver al inicio del sistema.
+ *  - Panel derecho: el formulario, en una card con blur. Cada pantalla
+ *    (Recuperar / Nueva contraseña) trae su propio "Volver al inicio de sesión".
  */
 export function AuthLayout() {
   const { tema, alternarTema } = useTheme()
@@ -29,9 +29,11 @@ export function AuthLayout() {
         </div>
 
         {/* Placa blanca: el logo conserva sus azules originales, que sobre el
-            degradado oscuro no tendrían contraste. */}
+            degradado oscuro no tendrían contraste. Lleva a /login (y no a
+            "/", que sin sesión rebota al mismo login): útil desde Recuperar
+            y Nueva contraseña. */}
         <Link
-          to="/"
+          to="/login"
           className="relative w-fit overflow-hidden rounded-xl bg-white px-4 py-2.5 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1E3A5F]"
         >
           {/* GENLOGS.png trae ~20% de margen transparente arriba/abajo y ~10% a
@@ -78,13 +80,6 @@ export function AuthLayout() {
         </button>
 
         <div className="w-full max-w-sm">
-          <Link
-            to="/"
-            className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-          >
-            <ArrowLeft size={14} /> Volver al inicio
-          </Link>
-
           <div className="rounded-2xl border border-border/70 bg-card/80 backdrop-blur-xl p-6 shadow-xl shadow-black/10 sm:p-8">
             {/* Logo solo visible en mobile, donde el panel hero está oculto */}
             <div className="mb-6 flex flex-col items-center justify-center lg:hidden">
