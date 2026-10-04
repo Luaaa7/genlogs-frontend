@@ -28,8 +28,22 @@ export function AuthLayout() {
           <div className="absolute bottom-0 left-1/4 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
         </div>
 
-        <Link to="/" className="relative w-fit rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
-          <img src={logoGenlogs} alt="GenLogs S.A.C." width={160} height={64} className="h-16 w-auto object-contain brightness-0 invert" />
+        {/* Placa blanca: el logo conserva sus azules originales, que sobre el
+            degradado oscuro no tendrían contraste. */}
+        <Link
+          to="/"
+          className="relative w-fit overflow-hidden rounded-xl bg-white px-4 py-2.5 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1E3A5F]"
+        >
+          {/* GENLOGS.png trae ~20% de margen transparente arriba/abajo y ~10% a
+              los lados: los márgenes negativos lo recortan para que el logo
+              llene la placa en vez de verse pequeño. */}
+          <img
+            src={logoGenlogs}
+            alt="GenLogs S.A.C."
+            width={192}
+            height={80}
+            className="-mx-4 -my-4 h-20 w-auto max-w-none object-contain"
+          />
         </Link>
 
         <div className="relative space-y-4">
