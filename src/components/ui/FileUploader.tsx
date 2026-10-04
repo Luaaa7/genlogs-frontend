@@ -112,7 +112,7 @@ function ItemArchivo({
         <p
           className={cn(
             "mt-1 flex items-center gap-1 text-xs",
-            enError ? "text-destructive" : archivo.estado === "completado" ? "text-emerald-600" : "text-muted-foreground"
+            enError ? "text-destructive" : archivo.estado === "completado" ? "text-success" : "text-muted-foreground"
           )}
         >
           {enError && <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
@@ -277,7 +277,7 @@ export function FileUploader({
 
       <div aria-live="polite" className="flex flex-col gap-2">
         {aviso && (
-          <p role="status" className="text-xs text-amber-600">
+          <p role="status" className="text-xs text-warning-text">
             {aviso}
           </p>
         )}

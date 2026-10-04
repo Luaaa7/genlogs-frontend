@@ -79,7 +79,7 @@ const moneda = useWatch({ control: methods.control, name: 'moneda' });
               onClick={() =>
                 navigate(`/cotizaciones/${cotizacionCreada.id}`)
               }
-              className="flex-1 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition font-medium"
+              className="flex-1 px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition font-medium"
             >
               Ver Detalles
             </button>
@@ -157,7 +157,7 @@ const moneda = useWatch({ control: methods.control, name: 'moneda' });
                 <button
                   type="button"
                   onClick={handlePrimerPaso}
-                  className="flex-1 px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent/90 transition font-medium"
+                  className="flex-1 px-6 py-3 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition font-medium"
                 >
                   Siguiente
                 </button>
@@ -167,7 +167,7 @@ const moneda = useWatch({ control: methods.control, name: 'moneda' });
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="flex-1 inline-flex items-center justify-center px-6 py-3 bg-success text-white rounded-lg hover:bg-success/90 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
+                  className="flex-1 inline-flex items-center justify-center px-6 py-3 bg-success text-success-foreground rounded-lg hover:bg-success/90 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
                 >
                   {isPending ? (
                     <>

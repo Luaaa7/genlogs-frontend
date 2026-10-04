@@ -150,7 +150,7 @@ export function DashboardPage() {
       label: "Cotizaciones pendientes",
       value: String(cotizacionesPendientes),
       iconBgColor: "bg-warning/10",
-      iconColor: "text-warning",
+      iconColor: "text-warning-text",
     },
     {
       icon: ShoppingCart,

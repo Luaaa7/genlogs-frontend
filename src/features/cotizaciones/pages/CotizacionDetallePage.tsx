@@ -98,7 +98,7 @@ export const CotizacionDetallePage: React.FC = () => {
           </p>
           <button
             onClick={() => navigate('/cotizaciones')}
-            className="mt-4 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90"
+            className="mt-4 px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90"
           >
             Volver
           </button>
@@ -161,7 +161,7 @@ export const CotizacionDetallePage: React.FC = () => {
           </div>
           <button
             onClick={() => navigate(`/cotizaciones/${cotizacion.id}/editar`)}
-            className="inline-flex items-center px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition font-medium"
+            className="inline-flex items-center px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition font-medium"
           >
             <Edit className="w-4 h-4 mr-2" />
             Editar
@@ -213,7 +213,7 @@ export const CotizacionDetallePage: React.FC = () => {
             <div className="flex gap-2">
               <button
                 onClick={() => setShowEnvioModal(true)}
-                className="inline-flex items-center px-4 py-2 bg-success text-white rounded-lg hover:bg-success/90 transition font-medium text-sm"
+                className="inline-flex items-center px-4 py-2 bg-success text-success-foreground rounded-lg hover:bg-success/90 transition font-medium text-sm"
               >
                 <Send className="w-4 h-4 mr-2" />
                 Enviar

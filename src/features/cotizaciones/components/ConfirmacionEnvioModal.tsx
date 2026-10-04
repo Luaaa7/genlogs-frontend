@@ -158,7 +158,7 @@ export const ConfirmacionEnvioModal: React.FC<ConfirmacionEnvioModalProps> = ({
             <button
               type="submit"
               disabled={isPending}
-              className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
             >
               {isPending ? (
                 <>

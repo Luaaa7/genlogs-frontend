@@ -92,7 +92,7 @@ export function ProveedorForm({ defaultValues, onSubmit, isSubmitting, serverErr
 
       {serverError && <p role="alert" className="text-sm text-destructive">{serverError}</p>}
 
-      <button type="submit" disabled={isSubmitting} className="rounded bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+      <button type="submit" disabled={isSubmitting} className="rounded bg-accent px-4 py-2 text-sm font-medium text-accent-foreground disabled:opacity-50">
         {isSubmitting ? 'Guardando…' : 'Guardar proveedor'}
       </button>
     </form>

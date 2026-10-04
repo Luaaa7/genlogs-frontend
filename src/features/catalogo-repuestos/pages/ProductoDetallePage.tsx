@@ -81,7 +81,6 @@ export function ProductoDetallePage() {
                   type="button"
                   variant="destructive"
                   size="sm"
-                  className="text-white"
                   onClick={handleEliminar}
                   disabled={eliminar.isPending}
                 >

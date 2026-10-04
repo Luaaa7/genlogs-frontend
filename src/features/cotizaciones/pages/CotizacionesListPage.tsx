@@ -76,7 +76,7 @@ export const CotizacionesListPage: React.FC = () => {
             </div>
             <button
               onClick={() => navigate('/cotizaciones/nueva')}
-              className="inline-flex w-full sm:w-auto shrink-0 items-center justify-center whitespace-nowrap px-4 py-2.5 text-sm sm:px-6 sm:py-3 sm:text-base bg-accent text-white rounded-lg hover:bg-accent/90 transition font-semibold"
+              className="inline-flex w-full sm:w-auto shrink-0 items-center justify-center whitespace-nowrap px-4 py-2.5 text-sm sm:px-6 sm:py-3 sm:text-base bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition font-semibold"
             >
               <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Nueva Cotización
@@ -300,7 +300,7 @@ export const CotizacionesListPage: React.FC = () => {
                         onClick={() => handlePageChange(i)}
                         className={`px-3 py-1 rounded-lg transition ${
                           filtros.page === i
-                            ? 'bg-accent text-white'
+                            ? 'bg-accent text-accent-foreground'
                             : 'border border-border hover:bg-muted'
                         }`}
                       >
@@ -330,7 +330,7 @@ export const CotizacionesListPage: React.FC = () => {
             </p>
             <button
               onClick={() => navigate('/cotizaciones/nueva')}
-              className="inline-flex items-center px-6 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition font-medium"
+              className="inline-flex items-center px-6 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition font-medium"
             >
               <Plus className="w-4 h-4 mr-2" />
               Crear Primera Cotización
