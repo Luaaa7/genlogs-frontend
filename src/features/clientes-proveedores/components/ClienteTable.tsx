@@ -1,56 +1,83 @@
 import { Link } from 'react-router-dom'
-import { Users } from 'lucide-react'
+import { Search, Users } from 'lucide-react'
 import type { Cliente, FiltrosCliente } from '../../../types/cliente.types'
 import { TableSkeletonRows } from '@/components/ui/TableSkeletonRows'
-interface Props { clientes: Cliente[]; filtros: FiltrosCliente; onFiltrosChange: (f: FiltrosCliente) => void; isLoading?: boolean }
-const ctl = 'h-10 w-full sm:w-96 rounded-lg border border-border bg-card px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-export function ClienteTable({ clientes, filtros, onFiltrosChange, isLoading }: Props) {
+import { EstadoVacio } from '@/components/ui/EstadoVacio'
+import { Tabla, TablaCard, Td, Th, controlClass, filaClass } from '@/components/ui/tabla'
+import { cn } from '@/lib/utils/utils'
+
+interface Props {
+  clientes: Cliente[]
+  filtros: FiltrosCliente
+  onFiltrosChange: (f: FiltrosCliente) => void
+  isLoading?: boolean
+  /** Acción para el estado vacío sin filtros (p. ej. abrir "Nuevo cliente"). */
+  accionVacio?: React.ReactNode
+}
+
+export function ClienteTable({ clientes, filtros, onFiltrosChange, isLoading, accionVacio }: Props) {
+  const busqueda = filtros.documento ?? filtros.razonSocial ?? ''
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-4 shadow-sm">
-        <input
-          className={ctl}
-          placeholder="Buscar por DNI, RUC o razón social"
-          value={filtros.documento ?? filtros.razonSocial ?? ''}
-          onChange={(e) => onFiltrosChange({ ...filtros, documento: e.target.value, razonSocial: e.target.value })}
+    <TablaCard
+      barra={
+        <div className="relative flex w-full items-center sm:w-96">
+          <Search className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          <label className="sr-only" htmlFor="buscar-cliente">Buscar por DNI, RUC o razón social</label>
+          <input
+            id="buscar-cliente"
+            type="search"
+            className={cn(controlClass, 'w-full pl-9')}
+            placeholder="DNI, RUC o razón social"
+            value={busqueda}
+            onChange={(e) => onFiltrosChange({ ...filtros, documento: e.target.value || undefined, razonSocial: e.target.value || undefined })}
+          />
+        </div>
+      }
+    >
+      {!isLoading && clientes.length === 0 ? (
+        <EstadoVacio
+          icono={<Users className="h-5.5 w-5.5" />}
+          titulo={busqueda ? `Sin resultados para "${busqueda}"` : 'Aún no hay clientes'}
+          descripcion={busqueda ? 'Revisa el número de documento o busca por otra parte del nombre.' : 'Registra el primero con su RUC: los datos se completan desde SUNAT.'}
+          accion={busqueda ? undefined : accionVacio}
         />
-      </div>
-      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left text-sm">
-          <thead className="bg-muted text-muted-foreground">
+      ) : (
+        <Tabla titulo="Clientes">
+          <thead>
             <tr>
-              <th className="p-3 font-medium">Documento</th>
-              <th className="p-3 font-medium">Razón social</th>
-              <th className="p-3 font-medium">Dirección</th>
-              <th className="p-3 font-medium">Empresas mineras</th>
+              <Th>Cliente</Th>
+              <Th>Documento</Th>
+              <Th>Contacto</Th>
+              <Th alinear="derecha">Unidades mineras</Th>
             </tr>
           </thead>
           <tbody>
-            {isLoading && <TableSkeletonRows columns={4} />}
-            {!isLoading && clientes.length === 0 && (
-              <tr>
-                <td colSpan={4} className="p-10 text-center text-muted-foreground">
-                  <Users className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
-                  No hay clientes registrados.
-                </td>
-              </tr>
+            {isLoading ? (
+              <TableSkeletonRows columns={4} />
+            ) : (
+              clientes.map((c) => (
+                <tr key={c.idCliente ?? c.id} className={filaClass}>
+                  <Td>
+                    <Link to={`/clientes/${c.idCliente ?? c.id}`} className="rounded font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                      {c.tercero.razonSocial}
+                    </Link>
+                    {c.tercero.nombreComercial && <p className="text-xs text-muted-foreground">{c.tercero.nombreComercial}</p>}
+                  </Td>
+                  <Td className="whitespace-nowrap tabular-nums">
+                    <span className="text-muted-foreground">{c.tercero.tipoDocumento}</span> {c.tercero.numeroDocumento}
+                  </Td>
+                  <Td>
+                    <p>{c.tercero.email || c.tercero.correo || '—'}</p>
+                    {c.tercero.telefono && <p className="text-xs tabular-nums text-muted-foreground">{c.tercero.telefono}</p>}
+                  </Td>
+                  <Td alinear="derecha">{c.empresasMineras?.length ?? 0}</Td>
+                </tr>
+              ))
             )}
-            {clientes.map((c) => (
-              <tr key={c.id} className="border-t border-border hover:bg-muted/50">
-                <td className="p-3">{c.tercero.tipoDocumento} {c.tercero.numeroDocumento}</td>
-                <td className="p-3">
-                  <Link to={`/clientes/${c.id}`} className="font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded">{c.tercero.razonSocial}</Link>
-                  {c.tercero.nombreComercial && <div className="text-xs text-muted-foreground">{c.tercero.nombreComercial}</div>}
-                </td>
-                <td className="p-3">{c.tercero.direccion || '—'}</td>
-                <td className="p-3">{c.empresasMineras.length}</td>
-              </tr>
-            ))}
           </tbody>
-        </table>
-        </div>
-      </div>
-    </div>
+        </Tabla>
+      )}
+    </TablaCard>
   )
 }

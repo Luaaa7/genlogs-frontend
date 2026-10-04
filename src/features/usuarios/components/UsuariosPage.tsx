@@ -1,10 +1,14 @@
 import { useState } from "react"
-import { Users as UsersIcon } from "lucide-react"
+import { Plus, RefreshCw, Users as UsersIcon } from "lucide-react"
 import { UsuarioFormModal } from "./UsuarioFormModal"
 import { useUsuarios } from "../hooks/useUsuarios"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { TableSkeletonRows } from "@/components/ui/TableSkeletonRows"
 import { EstadoBadge } from "@/components/ui/EstadoBadge"
+import { PageHeader } from "@/components/ui/PageHeader"
+import { EstadoVacio } from "@/components/ui/EstadoVacio"
+import { Tabla, TablaCard, Td, Th, filaClass } from "@/components/ui/tabla"
+import { Button } from "@/components/ui/button"
 
 export function UsuariosPage() {
   const { usuarios, roles, loading, error, agregar, alternarBloqueo, recargar } = useUsuarios()
@@ -24,87 +28,87 @@ export function UsuariosPage() {
     }
   }
 
+  const nuevo = (
+    <Button onClick={() => setMostrarFormulario(true)}>
+      <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+      Nuevo usuario
+    </Button>
+  )
+
   return (
-    <section className="space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Usuarios</h1>
-          <p className="text-sm text-muted-foreground">
-            Registra usuarios, asigna roles y administra el bloqueo de acceso.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => void recargar()}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            Actualizar
-          </button>
-          <button
-            type="button"
-            onClick={() => setMostrarFormulario(true)}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            Nuevo usuario
-          </button>
-        </div>
-      </header>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        titulo="Usuarios"
+        descripcion={<><span className="tabular-nums">{usuarios.length}</span> usuarios con acceso al sistema</>}
+        acciones={
+          <>
+            <Button variant="outline" onClick={() => void recargar()}>
+              <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />
+              Actualizar
+            </Button>
+            {nuevo}
+          </>
+        }
+      />
 
       {(error || accionError) && (
-        <ErrorBanner message={error || accionError || ""} onRetry={() => void recargar()} />
+        <ErrorBanner message={error || accionError || ""} onRetry={error ? () => void recargar() : undefined} />
       )}
 
-      <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left text-sm">
-          <thead className="bg-muted">
-            <tr>
-              <th className="p-3 font-medium text-muted-foreground">Usuario</th>
-              <th className="p-3 font-medium text-muted-foreground">Nombres</th>
-              <th className="p-3 font-medium text-muted-foreground">Correo</th>
-              <th className="p-3 font-medium text-muted-foreground">Rol</th>
-              <th className="p-3 font-medium text-muted-foreground">Estado</th>
-              <th className="p-3 text-right font-medium text-muted-foreground">Acción</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && <TableSkeletonRows columns={6} />}
-            {!loading && !error && usuarios.length === 0 && (
+      <TablaCard>
+        {!loading && !error && usuarios.length === 0 ? (
+          <EstadoVacio
+            icono={<UsersIcon className="h-5.5 w-5.5" />}
+            titulo="Aún no hay usuarios"
+            descripcion="Crea el primero y asígnale un rol."
+            accion={nuevo}
+          />
+        ) : (
+          <Tabla titulo="Usuarios">
+            <thead>
               <tr>
-                <td colSpan={6} className="p-10 text-center text-muted-foreground">
-                  <UsersIcon className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
-                  No hay usuarios registrados. Usa "Nuevo usuario" para crear el primero.
-                </td>
+                <Th>Usuario</Th>
+                <Th>Correo</Th>
+                <Th>Rol</Th>
+                <Th>Estado</Th>
+                <Th><span className="sr-only">Acciones</span></Th>
               </tr>
-            )}
-            {!loading && usuarios.map((usuario) => (
-              <tr key={usuario.idUsuario} className="border-t border-border hover:bg-muted/50">
-                <td className="p-3 font-medium text-foreground">{usuario.nombreUsuario}</td>
-                <td className="p-3">{usuario.nombres}</td>
-                <td className="p-3">{usuario.correo}</td>
-                <td className="p-3">{usuario.nombreRol}</td>
-                <td className="p-3">
-                  <EstadoBadge tono={usuario.bloqueado ? "destructive" : "success"}>
-                    {usuario.bloqueado ? "Bloqueado" : "Activo"}
-                  </EstadoBadge>
-                </td>
-                <td className="p-3 text-right">
-                  <button
-                    type="button"
-                    disabled={operandoId === usuario.idUsuario}
-                    onClick={() => void cambiarBloqueo(usuario.idUsuario, usuario.bloqueado)}
-                    className="text-sm font-medium text-accent hover:underline disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-                  >
-                    {operandoId === usuario.idUsuario ? "Guardando…" : usuario.bloqueado ? "Desbloquear" : "Bloquear"}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        </div>
-      </div>
+            </thead>
+            <tbody>
+              {loading ? (
+                <TableSkeletonRows columns={5} />
+              ) : (
+                usuarios.map((usuario) => (
+                  <tr key={usuario.idUsuario} className={filaClass}>
+                    <Td>
+                      <p className="font-medium text-foreground">{usuario.nombres}</p>
+                      <p className="text-xs text-muted-foreground">{usuario.nombreUsuario}</p>
+                    </Td>
+                    <Td>{usuario.correo}</Td>
+                    <Td className="capitalize">{usuario.nombreRol?.toLowerCase()}</Td>
+                    <Td>
+                      <EstadoBadge tono={usuario.bloqueado ? "destructive" : "success"}>
+                        {usuario.bloqueado ? "Bloqueado" : "Activo"}
+                      </EstadoBadge>
+                    </Td>
+                    <Td className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={operandoId === usuario.idUsuario}
+                        onClick={() => void cambiarBloqueo(usuario.idUsuario, usuario.bloqueado)}
+                        aria-label={`${usuario.bloqueado ? "Desbloquear" : "Bloquear"} a ${usuario.nombres}`}
+                      >
+                        {operandoId === usuario.idUsuario ? "Guardando…" : usuario.bloqueado ? "Desbloquear" : "Bloquear"}
+                      </Button>
+                    </Td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </Tabla>
+        )}
+      </TablaCard>
 
       {mostrarFormulario && (
         <UsuarioFormModal
@@ -116,6 +120,6 @@ export function UsuariosPage() {
           }}
         />
       )}
-    </section>
+    </div>
   )
 }
