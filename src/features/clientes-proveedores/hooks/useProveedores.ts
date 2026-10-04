@@ -7,7 +7,9 @@ import { clientesKeys } from './useClientes';
 export const proveedoresKeys = { all: ['proveedores'] as const };
 
 export const useProveedores = () =>
-  useQuery({ queryKey: proveedoresKeys.all, queryFn: proveedoresApi.listar, initialData: [] });
+  // initialDataUpdatedAt: 0 → la lista vacía inicial cuenta como antigua y se
+  // consulta al servidor al montar (con el staleTime global no lo hacía).
+  useQuery({ queryKey: proveedoresKeys.all, queryFn: proveedoresApi.listar, initialData: [], initialDataUpdatedAt: 0 });
 
 export const useCrearProveedor = () => {
   const qc = useQueryClient();

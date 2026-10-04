@@ -11,6 +11,10 @@ export function useEmpresasMineras(filtros: EmpresaMineraFiltros = {}) {
   return useQuery({ queryKey: empresasMinerasKeys.lista(filtros), queryFn: () => empresasMinerasApi.listar(filtros) })
 }
 
+export function useMinerales() {
+  return useQuery({ queryKey: ['minerales'], queryFn: () => empresasMinerasApi.listarMinerales(), staleTime: 10 * 60_000 })
+}
+
 export function useCrearEmpresaMinera() {
   const queryClient = useQueryClient()
   return useMutation({

@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import * as productosApi from "@/api/productosApi"
-import type { ProductoFiltros } from "@/types/producto.types"
+import type { Producto, ProductoFiltros } from "@/types/producto.types"
 import type { PageResponse } from "@/types/common.types"
 
 export const productosKeys = {
@@ -9,7 +9,7 @@ export const productosKeys = {
   detalle: (id: number) => ["productos", "detalle", id] as const,
 }
 
-const emptyPageResponse: PageResponse<any> = {
+const emptyPageResponse: PageResponse<Producto> = {
   content: [],
   totalElements: 0,
   totalPages: 0,
@@ -24,8 +24,11 @@ export function useProductos(filtros: ProductoFiltros) {
     queryFn: () => productosApi.listarProductos(filtros),
     placeholderData: keepPreviousData,
     staleTime: 30_000,
-    // FIX: initialData para evitar undefined
+    // initialData evita `undefined`; initialDataUpdatedAt: 0 lo marca como
+    // antiguo para que igual se pidan los datos al montar (si no, con staleTime
+    // React Query daba por "fresca" la lista vacía y no consultaba al servidor).
     initialData: emptyPageResponse,
+    initialDataUpdatedAt: 0,
   })
 }
 

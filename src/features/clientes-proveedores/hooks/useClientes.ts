@@ -13,7 +13,10 @@ export const useClientes = (filtros: FiltrosCliente) =>
     queryKey: clientesKeys.lista(filtros),
     queryFn: () => clientesApi.listar(filtros),
     placeholderData: keepPreviousData,
+    // initialDataUpdatedAt: 0 → la lista vacía inicial cuenta como antigua y se
+    // consulta al servidor al montar (con el staleTime global no lo hacía).
     initialData: [],
+    initialDataUpdatedAt: 0,
   });
 
 export const useCliente = (id: number) =>
