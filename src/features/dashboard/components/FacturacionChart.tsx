@@ -21,8 +21,8 @@ interface FacturacionChartProps {
 }
 
 const COLORES = {
-  facturado: "#3b82f6",
-  comparativa: "#94a3b8",
+  facturado: "var(--chart-1)",
+  comparativa: "var(--muted-foreground)",
 }
 
 function formatearMesCorto(mes: string): string {
@@ -95,13 +95,13 @@ export function FacturacionChart({ data, tipo = "barras", className }: Facturaci
             <XAxis
               dataKey="mes"
               className="text-xs"
-              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+              tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
               className="text-xs"
-              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+              tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
               axisLine={false}
               tickLine={false}
               tickFormatter={(value) => formatCurrency(value).replace("PEN", "").trim()}

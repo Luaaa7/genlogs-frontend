@@ -15,16 +15,18 @@ interface CotizacionesPorEstadoChartProps {
   className?: string
 }
 
+// Colores del sistema (src/index.css), no hex sueltos: así el gráfico sigue
+// la paleta y el tema claro/oscuro. Mismo significado que los chips de estado.
 const ESTADO_COLORES: Record<string, string> = {
-  APROBADA: "#22c55e",
-  PENDIENTE: "#f59e0b",
-  RECHAZADA: "#ef4444",
-  BORRADOR: "#9ca3af",
-  ENVIADA: "#3b82f6",
-  EN_NEGOCIACION: "#f97316",
-  ACEPTADA: "#22c55e",
-  CONVERTIDA_OC: "#8b5cf6",
-  VENCIDA: "#fb923c",
+  APROBADA: "var(--chart-2)",
+  PENDIENTE: "var(--chart-3)",
+  RECHAZADA: "var(--chart-4)",
+  BORRADOR: "var(--muted-foreground)",
+  ENVIADA: "var(--info)",
+  EN_NEGOCIACION: "var(--chart-5)",
+  ACEPTADA: "var(--chart-2)",
+  CONVERTIDA_OC: "var(--chart-1)",
+  VENCIDA: "var(--warning-text)",
 }
 
 const ESTADO_ETIQUETAS: Record<string, string> = {
@@ -98,7 +100,7 @@ export function CotizacionesPorEstadoChart({ data, className }: CotizacionesPorE
   const chartData = safeData.map((item) => ({
     ...item,
     label: ESTADO_ETIQUETAS[item.estado] ?? item.estado,
-    color: ESTADO_COLORES[item.estado] ?? "#6366f1",
+    color: ESTADO_COLORES[item.estado] ?? "var(--chart-1)",
   }))
 
   return (
@@ -114,7 +116,6 @@ export function CotizacionesPorEstadoChart({ data, className }: CotizacionesPorE
               cy="50%"
               innerRadius={60}
               outerRadius={100}
-              fill="#8884d8"
               paddingAngle={2}
               dataKey="cantidad"
               nameKey="estado"
