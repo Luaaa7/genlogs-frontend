@@ -27,6 +27,17 @@
     --color-sidebar-muted: var(--sidebar-muted);
     --color-sidebar: var(--sidebar);
     --color-chart-5: var(--chart-5);
+    --color-viz-1: var(--viz-1);
+    --color-viz-2: var(--viz-2);
+    --color-viz-3: var(--viz-3);
+    --color-viz-3-text: var(--viz-3-text);
+    --color-heat-0: var(--heat-0);
+    --color-heat-1: var(--heat-1);
+    --color-heat-2: var(--heat-2);
+    --color-heat-3: var(--heat-3);
+    --color-heat-4: var(--heat-4);
+    --color-brand-navy: var(--brand-navy);
+    --color-brand-blue: var(--brand-blue);
     --color-chart-4: var(--chart-4);
     --color-chart-3: var(--chart-3);
     --color-chart-2: var(--chart-2);
@@ -96,6 +107,20 @@
     --chart-3: #EAB308;
     --chart-4: #DC2626;
     --chart-5: #D97706;
+    /* Visualización del dashboard: azul marino / celeste / naranja (pares que
+       se distinguen también con daltonismo) y escala del mapa de calor. */
+    --viz-1: #1E3A5F;
+    --viz-2: #60A5FA;
+    --viz-3: #D97706;
+    --viz-3-text: #B45309;
+    --heat-0: #F3F4F6;
+    --heat-1: #D6E4F3;
+    --heat-2: #9DBEE0;
+    --heat-3: #2E6BA8;
+    --heat-4: #1E3A5F;
+    /* Colores fijos de marca para las tarjetas a color (iguales en ambos temas) */
+    --brand-navy: #1E3A5F;
+    --brand-blue: #2E6BA8;
     --radius: 0.625rem;
     /* Sidebar: siempre oscuro (azul marino de marca), independiente del tema
        del contenido. accent = hover; primary = ítem activo; muted = títulos
@@ -145,6 +170,17 @@
     --chart-3: #EAB308;
     --chart-4: #DC2626;
     --chart-5: #D97706;
+    --viz-1: #93C5FD;
+    --viz-2: #2E6BA8;
+    --viz-3: #F59E0B;
+    --viz-3-text: #F59E0B;
+    --heat-0: #1F2937;
+    --heat-1: #1E3A5F;
+    --heat-2: #2E5C8F;
+    --heat-3: #3B82F6;
+    --heat-4: #93C5FD;
+    --brand-navy: #1E3A5F;
+    --brand-blue: #2E6BA8;
     --sidebar: #0B1220;
     --sidebar-foreground: #DCE6F2;
     --sidebar-muted: #94A3B8;
