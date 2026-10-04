@@ -1,5 +1,5 @@
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
-import { ArrowLeft } from "lucide-react"
+import { useLocation, useNavigate, useParams } from "react-router-dom"
+import { PageHeader } from "@/components/ui/PageHeader"
 import { mensajeErrorApi } from "@/api/productosApi"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -46,17 +46,8 @@ export function EditarProductoPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6 p-6">
-      <div className="flex flex-col gap-2">
-        <Link
-          to={`/catalogo-repuestos/${idProducto}`}
-          className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Volver al producto
-        </Link>
-        <h1 className="text-2xl font-semibold text-foreground">Editar producto</h1>
-      </div>
+    <div className="flex max-w-4xl flex-col gap-6">
+      <PageHeader titulo="Editar producto" descripcion="Actualiza los datos, la ficha técnica y los archivos del repuesto." />
 
       {aviso && (
         <p role="status" className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-warning-text">

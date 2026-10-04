@@ -168,7 +168,7 @@ export function ProductoForm({
       className="flex flex-col gap-8"
     >
       {/* Datos base */}
-      <section aria-labelledby={idDe("datos")} className="flex flex-col gap-4">
+      <section aria-labelledby={idDe("datos")} className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 sm:p-6">
         <h2 id={idDe("datos")} className="text-base font-semibold">
           Datos del producto
         </h2>
@@ -290,7 +290,7 @@ export function ProductoForm({
       </section>
 
       {/* Ficha técnica dinámica */}
-      <section aria-labelledby={idDe("ficha")} className="flex flex-col gap-3">
+      <section aria-labelledby={idDe("ficha")} className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 id={idDe("ficha")} className="text-base font-semibold">
             Ficha técnica
@@ -316,7 +316,7 @@ export function ProductoForm({
                 type="button"
                 disabled={yaAgregada}
                 onClick={() => agregarSugerida(nombre)}
-                className="rounded-full border border-border px-3 py-1 text-xs hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-full border border-border px-3 py-1 text-xs hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {nombre}
               </button>
@@ -409,7 +409,7 @@ export function ProductoForm({
       </section>
 
       {/* Imágenes */}
-      <section aria-labelledby={idDe("imagenes")} className="flex flex-col gap-3">
+      <section aria-labelledby={idDe("imagenes")} className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 sm:p-6">
         <h2 id={idDe("imagenes")} className="text-base font-semibold">
           Imágenes
         </h2>
@@ -468,7 +468,7 @@ export function ProductoForm({
       </section>
 
       {/* Documentos */}
-      <section aria-labelledby={idDe("documentos")} className="flex flex-col gap-3">
+      <section aria-labelledby={idDe("documentos")} className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 sm:p-6">
         <h2 id={idDe("documentos")} className="text-base font-semibold">
           Documentos
         </h2>
@@ -480,7 +480,7 @@ export function ProductoForm({
               {documentosExistentes.map((doc) => (
                 <li key={doc.idDocumento} className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                  <a href={doc.urlDocumento} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                  <a href={doc.urlDocumento} target="_blank" rel="noreferrer" className="text-accent hover:underline">
                     {doc.nombreDocumento}
                   </a>
                   <span className="text-xs text-muted-foreground">
@@ -532,7 +532,7 @@ export function ProductoForm({
 
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" disabled={submitting || subiendo}>
-          {(submitting || subiendo) && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+          {(submitting || subiendo) && <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
           {submitting ? "Guardando…" : subiendo ? "Subiendo archivos…" : submitLabel}
         </Button>
         {onCancel && (

@@ -1,5 +1,5 @@
-import { Link, useNavigate } from "react-router-dom"
-import { ArrowLeft } from "lucide-react"
+import { useNavigate } from "react-router-dom"
+import { PageHeader } from "@/components/ui/PageHeader"
 import { mensajeErrorApi } from "@/api/productosApi"
 import { useCrearProducto } from "@/hooks/useCrearProducto"
 import { productoFormToRequest } from "@/lib/validators/producto.schema"
@@ -35,17 +35,8 @@ export function NuevoProductoPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6 p-6">
-      <div className="flex flex-col gap-2">
-        <Link
-          to="/catalogo-repuestos"
-          className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Volver al catálogo
-        </Link>
-        <h1 className="text-2xl font-semibold text-foreground">Nuevo producto</h1>
-      </div>
+    <div className="flex max-w-4xl flex-col gap-6">
+      <PageHeader titulo="Nuevo producto" descripcion="Datos, ficha técnica, imágenes y documentos del repuesto." />
 
       <ProductoForm
         onSubmit={handleSubmit}

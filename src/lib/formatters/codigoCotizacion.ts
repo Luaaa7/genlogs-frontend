@@ -162,7 +162,9 @@ export function colorEstadoCotizacion(estado: string): string {
 export function mapearCondicionPago(condicion: string): string {
   const condicionesMap: Record<string, string> = {
     CONTADO: 'Contado',
+    CREDITO_15: 'Crédito 15 días',
     CREDITO_30: 'Crédito 30 días',
+    CREDITO_45: 'Crédito 45 días',
     CREDITO_60: 'Crédito 60 días',
   };
   return condicionesMap[condicion] || condicion;

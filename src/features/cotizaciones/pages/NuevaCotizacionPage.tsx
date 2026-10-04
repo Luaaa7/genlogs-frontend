@@ -1,28 +1,32 @@
 // src/features/cotizaciones/pages/NuevaCotizacionPage.tsx
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useForm, useWatch, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { crearCotizacionSchema, type CrearCotizacionFormData } from '@/lib/validators/cotizacion.schema';
 import { useCrearCotizacion } from '../hooks/useCrearCotizacion';
 import { CotizacionForm } from '../components/CotizacionForm';
 import { CotizacionDetalleForm } from '../components/CotizacionDetalleForm';
-import { ArrowLeft, Save, Loader2, CheckCircle } from 'lucide-react';
 import { useClientes } from '@/features/clientes-proveedores/hooks/useClientes';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { ErrorBanner } from '@/components/ui/ErrorBanner';
+import { Button } from '@/components/ui/button';
+import { calcularSubtotal, formatearMoneda, mapearCondicionPago } from '@/lib/formatters/codigoCotizacion';
+import type { CreateCotizacionRequest } from '@/types/cotizacion.types';
+import { Loader2 } from 'lucide-react';
 
+const IGV = 0.18;
 
-
+/** Nueva cotización en una sola pantalla: datos generales e ítems a la
+ *  izquierda; resumen con el total y la acción de crear, fijo a la derecha. */
 export const NuevaCotizacionPage: React.FC = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState<'info' | 'detalles' | 'success'>('info');
-  
-  // FIX: Usar hook real en lugar de mock
   const { data: clientes = [], isLoading: cargandoClientes } = useClientes({});
 
   const methods = useForm<CrearCotizacionFormData>({
     resolver: zodResolver(crearCotizacionSchema),
-    mode: 'onChange',
+    mode: 'onTouched',
     defaultValues: {
       clienteId: undefined as number | undefined,
       condicionPago: undefined,
@@ -32,169 +36,70 @@ export const NuevaCotizacionPage: React.FC = () => {
     },
   });
 
-  const { mutate: crearCotizacion, isPending, isSuccess, data: cotizacionCreada } =
-    useCrearCotizacion();
+  const { mutate: crearCotizacion, isPending, isError, error } = useCrearCotizacion();
 
-const moneda = useWatch({ control: methods.control, name: 'moneda' });
-
-  const handlePrimerPaso = async () => {
-    const isValid = await methods.trigger(['clienteId', 'condicionPago', 'moneda'] as const);
-    if (isValid) {
-      setStep('detalles');
-    }
-  };
+  const [clienteId, moneda, condicionPago, detalles] = useWatch({
+    control: methods.control,
+    name: ['clienteId', 'moneda', 'condicionPago', 'detalles'],
+  });
+  const monedaActual = moneda || 'PEN';
+  const subtotal = (detalles ?? []).reduce((s, d) => s + calcularSubtotal(d?.cantidad || 0, d?.precioUnitario || 0), 0);
+  const igv = subtotal * IGV;
+  const cliente = clientes.find((c) => (c.idCliente ?? c.id) === clienteId);
 
   const onSubmit = (data: CrearCotizacionFormData) => {
-    crearCotizacion(data);
+    crearCotizacion(data as unknown as CreateCotizacionRequest, {
+      onSuccess: (creada) => navigate(`/cotizaciones/${creada.idCotizacion ?? creada.id}`),
+    });
   };
 
-  if (step === 'success' && isSuccess && cotizacionCreada) {
-    return (
-      <div className="min-h-screen bg-muted py-8 px-4 flex items-center justify-center">
-        <div className="bg-card rounded-lg shadow-xl p-8 text-center max-w-md">
-          <div className="flex justify-center mb-4">
-            <div className="bg-success/10 p-4 rounded-full">
-              <CheckCircle className="w-12 h-12 text-success" />
-            </div>
-          </div>
-          <h2 className="text-2xl font-bold text-foreground mb-2">
-            ¡Cotización Creada!
-          </h2>
-          <p className="text-muted-foreground mb-2">
-            La cotización <span className="font-semibold">{cotizacionCreada.codigo}</span> ha sido
-            creada exitosamente
-          </p>
-          <p className="text-sm text-muted-foreground mb-6">
-            Total: {cotizacionCreada.moneda} {cotizacionCreada.total.toFixed(2)}
-          </p>
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => navigate('/cotizaciones')}
-              className="flex-1 px-4 py-2 border border-border text-foreground rounded-lg hover:bg-muted transition font-medium"
-            >
-              Ver Todas
-            </button>
-            <button
-              onClick={() =>
-                navigate(`/cotizaciones/${cotizacionCreada.id}`)
-              }
-              className="flex-1 px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition font-medium"
-            >
-              Ver Detalles
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-muted py-8 px-4">
-      <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 flex items-center gap-4">
-          <button
-            onClick={() => navigate('/cotizaciones')}
-            className="p-2 hover:bg-muted rounded-lg transition"
-          >
-            <ArrowLeft className="w-5 h-5 text-foreground" />
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Nueva Cotización
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {step === 'info'
-                ? 'Paso 1: Información General'
-                : 'Paso 2: Detalles de Productos y Servicios'}
-            </p>
+    <div className="flex flex-col gap-6">
+      <PageHeader titulo="Nueva cotización" descripcion="Completa los datos generales y agrega los ítems; se crea como borrador." />
+
+      <FormProvider<CrearCotizacionFormData> {...methods}>
+        <form onSubmit={methods.handleSubmit(onSubmit)} noValidate className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="flex min-w-0 flex-col gap-4">
+            <CotizacionForm clientes={clientes} isLoadingClientes={cargandoClientes} />
+            <CotizacionDetalleForm moneda={monedaActual} />
           </div>
-        </div>
 
-        {/* Progress Bar */}
-        <div className="mb-8 flex gap-4">
-          <div
-            className={`flex-1 h-2 rounded-full transition ${
-              step === 'info' || step === 'detalles'
-                ? 'bg-accent'
-                : 'bg-success'
-            }`}
-          />
-          <div
-            className={`flex-1 h-2 rounded-full transition ${
-              step === 'detalles' || step === 'success'
-                ? 'bg-accent'
-                : 'bg-muted'
-            }`}
-          />
-        </div>
+          {/* Resumen fijo: total y acción principal siempre a la vista */}
+          <aside aria-labelledby="resumen-t" className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 lg:sticky lg:top-24">
+            <h2 id="resumen-t" className="text-base font-semibold">Resumen</h2>
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+              <dt className="text-muted-foreground">Cliente</dt>
+              <dd className="text-right">{cliente?.tercero.razonSocial ?? '—'}</dd>
+              <dt className="text-muted-foreground">Pago</dt>
+              <dd className="text-right">{condicionPago ? mapearCondicionPago(condicionPago) : '—'}</dd>
+              <dt className="text-muted-foreground">Ítems</dt>
+              <dd className="text-right tabular-nums">{detalles?.length ?? 0}</dd>
+            </dl>
+            <dl className="grid grid-cols-[1fr_auto] gap-y-2 border-t border-border pt-4 text-sm">
+              <dt className="text-muted-foreground">Subtotal</dt>
+              <dd className="text-right tabular-nums">{formatearMoneda(subtotal, monedaActual)}</dd>
+              <dt className="text-muted-foreground">IGV (18%)</dt>
+              <dd className="text-right tabular-nums">{formatearMoneda(igv, monedaActual)}</dd>
+              <dt className="text-base font-semibold">Total</dt>
+              <dd className="text-right text-base font-semibold tabular-nums">{formatearMoneda(subtotal + igv, monedaActual)}</dd>
+            </dl>
 
-        {/* Form */}
-        <FormProvider<CrearCotizacionFormData> {...methods}>
-          <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
-            {step === 'info' && (
-             <CotizacionForm clientes={clientes} isLoadingClientes={cargandoClientes} />
+            {isError && (
+              <ErrorBanner message={error?.response?.data?.message ?? 'No se pudo crear la cotización. Revisa los datos e inténtalo de nuevo.'} />
             )}
 
-            {step === 'detalles' && (
-              <CotizacionDetalleForm moneda={moneda || 'PEN'} />
-            )}
-
-            {/* Navigation Buttons */}
-            <div className="flex gap-4 pt-6">
-              {step === 'detalles' && (
-                <button
-                  type="button"
-                  onClick={() => setStep('info')}
-                  className="px-6 py-3 border border-border text-foreground rounded-lg hover:bg-muted transition font-medium"
-                >
-                  Atrás
-                </button>
-              )}
-
-              {step === 'info' && (
-                <button
-                  type="button"
-                  onClick={handlePrimerPaso}
-                  className="flex-1 px-6 py-3 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition font-medium"
-                >
-                  Siguiente
-                </button>
-              )}
-
-              {step === 'detalles' && (
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="flex-1 inline-flex items-center justify-center px-6 py-3 bg-success text-success-foreground rounded-lg hover:bg-success/90 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
-                >
-                  {isPending ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Creando...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-5 h-5 mr-2" />
-                      Crear Cotización
-                    </>
-                  )}
-                </button>
-              )}
+            <div className="flex flex-col gap-2">
+              <Button type="submit" disabled={isPending} className="w-full">
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
+                {isPending ? 'Creando…' : 'Crear cotización'}
+              </Button>
+              <Button variant="ghost" asChild className="w-full">
+                <Link to="/cotizaciones">Cancelar</Link>
+              </Button>
             </div>
-          </form>
-        </FormProvider>
-
-        {/* Info Box */}
-        <div className="mt-8 p-4 bg-accent/10 border border-accent/30 rounded-lg">
-          <p className="text-sm text-accent">
-            <span className="font-semibold">💡 Consejo:</span> Puedes guardar
-            como borrador y continuar más tarde. Los datos se guardarán
-            automáticamente en el navegador.
-          </p>
-        </div>
-      </div>
+          </aside>
+        </form>
+      </FormProvider>
     </div>
   );
 };
