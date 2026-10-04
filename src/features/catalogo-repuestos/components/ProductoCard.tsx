@@ -1,6 +1,7 @@
 import { ImageOff } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Skeleton } from "@/components/ui/skeleton"
+import { EstadoBadge } from "@/components/ui/EstadoBadge"
 import { cn } from "@/lib/utils/utils"
 import type { Producto } from "@/types/producto.types"
 
@@ -36,7 +37,8 @@ export function ProductoCard({ producto }: { producto: Producto }) {
         {(inactivo || !producto.visibleWeb) && (
           <div className="absolute left-2 top-2 flex flex-col items-start gap-1">
             {inactivo && (
-              <span className="rounded-full bg-destructive px-2 py-0.5 text-xs text-white">Inactivo</span>
+              // Va sobre la foto del producto: fondo sólido, no el tinte /10
+              <EstadoBadge tono="destructive" className="bg-destructive text-destructive-foreground">Inactivo</EstadoBadge>
             )}
             {!producto.visibleWeb && (
               <span className="rounded-full bg-background/90 px-2 py-0.5 text-xs text-foreground shadow-sm">

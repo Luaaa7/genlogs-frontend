@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react"
 import { AlertTriangle } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 interface ConfirmDialogProps {
   open: boolean
@@ -51,14 +52,20 @@ export function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onCancel} aria-hidden="true" />
+      <div
+        className="absolute inset-0 bg-black/40 animate-in fade-in-0 duration-200 motion-reduce:animate-none"
+        onClick={onCancel}
+        aria-hidden="true"
+      />
 
+      {/* Entrada: opacidad + scale(0.95→1) centrada (los modales no salen de
+          un disparador), 200ms ease-out; sin movimiento con reduced-motion. */}
       <div
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-description"
-        className="relative w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-xl"
+        className="relative w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-xl animate-in fade-in-0 zoom-in-95 duration-200 ease-out motion-reduce:animate-none"
       >
         <div className="flex items-start gap-3">
           <div
@@ -81,27 +88,17 @@ export function ConfirmDialog({
         </div>
 
         <div className="mt-6 flex justify-end gap-2">
-          <button
-            ref={cancelRef}
-            type="button"
-            onClick={onCancel}
-            disabled={isLoading}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
-          >
+          <Button ref={cancelRef} type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
             {cancelLabel}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant={variant === "destructive" ? "destructive" : "default"}
             onClick={onConfirm}
             disabled={isLoading}
-            className={
-              variant === "destructive"
-                ? "rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-white hover:bg-destructive/90 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
-                : "rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
-            }
           >
             {isLoading ? "Procesando…" : confirmLabel}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

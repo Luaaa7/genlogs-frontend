@@ -4,6 +4,7 @@ import { UsuarioFormModal } from "./UsuarioFormModal"
 import { useUsuarios } from "../hooks/useUsuarios"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { TableSkeletonRows } from "@/components/ui/TableSkeletonRows"
+import { EstadoBadge } from "@/components/ui/EstadoBadge"
 
 export function UsuariosPage() {
   const { usuarios, roles, loading, error, agregar, alternarBloqueo, recargar } = useUsuarios()
@@ -43,7 +44,7 @@ export function UsuariosPage() {
           <button
             type="button"
             onClick={() => setMostrarFormulario(true)}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Nuevo usuario
           </button>
@@ -84,9 +85,9 @@ export function UsuariosPage() {
                 <td className="p-3">{usuario.correo}</td>
                 <td className="p-3">{usuario.nombreRol}</td>
                 <td className="p-3">
-                  <span className={`rounded-full px-2 py-1 text-xs font-medium ${usuario.bloqueado ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success"}`}>
+                  <EstadoBadge tono={usuario.bloqueado ? "destructive" : "success"}>
                     {usuario.bloqueado ? "Bloqueado" : "Activo"}
-                  </span>
+                  </EstadoBadge>
                 </td>
                 <td className="p-3 text-right">
                   <button

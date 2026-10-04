@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom"
 import { cn } from "@/lib/utils/utils"
+import { Button } from "@/components/ui/button"
 
 interface EmptyStateCardProps {
   icon: React.ReactNode
@@ -34,21 +35,9 @@ export function EmptyStateCard({
       <p className="mt-1.5 text-sm text-muted-foreground max-w-xs mx-auto">{description}</p>
       {action && (
         <div className="mt-6">
-          {action.variant === "outline" ? (
-            <Link
-              to={action.href}
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {action.label}
-            </Link>
-          ) : (
-            <Link
-              to={action.href}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {action.label}
-            </Link>
-          )}
+          <Button asChild variant={action.variant === "outline" ? "outline" : "default"}>
+            <Link to={action.href}>{action.label}</Link>
+          </Button>
         </div>
       )}
     </div>

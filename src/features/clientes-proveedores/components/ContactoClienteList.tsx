@@ -5,6 +5,7 @@ import { contactoSchema, type ContactoFormValues } from '../../../lib/validators
 import type { ContactoCliente } from '../../../types/proveedor.types';
 import { useAgregarContacto, useEliminarContacto } from '../hooks/useProveedores';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { EstadoBadge } from '@/components/ui/EstadoBadge';
 
 const input = 'rounded border border-border p-2 text-sm';
 
@@ -29,7 +30,7 @@ export function ContactoClienteList({ clienteId, contactos }: { clienteId: numbe
           <li key={c.id ?? c.idContacto} className="flex items-center justify-between gap-3 p-3 text-sm">
             <div>
               <div className="font-medium">
-                {c.nombre ?? c.nombres} {(c.principal ?? c.esPrincipal) && <span className="ml-1 rounded bg-accent/10 px-1.5 py-0.5 text-xs text-accent">Principal</span>}
+                {c.nombre ?? c.nombres} {(c.principal ?? c.esPrincipal) && <EstadoBadge tono="accent" className="ml-1">Principal</EstadoBadge>}
               </div>
               <div className="text-muted-foreground">{c.cargo} · {c.telefono} · {c.email ?? c.correo}</div>
             </div>

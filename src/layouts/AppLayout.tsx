@@ -72,6 +72,12 @@ function topNavLinkClass(isActive: boolean) {
   }`;
 }
 
+/** Entrada de los menús desplegables: salen de su botón (esquina superior
+ *  derecha), opacidad + scale(0.95→1) en 150ms ease-out. Sin movimiento con
+ *  prefers-reduced-motion. */
+const MENU_ENTRADA =
+  'origin-top-right animate-in fade-in-0 zoom-in-95 duration-150 ease-out motion-reduce:animate-none';
+
 function inicialesDe(nombre: string | null) {
   if (!nombre) return '?';
   const partes = nombre.trim().split(/\s+/);
@@ -181,7 +187,7 @@ export function AppLayout() {
               alt="GenLogs"
               width={192}
               height={80}
-              className="h-9 w-auto max-w-[9rem] object-contain shrink-0"
+              className="h-9 w-auto max-w-[9rem] object-contain shrink-0 dark:brightness-0 dark:invert"
             />
             <span className="hidden text-lg font-semibold tracking-tight text-foreground truncate sm:inline">
               ERP
@@ -217,7 +223,7 @@ export function AppLayout() {
                 {isCatalogoOpen && (
                   <div
                     role="menu"
-                    className="absolute right-0 mt-2 w-48 rounded-xl border border-border/60 bg-card/90 backdrop-blur-xl py-1.5 shadow-lg shadow-black/5 z-50"
+                    className={`absolute right-0 mt-2 w-48 rounded-xl border border-border/60 bg-card/90 backdrop-blur-xl py-1.5 shadow-lg shadow-black/5 z-50 ${MENU_ENTRADA}`}
                   >
                     {catalogoSubItems.map((subItem) => (
                       <Link
@@ -282,7 +288,7 @@ export function AppLayout() {
               {isUserMenuOpen && (
                 <div
                   role="menu"
-                  className="absolute right-0 mt-2 w-56 rounded-xl border border-border/60 bg-card/90 backdrop-blur-xl py-1 shadow-lg shadow-black/5 z-50"
+                  className={`absolute right-0 mt-2 w-56 rounded-xl border border-border/60 bg-card/90 backdrop-blur-xl py-1 shadow-lg shadow-black/5 z-50 ${MENU_ENTRADA}`}
                 >
                   <div className="border-b border-border px-3 py-2.5">
                     <p className="text-sm font-medium text-foreground truncate">{nombreUsuario ?? 'Usuario'}</p>

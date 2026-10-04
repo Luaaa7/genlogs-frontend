@@ -2,6 +2,7 @@ import { useMemo, useState } from "react"
 import type { ReactNode } from "react"
 import { FileText, ImageOff } from "lucide-react"
 import { cn } from "@/lib/utils/utils"
+import { EstadoBadge } from "@/components/ui/EstadoBadge"
 import { ETIQUETA_TIPO_DOCUMENTO } from "@/types/producto.types"
 import type { CaracteristicaProducto, Producto } from "@/types/producto.types"
 
@@ -128,7 +129,7 @@ export function ProductoDetalle({ producto, acciones }: ProductoDetalleProps) {
               </span>
             )}
             {producto.status === "I" && (
-              <span className="rounded-full bg-destructive/10 px-3 py-1 text-destructive">Inactivo</span>
+              <EstadoBadge tono="destructive" className="px-3 py-1 text-sm">Inactivo</EstadoBadge>
             )}
           </div>
         </header>

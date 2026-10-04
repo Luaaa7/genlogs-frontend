@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton"
+import { EstadoBadge } from "@/components/ui/EstadoBadge"
 import type { Servicio } from "@/types/servicio.types"
 
 interface ServicioCardProps {
@@ -18,7 +19,7 @@ export function ServicioCard({ servicio, onEditar, onDesactivar }: ServicioCardP
           <h3 className="text-base font-semibold">{servicio.nombreServicio}</h3>
         </div>
         {inactivo && (
-          <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs text-destructive">Inactivo</span>
+          <EstadoBadge tono="destructive">Inactivo</EstadoBadge>
         )}
       </div>
 
@@ -34,7 +35,7 @@ export function ServicioCard({ servicio, onEditar, onDesactivar }: ServicioCardP
 
       <div className="flex gap-2">
         {servicio.visibleWeb && (
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">Visible en web</span>
+          <EstadoBadge tono="accent">Visible en web</EstadoBadge>
         )}
       </div>
 
