@@ -1,5 +1,7 @@
 // src/lib/formatters/codigoCotizacion.ts
 
+import type { EstadoBadgeTono } from '@/components/ui/EstadoBadge';
+
 /**
  * Genera un código de cotización con formato COT-YYYY-XXXX
  * Donde YYYY es el año actual y XXXX es un número secuencial
@@ -110,11 +112,31 @@ export function mapearEstadoCotizacion(estado: string): string {
   const estadosMap: Record<string, string> = {
     BORRADOR: 'Borrador',
     ENVIADA: 'Enviada',
+    EN_NEGOCIACION: 'En negociación',
     APROBADA: 'Aprobada',
     RECHAZADA: 'Rechazada',
-    CADUCADA: 'Caducada',
+    VENCIDA: 'Vencida',
+    CADUCADA: 'Vencida',
+    ANULADA: 'Anulada',
   };
   return estadosMap[estado] || estado;
+}
+
+/**
+ * Tono de EstadoBadge para un estado de cotización
+ */
+export function tonoEstadoCotizacion(estado: string): EstadoBadgeTono {
+  const tonos: Record<string, EstadoBadgeTono> = {
+    BORRADOR: 'neutral',
+    ENVIADA: 'info',
+    EN_NEGOCIACION: 'accent',
+    APROBADA: 'success',
+    RECHAZADA: 'destructive',
+    VENCIDA: 'warning',
+    CADUCADA: 'warning',
+    ANULADA: 'neutral',
+  };
+  return tonos[estado] ?? 'neutral';
 }
 
 /**
@@ -123,10 +145,13 @@ export function mapearEstadoCotizacion(estado: string): string {
 export function colorEstadoCotizacion(estado: string): string {
   const coloresMap: Record<string, string> = {
     BORRADOR: 'bg-muted text-muted-foreground',
-    ENVIADA: 'bg-accent/10 text-accent',
+    ENVIADA: 'bg-info/10 text-info',
+    EN_NEGOCIACION: 'bg-accent/10 text-accent',
     APROBADA: 'bg-success/10 text-success',
     RECHAZADA: 'bg-destructive/10 text-destructive',
-    CADUCADA: 'bg-warning/10 text-warning',
+    VENCIDA: 'bg-warning/10 text-warning-text',
+    CADUCADA: 'bg-warning/10 text-warning-text',
+    ANULADA: 'bg-muted text-muted-foreground',
   };
   return coloresMap[estado] || 'bg-muted text-muted-foreground';
 }

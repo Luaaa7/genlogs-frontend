@@ -1,16 +1,8 @@
 
 
-import { useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { cotizacionesApi } from '@/api/cotizacionesApi';
 import type { Cotizacion, CotizacionesListResponse, CotizacionesFilterParams } from '@/types/cotizacion.types';
-
-const emptyCotizacionesResponse: CotizacionesListResponse = {
-  content: [],
-  totalElements: 0,
-  totalPages: 0,
-  currentPage: 0,
-  pageSize: 10,
-};
 
 export function useCotizaciones(
   filtros?: CotizacionesFilterParams
@@ -22,8 +14,10 @@ export function useCotizaciones(
     gcTime: 1000 * 60 * 30,
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    // FIX: initialData para evitar undefined en data.content
-    initialData: emptyCotizacionesResponse,
+    // Mientras carga otra página o filtro se sigue mostrando la anterior. (Antes
+    // era `initialData` vacío: con staleTime de 5 min React Query lo daba por
+    // fresco y no pedía la lista al servidor.)
+    placeholderData: keepPreviousData,
   });
 }
 

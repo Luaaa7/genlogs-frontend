@@ -163,8 +163,9 @@
     --warning: #EAB308;
     --warning-foreground: #1F2937;
     --warning-text: #EAB308;
-    --info: #2563EB;
-    --info-foreground: #FFFFFF;
+    /* Como texto, #2563EB queda en 3.4:1 sobre fondo oscuro; #60A5FA da 7:1 */
+    --info: #60A5FA;
+    --info-foreground: #0F172A;
     --chart-1: #2E6BA8;
     --chart-2: #16A34A;
     --chart-3: #EAB308;

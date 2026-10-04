@@ -1,32 +1,69 @@
 // src/features/cotizaciones/pages/CotizacionesListPage.tsx
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useCotizaciones } from '../hooks/useCotizaciones';
+import { Link, useNavigate } from 'react-router-dom';
+import { useCotizaciones, useCotizacionesEstadisticas } from '../hooks/useCotizaciones';
 import { useDuplicarCotizacion } from '../hooks/useCotizacionesMutations';
+import { cotizacionesApi } from '@/api/cotizacionesApi';
 import {
   EstadoCotizacion,
   Moneda,
+  type Cotizacion,
   type CotizacionesFilterParams,
 } from '@/types/cotizacion.types';
 import {
   formatearMoneda,
   mapearEstadoCotizacion,
-  formatearFecha,
-  colorEstadoCotizacion,
+  tonoEstadoCotizacion,
 } from '@/lib/formatters/codigoCotizacion';
-import {
-  Plus,
-  Search,
-  Filter,
-  Loader2,
-  AlertCircle,
-  Copy,
-  Eye,
-  ChevronLeft,
-  ChevronRight,
-  Download,
-} from 'lucide-react';
+import { formatearFechaCorta, parsearFechaLocal } from '@/lib/formatters/fechaLocal';
+import { Button } from '@/components/ui/button';
+import { EstadoBadge } from '@/components/ui/EstadoBadge';
+import { ErrorBanner } from '@/components/ui/ErrorBanner';
+import { TableSkeletonRows } from '@/components/ui/TableSkeletonRows';
+import { cn } from '@/lib/utils/utils';
+import { ChevronLeft, ChevronRight, Copy, Download, FileText, Loader2, Plus } from 'lucide-react';
+
+/** Filtros por estado, en el orden del flujo comercial. */
+const PESTANAS: { estado?: EstadoCotizacion; label: string }[] = [
+  { label: 'Todas' },
+  { estado: EstadoCotizacion.BORRADOR, label: 'Borrador' },
+  { estado: EstadoCotizacion.ENVIADA, label: 'Enviadas' },
+  { estado: EstadoCotizacion.EN_NEGOCIACION, label: 'En negociación' },
+  { estado: EstadoCotizacion.APROBADA, label: 'Aprobadas' },
+  { estado: EstadoCotizacion.RECHAZADA, label: 'Rechazadas' },
+  { estado: EstadoCotizacion.VENCIDA, label: 'Vencidas' },
+  { estado: EstadoCotizacion.ANULADA, label: 'Anuladas' },
+];
+
+const ESTADOS_ABIERTOS = new Set<string>(['BORRADOR', 'ENVIADA', 'EN_NEGOCIACION']);
+const TAMANOS = [10, 20, 50];
+const selectClass =
+  'h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+
+const idDe = (c: Cotizacion) => c.idCotizacion ?? c.id!;
+const codigoDe = (c: Cotizacion) => c.codigoCotizacion ?? c.codigo ?? `#${idDe(c)}`;
+const estadoDe = (c: Cotizacion) => c.estadoCodigo ?? c.estadoCotizacion;
+
+/** "En 3 días", "Hoy", "Hace 2 días" para la fecha de validez de una cotización abierta. */
+function notaVencimiento(c: Cotizacion): { texto: string; clase: string } | null {
+  if (!ESTADOS_ABIERTOS.has(estadoDe(c))) return null;
+  const fecha = parsearFechaLocal(c.fechaValidez);
+  if (!fecha) return null;
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const dias = Math.round((fecha.getTime() - hoy.getTime()) / 86_400_000);
+  if (dias < 0) return { texto: dias === -1 ? 'Venció ayer' : `Venció hace ${-dias} días`, clase: 'text-destructive' };
+  if (dias === 0) return { texto: 'Vence hoy', clase: 'text-warning-text' };
+  if (dias <= 7) return { texto: dias === 1 ? 'Vence mañana' : `Vence en ${dias} días`, clase: 'text-warning-text' };
+  return null;
+}
+
+/** Páginas visibles alrededor de la actual (máx. 5), para no listar 40 botones. */
+function paginasVisibles(actual: number, total: number) {
+  const inicio = Math.max(0, Math.min(actual - 2, total - 5));
+  return Array.from({ length: Math.min(5, total) }, (_, i) => inicio + i);
+}
 
 export const CotizacionesListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -36,308 +73,267 @@ export const CotizacionesListPage: React.FC = () => {
     sortBy: 'fechaCreacion',
     sortDir: 'DESC',
   });
+  const [descargando, setDescargando] = useState<number | null>(null);
+  const [errorAccion, setErrorAccion] = useState<string | null>(null);
 
-  const [showFilters, setShowFilters] = useState(false);
-  const { data, isLoading, error } = useCotizaciones(filtros);
-  const { mutate: duplicarCotizacion, isPending: isDuplicarPending } =
-    useDuplicarCotizacion();
+  const { data, isLoading, isError, error, refetch } = useCotizaciones(filtros);
+  const { data: estadisticas } = useCotizacionesEstadisticas();
+  const { mutate: duplicarCotizacion, isPending: isDuplicarPending } = useDuplicarCotizacion();
 
-  const handleFilterChange = (newFiltros: Partial<CotizacionesFilterParams>) => {
-    setFiltros((prev) => ({
-      ...prev,
-      ...newFiltros,
-      page: 0, // Reset a primera página al cambiar filtros
-    }));
-  };
+  const cambiarFiltros = (nuevos: Partial<CotizacionesFilterParams>) =>
+    setFiltros((prev) => ({ ...prev, ...nuevos, page: 0 }));
 
-  const handlePageChange = (newPage: number) => {
-    setFiltros((prev) => ({ ...prev, page: newPage }));
-  };
-
-  const handleDuplicar = (id: number) => {
-    duplicarCotizacion(id, {
-      onSuccess: (data) => {
-        navigate(`/cotizaciones/${data.id}/editar`);
-      },
+  const handleDuplicar = (c: Cotizacion) => {
+    setErrorAccion(null);
+    duplicarCotizacion(idDe(c), {
+      onSuccess: (copia) => navigate(`/cotizaciones/${copia.idCotizacion ?? copia.id}`),
+      onError: () => setErrorAccion(`No se pudo duplicar ${codigoDe(c)}. Inténtalo de nuevo.`),
     });
   };
 
+  const handleDescargar = async (c: Cotizacion) => {
+    setErrorAccion(null);
+    setDescargando(idDe(c));
+    try {
+      const pdf = await cotizacionesApi.descargarCotizacionPDF(idDe(c));
+      const url = URL.createObjectURL(pdf);
+      const enlace = document.createElement('a');
+      enlace.href = url;
+      enlace.download = `${codigoDe(c)}.pdf`;
+      enlace.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setErrorAccion(`No se pudo descargar el PDF de ${codigoDe(c)}.`);
+    } finally {
+      setDescargando(null);
+    }
+  };
+
+  const contenido = data?.content ?? [];
+  const total = data?.totalElements ?? 0;
+  const totalPaginas = data?.totalPages ?? 0;
+  const pagina = filtros.page ?? 0;
+  const tamano = filtros.size ?? 10;
+  const desde = total === 0 ? 0 : pagina * tamano + 1;
+  const hasta = pagina * tamano + contenido.length;
+  const conteo = (estado?: string) =>
+    estado ? estadisticas?.totalPorEstado?.[estado] : estadisticas?.totalCotizaciones;
+
   return (
-    <div className="min-h-screen bg-muted py-6 px-4 sm:py-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
-            <div className="min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Cotizaciones</h1>
-              <p className="text-muted-foreground mt-1">
-                Gestiona tus cotizaciones y seguimiento de clientes
-              </p>
-            </div>
+    <div className="flex flex-col gap-6">
+      {/* Encabezado: título con contexto y una sola acción principal */}
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Cotizaciones</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {estadisticas
+              ? <><span className="tabular-nums">{estadisticas.totalCotizaciones}</span> cotizaciones · <span className="tabular-nums">{formatearMoneda(estadisticas.montoTotalPendiente)}</span> pendiente de aprobación</>
+              : 'Cotizaciones a clientes y su seguimiento'}
+          </p>
+        </div>
+        <Button asChild>
+          <Link to="/cotizaciones/nueva">
+            <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+            Nueva cotización
+          </Link>
+        </Button>
+      </div>
+
+      {/* Filtro por estado */}
+      <div role="group" aria-label="Filtrar por estado" className="flex flex-wrap gap-2">
+        {PESTANAS.map((p) => {
+          const activa = filtros.estadoCotizacion === p.estado;
+          const n = conteo(p.estado);
+          return (
             <button
-              onClick={() => navigate('/cotizaciones/nueva')}
-              className="inline-flex w-full sm:w-auto shrink-0 items-center justify-center whitespace-nowrap px-4 py-2.5 text-sm sm:px-6 sm:py-3 sm:text-base bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition font-semibold"
+              key={p.label}
+              type="button"
+              aria-pressed={activa}
+              onClick={() => cambiarFiltros({ estadoCotizacion: p.estado })}
+              className={cn(
+                'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                activa
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border bg-card text-foreground hover:bg-muted'
+              )}
             >
-              <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-              Nueva Cotización
+              {p.label}
+              {n !== undefined && (
+                <span className={cn('tabular-nums', activa ? 'text-primary-foreground/80' : 'text-muted-foreground')}>{n}</span>
+              )}
             </button>
-          </div>
-        </div>
+          );
+        })}
+      </div>
 
-        {/* Filters */}
-        <div className="bg-card rounded-lg shadow-sm border border-border p-4 mb-6">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center text-foreground hover:text-foreground font-medium"
+      {(isError || errorAccion) && (
+        <ErrorBanner
+          message={errorAccion ?? (error instanceof Error ? `No se pudieron cargar las cotizaciones: ${error.message}` : 'No se pudieron cargar las cotizaciones.')}
+          onRetry={errorAccion ? undefined : () => refetch()}
+        />
+      )}
+
+      <section className="overflow-hidden rounded-xl border border-border bg-card">
+        {/* Barra de filtros secundarios */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
+          <label className="sr-only" htmlFor="cot-moneda">Moneda</label>
+          <select
+            id="cot-moneda"
+            value={filtros.moneda ?? ''}
+            onChange={(e) => cambiarFiltros({ moneda: (e.target.value as Moneda) || undefined })}
+            className={selectClass}
           >
-            <Filter className="w-4 h-4 mr-2" />
-            Filtros {filtros.estadoCotizacion && '(1)'}
-          </button>
-
-          {showFilters && (
-            <div className="mt-4 pt-4 border-t border-border grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Estado */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Estado
-                </label>
-                <select
-                  value={filtros.estadoCotizacion || ''}
-                  onChange={(e) =>
-                    handleFilterChange({
-                      estadoCotizacion: (e.target.value as EstadoCotizacion) || undefined,
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none"
-                >
-                  <option value="">Todos los estados</option>
-                  {Object.values(EstadoCotizacion).map((estado) => (
-                    <option key={estado} value={estado}>
-                      {mapearEstadoCotizacion(estado)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Moneda */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Moneda
-                </label>
-                <select
-                  value={filtros.moneda || ''}
-                  onChange={(e) =>
-                    handleFilterChange({ moneda: (e.target.value as Moneda) || undefined })
-                  }
-                  className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none"
-                >
-                  <option value="">Todas las monedas</option>
-                  {Object.values(Moneda).map((moneda) => (
-                    <option key={moneda} value={moneda}>
-                      {moneda}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Ordenar */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Ordenar por
-                </label>
-                <select
-                  value={filtros.sortDir || 'DESC'}
-                  onChange={(e) =>
-                    handleFilterChange({
-                      sortDir: (e.target.value as 'ASC' | 'DESC'),
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none"
-                >
-                  <option value="DESC">Más recientes</option>
-                  <option value="ASC">Más antiguos</option>
-                </select>
-              </div>
-            </div>
-          )}
+            <option value="">Todas las monedas</option>
+            {Object.values(Moneda).map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
+          <label className="sr-only" htmlFor="cot-orden">Ordenar por</label>
+          <select
+            id="cot-orden"
+            value={filtros.sortDir ?? 'DESC'}
+            onChange={(e) => cambiarFiltros({ sortDir: e.target.value as 'ASC' | 'DESC' })}
+            className={selectClass}
+          >
+            <option value="DESC">Más recientes primero</option>
+            <option value="ASC">Más antiguas primero</option>
+          </select>
         </div>
 
-        {/* Content */}
-        {isLoading ? (
-          <div className="flex justify-center items-center py-12">
-            <Loader2 className="w-8 h-8 text-accent animate-spin" />
+        {!isLoading && !isError && contenido.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 px-4 py-14 text-center">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/10 text-accent">
+              <FileText className="h-5.5 w-5.5" aria-hidden="true" />
+            </span>
+            <h2 className="text-base font-semibold">
+              {filtros.estadoCotizacion || filtros.moneda ? 'No hay cotizaciones con estos filtros' : 'Aún no hay cotizaciones'}
+            </h2>
+            <p className="max-w-sm text-sm text-muted-foreground">
+              {filtros.estadoCotizacion || filtros.moneda
+                ? 'Prueba con otro estado o moneda, o crea una nueva.'
+                : 'Crea la primera para empezar a hacer seguimiento a tus clientes.'}
+            </p>
+            <Button asChild className="mt-2">
+              <Link to="/cotizaciones/nueva"><Plus className="mr-2 h-4 w-4" aria-hidden="true" />Nueva cotización</Link>
+            </Button>
           </div>
-        ) : error ? (
-          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-6 flex items-start gap-4">
-            <AlertCircle className="w-6 h-6 text-destructive flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-destructive mb-1">
-                Error al cargar cotizaciones
-              </h3>
-              <p className="text-destructive">
-                {error instanceof Error ? error.message : 'Intenta recargar la página'}
-              </p>
-            </div>
-          </div>
-        ) : data && data.content.length > 0 ? (
-          <>
-            {/* Table */}
-            <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-muted border-b border-border">
-                      <th className="px-6 py-3 text-left font-semibold text-foreground">
-                        Código
-                      </th>
-                      <th className="px-6 py-3 text-left font-semibold text-foreground">
-                        Cliente
-                      </th>
-                      <th className="px-6 py-3 text-center font-semibold text-foreground">
-                        Estado
-                      </th>
-                      <th className="px-6 py-3 text-right font-semibold text-foreground">
-                        Total
-                      </th>
-                      <th className="px-6 py-3 text-center font-semibold text-foreground">
-                        Fecha
-                      </th>
-                      <th className="px-6 py-3 text-center font-semibold text-foreground">
-                        Acciones
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.content.map((cotizacion) => (
-                      <tr
-                        key={cotizacion.id}
-                        className="border-b border-border hover:bg-muted transition"
-                      >
-                        <td className="px-6 py-4">
-                          <span className="font-mono font-semibold text-foreground">
-                            {cotizacion.codigo}
-                          </span>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] text-sm">
+              <caption className="sr-only">Lista de cotizaciones</caption>
+              <thead>
+                <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
+                  <th className="px-4 py-2.5 font-medium">Código</th>
+                  <th className="px-4 py-2.5 font-medium">Cliente</th>
+                  <th className="px-4 py-2.5 font-medium">Emitida</th>
+                  <th className="px-4 py-2.5 font-medium">Vence</th>
+                  <th className="px-4 py-2.5 font-medium">Estado</th>
+                  <th className="px-4 py-2.5 text-right font-medium">Monto</th>
+                  <th className="px-4 py-2.5"><span className="sr-only">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  <TableSkeletonRows columns={7} rows={tamano > 10 ? 10 : tamano} />
+                ) : (
+                  contenido.map((c) => {
+                    const nota = notaVencimiento(c);
+                    const estado = estadoDe(c);
+                    return (
+                      <tr key={idDe(c)} className="border-t border-border first:border-t-0 hover:bg-muted/60">
+                        <td className="whitespace-nowrap px-4 py-3">
+                          <Link to={`/cotizaciones/${idDe(c)}`} className="rounded font-medium tabular-nums text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                            {codigoDe(c)}
+                          </Link>
                         </td>
-                        <td className="px-6 py-4">
-                          <div>
-                            <p className="font-medium text-foreground">
-                              {cotizacion.clienteNombre}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {cotizacion.clienteEmail}
-                            </p>
-                          </div>
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-foreground">{c.clienteNombre ?? c.cliente ?? '—'}</p>
+                          {c.clienteEmail && <p className="text-xs text-muted-foreground">{c.clienteEmail}</p>}
                         </td>
-                        <td className="px-6 py-4 text-center">
-                          <span
-                            className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${colorEstadoCotizacion(
-                              cotizacion.estadoCotizacion
-                            )}`}
-                          >
-                            {mapearEstadoCotizacion(
-                              cotizacion.estadoCotizacion
-                            )}
-                          </span>
+                        <td className="whitespace-nowrap px-4 py-3 tabular-nums">{formatearFechaCorta(c.fechaCotizacion ?? c.fechaCreacion)}</td>
+                        <td className="whitespace-nowrap px-4 py-3">
+                          <p className="tabular-nums">{formatearFechaCorta(c.fechaValidez)}</p>
+                          {nota && <p className={cn('text-xs', nota.clase)}>{nota.texto}</p>}
                         </td>
-                        <td className="px-6 py-4 text-right font-semibold text-foreground">
-                          {formatearMoneda(cotizacion.total, cotizacion.moneda)}
+                        <td className="px-4 py-3">
+                          <EstadoBadge tono={tonoEstadoCotizacion(estado)}>{mapearEstadoCotizacion(estado)}</EstadoBadge>
                         </td>
-                        <td className="px-6 py-4 text-center text-muted-foreground">
-                          {formatearFecha(cotizacion.fechaCreacion || '')}
+                        <td className="whitespace-nowrap px-4 py-3 text-right font-medium tabular-nums">
+                          {formatearMoneda(c.total ?? 0, c.monedaCodigo ?? c.moneda ?? 'PEN')}
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="flex justify-center gap-2">
+                        <td className="px-4 py-3">
+                          <div className="flex justify-end gap-1">
                             <button
-                              onClick={() =>
-                                navigate(`/cotizaciones/${cotizacion.id}`)
-                              }
-                              className="p-2 text-accent hover:bg-accent/10 rounded-lg transition"
-                              title="Ver detalles"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDuplicar(cotizacion.id!)}
+                              type="button"
+                              onClick={() => handleDuplicar(c)}
                               disabled={isDuplicarPending}
-                              className="p-2 text-success hover:bg-success/10 disabled:opacity-50 rounded-lg transition"
+                              aria-label={`Duplicar ${codigoDe(c)}`}
                               title="Duplicar"
+                              className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
-                              <Copy className="w-4 h-4" />
+                              <Copy className="h-4 w-4" aria-hidden="true" />
                             </button>
                             <button
-                              className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition"
+                              type="button"
+                              onClick={() => handleDescargar(c)}
+                              disabled={descargando === idDe(c)}
+                              aria-label={`Descargar PDF de ${codigoDe(c)}`}
                               title="Descargar PDF"
+                              className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
-                              <Download className="w-4 h-4" />
+                              {descargando === idDe(c)
+                                ? <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                                : <Download className="h-4 w-4" aria-hidden="true" />}
                             </button>
                           </div>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Pagination */}
-            {data.totalPages > 1 && (
-              <div className="flex justify-between items-center mt-6 p-4 bg-card rounded-lg border border-border">
-                <p className="text-sm text-muted-foreground">
-                  Mostrando {data.content.length} de {data.totalElements} cotizaciones
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handlePageChange(filtros.page! - 1)}
-                    disabled={filtros.page === 0}
-                    className="p-2 border border-border rounded-lg hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: data.totalPages }).map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handlePageChange(i)}
-                        className={`px-3 py-1 rounded-lg transition ${
-                          filtros.page === i
-                            ? 'bg-accent text-accent-foreground'
-                            : 'border border-border hover:bg-muted'
-                        }`}
-                      >
-                        {i + 1}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => handlePageChange(filtros.page! + 1)}
-                    disabled={filtros.page! >= data.totalPages - 1}
-                    className="p-2 border border-border rounded-lg hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="text-center py-12 bg-card rounded-lg border border-border">
-            <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              Sin cotizaciones
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              No hay cotizaciones disponibles con los filtros seleccionados
-            </p>
-            <button
-              onClick={() => navigate('/cotizaciones/nueva')}
-              className="inline-flex items-center px-6 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition font-medium"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Crear Primera Cotización
-            </button>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         )}
-      </div>
+
+        {/* Pie: rango, tamaño de página y paginación */}
+        {total > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 text-[13px]">
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <span>Mostrando <span className="tabular-nums">{desde}–{hasta}</span> de <span className="tabular-nums">{total}</span></span>
+              <label className="sr-only" htmlFor="cot-tamano">Filas por página</label>
+              <select
+                id="cot-tamano"
+                value={tamano}
+                onChange={(e) => cambiarFiltros({ size: Number(e.target.value) })}
+                className={cn(selectClass, 'h-8 px-2 text-[13px]')}
+              >
+                {TAMANOS.map((t) => <option key={t} value={t}>{t} por página</option>)}
+              </select>
+            </div>
+            {totalPaginas > 1 && (
+              <nav aria-label="Paginación" className="flex items-center gap-1">
+                <Button variant="outline" size="sm" onClick={() => setFiltros((f) => ({ ...f, page: pagina - 1 }))} disabled={pagina === 0} aria-label="Página anterior">
+                  <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                </Button>
+                {paginasVisibles(pagina, totalPaginas).map((i) => (
+                  <Button
+                    key={i}
+                    variant={i === pagina ? 'default' : 'ghost'}
+                    size="sm"
+                    aria-current={i === pagina ? 'page' : undefined}
+                    onClick={() => setFiltros((f) => ({ ...f, page: i }))}
+                    className="min-w-9 tabular-nums"
+                  >
+                    {i + 1}
+                  </Button>
+                ))}
+                <Button variant="outline" size="sm" onClick={() => setFiltros((f) => ({ ...f, page: pagina + 1 }))} disabled={pagina >= totalPaginas - 1} aria-label="Página siguiente">
+                  <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                </Button>
+              </nav>
+            )}
+          </div>
+        )}
+      </section>
     </div>
   );
 };
