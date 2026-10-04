@@ -29,7 +29,7 @@ export function AuthLayout() {
         </div>
 
         <Link to="/" className="relative w-fit rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
-          <img src={logoGenlogs} alt="GenLogs S.A.C." width={160} height={64} className="h-16 w-auto object-contain" />
+          <img src={logoGenlogs} alt="GenLogs S.A.C." width={160} height={64} className="h-16 w-auto object-contain brightness-0 invert" />
         </Link>
 
         <div className="relative space-y-4">
@@ -79,7 +79,7 @@ export function AuthLayout() {
                 alt="GenLogs S.A.C."
                 width={192}
                 height={80}
-                className="h-24 w-auto object-contain"
+                className="h-24 w-auto object-contain dark:brightness-0 dark:invert"
               />
             </div>
 

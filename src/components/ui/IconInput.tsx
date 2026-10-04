@@ -1,24 +1,20 @@
 import React from "react";
+import { cn } from "@/lib/utils/utils";
+import { iconInputClass } from "./inputStyles";
 
 interface IconInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactNode;
 }
 
-export function IconInput({ icon, placeholder, className = "", ...props }: IconInputProps) {
+export function IconInput({ icon, className, ...props }: IconInputProps) {
   return (
     <div className="relative flex items-center w-full">
       {icon && (
-        <span className="absolute left-3.5 text-slate-400 pointer-events-none flex items-center justify-center">
+        <span className="absolute left-3.5 text-muted-foreground pointer-events-none flex items-center justify-center">
           {icon}
         </span>
       )}
-      <input
-        {...props}
-        placeholder={placeholder}
-        className={`w-full rounded-xl border border-slate-200 bg-white py-2.5 text-sm text-slate-800 placeholder:text-slate-400 placeholder:font-light focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all ${
-          icon ? "pl-10 pr-4" : "px-4"
-        } ${className}`}
-      />
+      <input {...props} className={cn(iconInputClass, icon ? "pl-10 pr-4" : "px-4", className)} />
     </div>
   );
 }

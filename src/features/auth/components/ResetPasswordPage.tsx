@@ -11,7 +11,7 @@ const linkClass =
   "text-sm font-medium text-accent hover:text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
 
 const botonClass =
-  "w-full rounded-lg bg-linear-to-r from-primary to-accent px-4 py-2.5 text-center text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+  "w-full rounded-lg bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-foreground shadow-sm transition-[background-color,transform] duration-150 ease-out hover:bg-primary/90 active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 
 function formatearTiempo(totalSegundos: number): string {
   const min = Math.floor(totalSegundos / 60)
@@ -167,7 +167,7 @@ export function ResetPasswordPage() {
 
       <div
         className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${
-          pocoTiempo ? "bg-destructive/10 text-destructive" : "bg-amber-50 text-amber-800"
+          pocoTiempo ? "bg-destructive/10 text-destructive" : "bg-warning/10 text-warning-text"
         }`}
         role="timer"
       >
@@ -212,7 +212,7 @@ export function ResetPasswordPage() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-lg bg-linear-to-r from-primary to-accent px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition-opacity hover:opacity-90 disabled:opacity-50"
+        className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-[background-color,transform] duration-150 ease-out hover:bg-primary/90 active:scale-[0.97] motion-reduce:active:scale-100 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
         {loading ? "Guardando..." : "Cambiar contraseña"}
       </button>
