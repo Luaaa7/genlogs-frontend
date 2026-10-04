@@ -24,6 +24,7 @@
     --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
     --color-sidebar-primary: var(--sidebar-primary);
     --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-muted: var(--sidebar-muted);
     --color-sidebar: var(--sidebar);
     --color-chart-5: var(--chart-5);
     --color-chart-4: var(--chart-4);
@@ -96,15 +97,18 @@
     --chart-4: #DC2626;
     --chart-5: #D97706;
     --radius: 0.625rem;
-    /* Sidebar: siempre oscuro, independiente del tema claro/oscuro del contenido */
-    --sidebar: #0F172A;
-    --sidebar-foreground: #F9FAFB;
+    /* Sidebar: siempre oscuro (azul marino de marca), independiente del tema
+       del contenido. accent = hover; primary = ítem activo; muted = títulos
+       de grupo. Contrastes: texto 9.1:1, títulos 6.6:1, activo 5.5:1. */
+    --sidebar: #1E3A5F;
+    --sidebar-foreground: #DCE6F2;
+    --sidebar-muted: #B6C6DA;
     --sidebar-primary: #2E6BA8;
     --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: rgba(46, 107, 168, 0.18);
-    --sidebar-accent-foreground: #F9FAFB;
-    --sidebar-border: #1F2937;
-    --sidebar-ring: #2E6BA8;
+    --sidebar-accent: rgba(255, 255, 255, 0.08);
+    --sidebar-accent-foreground: #FFFFFF;
+    --sidebar-border: rgba(255, 255, 255, 0.10);
+    --sidebar-ring: #93C5FD;
 }
 
 .dark {
@@ -142,13 +146,14 @@
     --chart-4: #DC2626;
     --chart-5: #D97706;
     --sidebar: #0B1220;
-    --sidebar-foreground: #F9FAFB;
-    --sidebar-primary: #2E6BA8;
+    --sidebar-foreground: #DCE6F2;
+    --sidebar-muted: #94A3B8;
+    --sidebar-primary: #1E3A5F;
     --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: rgba(46, 107, 168, 0.22);
-    --sidebar-accent-foreground: #F9FAFB;
+    --sidebar-accent: rgba(255, 255, 255, 0.06);
+    --sidebar-accent-foreground: #FFFFFF;
     --sidebar-border: rgba(255, 255, 255, 0.08);
-    --sidebar-ring: #2E6BA8;
+    --sidebar-ring: #93C5FD;
 }
 
 @layer base {

@@ -1,15 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Menu,
   X,
   ChevronDown,
+  ChevronRight,
   LayoutDashboard,
   FileText,
   ShoppingCart,
   Users,
   Truck,
   Package,
+  Wrench,
   Receipt,
   Building2,
   BarChart3,
@@ -23,53 +25,59 @@ import logoGenlogs from '../assets/GENLOGS.png';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useTheme } from '@/hooks/useTheme';
 import { GlobalSearchDialog } from '@/components/ui/GlobalSearchDialog';
+import { cn } from '@/lib/utils/utils';
 
-type NavItem = { label: string; path: string; icon: React.ElementType };
+type NavItem = { label: string; path: string; icon: React.ElementType; soloAdmin?: boolean };
+type NavGroup = { titulo: string; items: NavItem[] };
 
-const mainNavItems: NavItem[] = [
-  { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { label: 'Cotizaciones', path: '/cotizaciones', icon: FileText },
-  { label: 'Órdenes de compra', path: '/ordenes-compra', icon: ShoppingCart },
-  { label: 'Clientes', path: '/clientes', icon: Users },
-  { label: 'Proveedores', path: '/proveedores', icon: Truck },
-];
-
-const secondaryNavItems: NavItem[] = [
-  { label: 'Facturación', path: '/facturacion', icon: Receipt },
-  { label: 'Empresas mineras', path: '/empresas-mineras', icon: Building2 },
-  { label: 'Reportes', path: '/reportes', icon: BarChart3 },
-  { label: 'Usuarios', path: '/usuarios', icon: UserCog },
-];
-
-const catalogoSubItems: NavItem[] = [
-  { label: 'Repuestos', path: '/catalogo-repuestos', icon: Package },
-  { label: 'Servicios', path: '/catalogo-servicios', icon: Package },
+/** Una sola navegación para todo el sistema (antes había un nav superior y
+ *  una barra lateral con módulos distintos). Agrupada por tipo de trabajo. */
+const NAV_GROUPS: NavGroup[] = [
+  {
+    titulo: 'Operación',
+    items: [
+      { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+      { label: 'Cotizaciones', path: '/cotizaciones', icon: FileText },
+      { label: 'Órdenes de compra', path: '/ordenes-compra', icon: ShoppingCart },
+      { label: 'Facturación', path: '/facturacion', icon: Receipt },
+    ],
+  },
+  {
+    titulo: 'Maestros',
+    items: [
+      { label: 'Clientes', path: '/clientes', icon: Users },
+      { label: 'Proveedores', path: '/proveedores', icon: Truck },
+      { label: 'Empresas mineras', path: '/empresas-mineras', icon: Building2 },
+      { label: 'Repuestos', path: '/catalogo-repuestos', icon: Package },
+      { label: 'Servicios', path: '/catalogo-servicios', icon: Wrench },
+    ],
+  },
+  {
+    titulo: 'Administración',
+    items: [
+      { label: 'Reportes', path: '/reportes', icon: BarChart3 },
+      { label: 'Usuarios', path: '/usuarios', icon: UserCog, soloAdmin: true },
+    ],
+  },
 ];
 
 // Los 4 accesos más usados van fijos en la barra inferior móvil; el resto
-// (Proveedores, Catálogo, Facturación, Empresas mineras, Reportes, Usuarios)
-// vive detrás del quinto botón, "Menú".
-const bottomNavItems: NavItem[] = mainNavItems.slice(0, 4);
+// vive detrás del quinto botón, "Menú", que abre el mismo menú lateral.
+const BOTTOM_NAV: NavItem[] = [
+  NAV_GROUPS[0].items[0],
+  NAV_GROUPS[0].items[1],
+  NAV_GROUPS[0].items[2],
+  NAV_GROUPS[1].items[0],
+];
 
-/** Clase única para todo item de navegación activo/inactivo — nunca se
- *  redefine por pantalla, para que el estado "seleccionado" se vea y se
- *  comporte igual en el drawer móvil, el nav de escritorio y el dropdown. */
-function navLinkClass(isActive: boolean, dense = false) {
-  const base = `flex items-center gap-2.5 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-    dense ? 'px-3 py-1.5' : 'px-3 py-2'
-  }`;
-  return isActive
-    ? `${base} bg-accent/10 text-accent font-semibold`
-    : `${base} text-muted-foreground hover:bg-muted hover:text-foreground`;
-}
+/** Nombre de cada sección y de las subrutas, para la ruta (breadcrumb). */
+const SECCIONES: Record<string, string> = Object.fromEntries(
+  NAV_GROUPS.flatMap((g) => g.items.map((i) => [i.path.slice(1), i.label]))
+);
+const SUBRUTAS: Record<string, string> = { nueva: 'Nueva', nuevo: 'Nuevo', editar: 'Editar' };
 
-/** Estilo del nav horizontal del header (escritorio) — sin caja de fondo,
- *  solo cambio de color + una línea delgada debajo cuando está activo.
- *  Más liviano y "Instagram/minimalista" que una píldora rellena. */
-function topNavLinkClass(isActive: boolean) {
-  return `relative flex h-full items-center px-1 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm ${
-    isActive ? 'text-accent font-semibold' : 'text-muted-foreground hover:text-foreground'
-  }`;
+function estaActivo(pathname: string, path: string) {
+  return pathname === path || pathname.startsWith(`${path}/`);
 }
 
 /** Entrada de los menús desplegables: salen de su botón (esquina superior
@@ -85,13 +93,109 @@ function inicialesDe(nombre: string | null) {
   return primeras.join('') || nombre[0]?.toUpperCase() || '?';
 }
 
+/** Contenido del menú lateral: se usa igual en la barra fija de escritorio y
+ *  en el drawer móvil, para que el estado "seleccionado" sea idéntico. */
+function NavLateral({ esAdmin, onNavigate }: { esAdmin: boolean; onNavigate?: () => void }) {
+  const { pathname } = useLocation();
+
+  return (
+    <nav aria-label="Módulos" className="flex flex-col px-3 pb-6">
+      {NAV_GROUPS.map((grupo) => {
+        const items = grupo.items.filter((item) => !item.soloAdmin || esAdmin);
+        if (items.length === 0) return null;
+        return (
+          <div key={grupo.titulo}>
+            <p className="mx-2.5 mt-5 mb-1.5 text-xs font-medium text-sidebar-muted">{grupo.titulo}</p>
+            <ul className="flex flex-col gap-0.5">
+              {items.map((item) => {
+                const activo = estaActivo(pathname, item.path);
+                return (
+                  <li key={item.path}>
+                    <Link
+                      to={item.path}
+                      onClick={onNavigate}
+                      aria-current={activo ? 'page' : undefined}
+                      className={cn(
+                        'flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
+                        activo
+                          ? // Activo a todo lo ancho, con borde claro a la izquierda
+                            '-mx-3 rounded-none bg-sidebar-primary px-5.5 text-sidebar-primary-foreground shadow-[inset_4px_0_0_var(--sidebar-ring)]'
+                          : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                      )}
+                    >
+                      <item.icon className="h-4.5 w-4.5 shrink-0" aria-hidden="true" />
+                      {item.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })}
+    </nav>
+  );
+}
+
+/** Logo en blanco a una tinta: el menú lateral siempre es oscuro. La imagen
+ *  trae margen transparente; los márgenes negativos lo recortan. */
+function LogoLateral({ onNavigate }: { onNavigate?: () => void }) {
+  return (
+    <Link
+      to="/dashboard"
+      onClick={onNavigate}
+      aria-label="GenLogs, ir al dashboard"
+      className="flex h-11 items-center overflow-hidden rounded-md px-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+    >
+      <img
+        src={logoGenlogs}
+        alt=""
+        width={192}
+        height={80}
+        className="-mx-4 h-16 w-auto max-w-none object-contain brightness-0 invert"
+      />
+    </Link>
+  );
+}
+
+/** Ruta de la pantalla actual: "Cotizaciones › Detalle", "Repuestos › Nuevo". */
+function Breadcrumb() {
+  const { pathname } = useLocation();
+  const [seccion, ...resto] = pathname.split('/').filter(Boolean);
+  const titulo = SECCIONES[seccion];
+  if (!titulo) return null;
+
+  const partes = resto.map((s) => SUBRUTAS[s] ?? 'Detalle');
+  const actual = partes.length === 0;
+
+  return (
+    <nav aria-label="Ruta" className="hidden min-w-0 items-center gap-1.5 text-sm md:flex">
+      {actual ? (
+        <span aria-current="page" className="font-medium text-foreground">{titulo}</span>
+      ) : (
+        <Link to={`/${seccion}`} className="rounded text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          {titulo}
+        </Link>
+      )}
+      {partes.map((parte, i) => (
+        <Fragment key={i}>
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <span
+            aria-current={i === partes.length - 1 ? 'page' : undefined}
+            className={i === partes.length - 1 ? 'font-medium text-foreground' : 'text-muted-foreground'}
+          >
+            {parte}
+          </span>
+        </Fragment>
+      ))}
+    </nav>
+  );
+}
+
 export function AppLayout() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isCatalogoOpen, setIsCatalogoOpen] = useState(false);
-  const [isMobileCatalogoOpen, setIsMobileCatalogoOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isBusquedaAbierta, setIsBusquedaAbierta] = useState(false);
-  const catalogoRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
@@ -99,28 +203,19 @@ export function AppLayout() {
   const nombreUsuario = useAuthStore((s) => s.nombreUsuario);
   const nombreRol = useAuthStore((s) => s.nombreRol);
   const logout = useAuthStore((s) => s.logout);
+  const esAdmin = nombreRol?.toUpperCase() === 'ADMINISTRADOR';
   const { tema, alternarTema } = useTheme();
 
-  const toggleMenu = () => setIsMenuOpen((v) => !v);
   const closeMenu = () => setIsMenuOpen(false);
-
-  const isCatalogoActive =
-    location.pathname.startsWith('/catalogo-repuestos') ||
-    location.pathname.startsWith('/catalogo-servicios');
 
   // El "Menú" de la barra inferior cuenta como activo cuando estamos en algo
   // que no vive en los 4 accesos fijos (para que siempre haya un ítem resaltado).
-  const isMenuSectionActive =
-    !bottomNavItems.some((item) => location.pathname.startsWith(item.path)) &&
-    !location.pathname.startsWith('/dashboard');
+  const isMenuSectionActive = !BOTTOM_NAV.some((item) => estaActivo(location.pathname, item.path));
 
-  // El dropdown de Catálogo y el menú de usuario se abren/cierran con click
-  // (no solo hover), para que funcionen igual con mouse, teclado y táctil.
+  // El menú de usuario se abre/cierra con click (no solo hover), para que
+  // funcione igual con mouse, teclado y táctil; se cierra al hacer click fuera.
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (catalogoRef.current && !catalogoRef.current.contains(e.target as Node)) {
-        setIsCatalogoOpen(false);
-      }
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setIsUserMenuOpen(false);
       }
@@ -161,138 +256,79 @@ export function AppLayout() {
   }
 
   return (
-    <div className="relative min-h-screen bg-background flex flex-col font-sans antialiased text-foreground overflow-x-hidden">
-      {/* Fondo ilustrado — un par de manchas de color muy suaves y
-          desenfocadas, fijas detrás de todo el contenido. Dan un aire
-          "premium/orgánico" sin romper el minimalismo ni tapar nada:
-          opacidad muy baja, no interactúan con el mouse. */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute -top-32 -right-24 h-96 w-96 rounded-full bg-accent/15 blur-3xl" />
-        <div className="absolute top-1/3 -left-32 h-80 w-80 rounded-full bg-success/15 blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 h-72 w-72 rounded-full bg-warning/15 blur-3xl" />
-        <div className="absolute bottom-1/4 -right-16 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
-      </div>
+    <div className="flex min-h-screen bg-background font-sans text-foreground antialiased">
+      {/* Menú lateral fijo — escritorio (lg+) */}
+      <aside className="sticky top-0 hidden h-screen w-62 shrink-0 flex-col overflow-y-auto bg-sidebar pt-4 lg:flex">
+        <div className="px-3">
+          <LogoLateral />
+        </div>
+        <NavLateral esAdmin={esAdmin} />
+      </aside>
 
-      {/* Navbar superior — vidrio esmerilado (glassmorphism): fondo
-          semitransparente + blur fuerte, borde muy sutil en vez de línea
-          dura, para que se sienta ligera y flote sobre el contenido. */}
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-card/70 backdrop-blur-xl supports-[backdrop-filter]:bg-card/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
-          <Link to="/dashboard" className="flex items-center gap-2.5 min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md">
-            {/* width/height fijan la proporción real (1920x800) para que el
-                navegador reserve el espacio antes de que cargue la imagen
-                y no "salte" el resto del header al montar la página. */}
-            <img
-              src={logoGenlogs}
-              alt="GenLogs"
-              width={192}
-              height={80}
-              className="h-9 w-auto max-w-[9rem] object-contain shrink-0 dark:brightness-0 dark:invert"
-            />
-            <span className="hidden text-lg font-semibold tracking-tight text-foreground truncate sm:inline">
-              ERP
-            </span>
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Barra superior: ruta, búsqueda, tema y usuario */}
+        <header className="sticky top-0 z-40 flex h-16 items-center gap-3 border-b border-border bg-card px-4 sm:px-6 lg:px-8">
+          {/* En móvil/tablet no hay menú lateral: el logo va aquí */}
+          <Link
+            to="/dashboard"
+            aria-label="GenLogs, ir al dashboard"
+            className="flex h-10 shrink-0 items-center overflow-hidden rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
+          >
+            <img src={logoGenlogs} alt="" width={192} height={80} className="-mx-3 h-14 w-auto max-w-none object-contain dark:brightness-0 dark:invert" />
           </Link>
 
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Navegación de escritorio — desde lg (1024px) para evitar que
-                los ~7 items se aprieten en tablets (md, 768-1024px) */}
-            <nav className="hidden lg:flex items-stretch gap-5 h-16">
-              {mainNavItems.map((item) => {
-                const isActive = location.pathname.startsWith(item.path);
-                return (
-                  <Link key={item.path} to={item.path} className={topNavLinkClass(isActive)}>
-                    {item.label}
-                    {isActive && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-accent" />}
-                  </Link>
-                );
-              })}
+          <Breadcrumb />
 
-              {/* Dropdown de Catálogo — click, no hover, para funcionar en táctil */}
-              <div className="relative flex items-stretch" ref={catalogoRef}>
-                <button
-                  onClick={() => setIsCatalogoOpen((v) => !v)}
-                  aria-expanded={isCatalogoOpen}
-                  aria-haspopup="menu"
-                  className={`${topNavLinkClass(isCatalogoActive)} gap-1`}
-                >
-                  <span>Catálogo</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${isCatalogoOpen ? 'rotate-180' : ''}`} />
-                  {isCatalogoActive && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-accent" />}
-                </button>
-                {isCatalogoOpen && (
-                  <div
-                    role="menu"
-                    className={`absolute right-0 mt-2 w-48 rounded-xl border border-border/60 bg-card/90 backdrop-blur-xl py-1.5 shadow-lg shadow-black/5 z-50 ${MENU_ENTRADA}`}
-                  >
-                    {catalogoSubItems.map((subItem) => (
-                      <Link
-                        key={subItem.path}
-                        to={subItem.path}
-                        role="menuitem"
-                        onClick={() => setIsCatalogoOpen(false)}
-                        className={navLinkClass(location.pathname.startsWith(subItem.path))}
-                      >
-                        {subItem.label}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </nav>
-
-            {/* Búsqueda global — Ctrl+K / Cmd+K desde cualquier pantalla */}
+          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+            {/* Búsqueda global — parece un campo, abre el diálogo (Ctrl+K) */}
             <button
               type="button"
               onClick={() => setIsBusquedaAbierta(true)}
               aria-label="Buscar (Ctrl+K)"
-              className="flex h-9 items-center gap-2 rounded-full px-3 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+              className="flex h-10 items-center gap-2 whitespace-nowrap rounded-lg px-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:w-72 md:border md:border-border md:bg-background"
             >
-              <Search className="h-4 w-4 shrink-0" />
-              <span className="hidden text-xs text-muted-foreground xl:inline">Ctrl+K</span>
+              <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span className="hidden min-w-0 truncate md:inline">Buscar cotizaciones, clientes…</span>
+              <kbd className="ml-auto hidden shrink-0 whitespace-nowrap rounded border border-border px-1.5 font-sans text-[11px] leading-4 text-muted-foreground md:inline">Ctrl K</kbd>
             </button>
 
-            {/* Alternar tema claro/oscuro — visible en todos los tamaños */}
             <button
               type="button"
               onClick={alternarTema}
               aria-label={tema === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {tema === 'dark' ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
             </button>
 
-            {/* Menú de usuario — visible en todos los tamaños, es la única
-                forma de cerrar sesión en toda la app. */}
+            {/* Menú de usuario — la única forma de cerrar sesión en escritorio */}
             <div className="relative" ref={userMenuRef}>
               <button
+                type="button"
                 onClick={() => setIsUserMenuOpen((v) => !v)}
                 aria-expanded={isUserMenuOpen}
                 aria-haspopup="menu"
-                className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+                aria-label="Menú de usuario"
+                className="flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-2 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                   {inicialesDe(nombreUsuario)}
                 </span>
-                <span className="hidden xl:flex flex-col items-start leading-tight max-w-32">
-                  <span className="text-sm font-medium text-foreground truncate w-full text-left">
-                    {nombreUsuario ?? 'Usuario'}
-                  </span>
-                  <span className="text-xs text-muted-foreground truncate w-full text-left">
-                    {nombreRol ?? ''}
-                  </span>
+                <span className="hidden max-w-36 flex-col items-start leading-tight xl:flex">
+                  <span className="w-full truncate text-left text-sm font-medium text-foreground">{nombreUsuario ?? 'Usuario'}</span>
+                  <span className="w-full truncate text-left text-xs capitalize text-muted-foreground">{nombreRol?.toLowerCase() ?? ''}</span>
                 </span>
-                <ChevronDown className={`hidden sm:block w-4 h-4 text-muted-foreground transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={cn('hidden h-4 w-4 text-muted-foreground transition-transform sm:block', isUserMenuOpen && 'rotate-180')} aria-hidden="true" />
               </button>
 
               {isUserMenuOpen && (
                 <div
                   role="menu"
-                  className={`absolute right-0 mt-2 w-56 rounded-xl border border-border/60 bg-card/90 backdrop-blur-xl py-1 shadow-lg shadow-black/5 z-50 ${MENU_ENTRADA}`}
+                  className={cn('absolute right-0 z-50 mt-2 w-56 rounded-xl border border-border bg-card py-1 shadow-lg shadow-black/5', MENU_ENTRADA)}
                 >
                   <div className="border-b border-border px-3 py-2.5">
-                    <p className="text-sm font-medium text-foreground truncate">{nombreUsuario ?? 'Usuario'}</p>
-                    <p className="text-xs text-muted-foreground truncate">{nombreRol ?? ''}</p>
+                    <p className="truncate text-sm font-medium text-foreground">{nombreUsuario ?? 'Usuario'}</p>
+                    <p className="truncate text-xs capitalize text-muted-foreground">{nombreRol?.toLowerCase() ?? ''}</p>
                   </div>
                   <button
                     type="button"
@@ -300,205 +336,90 @@ export function AppLayout() {
                     onClick={handleLogout}
                     className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <LogOut className="h-4 w-4 shrink-0" />
+                    <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
                     Cerrar sesión
                   </button>
                 </div>
               )}
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div className="flex flex-1 relative">
-        {/* Drawer "Menú" — en móvil se abre desde la barra inferior en vez
-            de un hamburguesa arriba, y reúne todo lo que no cabe en los
-            4 accesos fijos de abajo. */}
-        {isMenuOpen && (
-          <>
-            <div
-              className="fixed inset-0 bg-black/40 z-40 transition-opacity lg:hidden"
-              onClick={closeMenu}
-              aria-hidden="true"
-            />
-
-            <aside
-              className="fixed top-0 left-0 w-[85vw] max-w-72 h-full bg-card/85 backdrop-blur-xl border-r border-border/60 text-card-foreground z-50 shadow-2xl shadow-black/10 flex flex-col justify-between overflow-y-auto lg:hidden"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Menú de módulos"
-            >
-              <div>
-                <div className="flex items-center justify-between p-5 pb-3 border-b border-border">
-                  <span className="text-base font-semibold text-foreground">Menú de módulos</span>
-                  <button
-                    onClick={closeMenu}
-                    className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
-                    aria-label="Cerrar menú"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Tarjeta del usuario logueado, arriba del todo del menú */}
-                <div className="flex items-center gap-3 px-5 py-4 border-b border-border bg-muted/40">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">
-                    {inicialesDe(nombreUsuario)}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{nombreUsuario ?? 'Usuario'}</p>
-                    <p className="text-xs text-muted-foreground truncate">{nombreRol ?? ''}</p>
-                  </div>
-                </div>
-
-                <nav className="space-y-1 p-5">
-                  {mainNavItems.map((item) => (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      onClick={closeMenu}
-                      className={navLinkClass(location.pathname.startsWith(item.path))}
-                    >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      {item.label}
-                    </Link>
-                  ))}
-
-                  {/* Catálogo como acordeón */}
-                  <div>
-                    <button
-                      onClick={() => setIsMobileCatalogoOpen((v) => !v)}
-                      aria-expanded={isMobileCatalogoOpen}
-                      className={`w-full flex items-center justify-between ${navLinkClass(isCatalogoActive)}`}
-                    >
-                      <span className="flex items-center gap-2.5">
-                        <Package className="h-4 w-4 shrink-0" />
-                        Catálogo
-                      </span>
-                      <ChevronDown
-                        className={`w-4 h-4 transition-transform duration-200 ${
-                          isMobileCatalogoOpen || isCatalogoActive ? 'rotate-180' : ''
-                        }`}
-                      />
-                    </button>
-
-                    {(isMobileCatalogoOpen || isCatalogoActive) && (
-                      <div className="ml-4 mt-1 space-y-1 border-l-2 border-border pl-2">
-                        {catalogoSubItems.map((subItem) => (
-                          <Link
-                            key={subItem.path}
-                            to={subItem.path}
-                            onClick={closeMenu}
-                            className={navLinkClass(location.pathname.startsWith(subItem.path))}
-                          >
-                            {subItem.label}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {secondaryNavItems.map((item) => (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      onClick={closeMenu}
-                      className={navLinkClass(location.pathname.startsWith(item.path))}
-                    >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      {item.label}
-                    </Link>
-                  ))}
-                </nav>
-              </div>
-
-              <div className="border-t border-border p-5 space-y-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    closeMenu();
-                    setIsBusquedaAbierta(true);
-                  }}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
-                >
-                  <Search className="h-4 w-4" />
-                  Buscar
-                </button>
-                <button
-                  type="button"
-                  onClick={alternarTema}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
-                >
-                  {tema === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                  {tema === 'dark' ? 'Tema claro' : 'Tema oscuro'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Cerrar sesión
-                </button>
-                <p className="text-xs text-muted-foreground text-center">GenLogs ERP System</p>
-              </div>
-            </aside>
-          </>
-        )}
-
-        {/* Barra secundaria de escritorio (lg+): los módulos que no caben
-            en el nav superior, siempre visibles sin abrir el drawer */}
-        <nav className="hidden lg:flex flex-col gap-1 w-56 shrink-0 border-r border-border/60 bg-card/60 backdrop-blur-xl p-4">
-          {secondaryNavItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={navLinkClass(location.pathname.startsWith(item.path))}
-            >
-              <item.icon className="h-4 w-4 shrink-0" />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Contenido principal — más aire en escritorio, y espacio abajo en
-            móvil para no quedar tapado por la barra de navegación inferior */}
-        <main className="flex-1 p-4 pb-24 sm:p-6 lg:p-8 lg:pb-8 max-w-7xl mx-auto w-full min-w-0">
+        {/* Contenido principal — espacio abajo en móvil para la barra inferior */}
+        <main className="mx-auto w-full min-w-0 max-w-7xl flex-1 p-4 pb-24 sm:p-6 lg:p-8 lg:pb-8">
           <Outlet />
         </main>
       </div>
 
-      {/* Barra de navegación inferior — solo móvil/tablet (hasta lg),
-          estilo app: iconos fijos + "Menú" para todo lo demás. */}
+      {/* Drawer "Menú" — móvil/tablet: el mismo menú lateral, desde la barra inferior */}
+      {isMenuOpen && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/40 animate-in fade-in-0 duration-200 motion-reduce:animate-none lg:hidden" onClick={closeMenu} aria-hidden="true" />
+          <aside
+            className="fixed inset-y-0 left-0 z-50 flex w-[85vw] max-w-72 flex-col overflow-y-auto bg-sidebar pt-4 shadow-2xl animate-in slide-in-from-left duration-200 ease-out motion-reduce:animate-none lg:hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menú de módulos"
+          >
+            <div className="flex items-center justify-between px-3">
+              <LogoLateral onNavigate={closeMenu} />
+              <button
+                type="button"
+                onClick={closeMenu}
+                aria-label="Cerrar menú"
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-sidebar-foreground hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <NavLateral esAdmin={esAdmin} onNavigate={closeMenu} />
+            <div className="mt-auto border-t border-sidebar-border p-3">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex h-10 w-full items-center gap-2.5 rounded-lg px-2.5 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+              >
+                <LogOut className="h-4.5 w-4.5" aria-hidden="true" />
+                Cerrar sesión
+              </button>
+            </div>
+          </aside>
+        </>
+      )}
+
+      {/* Barra de navegación inferior — solo móvil/tablet (hasta lg) */}
       <nav
-        className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border/60 bg-card/70 backdrop-blur-xl supports-[backdrop-filter]:bg-card/60 pb-[env(safe-area-inset-bottom)]"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] lg:hidden"
         aria-label="Navegación principal"
       >
         <div className="grid grid-cols-5">
-          {bottomNavItems.map((item) => {
-            const isActive = location.pathname.startsWith(item.path);
+          {BOTTOM_NAV.map((item) => {
+            const activo = estaActivo(location.pathname, item.path);
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${
-                  isActive ? 'text-accent' : 'text-muted-foreground'
-                }`}
+                aria-current={activo ? 'page' : undefined}
+                className={cn(
+                  'flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+                  activo ? 'text-accent' : 'text-muted-foreground'
+                )}
               >
-                <item.icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
-                <span className="truncate max-w-[4.5rem]">{item.label.split(' ')[0]}</span>
+                <item.icon className="h-5 w-5" strokeWidth={activo ? 2.5 : 2} aria-hidden="true" />
+                <span className="max-w-[4.5rem] truncate">{item.label.split(' ')[0]}</span>
               </Link>
             );
           })}
           <button
             type="button"
-            onClick={toggleMenu}
+            onClick={() => setIsMenuOpen(true)}
             aria-expanded={isMenuOpen}
-            className={`flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${
+            className={cn(
+              'flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
               isMenuOpen || isMenuSectionActive ? 'text-accent' : 'text-muted-foreground'
-            }`}
+            )}
           >
-            <Menu className="h-5 w-5" strokeWidth={isMenuOpen || isMenuSectionActive ? 2.5 : 2} />
+            <Menu className="h-5 w-5" strokeWidth={isMenuOpen || isMenuSectionActive ? 2.5 : 2} aria-hidden="true" />
             <span>Menú</span>
           </button>
         </div>
