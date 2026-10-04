@@ -1,126 +1,64 @@
 // src/features/cotizaciones/components/SeguimientoTimeline.tsx
 
 import React from 'react';
-import { EstadoCotizacion } from "@/types/cotizacion.types";
-import type { SeguimientoCotizacion } from "@/types/cotizacion.types";
-import { formatearFechaHora, mapearEstadoCotizacion, colorEstadoCotizacion } from '@/lib/formatters/codigoCotizacion';
-import { CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import type { SeguimientoCotizacion } from '@/types/cotizacion.types';
+import { formatearFechaHora, mapearEstadoCotizacion } from '@/lib/formatters/codigoCotizacion';
+import { Check, X } from 'lucide-react';
+import { cn } from '@/lib/utils/utils';
 
 interface SeguimientoTimelineProps {
   seguimientos?: SeguimientoCotizacion[];
-  estadoActual: EstadoCotizacion;
 }
 
-export const SeguimientoTimeline: React.FC<SeguimientoTimelineProps> = ({
-  seguimientos = [],
-  estadoActual,
-}) => {
-  const getSeguimientoIcon = (estado: EstadoCotizacion) => {
-    switch (estado) {
-      case EstadoCotizacion.APROBADA:
-        return <CheckCircle2 className="w-6 h-6 text-success" />;
-      case EstadoCotizacion.RECHAZADA:
-        return <AlertCircle className="w-6 h-6 text-destructive" />;
-      case EstadoCotizacion.CADUCADA:
-        return <AlertCircle className="w-6 h-6 text-warning-text" />;
-      default:
-        return <Clock className="w-6 h-6 text-accent" />;
-    }
-  };
-
-  const sortedSeguimientos = [...(seguimientos || [])].sort(
-    (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
+/** Historial de cambios de estado, del más reciente al más antiguo. El estado
+ *  actual ya se ve en el encabezado de la página: aquí solo va el recorrido. */
+export const SeguimientoTimeline: React.FC<SeguimientoTimelineProps> = ({ seguimientos = [] }) => {
+  const ordenados = [...seguimientos].sort(
+    (a, b) => new Date(b.fecha ?? b.fechaEvento).getTime() - new Date(a.fecha ?? a.fechaEvento).getTime()
   );
 
   return (
-    <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-foreground">
-          Historial y Seguimiento
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Registro de cambios de estado de la cotización
-        </p>
-      </div>
+    <section aria-labelledby="seguimiento-t" className="rounded-xl border border-border bg-card p-5">
+      <h2 id="seguimiento-t" className="mb-4 text-base font-semibold text-foreground">Seguimiento</h2>
 
-      {sortedSeguimientos.length === 0 ? (
-        <div className="text-center py-8">
-          <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">
-            Sin historial de cambios. Esta es la cotización inicial.
-          </p>
-        </div>
+      {ordenados.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Sin cambios de estado todavía.</p>
       ) : (
-        <div className="space-y-6">
-          {sortedSeguimientos.map((seguimiento, index) => (
-            <div key={seguimiento.id || index} className="flex gap-4">
-              {/* Timeline dot and line */}
-              <div className="flex flex-col items-center">
-                <div className="relative z-10">
-                  {getSeguimientoIcon(seguimiento.estadoNuevo)}
+        <ol className="flex flex-col">
+          {ordenados.map((s, i) => {
+            const negativo = s.estadoNuevo === 'RECHAZADA' || s.estadoNuevo === 'ANULADA';
+            const ultimo = i === ordenados.length - 1;
+            const nota = s.observaciones || s.comentario;
+            return (
+              <li key={s.idSeguimiento ?? s.id ?? i} className="grid grid-cols-[20px_1fr] gap-3">
+                <div className="flex flex-col items-center">
+                  <span
+                    className={cn(
+                      'flex h-5 w-5 shrink-0 items-center justify-center rounded-full',
+                      negativo ? 'bg-destructive/10 text-destructive' : 'bg-success/10 text-success'
+                    )}
+                    aria-hidden="true"
+                  >
+                    {negativo ? <X className="h-3 w-3" /> : <Check className="h-3 w-3" />}
+                  </span>
+                  {!ultimo && <span className="w-px flex-1 bg-border" aria-hidden="true" />}
                 </div>
-                {index < sortedSeguimientos.length - 1 && (
-                  <div className="w-1 h-16 bg-muted mt-2"></div>
-                )}
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 pt-1">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-foreground">
-                        {mapearEstadoCotizacion(seguimiento.estadoAnterior)}
-                      </span>
-                      <span className="text-muted-foreground">→</span>
-                      <span
-                        className={`font-semibold px-2 py-1 rounded ${colorEstadoCotizacion(
-                          seguimiento.estadoNuevo
-                        )}`}
-                      >
-                        {mapearEstadoCotizacion(seguimiento.estadoNuevo)}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formatearFechaHora(seguimiento.fecha)}
-                    </p>
-                  </div>
-                </div>
-
-                {seguimiento.usuarioNombre && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    <span className="font-medium">Por:</span>{' '}
-                    {seguimiento.usuarioNombre}
+                <div className={cn('min-w-0', !ultimo && 'pb-4')}>
+                  <p className="text-sm font-medium text-foreground">
+                    {s.estadoAnterior ? `${mapearEstadoCotizacion(s.estadoAnterior)} → ` : ''}
+                    {mapearEstadoCotizacion(s.estadoNuevo)}
                   </p>
-                )}
-
-                {seguimiento.observaciones && (
-                  <div className="mt-3 p-3 bg-muted border border-border rounded">
-                    <p className="text-sm text-foreground">
-                      {seguimiento.observaciones}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+                  <p className="text-[13px] text-muted-foreground">
+                    {formatearFechaHora(s.fecha ?? s.fechaEvento)}
+                    {s.usuarioNombre ? ` · ${s.usuarioNombre}` : ''}
+                  </p>
+                  {nota && <p className="mt-1 text-[13px] text-foreground">{nota}</p>}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
       )}
-
-      {/* Current status */}
-      <div className="mt-8 pt-6 border-t border-border">
-        <div className="flex items-center justify-between p-4 bg-accent/10 border border-accent/30 rounded-lg">
-          <div>
-            <p className="text-sm text-accent font-medium">
-              Estado actual de la cotización
-            </p>
-            <p className={`text-lg font-bold mt-1 ${colorEstadoCotizacion(estadoActual)}`}>
-              {mapearEstadoCotizacion(estadoActual)}
-            </p>
-          </div>
-          {getSeguimientoIcon(estadoActual)}
-        </div>
-      </div>
-    </div>
+    </section>
   );
 };

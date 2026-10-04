@@ -111,14 +111,13 @@ export const AdjuntoCotizacionUploader: React.FC<AdjuntoCotizacionUploaderProps>
   };
 
   return (
-    <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-foreground">
-          Adjuntos y Documentos
+    <section aria-labelledby="adjuntos-t" className="rounded-xl border border-border bg-card p-5">
+      <div className="mb-4">
+        <h2 id="adjuntos-t" className="text-base font-semibold text-foreground">
+          Adjuntos
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Carga documentos, imágenes o especificaciones relacionadas con la
-          cotización
+          Fichas técnicas, requerimientos del cliente u otros documentos de la cotización.
         </p>
       </div>
 
@@ -250,14 +249,9 @@ export const AdjuntoCotizacionUploader: React.FC<AdjuntoCotizacionUploaderProps>
         </div>
       )}
 
-      {/* Info */}
-      <div className="mt-6 p-4 bg-accent/10 border border-accent/30 rounded-lg">
-        <p className="text-sm text-accent">
-          <span className="font-semibold">💡 Consejo:</span> Los adjuntos se
-          almacenan en Cloudinary y estarán disponibles cuando se comparta la
-          cotización.
-        </p>
-      </div>
-    </div>
+      <p className="mt-4 text-[13px] text-muted-foreground">
+        Los adjuntos quedan disponibles al compartir la cotización.
+      </p>
+    </section>
   );
 };
