@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Search, Users } from 'lucide-react'
 import type { Cliente, FiltrosCliente } from '../../../types/cliente.types'
+import { codigoTipoDocumento } from '../../../types/tercero.types'
 import { TableSkeletonRows } from '@/components/ui/TableSkeletonRows'
 import { EstadoVacio } from '@/components/ui/EstadoVacio'
 import { Tabla, TablaCard, Td, Th, controlClass, filaClass } from '@/components/ui/tabla'
@@ -49,12 +50,11 @@ export function ClienteTable({ clientes, filtros, onFiltrosChange, isLoading, ac
               <Th>Cliente</Th>
               <Th>Documento</Th>
               <Th>Contacto</Th>
-              <Th alinear="derecha">Unidades mineras</Th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
-              <TableSkeletonRows columns={4} />
+              <TableSkeletonRows columns={3} />
             ) : (
               clientes.map((c) => (
                 <tr key={c.idCliente ?? c.id} className={filaClass}>
@@ -65,13 +65,12 @@ export function ClienteTable({ clientes, filtros, onFiltrosChange, isLoading, ac
                     {c.tercero.nombreComercial && <p className="text-xs text-muted-foreground">{c.tercero.nombreComercial}</p>}
                   </Td>
                   <Td className="whitespace-nowrap tabular-nums">
-                    <span className="text-muted-foreground">{c.tercero.tipoDocumento}</span> {c.tercero.numeroDocumento}
+                    <span className="text-muted-foreground">{codigoTipoDocumento(c.tercero.tipoDocumento)}</span> {c.tercero.numeroDocumento}
                   </Td>
                   <Td>
                     <p>{c.tercero.email || c.tercero.correo || '—'}</p>
                     {c.tercero.telefono && <p className="text-xs tabular-nums text-muted-foreground">{c.tercero.telefono}</p>}
                   </Td>
-                  <Td alinear="derecha">{c.empresasMineras?.length ?? 0}</Td>
                 </tr>
               ))
             )}

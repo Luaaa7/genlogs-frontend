@@ -8,6 +8,8 @@ export interface CategoriaServicio {
 }
 
 export async function listarCategoriasServicio(): Promise<CategoriaServicio[]> {
-  const { data } = await axiosClient.get<CategoriaServicio[]>("/categorias-servicio")
+  // La ruta real es /api/catalogos/categorias-servicio (CategoriaServicioController);
+  // /api/categorias-servicio no existe y devolvía 404.
+  const { data } = await axiosClient.get<CategoriaServicio[]>("/catalogos/categorias-servicio")
   return data
 }

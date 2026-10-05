@@ -7,6 +7,8 @@ export interface SectorEconomico {
 }
 
 export async function listarSectoresEconomicos(): Promise<SectorEconomico[]> {
-  const { data } = await axiosClient.get<SectorEconomico[]>("/sectores-economicos")
+  // La ruta real es /api/catalogos/sectores-economicos (SectorEconomicoController);
+  // /api/sectores-economicos no existe y devolvía 404.
+  const { data } = await axiosClient.get<SectorEconomico[]>("/catalogos/sectores-economicos")
   return data
 }

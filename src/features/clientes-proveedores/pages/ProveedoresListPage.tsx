@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Plus, Search, Truck } from 'lucide-react'
 import { useProveedores, useCrearProveedor } from '../hooks/useProveedores'
+import { codigoTipoDocumento } from '@/types/tercero.types'
 import { ProveedorForm } from '../components/ProveedorForm'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
 import { TableSkeletonRows } from '@/components/ui/TableSkeletonRows'
@@ -87,7 +88,7 @@ export default function ProveedoresListPage() {
                       {p.tercero.nombreComercial && <p className="text-xs text-muted-foreground">{p.tercero.nombreComercial}</p>}
                     </Td>
                     <Td className="whitespace-nowrap tabular-nums">
-                      <span className="text-muted-foreground">{p.tercero.tipoDocumento}</span> {p.tercero.numeroDocumento}
+                      <span className="text-muted-foreground">{codigoTipoDocumento(p.tercero.tipoDocumento)}</span> {p.tercero.numeroDocumento}
                     </Td>
                     <Td>{p.tercero.direccion || '—'}</Td>
                     <Td>

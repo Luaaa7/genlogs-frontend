@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Building2, MapPin } from 'lucide-react'
-import { useEmpresasMineras, useMinerales } from '../hooks/useEmpresasMineras'
+import { useEmpresasMineras } from '../hooks/useEmpresasMineras'
 import { MapaUnidades, type PuntoMapa } from '../components/MapaUnidades'
 import { useClientes } from '@/features/clientes-proveedores/hooks/useClientes'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
@@ -21,48 +21,48 @@ const selectClass =
 const idDe = (e: EmpresaMinera) => e.idEmpresaMinera ?? e.id ?? 0
 const nombreDe = (e: EmpresaMinera) => e.nombreUnidadMinera ?? e.nombre ?? 'Unidad minera'
 const tieneCoordenadas = (e: EmpresaMinera) => Number.isFinite(e.latitud) && Number.isFinite(e.longitud) && !(e.latitud === 0 && e.longitud === 0)
-const mineralesDe = (e: EmpresaMinera) =>
-  e.minerales.map((m) => m.mineral?.nombreMineral ?? m.nombre).filter(Boolean).join(', ') || '—'
+const idClienteDe = (e: EmpresaMinera) => e.cliente?.idCliente
+const idEtapaDe = (e: EmpresaMinera) => e.etapaComercial?.idEtapaComercial
+// La lista de minerales por unidad no viene embebida en este listado (es un
+// endpoint aparte, /empresas-mineras/{id}/minerales); de momento no se pide
+// aquí fila por fila para no disparar N requests al cargar la página.
 
 export function EmpresasMinerasPage() {
   const { data = [], isLoading, isError, refetch } = useEmpresasMineras()
-  const { data: minerales = [] } = useMinerales()
   const { data: clientes = [] } = useClientes({ size: 500 })
 
   const [vista, setVista] = useState<'mapa' | 'tabla'>('mapa')
-  const [filtroMineral, setFiltroMineral] = useState('')
   const [filtroEtapa, setFiltroEtapa] = useState('')
   const [filtroCliente, setFiltroCliente] = useState('')
   const [seleccion, setSeleccion] = useState<number | null>(null)
 
   const nombreCliente = useMemo(() => {
     const mapa = new Map(clientes.map((c) => [c.idCliente ?? c.id, c.tercero?.nombreComercial || c.tercero?.razonSocial]))
-    return (id: number) => mapa.get(id) ?? `Cliente #${id}`
+    return (id: number | undefined) => (id != null ? mapa.get(id) ?? `Cliente #${id}` : 'Sin cliente')
   }, [clientes])
 
   // Etapas presentes en los datos, en el orden del flujo comercial
   const etapas = useMemo(() => {
     const unicas = new Map<number, { id: number; nombre: string; orden: number }>()
     for (const e of data) {
-      if (e.etapaComercial) unicas.set(e.idEtapaComercial, { id: e.idEtapaComercial, nombre: e.etapaComercial.nombreEtapa, orden: e.etapaComercial.ordenFlujo })
+      if (e.etapaComercial) unicas.set(e.etapaComercial.idEtapaComercial, { id: e.etapaComercial.idEtapaComercial, nombre: e.etapaComercial.nombreEtapa, orden: e.etapaComercial.ordenFlujo })
     }
     // La etapa más avanzada (cliente activo) toma el color más fuerte (azul marino)
     const ordenadas = [...unicas.values()].sort((a, b) => a.orden - b.orden)
     return ordenadas.map((e, i) => ({ ...e, color: COLORES_ETAPA[(ordenadas.length - 1 - i) % COLORES_ETAPA.length] }))
   }, [data])
-  const etapaDe = (e: EmpresaMinera) => etapas.find((x) => x.id === e.idEtapaComercial)
+  const etapaDe = (e: EmpresaMinera) => etapas.find((x) => x.id === idEtapaDe(e))
 
-  const clientesConUnidades = useMemo(() => [...new Set(data.map((e) => e.idCliente))], [data])
+  const clientesConUnidades = useMemo(() => [...new Set(data.map((e) => idClienteDe(e)).filter((id): id is number => id != null))], [data])
 
   const filtradas = useMemo(
     () =>
       data.filter(
         (e) =>
-          (!filtroMineral || e.minerales.some((m) => String(m.idMineral) === filtroMineral)) &&
-          (!filtroEtapa || String(e.idEtapaComercial) === filtroEtapa) &&
-          (!filtroCliente || String(e.idCliente) === filtroCliente)
+          (!filtroEtapa || String(idEtapaDe(e)) === filtroEtapa) &&
+          (!filtroCliente || String(idClienteDe(e)) === filtroCliente)
       ),
-    [data, filtroMineral, filtroEtapa, filtroCliente]
+    [data, filtroEtapa, filtroCliente]
   )
 
   const puntos: PuntoMapa[] = useMemo(
@@ -72,7 +72,7 @@ export function EmpresasMinerasPage() {
         nombre: nombreDe(e),
         lat: e.latitud,
         lon: e.longitud,
-        color: etapas.find((x) => x.id === e.idEtapaComercial)?.color ?? 'var(--muted-foreground)',
+        color: etapas.find((x) => x.id === idEtapaDe(e))?.color ?? 'var(--muted-foreground)',
       })),
     [filtradas, etapas]
   )
@@ -109,11 +109,6 @@ export function EmpresasMinerasPage() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <label className="sr-only" htmlFor="em-mineral">Mineral</label>
-        <select id="em-mineral" value={filtroMineral} onChange={(e) => setFiltroMineral(e.target.value)} className={selectClass}>
-          <option value="">Todos los minerales</option>
-          {minerales.map((m) => <option key={m.idMineral} value={m.idMineral}>{m.nombreMineral}</option>)}
-        </select>
         <label className="sr-only" htmlFor="em-etapa">Etapa comercial</label>
         <select id="em-etapa" value={filtroEtapa} onChange={(e) => setFiltroEtapa(e.target.value)} className={selectClass}>
           <option value="">Todas las etapas</option>
@@ -172,12 +167,12 @@ export function EmpresasMinerasPage() {
                 <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
                   <dt className="text-muted-foreground">Cliente</dt>
                   <dd>
-                    <Link to={`/clientes/${actual.idCliente}`} className="rounded text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                      {nombreCliente(actual.idCliente)}
-                    </Link>
+                    {idClienteDe(actual) != null ? (
+                      <Link to={`/clientes/${idClienteDe(actual)}`} className="rounded text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                        {nombreCliente(idClienteDe(actual))}
+                      </Link>
+                    ) : '—'}
                   </dd>
-                  <dt className="text-muted-foreground">Minerales</dt>
-                  <dd>{mineralesDe(actual)}</dd>
                   <dt className="text-muted-foreground">Coordenadas</dt>
                   <dd className="tabular-nums">{tieneCoordenadas(actual) ? `${actual.latitud.toFixed(4)}, ${actual.longitud.toFixed(4)}` : 'Sin coordenadas'}</dd>
                   {actual.altitudMsnm != null && (
@@ -218,7 +213,7 @@ export function EmpresasMinerasPage() {
                           <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: etapaDe(e)?.color ?? 'var(--muted-foreground)' }} aria-hidden="true" />
                           <span className="min-w-0 flex-1">
                             <span className="block truncate font-medium">{nombreDe(e)}</span>
-                            <span className="block truncate text-xs text-muted-foreground">{nombreCliente(e.idCliente)} · {mineralesDe(e)}</span>
+                            <span className="block truncate text-xs text-muted-foreground">{nombreCliente(idClienteDe(e))}</span>
                           </span>
                           {!tieneCoordenadas(e) && <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="Sin coordenadas" />}
                         </button>
@@ -239,7 +234,6 @@ export function EmpresasMinerasPage() {
                 <tr className="border-b border-border text-left text-xs text-muted-foreground">
                   <th className="px-4 py-2.5 font-medium">Unidad minera</th>
                   <th className="px-4 py-2.5 font-medium">Cliente</th>
-                  <th className="px-4 py-2.5 font-medium">Minerales</th>
                   <th className="px-4 py-2.5 font-medium">Etapa</th>
                   <th className="px-4 py-2.5 font-medium">Coordenadas</th>
                   <th className="px-4 py-2.5 text-right font-medium">Altitud</th>
@@ -247,7 +241,7 @@ export function EmpresasMinerasPage() {
               </thead>
               <tbody>
                 {isLoading ? (
-                  <TableSkeletonRows columns={6} />
+                  <TableSkeletonRows columns={5} />
                 ) : (
                   filtradas.map((e) => (
                     <tr key={idDe(e)} className="border-t border-border first:border-t-0 hover:bg-muted/60">
@@ -255,8 +249,7 @@ export function EmpresasMinerasPage() {
                         <p className="font-medium">{nombreDe(e)}</p>
                         <p className="text-xs text-muted-foreground">{e.tipoOperacion?.nombreOperacion ?? ''}</p>
                       </td>
-                      <td className="px-4 py-3">{nombreCliente(e.idCliente)}</td>
-                      <td className="px-4 py-3">{mineralesDe(e)}</td>
+                      <td className="px-4 py-3">{nombreCliente(idClienteDe(e))}</td>
                       <td className="px-4 py-3">{etapaDe(e) ? <EstadoBadge tono="accent">{etapaDe(e)!.nombre}</EstadoBadge> : '—'}</td>
                       <td className="whitespace-nowrap px-4 py-3 tabular-nums">{tieneCoordenadas(e) ? `${e.latitud.toFixed(4)}, ${e.longitud.toFixed(4)}` : 'Sin coordenadas'}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{e.altitudMsnm != null ? `${e.altitudMsnm.toLocaleString('es-PE')} m` : '—'}</td>

@@ -3,15 +3,21 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { contactoSchema, type ContactoFormValues } from '../../../lib/validators/rucDni.schema';
 import type { ContactoCliente } from '../../../types/proveedor.types';
-import { useAgregarContacto, useEliminarContacto } from '../hooks/useProveedores';
+import { useAgregarContacto, useContactosTercero, useEliminarContacto } from '../hooks/useProveedores';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EstadoBadge } from '@/components/ui/EstadoBadge';
 
 const input = 'rounded border border-border p-2 text-sm';
 
-export function ContactoClienteList({ clienteId, contactos }: { clienteId: number; contactos: ContactoCliente[] }) {
-  const agregar = useAgregarContacto(clienteId);
-  const eliminar = useEliminarContacto(clienteId);
+/**
+ * Los contactos cuelgan del Tercero (no del Cliente/Proveedor directamente),
+ * así que este componente recibe idTercero y carga su propia lista — no
+ * depende de que el padre se la pase embebida en otro objeto.
+ */
+export function ContactoClienteList({ idTercero }: { idTercero: number }) {
+  const { data: contactos = [] } = useContactosTercero(idTercero);
+  const agregar = useAgregarContacto(idTercero);
+  const eliminar = useEliminarContacto(idTercero);
   const [contactoAEliminar, setContactoAEliminar] = useState<ContactoCliente | null>(null);
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ContactoFormValues>({
     resolver: zodResolver(contactoSchema),
