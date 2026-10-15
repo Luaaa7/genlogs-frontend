@@ -15,6 +15,25 @@ import type { EmpresaMinera } from '@/types/empresaMinera.types'
  *  distinguen también con daltonismo. Se asignan de la etapa final hacia atrás. */
 const COLORES_ETAPA = ['var(--viz-1)', 'var(--viz-3)', 'var(--viz-2)', 'var(--chart-2)', 'var(--chart-4)']
 
+/** Clases del chip de etapa en la tabla: un color por familia de etapa comercial
+ *  (verde producción, azul construcción/desarrollo, ámbar exploración, pizarra
+ *  cierre). El nombre viene del backend (`nombreEtapa`) sin catálogo fijo, así
+ *  que el matching es por contenido sobre el texto normalizado (minúsculas y
+ *  sin acentos). Si no coincide ninguna familia, se devuelve undefined y el
+ *  badge conserva su tono por defecto. */
+const CLASES_ETAPA: ReadonlyArray<{ patron: RegExp; clases: string }> = [
+  { patron: /producc/, clases: 'bg-emerald-50 text-emerald-700 border border-emerald-200' },
+  { patron: /(construcc|desarroll)/, clases: 'bg-blue-50 text-blue-700 border border-blue-200' },
+  { patron: /explorac/, clases: 'bg-amber-50 text-amber-700 border border-amber-200' },
+  { patron: /cierre/, clases: 'bg-slate-100 text-slate-700 border border-slate-300' },
+]
+
+const clasesDeEtapa = (nombre?: string): string | undefined => {
+  if (!nombre) return undefined
+  const texto = nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  return CLASES_ETAPA.find(({ patron }) => patron.test(texto))?.clases
+}
+
 const selectClass =
   'h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
@@ -250,7 +269,7 @@ export function EmpresasMinerasPage() {
                         <p className="text-xs text-muted-foreground">{e.tipoOperacion?.nombreOperacion ?? ''}</p>
                       </td>
                       <td className="px-4 py-3">{nombreCliente(idClienteDe(e))}</td>
-                      <td className="px-4 py-3">{etapaDe(e) ? <EstadoBadge tono="accent">{etapaDe(e)!.nombre}</EstadoBadge> : '—'}</td>
+                      <td className="px-4 py-3">{etapaDe(e) ? <EstadoBadge tono="accent" className={clasesDeEtapa(etapaDe(e)!.nombre)}>{etapaDe(e)!.nombre}</EstadoBadge> : '—'}</td>
                       <td className="whitespace-nowrap px-4 py-3 tabular-nums">{tieneCoordenadas(e) ? `${e.latitud.toFixed(4)}, ${e.longitud.toFixed(4)}` : 'Sin coordenadas'}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{e.altitudMsnm != null ? `${e.altitudMsnm.toLocaleString('es-PE')} m` : '—'}</td>
                     </tr>
