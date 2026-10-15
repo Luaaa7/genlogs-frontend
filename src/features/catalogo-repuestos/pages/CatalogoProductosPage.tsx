@@ -11,7 +11,8 @@ import { useProductos } from "@/hooks/useProductos"
 import { cn } from "@/lib/utils/utils"
 import type { ProductoFiltros } from "@/types/producto.types"
 import { CategoriaSelector } from "../components/CategoriaSelector"
-import { ProductoCard, ProductoCardSkeleton } from "../components/ProductoCard"
+import { ProductoCard } from "../components/ProductoCard"
+import CargandoCarrito from "@/components//ui/CargandoCarrito"
 
 const TAMANIO_PAGINA = 12
 
@@ -49,7 +50,7 @@ export function CatalogoProductosPage() {
   const productos = data?.content ?? []
   const totalPaginas = data?.totalPages ?? 0
   const totalElementos = data?.totalElements ?? 0
-  const sinResultados = !isLoading && !isError && productos.length === 0
+  const sinResultados = !isLoading && !isFetching && !isError && productos.length === 0
 
   function irAPagina(nueva: number) {
     setPaginaActual({ clave: claveFiltros, pagina: nueva })
@@ -141,7 +142,12 @@ export function CatalogoProductosPage() {
 
       {isError && <ErrorBanner message="No se pudo cargar el catálogo." onRetry={() => refetch()} />}
 
-      {sinResultados && (
+      {/* Control de estados: Carga vs Sin Resultados vs Grilla de productos */}
+      {isLoading || isFetching ? (
+        <div className="flex min-h-[300px] items-center justify-center py-12">
+          <CargandoCarrito />
+        </div>
+      ) : sinResultados ? (
         <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-10 text-center shadow-sm">
           <div className="relative flex h-16 w-16 items-center justify-center">
             <div className="absolute inset-0 rounded-full bg-gradient-to-br from-accent/15 via-accent/5 to-transparent" />
@@ -164,20 +170,19 @@ export function CatalogoProductosPage() {
             </Button>
           )}
         </div>
+      ) : (
+        <div
+          aria-busy={isFetching}
+          className={cn(
+            "grid grid-cols-2 gap-4 transition-opacity md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6",
+            isPlaceholderData && "opacity-60"
+          )}
+        >
+          {productos.map((producto) => (
+            <ProductoCard key={producto.idProducto} producto={producto} />
+          ))}
+        </div>
       )}
-
-      <div
-        aria-busy={isFetching}
-        className={cn(
-          "grid grid-cols-2 gap-4 transition-opacity md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6",
-          isPlaceholderData && "opacity-60"
-        )}
-      >
-        {isLoading && Array.from({ length: TAMANIO_PAGINA }).map((_, i) => <ProductoCardSkeleton key={i} />)}
-        {productos.map((producto) => (
-          <ProductoCard key={producto.idProducto} producto={producto} />
-        ))}
-      </div>
 
       {totalPaginas > 1 && (
         <nav aria-label="Paginación del catálogo" className="flex items-center justify-center gap-3">
