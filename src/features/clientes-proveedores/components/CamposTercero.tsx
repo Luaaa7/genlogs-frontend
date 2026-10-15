@@ -19,9 +19,16 @@ const TIPOS_DOCUMENTO = [
 /** Campos del tercero (documento, datos fiscales y contacto) con autocompletado
  *  por RUC/DNI (RF-08). Debe ir dentro de un <FormProvider>. */
 export function CamposTercero() {
-  const { register, setValue, getValues, formState: { errors } } = useFormContext<ConTercero>()
+  const { register, setValue, getValues, trigger, setError, formState: { errors } } = useFormContext<ConTercero>()
   const e = errors.tercero
   const consultar = useConsultarDocumento()
+
+  // Entrada en tiempo real: el valor se filtra ANTES de que react-hook-form lo
+  // lea, de modo que el form siempre recibe el dato ya saneado. Se conserva
+  // `valueAsNumber` donde el schema espera un número.
+  const { onChange: onChangeDistrito, ...propsDistrito } = register('tercero.idDistrito', { valueAsNumber: true })
+  const { onChange: onChangeTelefono, ...propsTelefono } = register('tercero.telefono')
+  const { onChange: onChangeCorreo, ...propsCorreo } = register('tercero.correo')
 
   // Completa razón social y dirección desde Factiliza (vía backend)
   async function buscarDocumento() {
@@ -85,7 +92,7 @@ export function CamposTercero() {
 
       <SeccionForm titulo="Ubicación y contacto">
         <Campo id="tercero-direccion" label="Dirección" opcional>
-          <input id="tercero-direccion" autoComplete="street-address" {...register('tercero.direccion')} className={inputFormClass} />
+          <input id="tercero-direccion" autoComplete="street-address" maxLength={255} {...register('tercero.direccion')} className={inputFormClass} />
         </Campo>
         <Campo
           id="tercero-distrito"
@@ -95,9 +102,14 @@ export function CamposTercero() {
         >
           <input
             id="tercero-distrito"
-            type="number"
-            min={1}
-            {...register('tercero.idDistrito', { valueAsNumber: true })}
+            type="text"
+            inputMode="numeric"
+            maxLength={6}
+            {...propsDistrito}
+            onChange={(ev) => {
+              ev.target.value = ev.target.value.replace(/\D/g, '')
+              onChangeDistrito(ev)
+            }}
             aria-invalid={!!e?.idDistrito}
             aria-describedby={describedBy('tercero-distrito', { error: e?.idDistrito, ayuda: true })}
             className={`${inputFormClass} max-w-40`}
@@ -105,15 +117,40 @@ export function CamposTercero() {
         </Campo>
         <div className="grid gap-4 sm:grid-cols-2">
           <Campo id="tercero-telefono" label="Teléfono" opcional>
-            <input id="tercero-telefono" type="tel" autoComplete="tel" placeholder="+51 984 215 330" {...register('tercero.telefono')} className={inputFormClass} />
+            <input
+              id="tercero-telefono"
+              type="tel"
+              maxLength={15}
+              autoComplete="tel"
+              placeholder="+51 984 215 330"
+              {...propsTelefono}
+              onChange={(ev) => {
+                ev.target.value = ev.target.value.replace(/[^0-9+]/g, '')
+                onChangeTelefono(ev)
+              }}
+              className={inputFormClass}
+            />
           </Campo>
           <Campo id="tercero-correo" label="Correo" opcional error={e?.correo?.message}>
             <input
               id="tercero-correo"
               type="email"
+              maxLength={100}
               autoComplete="email"
               placeholder="compras@empresa.pe"
-              {...register('tercero.correo')}
+              {...propsCorreo}
+              onChange={(ev) => {
+                onChangeCorreo(ev)
+                // Con resolver (Zod), react-hook-form no ejecuta las `validate`
+                // de register: `trigger` fuerza la validación del schema al
+                // escribir y setError cubre el requisito explícito de '@'.
+                const valor = ev.target.value
+                if (valor && !valor.includes('@')) {
+                  setError('tercero.correo', { type: 'pattern', message: 'El correo debe incluir el carácter @' })
+                } else {
+                  void trigger('tercero.correo')
+                }
+              }}
               aria-invalid={!!e?.correo}
               aria-describedby={describedBy('tercero-correo', { error: e?.correo })}
               className={inputFormClass}

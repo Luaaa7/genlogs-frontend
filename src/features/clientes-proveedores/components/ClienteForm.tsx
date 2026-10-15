@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { FormProvider, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery } from '@tanstack/react-query'
@@ -24,6 +25,16 @@ export function ClienteForm({ onSubmit, isSubmitting, serverError }: Props) {
   const { register, handleSubmit, formState: { errors } } = form
   const { data: sectores = [] } = useQuery({ queryKey: ['sectores-economicos'], queryFn: listarSectoresEconomicos, staleTime: 10 * 60_000 })
 
+  // Catálogo del backend + opción "Alimentario": si el catálogo ya la incluye
+  // se usa su id real (evitando duplicarla); si no, se añade con el siguiente
+  // id disponible.
+  const opcionesSector = useMemo(() => {
+    const normalizar = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    if (sectores.some((s) => normalizar(s.nombreSector).includes('alimentario'))) return sectores
+    const idProvisional = sectores.reduce((max, s) => Math.max(max, s.idSectorEconomico), 0) + 1
+    return [...sectores, { idSectorEconomico: idProvisional, nombreSector: 'Alimentario' }]
+  }, [sectores])
+
   return (
     <FormProvider {...form}>
       <form onSubmit={handleSubmit((d) => onSubmit(d as ClienteRequest))} className="flex flex-col gap-5" noValidate>
@@ -39,7 +50,7 @@ export function ClienteForm({ onSubmit, isSubmitting, serverError }: Props) {
                 aria-describedby={describedBy('cliente-sector', { error: errors.idSectorEconomico })}
                 className={inputFormClass}
               >
-                {sectores.map((s) => <option key={s.idSectorEconomico} value={s.idSectorEconomico}>{s.nombreSector}</option>)}
+                {opcionesSector.map((s) => <option key={s.idSectorEconomico} value={s.idSectorEconomico}>{s.nombreSector}</option>)}
               </select>
             ) : (
               // Sin catálogo de sectores disponible: se ingresa el código
