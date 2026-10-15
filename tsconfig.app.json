@@ -7,6 +7,8 @@
     "types": ["vite/client"],
     "allowArbitraryExtensions": true,
     "skipLibCheck": true,
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -15,6 +17,11 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
+
+    /* Alias de importación para shadcn/ui */
+    "paths": {
+      "@/*": ["./src/*"]
+    },
 
     /* Linting */
     "noUnusedLocals": true,
