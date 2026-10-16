@@ -9,14 +9,19 @@ import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PanelLateral } from '@/components/ui/PanelLateral';
 import { Button } from '@/components/ui/button';
+import CargandoSpinner from '../../../components/ui/CargandoSpinner';
 import type { FiltrosCliente } from '../../../types/cliente.types';
 
 export default function ClientesListPage() {
   const [filtros, setFiltros] = useState<FiltrosCliente>({});
   const [debounced] = useDebounce(filtros, 300);
   const [mostrarForm, setMostrarForm] = useState(false);
-  const { data = [], isLoading, isError, refetch } = useClientes(debounced);
+  
+  // Cambiamos a isFetching para cubrir tanto la carga inicial como las recargas por filtros
+  const { data = [], isFetching, isError, refetch } = useClientes(debounced);
   const crear = useCrearCliente();
+
+  const clientes = data ?? [];
 
   const nuevo = (
     <Button onClick={() => setMostrarForm(true)}>
@@ -29,12 +34,28 @@ export default function ClientesListPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         titulo="Clientes"
-        descripcion={<><span className="tabular-nums">{data.length}</span> clientes con sus contactos y unidades mineras</>}
+        descripcion={<><span className="tabular-nums">{clientes.length}</span> clientes con sus contactos y unidades mineras</>}
         acciones={nuevo}
       />
 
-      {isError && <ErrorBanner message="No se pudo cargar la lista de clientes." onRetry={() => refetch()} />}
-      <ClienteTable clientes={data} filtros={filtros} onFiltrosChange={setFiltros} isLoading={isLoading} accionVacio={nuevo} />
+      {isError && (
+        <ErrorBanner 
+          message="No se pudo cargar la lista de clientes." 
+          onRetry={() => refetch()} 
+        />
+      )}
+
+      {isFetching ? (
+        <CargandoSpinner texto="Cargando clientes..." />
+      ) : (
+        <ClienteTable 
+          clientes={clientes} 
+          filtros={filtros} 
+          onFiltrosChange={setFiltros} 
+          isLoading={isFetching} 
+          accionVacio={nuevo} 
+        />
+      )}
 
       <PanelLateral
         abierto={mostrarForm}

@@ -1,12 +1,17 @@
 ﻿@keyframes carrito-rebota {
   0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-4px); }
+  50%       { transform: translateY(-4px); }
 }
 
 @keyframes linea-desliza {
   0%   { transform: translateX(600px); opacity: 0; }
   40%  { opacity: 1; }
   100% { transform: translateX(-300px); opacity: 0; }
+}
+
+/* NUEVA ANIMACIÓN: Spinner escalonado (steps) */
+@keyframes spinner-gira {
+  to { transform: rotate(360deg); }
 }
 
 .carrito-rebota {
@@ -21,8 +26,18 @@
   animation-delay: 0.25s;
 }
 
+/* NUEVA CLASE: Spinner para pasos */
+.spinner-pasos {
+  animation: spinner-gira 1s steps(12) infinite;
+}
+
+/* Actualización de accesibilidad para movimiento reducido */
 @media (prefers-reduced-motion: reduce) {
-  .carrito-rebota, .linea-velocidad { animation: none; }
+  .carrito-rebota, 
+  .linea-velocidad, 
+  .spinner-pasos { 
+    animation: none; 
+  }
 }
 
 @import "tailwindcss";
