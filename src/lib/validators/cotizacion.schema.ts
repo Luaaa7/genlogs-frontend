@@ -36,7 +36,7 @@ export const filtrosCotizacionSchema = z.object({
   moneda: z.nativeEnum(Moneda).optional(),
   page: z.number().min(0).default(0),
   size: z.number().min(5).max(100).default(10),
-  sortBy: z.string().default('fechaCreacion'),
+  sortBy: z.string().default('fechaCotizacion'),
   sortDir: z.enum(['ASC', 'DESC']).default('DESC'),
 });
 

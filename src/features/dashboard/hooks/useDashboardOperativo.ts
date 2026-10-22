@@ -12,7 +12,7 @@ const LIMITE = 200
 export function useDashboardOperativo() {
   const cotizaciones = useQuery({
     queryKey: ["dashboard-cotizaciones-recientes"],
-    queryFn: () => cotizacionesApi.listarCotizaciones({ page: 0, size: LIMITE, sortBy: "fechaCreacion", sortDir: "DESC" }),
+    queryFn: () => cotizacionesApi.listarCotizaciones({ page: 0, size: LIMITE, sortBy: "fechaCotizacion", sortDir: "DESC" }),
     staleTime: 60_000,
     refetchOnWindowFocus: false,
     retry: false,

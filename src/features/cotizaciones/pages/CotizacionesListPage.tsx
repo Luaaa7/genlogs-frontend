@@ -70,7 +70,7 @@ export const CotizacionesListPage: React.FC = () => {
   const [filtros, setFiltros] = useState<CotizacionesFilterParams>({
     page: 0,
     size: 10,
-    sortBy: 'fechaCreacion',
+    sortBy: 'fechaCotizacion',
     sortDir: 'DESC',
   });
   const [descargando, setDescargando] = useState<number | null>(null);

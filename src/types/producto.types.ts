@@ -79,6 +79,10 @@ export interface ProductoFiltros {
   /** Base 0, igual que Spring Data. */
   page?: number
   size?: number
+  /** Campo por el que ordenar (ej: "codigoProducto", "nombreProducto"). */
+  sortBy?: string
+  /** Dirección de ordenamiento: "ASC" | "DESC". */
+  sortDir?: "ASC" | "DESC"
 }
 
 /** Imagen ya subida a Cloudinary, pendiente de asociar al producto. */

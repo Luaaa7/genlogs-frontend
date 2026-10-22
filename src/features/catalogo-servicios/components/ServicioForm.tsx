@@ -16,7 +16,7 @@ interface ServicioFormProps {
 }
 
 export function ServicioForm({ valoresIniciales, onSubmit, enviando }: ServicioFormProps) {
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<ServicioFormValues>({
+  const { register, handleSubmit, setValue, getValues, formState: { errors } } = useForm<ServicioFormValues>({
     resolver: zodResolver(servicioSchema),
     defaultValues: {
       idCategoriaServicio: valoresIniciales?.idCategoriaServicio,
@@ -45,10 +45,11 @@ export function ServicioForm({ valoresIniciales, onSubmit, enviando }: ServicioF
     queryFn: listarSectoresEconomicos,
   })
 
-  const idsSectoresSeleccionados = watch("idsSectores")
+  // Use getValues directly to avoid React Compiler warning about watch()
+  const idsSectoresSeleccionados = getValues("idsSectores") ?? []
 
   function toggleSector(id: number) {
-    const actuales = idsSectoresSeleccionados ?? []
+    const actuales = getValues("idsSectores") ?? []
     if (actuales.includes(id)) {
       setValue("idsSectores", actuales.filter((s) => s !== id))
     } else {
@@ -81,7 +82,7 @@ export function ServicioForm({ valoresIniciales, onSubmit, enviando }: ServicioF
         <CategoriaServicioSelector
           categorias={categorias}
           isLoading={cargandoCategorias}
-          value={watch("idCategoriaServicio")}
+          value={getValues("idCategoriaServicio")}
           onChange={(id) => setValue("idCategoriaServicio", id, { shouldValidate: true })}
           className="w-full rounded-md border border-border px-3 py-2 text-sm"
         />

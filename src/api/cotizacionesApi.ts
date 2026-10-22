@@ -27,7 +27,7 @@ export const cotizacionesApi = {
 
     params.append("page", String(filtros?.page ?? 0))
     params.append("size", String(filtros?.size ?? 10))
-    params.append("sortBy", filtros?.sortBy ?? "fechaCreacion")
+    params.append("sortBy", filtros?.sortBy ?? "fechaCotizacion")
     params.append("sortDir", filtros?.sortDir ?? "DESC")
 
     const response = await axiosClient.get<CotizacionesListResponse>("/cotizaciones", { params })

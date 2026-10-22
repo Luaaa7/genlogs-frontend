@@ -19,6 +19,8 @@ function limpiarFiltros(filtros: ProductoFiltros): ProductoFiltros {
   if (filtros.idMarca) limpio.idMarca = filtros.idMarca
   limpio.page = filtros.page ?? 0
   limpio.size = filtros.size ?? 12
+  if (filtros.sortBy) limpio.sortBy = filtros.sortBy
+  if (filtros.sortDir) limpio.sortDir = filtros.sortDir
   return limpio
 }
 

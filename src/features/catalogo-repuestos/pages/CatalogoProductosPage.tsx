@@ -42,6 +42,8 @@ export function CatalogoProductosPage() {
     idMarca,
     page: pagina,
     size: TAMANIO_PAGINA,
+    sortBy: "codigoProducto",
+    sortDir: "ASC",
   }
 
   const { data, isLoading, isError, isFetching, isPlaceholderData, refetch } = useProductos(filtros)

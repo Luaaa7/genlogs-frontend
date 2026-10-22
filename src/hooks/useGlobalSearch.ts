@@ -29,7 +29,7 @@ export function useGlobalSearch(termino: string) {
     queryFn: async (): Promise<ResultadoBusquedaGlobal> => {
       const [clientes, cotizacionesResp, productosResp] = await Promise.all([
         clientesApi.listar({ razonSocial: query, size: 5 }),
-        cotizacionesApi.listarCotizaciones({ size: 30, sortBy: "fechaCreacion", sortDir: "DESC" }),
+        cotizacionesApi.listarCotizaciones({ size: 30, sortBy: "fechaCotizacion", sortDir: "DESC" }),
         productosApi.listarProductos({ nombre: query, size: 5 }),
       ])
 

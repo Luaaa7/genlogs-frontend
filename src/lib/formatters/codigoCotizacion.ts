@@ -15,9 +15,39 @@ export function generarCodigoCotizacion(numeroSecuencial: number): string {
 }
 
 /**
+ * Normaliza un código de moneda a formato ISO 4217 de 3 letras.
+ * Intl.NumberFormat exige códigos ISO (ej: USD, PEN, EUR) y no acepta símbolos ($, S/, €).
+ * @param currency - Código o símbolo de moneda
+ * @returns Código ISO 4217 válido
+ */
+function normalizarMoneda(currency: string): string {
+  const simboloAISO: Record<string, string> = {
+    '$': 'USD',
+    'US$': 'USD',
+    'S/': 'PEN',
+    'S/.': 'PEN',
+    '€': 'EUR',
+    '£': 'GBP',
+    '¥': 'JPY',
+  };
+
+  const upper = currency?.trim()?.toUpperCase();
+  if (!upper) return 'PEN';
+
+  // Si ya es un código ISO de 3 letras, devolverlo tal cual
+  if (/^[A-Z]{3}$/.test(upper)) return upper;
+
+  // Si es un símbolo conocido, mapear a ISO
+  if (simboloAISO[currency.trim()]) return simboloAISO[currency.trim()];
+
+  // Fallback: devolver PEN por seguridad
+  return 'PEN';
+}
+
+/**
  * Formatea una cantidad de dinero con separadores de miles y decimales
  * @param monto - Monto a formatear
- * @param moneda - Moneda (PEN, USD, EUR)
+ * @param moneda - Moneda (PEN, USD, EUR) o símbolo ($, S/, €)
  * @param idioma - Idioma para formato local
  * @returns Monto formateado
  */
@@ -26,9 +56,10 @@ export function formatearMoneda(
   moneda: string = 'PEN',
   idioma: string = 'es-PE'
 ): string {
+  const monedaISO = normalizarMoneda(moneda);
   return new Intl.NumberFormat(idioma, {
     style: 'currency',
-    currency: moneda,
+    currency: monedaISO,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(monto);

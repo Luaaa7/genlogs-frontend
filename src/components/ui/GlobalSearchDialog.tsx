@@ -73,8 +73,6 @@ export function GlobalSearchDialog({ open, onClose }: GlobalSearchDialogProps) {
 
   useEffect(() => {
     if (open) {
-      setQuery("")
-      setIndiceActivo(0)
       document.body.style.overflow = "hidden"
       const id = requestAnimationFrame(() => inputRef.current?.focus())
       return () => cancelAnimationFrame(id)
@@ -88,8 +86,24 @@ export function GlobalSearchDialog({ open, onClose }: GlobalSearchDialogProps) {
     }
   }, [])
 
+  // Reset query and active index when dialog opens, using a callback to avoid sync setState in effect
   useEffect(() => {
-    setIndiceActivo(0)
+    if (open) {
+      // Schedule state updates after the current render to avoid sync setState in effect
+      const timeoutId = setTimeout(() => {
+        setQuery("")
+        setIndiceActivo(0)
+      }, 0)
+      return () => clearTimeout(timeoutId)
+    }
+  }, [open])
+
+  // Reset active index when search term changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setIndiceActivo(0)
+    }, 0)
+    return () => clearTimeout(timeoutId)
   }, [terminoDebounced])
 
   function irA(resultado: ResultadoPlano) {
