@@ -7,10 +7,12 @@ import type { ReporteRequest, TipoReporte, FormatoReporte } from "@/types/report
 import { Campo } from "@/components/ui/campo"
 import { describedBy, inputFormClass } from "@/components/ui/campoEstilos"
 import { Button } from "@/components/ui/button"
+import { useEffect, useRef } from "react"
 
 interface ReporteFiltroFormProps {
   onSubmit: (valores: ReporteRequest) => void
   enviando?: boolean
+  onChange?: (valores: Partial<ReporteRequest>) => void
 }
 
 const OPCIONES_TIPO: { value: TipoReporte; label: string }[] = [
@@ -33,8 +35,8 @@ const RANGOS_RAPIDOS: { label: string; calcular: () => RangoFechas }[] = [
   { label: "Año actual", calcular: () => anioActual() },
 ]
 
-export function ReporteFiltroForm({ onSubmit, enviando }: ReporteFiltroFormProps) {
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<ReporteRequest>({
+export function ReporteFiltroForm({ onSubmit, enviando, onChange }: ReporteFiltroFormProps) {
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ReporteRequest>({
     resolver: zodResolver(reporteFiltroSchema),
     defaultValues: {
       tipoReporte: "SERVICIOS",
@@ -43,6 +45,20 @@ export function ReporteFiltroForm({ onSubmit, enviando }: ReporteFiltroFormProps
       fechaFin: "",
     },
   })
+
+  const watchedValues = watch() // eslint-disable-line react-hooks/incompatible-library -- watch() triggers false positive with React Compiler
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (!onChange) return
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    timeoutRef.current = setTimeout(() => {
+      onChange(watchedValues)
+    }, 300)
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }
+  }, [watchedValues, onChange])
 
   function aplicarRango(rango: RangoFechas) {
     setValue("fechaInicio", rango.fechaInicio, { shouldValidate: true })

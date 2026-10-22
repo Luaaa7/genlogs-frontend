@@ -3,7 +3,12 @@ import { axiosClient } from "@/api/axiosClient"
 export interface ConsultaDocumentoResponse {
   numeroDocumento: string
   tipoDocumento: "RUC" | "DNI"
+  /** Razón social para RUC, nombres y apellidos para DNI */
   razonSocial: string | null
+  /** Nombres (solo para DNI) */
+  nombres?: string | null
+  /** Apellidos (solo para DNI) */
+  apellidos?: string | null
   direccion: string | null
   simulado: boolean
 }

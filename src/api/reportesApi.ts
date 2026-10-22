@@ -8,6 +8,11 @@ export async function generarReporte(request: ReporteRequest): Promise<Blob> {
   return data
 }
 
+export async function obtenerPreviewReporte(request: ReporteRequest): Promise<{ data: Record<string, unknown>[]; total: number }> {
+  const { data } = await axiosClient.post<{ data: Record<string, unknown>[]; total: number }>("/reportes/preview", request)
+  return data
+}
+
 export function descargarBlob(blob: Blob, nombreArchivo: string) {
   const url = window.URL.createObjectURL(blob)
   const link = document.createElement("a")
