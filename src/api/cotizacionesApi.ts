@@ -34,9 +34,62 @@ export const cotizacionesApi = {
     return response.data
   },
 
+  /**
+   * El backend reparte el detalle en endpoints aparte (/lineas, /seguimiento,
+   * /adjuntos) y con otros nombres de campo; aqui se arma el Cotizacion que
+   * espera la pantalla de detalle.
+   */
   async obtenerCotizacion(id: number): Promise<Cotizacion> {
-    const response = await axiosClient.get<Cotizacion>(`/cotizaciones/${id}`)
-    return response.data
+    const [cab, lineas, seguimiento, adjuntos] = await Promise.all([
+      axiosClient.get(`/cotizaciones/${id}`),
+      axiosClient.get(`/cotizaciones/${id}/lineas`),
+      axiosClient.get(`/cotizaciones/${id}/seguimiento`),
+      axiosClient.get(`/cotizaciones/${id}/adjuntos`),
+    ])
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const c: any = cab.data
+    const detalles = (lineas.data as any[]).map((l) => ({
+      idCotizacionDetalle: l.idCotizacionDetalle,
+      idProducto: l.idProducto,
+      idServicio: l.idServicio,
+      idUnidadMedida: 0,
+      producto: l.productoNombre ?? undefined,
+      servicio: l.servicioNombre ?? undefined,
+      descripcionPersonalizada: l.descripcionPersonalizada,
+      cantidad: Number(l.cantidad),
+      precioUnitario: Number(l.precioUnitario),
+      descuentoUnitario: Number(l.descuentoUnitario ?? 0),
+      importeLinea: Number(l.importeLinea),
+      subtotal: Number(l.importeLinea),
+    }))
+    const seguimientos = (seguimiento.data as any[]).map((s) => ({
+      idSeguimiento: s.idSeguimiento,
+      idEstadoCotizacion: 0,
+      estadoNuevo: s.codigoEstado ?? s.estado,
+      estadoAnterior: undefined,
+      fechaEvento: s.fechaEvento,
+      fecha: s.fechaEvento,
+      usuarioNombre: s.usuario ?? undefined,
+      comentario: s.comentario ?? undefined,
+      observaciones: '',
+    }))
+    const adjuntosMap = (adjuntos.data as any[]).map((a) => ({
+      idAdjunto: a.idAdjunto,
+      id: a.idAdjunto,
+      nombreArchivo: a.nombreArchivo,
+      urlArchivo: a.urlArchivo,
+      urlCloudinary: a.urlArchivo,
+      tipoArchivo: String(a.nombreArchivo ?? '').split('.').pop() ?? '',
+      tamanio: 0,
+      subidoPor: '',
+    }))
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+    return {
+      ...c,
+      detalles,
+      seguimientos,
+      adjuntos: adjuntosMap,
+    } as unknown as Cotizacion
   },
 
   async crearCotizacion(data: CreateCotizacionRequest): Promise<Cotizacion> {
@@ -48,11 +101,7 @@ export const cotizacionesApi = {
     id: number,
     data: UpdateEstadoCotizacionRequest
   ): Promise<Cotizacion> {
-    // El backend espera { codigoEstado, comentario }
-    const response = await axiosClient.patch<Cotizacion>(`/cotizaciones/${id}/estado`, {
-      codigoEstado: data.estadoNuevo,
-      comentario: data.comentario ?? data.observaciones ?? '',
-    })
+    const response = await axiosClient.patch<Cotizacion>(`/cotizaciones/${id}/estado`, data)
     return response.data
   },
 
