@@ -43,7 +43,7 @@ const selectClass =
 
 const idDe = (c: Cotizacion) => c.idCotizacion ?? c.id!;
 const codigoDe = (c: Cotizacion) => c.codigoCotizacion ?? c.codigo ?? `#${idDe(c)}`;
-const estadoDe = (c: Cotizacion) => c.estadoCodigo ?? c.estadoCotizacion;
+const estadoDe = (c: Cotizacion) => c.estadoCodigo ?? c.estadoCotizacion ?? c.estado;
 
 /** "En 3 días", "Hoy", "Hace 2 días" para la fecha de validez de una cotización abierta. */
 function notaVencimiento(c: Cotizacion): { texto: string; clase: string } | null {
@@ -245,7 +245,7 @@ export const CotizacionesListPage: React.FC = () => {
                           </Link>
                         </td>
                         <td className="px-4 py-3">
-                          <p className="font-medium text-foreground">{c.clienteNombre ?? c.cliente ?? '—'}</p>
+                          <p className="font-medium text-foreground">{c.clienteNombre ?? c.cliente ?? c.clienteRazonSocial ?? '—'}</p>
                           {c.clienteEmail && <p className="text-xs text-muted-foreground">{c.clienteEmail}</p>}
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 tabular-nums">{formatearFechaCorta(c.fechaCotizacion ?? c.fechaCreacion)}</td>

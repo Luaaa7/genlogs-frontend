@@ -45,11 +45,15 @@ export interface Cotizacion {
   observaciones: string | null
   estadoCodigo?: EstadoCotizacion
   estadoCotizacion: EstadoCotizacion
+  /** Nombre real del campo que manda CotizacionResponse.java (backend). */
+  estado?: EstadoCotizacion
   monedaCodigo?: Moneda
   moneda: Moneda
   condicionPago: CondicionPago | string
   cliente?: string
   clienteNombre?: string
+  /** Nombre real del campo que manda CotizacionResponse.java (backend). */
+  clienteRazonSocial?: string
   clienteEmail?: string
   subtotal: number
   igv: number
