@@ -84,8 +84,15 @@ export const cotizacionesApi = {
       subidoPor: '',
     }))
     /* eslint-enable @typescript-eslint/no-explicit-any */
+    // El backend manda el nombre del estado ("En negociación"); la pantalla
+    // espera el código ("EN_NEGOCIACION").
+    const estadoCodigo = c.estado
+      ? String(c.estado).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase().replace(/\s+/g, '_')
+      : undefined
     return {
       ...c,
+      clienteNombre: c.clienteNombre ?? c.clienteRazonSocial,
+      estadoCodigo: c.estadoCodigo ?? estadoCodigo,
       detalles,
       seguimientos,
       adjuntos: adjuntosMap,
