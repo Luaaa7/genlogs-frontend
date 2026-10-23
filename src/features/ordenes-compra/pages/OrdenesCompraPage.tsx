@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FileText, ShoppingCart } from 'lucide-react'
 import { useOrdenesCompra } from '../hooks/useOrdenesCompra'
+import { EstadoOrdenSelect } from '../components/EstadoOrdenSelect'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
 import { TableSkeletonRows } from '@/components/ui/TableSkeletonRows'
 import { EstadoBadge } from '@/components/ui/EstadoBadge'
@@ -25,6 +26,7 @@ export function OrdenesCompraPage() {
   const [tamano, setTamano] = useState(10)
   const { data, isLoading, isError, refetch } = useOrdenesCompra({ estadoCodigo: estado, page: pagina, size: tamano })
   const ordenes = data?.content ?? []
+  const [errorEstado, setErrorEstado] = useState<string | null>(null)
 
   return (
     <div className="flex flex-col gap-6">
@@ -35,6 +37,7 @@ export function OrdenesCompraPage() {
 
       <FiltroChips etiqueta="Filtrar por estado" opciones={OPCIONES} valor={estado} onChange={(v) => { setEstado(v); setPagina(0) }} />
 
+      {errorEstado && <ErrorBanner message={errorEstado} />}
       {isError && <ErrorBanner message="No se pudieron cargar las órdenes de compra." onRetry={() => refetch()} />}
 
       <TablaCard
@@ -85,7 +88,17 @@ export function OrdenesCompraPage() {
                         </Link>
                       </Td>
                       <Td className="whitespace-nowrap tabular-nums">{formatearFechaCorta(o.fechaRecepcion ?? o.fechaEmision)}</Td>
-                      <Td><EstadoBadge tono={e.tono}>{e.label}</EstadoBadge></Td>
+                      <Td>
+                        <div className="flex items-center gap-2">
+                          <EstadoBadge tono={e.tono}>{e.label}</EstadoBadge>
+                          <EstadoOrdenSelect
+                            idOrden={o.idOrdenCompra ?? o.id ?? 0}
+                            estadoActual={o.estadoCodigo ?? o.estado ?? ''}
+                            numero={o.numeroOrdenCompra ?? o.numero ?? ''}
+                            onError={setErrorEstado}
+                          />
+                        </div>
+                      </Td>
                       <Td alinear="derecha" className="whitespace-nowrap font-medium">{formatearMoneda(o.total ?? 0, o.moneda ?? 'PEN')}</Td>
                       <Td className="text-right">
                         {o.urlArchivo && (

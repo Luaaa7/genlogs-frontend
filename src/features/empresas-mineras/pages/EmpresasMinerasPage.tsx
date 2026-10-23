@@ -11,28 +11,25 @@ import { TableSkeletonRows } from '@/components/ui/TableSkeletonRows'
 import { cn } from '@/lib/utils/utils'
 import type { EmpresaMinera } from '@/types/empresaMinera.types'
 
-/** Colores por etapa comercial (azul marino, naranja, celeste…): pares que se
- *  distinguen también con daltonismo. Se asignan de la etapa final hacia atrás. */
-const COLORES_ETAPA = ['var(--viz-1)', 'var(--viz-3)', 'var(--viz-2)', 'var(--chart-2)', 'var(--chart-4)']
-
-/** Clases del chip de etapa en la tabla: un color por familia de etapa comercial
- *  (verde producción, azul construcción/desarrollo, ámbar exploración, pizarra
- *  cierre). El nombre viene del backend (`nombreEtapa`) sin catálogo fijo, así
- *  que el matching es por contenido sobre el texto normalizado (minúsculas y
- *  sin acentos). Si no coincide ninguna familia, se devuelve undefined y el
- *  badge conserva su tono por defecto. */
-const CLASES_ETAPA: ReadonlyArray<{ patron: RegExp; clases: string }> = [
-  { patron: /producc/, clases: 'bg-emerald-50 text-emerald-700 border border-emerald-200' },
-  { patron: /(construcc|desarroll)/, clases: 'bg-blue-50 text-blue-700 border border-blue-200' },
-  { patron: /explorac/, clases: 'bg-amber-50 text-amber-700 border border-amber-200' },
-  { patron: /cierre/, clases: 'bg-slate-100 text-slate-700 border border-slate-300' },
+/** Un color por familia de etapa comercial, el MISMO en el mapa, la leyenda,
+ *  la lista, la ficha y la tabla (verde producción, azul construcción/desarrollo,
+ *  ámbar exploración, azul marino cierre). El nombre viene del backend
+ *  (`nombreEtapa`), así que se reconoce por contenido sobre el texto
+ *  normalizado (minúsculas y sin acentos). */
+const FAMILIAS_ETAPA: ReadonlyArray<{ patron: RegExp; color: string; clases: string }> = [
+  { patron: /producc/, color: 'var(--chart-2)', clases: 'bg-emerald-50 text-emerald-700 border border-emerald-200' },
+  { patron: /(construcc|desarroll)/, color: 'var(--viz-2)', clases: 'bg-blue-50 text-blue-700 border border-blue-200' },
+  { patron: /explorac/, color: 'var(--viz-3)', clases: 'bg-amber-50 text-amber-700 border border-amber-200' },
+  { patron: /cierre/, color: 'var(--viz-1)', clases: 'bg-slate-100 text-slate-700 border border-slate-300' },
 ]
+const COLOR_SIN_ETAPA = 'var(--muted-foreground)'
 
-const clasesDeEtapa = (nombre?: string): string | undefined => {
+const familiaDe = (nombre?: string) => {
   if (!nombre) return undefined
   const texto = nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-  return CLASES_ETAPA.find(({ patron }) => patron.test(texto))?.clases
+  return FAMILIAS_ETAPA.find(({ patron }) => patron.test(texto))
 }
+const clasesDeEtapa = (nombre?: string) => familiaDe(nombre)?.clases
 
 const selectClass =
   'h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
@@ -66,9 +63,9 @@ export function EmpresasMinerasPage() {
     for (const e of data) {
       if (e.etapaComercial) unicas.set(e.etapaComercial.idEtapaComercial, { id: e.etapaComercial.idEtapaComercial, nombre: e.etapaComercial.nombreEtapa, orden: e.etapaComercial.ordenFlujo })
     }
-    // La etapa más avanzada (cliente activo) toma el color más fuerte (azul marino)
-    const ordenadas = [...unicas.values()].sort((a, b) => a.orden - b.orden)
-    return ordenadas.map((e, i) => ({ ...e, color: COLORES_ETAPA[(ordenadas.length - 1 - i) % COLORES_ETAPA.length] }))
+    return [...unicas.values()]
+      .sort((a, b) => a.orden - b.orden)
+      .map((e) => ({ ...e, color: familiaDe(e.nombre)?.color ?? COLOR_SIN_ETAPA }))
   }, [data])
   const etapaDe = (e: EmpresaMinera) => etapas.find((x) => x.id === idEtapaDe(e))
 
@@ -91,7 +88,7 @@ export function EmpresasMinerasPage() {
         nombre: nombreDe(e),
         lat: e.latitud,
         lon: e.longitud,
-        color: etapas.find((x) => x.id === idEtapaDe(e))?.color ?? 'var(--muted-foreground)',
+        color: etapas.find((x) => x.id === idEtapaDe(e))?.color ?? COLOR_SIN_ETAPA,
       })),
     [filtradas, etapas]
   )
@@ -151,7 +148,7 @@ export function EmpresasMinerasPage() {
             {data.length === 0 ? 'Aún no hay unidades mineras registradas' : 'Ninguna unidad coincide con los filtros'}
           </h2>
           <p className="max-w-sm text-sm text-muted-foreground">
-            {data.length === 0 ? 'Se registran desde la ficha de cada cliente.' : 'Prueba con otro mineral, etapa o cliente.'}
+            {data.length === 0 ? 'Se registran desde la ficha de cada cliente.' : 'Prueba con otra etapa o cliente.'}
           </p>
         </div>
       ) : vista === 'mapa' ? (
@@ -181,7 +178,7 @@ export function EmpresasMinerasPage() {
                     <h2 id="ficha-t" className="text-lg font-semibold">{nombreDe(actual)}</h2>
                     <p className="text-[13px] text-muted-foreground">{actual.tipoOperacion?.nombreOperacion ?? 'Unidad minera'}</p>
                   </div>
-                  {etapaDe(actual) && <EstadoBadge tono="accent">{etapaDe(actual)!.nombre}</EstadoBadge>}
+                  {etapaDe(actual) && <EstadoBadge tono="accent" className={clasesDeEtapa(etapaDe(actual)!.nombre)}>{etapaDe(actual)!.nombre}</EstadoBadge>}
                 </div>
                 <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
                   <dt className="text-muted-foreground">Cliente</dt>
@@ -229,7 +226,7 @@ export function EmpresasMinerasPage() {
                             activa ? 'bg-accent/10' : 'hover:bg-muted'
                           )}
                         >
-                          <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: etapaDe(e)?.color ?? 'var(--muted-foreground)' }} aria-hidden="true" />
+                          <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: etapaDe(e)?.color ?? COLOR_SIN_ETAPA }} aria-hidden="true" />
                           <span className="min-w-0 flex-1">
                             <span className="block truncate font-medium">{nombreDe(e)}</span>
                             <span className="block truncate text-xs text-muted-foreground">{nombreCliente(idClienteDe(e))}</span>

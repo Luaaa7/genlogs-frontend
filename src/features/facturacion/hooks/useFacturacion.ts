@@ -18,3 +18,19 @@ export function useCrearFactura() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: facturacionKeys.all }),
   })
 }
+
+export function useRegistrarPago() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, monto }: { id: number; monto: number }) => facturacionApi.registrarPago(id, monto),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: facturacionKeys.all }),
+  })
+}
+
+export function useAnularFactura() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => facturacionApi.anular(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: facturacionKeys.all }),
+  })
+}
