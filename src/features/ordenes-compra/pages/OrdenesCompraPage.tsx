@@ -5,12 +5,11 @@ import { useOrdenesCompra } from '../hooks/useOrdenesCompra'
 import { EstadoOrdenSelect } from '../components/EstadoOrdenSelect'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
 import { TableSkeletonRows } from '@/components/ui/TableSkeletonRows'
-import { EstadoBadge } from '@/components/ui/EstadoBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { FiltroChips } from '@/components/ui/FiltroChips'
 import { EstadoVacio } from '@/components/ui/EstadoVacio'
 import { Paginacion, Tabla, TablaCard, Td, Th, filaClass } from '@/components/ui/tabla'
-import { ESTADOS_ORDEN, estadoDe } from '@/lib/formatters/estados'
+import { ESTADOS_ORDEN } from '@/lib/formatters/estados'
 import { formatearMoneda } from '@/lib/formatters/codigoCotizacion'
 import { formatearFechaCorta } from '@/lib/formatters/fechaLocal'
 import type { EstadoOrdenCompra } from '@/types/ordenCompra.types'
@@ -77,7 +76,6 @@ export function OrdenesCompraPage() {
                 <TableSkeletonRows columns={7} />
               ) : (
                 ordenes.map((o) => {
-                  const e = estadoDe(ESTADOS_ORDEN, o.estadoCodigo ?? o.estado)
                   return (
                     <tr key={o.idOrdenCompra ?? o.id} className={filaClass}>
                       <Td className="whitespace-nowrap font-medium tabular-nums">{o.numeroOrdenCompra ?? o.numero}</Td>
@@ -89,15 +87,12 @@ export function OrdenesCompraPage() {
                       </Td>
                       <Td className="whitespace-nowrap tabular-nums">{formatearFechaCorta(o.fechaRecepcion ?? o.fechaEmision)}</Td>
                       <Td>
-                        <div className="flex items-center gap-2">
-                          <EstadoBadge tono={e.tono}>{e.label}</EstadoBadge>
-                          <EstadoOrdenSelect
-                            idOrden={o.idOrdenCompra ?? o.id ?? 0}
-                            estadoActual={o.estadoCodigo ?? o.estado ?? ''}
-                            numero={o.numeroOrdenCompra ?? o.numero ?? ''}
-                            onError={setErrorEstado}
-                          />
-                        </div>
+                        <EstadoOrdenSelect
+                          idOrden={o.idOrdenCompra ?? o.id ?? 0}
+                          estadoActual={o.estadoCodigo ?? o.estado ?? ''}
+                          numero={o.numeroOrdenCompra ?? o.numero ?? ''}
+                          onError={setErrorEstado}
+                        />
                       </Td>
                       <Td alinear="derecha" className="whitespace-nowrap font-medium">{formatearMoneda(o.total ?? 0, o.moneda ?? 'PEN')}</Td>
                       <Td className="text-right">
