@@ -16,8 +16,9 @@ interface Props { onSubmit: (data: ClienteRequest) => void; isSubmitting?: boole
 export function ClienteForm({ onSubmit, isSubmitting, serverError }: Props) {
   const form = useForm<ClienteFormValues>({
     resolver: zodResolver(clienteSchema),
+    mode: 'onBlur',
     defaultValues: {
-      tercero: { idTipoDocumento: 1, idDistrito: 1, numeroDocumento: '', razonSocial: '', direccion: '', telefono: '', correo: '' },
+      tercero: { idTipoDocumento: 1, idDistrito: undefined, numeroDocumento: undefined, razonSocial: '', direccion: '', telefono: '', correo: '' },
       idSectorEconomico: 1,
       situacion: 'ACTIVO',
     },

@@ -10,8 +10,9 @@ interface Props { defaultValues?: Partial<ProveedorFormValues>; onSubmit: (data:
 export function ProveedorForm({ defaultValues, onSubmit, isSubmitting, serverError }: Props) {
   const form = useForm<ProveedorFormValues>({
     resolver: zodResolver(proveedorSchema),
+    mode: 'onBlur',
     defaultValues: {
-      tercero: { idTipoDocumento: 1, idDistrito: 1, numeroDocumento: '', razonSocial: '', direccion: '', telefono: '', correo: '' },
+      tercero: { idTipoDocumento: 1, idDistrito: undefined, numeroDocumento: undefined, razonSocial: '', direccion: '', telefono: '', correo: '' },
       situacion: 'ACTIVO',
       ...defaultValues,
     },
