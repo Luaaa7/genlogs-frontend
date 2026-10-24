@@ -11,7 +11,7 @@ import { Tabla, TablaCard, Td, Th, filaClass } from "@/components/ui/tabla"
 import { Button } from "@/components/ui/button"
 
 export function UsuariosPage() {
-  const { usuarios, roles, loading, error, agregar, alternarBloqueo, recargar } = useUsuarios()
+  const { usuarios, roles, loading, error, agregar, alternarBloqueo, eliminar, recargar } = useUsuarios()
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [operandoId, setOperandoId] = useState<number | null>(null)
   const [accionError, setAccionError] = useState<string | null>(null)
@@ -23,6 +23,19 @@ export function UsuariosPage() {
       await alternarBloqueo(idUsuario, bloqueado)
     } catch {
       setAccionError("No se pudo actualizar el estado del usuario.")
+    } finally {
+      setOperandoId(null)
+    }
+  }
+
+  async function eliminarUsuario(idUsuario: number, nombres: string) {
+    if (!window.confirm(`¿Eliminar a ${nombres}? Ya no podrá iniciar sesión.`)) return
+    setOperandoId(idUsuario)
+    setAccionError(null)
+    try {
+      await eliminar(idUsuario)
+    } catch {
+      setAccionError("No se pudo eliminar el usuario. Recuerda que no puedes eliminar tu propio usuario.")
     } finally {
       setOperandoId(null)
     }
@@ -92,6 +105,7 @@ export function UsuariosPage() {
                       </EstadoBadge>
                     </Td>
                     <Td className="text-right">
+                      <div className="flex justify-end gap-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -101,6 +115,16 @@ export function UsuariosPage() {
                       >
                         {operandoId === usuario.idUsuario ? "Guardando…" : usuario.bloqueado ? "Desbloquear" : "Bloquear"}
                       </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={operandoId === usuario.idUsuario}
+                        onClick={() => void eliminarUsuario(usuario.idUsuario, usuario.nombres)}
+                        aria-label={`Eliminar a ${usuario.nombres}`}
+                      >
+                        Eliminar
+                      </Button>
+                      </div>
                     </Td>
                   </tr>
                 ))

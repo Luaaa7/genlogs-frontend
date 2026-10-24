@@ -11,6 +11,10 @@ export async function crearUsuario(data: UsuarioRequest): Promise<UsuarioRespons
   return response.data
 }
 
+export async function eliminarUsuario(idUsuario: number): Promise<void> {
+  await axiosClient.delete(`/usuarios/${idUsuario}`)
+}
+
 export async function cambiarBloqueoUsuario(
   idUsuario: number,
   bloqueado: boolean

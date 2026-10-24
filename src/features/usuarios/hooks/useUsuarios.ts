@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react"
-import { listarUsuarios, crearUsuario, cambiarBloqueoUsuario } from "@/api/usuariosApi"
+import { listarUsuarios, crearUsuario, cambiarBloqueoUsuario, eliminarUsuario } from "@/api/usuariosApi"
 import { listarRoles } from "@/api/rolesApi"
 import type { UsuarioRequest, UsuarioResponse, Rol } from "@/types/usuario"
 
@@ -55,5 +55,10 @@ export function useUsuarios() {
     setUsuarios((prev) => prev.map((u) => (u.idUsuario === idUsuario ? actualizado : u)))
   }
 
-  return { usuarios, roles, loading, error, agregar, alternarBloqueo, recargar: cargar }
+  async function eliminar(idUsuario: number) {
+    await eliminarUsuario(idUsuario)
+    setUsuarios((prev) => prev.filter((u) => u.idUsuario !== idUsuario))
+  }
+
+  return { usuarios, roles, loading, error, agregar, alternarBloqueo, eliminar, recargar: cargar }
 }
