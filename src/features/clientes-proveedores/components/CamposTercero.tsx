@@ -1,7 +1,7 @@
 import { useFormContext } from 'react-hook-form'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import { Loader2, Search, Info, AlertCircle } from 'lucide-react'
+import { Loader2, Search, AlertCircle } from 'lucide-react'
 import type { ClienteFormValues } from '../../../lib/validators/rucDni.schema'
 import { useConsultarDocumento } from '../hooks/useConsultarDocumento'
 import { Campo, SeccionForm } from '@/components/ui/campo'
@@ -103,9 +103,9 @@ export function CamposTercero() {
     // Limpiar campo de número de documento al cambiar tipo
     setValue('tercero.numeroDocumento', '', { shouldValidate: true })
     
-    // Para CE y Pasaporte, limpiar razón social ya que no hay autocompletado
+    // Para CE y Pasaporte, limpiar dirección ya que no hay autocompletado
+    // Pero NO limpiar razonSocial para permitir edición manual
     if (idTipoDocumento === 3 || idTipoDocumento === 4) {
-      setValue('tercero.razonSocial', '', { shouldValidate: true })
       setValue('tercero.direccion', '')
     }
   }, [idTipoDocumento, setValue])
@@ -129,11 +129,13 @@ export function CamposTercero() {
     ? RAZON_AYUDA[idTipoDocumento]
     : 'Selecciona un tipo de documento.'
 
-  // Determinar si mostrar el campo razonSocial (ocultar para CE y Pasaporte según requerimiento)
-  const mostrarRazonSocial = idTipoDocumento !== 3 && idTipoDocumento !== 4
-
   function handleDistritoChange(idDistrito: number) {
     setValue('tercero.idDistrito', idDistrito, { shouldValidate: true })
+    // Actualizar UBIGEO inmediatamente al seleccionar distrito
+    const distrito = distritos?.find((d) => d.idDistrito === idDistrito)
+    if (distrito?.ubigeo) {
+      setValue('tercero.ubigeo', distrito.ubigeo)
+    }
   }
 
   return (
@@ -184,32 +186,22 @@ export function CamposTercero() {
           </Campo>
         </div>
 
-        {mostrarRazonSocial && (
-          <Campo
+        <Campo
+          id="tercero-razon"
+          label={idTipoDocumento ? RAZON_SOCIAL_LABELS[idTipoDocumento] : 'Razón social / Nombres y apellidos'}
+          error={e?.razonSocial?.message}
+          ayuda={ayudaRazon}
+        >
+          <input
             id="tercero-razon"
-            label={idTipoDocumento ? RAZON_SOCIAL_LABELS[idTipoDocumento] : 'Razón social / Nombres y apellidos'}
-            error={e?.razonSocial?.message}
-            ayuda={ayudaRazon}
-          >
-            <input
-              id="tercero-razon"
-              autoComplete={idTipoDocumento === 1 ? 'organization' : 'name'}
-              placeholder={idTipoDocumento === 1 ? 'Empresa S.A.C.' : 'Juan Pérez Gómez'}
-              {...register('tercero.razonSocial')}
-              aria-invalid={!!e?.razonSocial}
-              aria-describedby={describedBy('tercero-razon', { error: e?.razonSocial })}
-              className={inputFormClass}
-            />
-          </Campo>
-        )}
-
-        {/* Mostrar indicador cuando el campo está oculto para CE/Pasaporte */}
-        {idTipoDocumento === 3 || idTipoDocumento === 4 ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Info className="h-4 w-4" aria-hidden="true" />
-            <span>Para {idTipoDocumento === 3 ? 'Carné de extranjería' : 'Pasaporte'} el campo de nombres se completa manualmente.</span>
-          </div>
-        ) : null}
+            autoComplete={idTipoDocumento === 1 ? 'organization' : 'name'}
+            placeholder={idTipoDocumento === 1 ? 'Empresa S.A.C.' : 'Juan Pérez Gómez'}
+            {...register('tercero.razonSocial')}
+            aria-invalid={!!e?.razonSocial}
+            aria-describedby={describedBy('tercero-razon', { error: e?.razonSocial })}
+            className={inputFormClass}
+          />
+        </Campo>
 
         {/* Indicador de modo simulado */}
         {consultar.data?.simulado && (

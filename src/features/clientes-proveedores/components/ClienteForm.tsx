@@ -11,16 +11,32 @@ import { describedBy, inputFormClass } from '@/components/ui/campoEstilos'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
 import { Button } from '@/components/ui/button'
 
-interface Props { onSubmit: (data: ClienteRequest) => void; isSubmitting?: boolean; serverError?: string }
+interface Props {
+  onSubmit: (data: ClienteRequest) => void
+  isSubmitting?: boolean
+  serverError?: string
+  /** Valores iniciales para modo edición */
+  valoresIniciales?: Partial<ClienteFormValues>
+}
 
-export function ClienteForm({ onSubmit, isSubmitting, serverError }: Props) {
+export function ClienteForm({ onSubmit, isSubmitting, serverError, valoresIniciales }: Props) {
   const form = useForm<ClienteFormValues>({
     resolver: zodResolver(clienteSchema),
     mode: 'onBlur',
     defaultValues: {
-      tercero: { idTipoDocumento: 1, idDistrito: undefined, numeroDocumento: undefined, razonSocial: '', direccion: '', telefono: '', correo: '' },
+      tercero: {
+        idTipoDocumento: 1,
+        idDistrito: undefined,
+        numeroDocumento: '',
+        razonSocial: '',
+        direccion: '',
+        telefono: '',
+        correo: '',
+        ...valoresIniciales?.tercero,
+      },
       idSectorEconomico: 1,
       situacion: 'ACTIVO',
+      ...valoresIniciales,
     },
   })
   const { register, handleSubmit, formState: { errors } } = form

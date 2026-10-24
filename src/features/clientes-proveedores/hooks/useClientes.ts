@@ -1,6 +1,6 @@
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { clientesApi } from '../../../api/clientesApi';
-import type { FiltrosCliente } from '../../../types/cliente.types';
+import type { FiltrosCliente, ClienteRequest } from '../../../types/cliente.types';
 
 export const clientesKeys = {
   all: ['clientes'] as const,
@@ -25,3 +25,11 @@ export const useCliente = (id: number) =>
     queryFn: () => clientesApi.obtener(id),
     enabled: Number.isFinite(id),
   });
+
+export const useActualizarCliente = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: ClienteRequest }) => clientesApi.actualizar(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: clientesKeys.all }),
+  });
+};

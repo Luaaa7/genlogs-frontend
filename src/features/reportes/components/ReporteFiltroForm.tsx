@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Download, Loader2 } from "lucide-react"
@@ -11,6 +12,8 @@ import { Button } from "@/components/ui/button"
 interface ReporteFiltroFormProps {
   onSubmit: (valores: ReporteRequest) => void
   enviando?: boolean
+  /** Callback disparado cuando cambian los valores del formulario (para vista previa) */
+  onChange?: (values: Partial<ReporteRequest>) => void
 }
 
 const OPCIONES_TIPO: { value: TipoReporte; label: string }[] = [
@@ -33,8 +36,8 @@ const RANGOS_RAPIDOS: { label: string; calcular: () => RangoFechas }[] = [
   { label: "Año actual", calcular: () => anioActual() },
 ]
 
-export function ReporteFiltroForm({ onSubmit, enviando }: ReporteFiltroFormProps) {
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<ReporteRequest>({
+export function ReporteFiltroForm({ onSubmit, enviando, onChange }: ReporteFiltroFormProps) {
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ReporteRequest>({
     resolver: zodResolver(reporteFiltroSchema),
     defaultValues: {
       tipoReporte: "SERVICIOS",
@@ -43,6 +46,19 @@ export function ReporteFiltroForm({ onSubmit, enviando }: ReporteFiltroFormProps
       fechaFin: "",
     },
   })
+
+  // Use ref to avoid watch dependency in useEffect (react-hook-form watch is not memoizable)
+  const onChangeRef = useRef(onChange)
+  onChangeRef.current = onChange
+
+  // Notify parent of changes for preview (debounced by parent)
+  useEffect(() => {
+    if (!onChangeRef.current) return
+    const subscription = watch((values) => {
+      onChangeRef.current?.(values)
+    })
+    return () => subscription.unsubscribe()
+  }, [watch])
 
   function aplicarRango(rango: RangoFechas) {
     setValue("fechaInicio", rango.fechaInicio, { shouldValidate: true })

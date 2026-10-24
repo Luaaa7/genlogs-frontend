@@ -113,10 +113,32 @@ export function ServicioForm({ valoresIniciales, onSubmit, enviando }: ServicioF
         <input
           type="number"
           step="0.5"
+          min="0.5"
           {...register("duracionEstimadaHoras", {
             // Campo vacío => undefined (con valueAsNumber llegaría NaN y fallaría la validación)
             setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
           })}
+          onKeyDown={(e) => {
+            // Prevenir teclas que permitan valores negativos
+            if (e.key === "-" || e.key === "e" || e.key === "E") {
+              e.preventDefault();
+            }
+          }}
+          onPaste={(e) => {
+            // Validar contenido pegado
+            const pasted = e.clipboardData.getData("text");
+            const value = Number(pasted);
+            if (!Number.isNaN(value) && value <= 0) {
+              e.preventDefault();
+            }
+          }}
+          onChange={(e) => {
+            // Validación en tiempo real: no permitir valores <= 0
+            const value = Number(e.target.value);
+            if (!Number.isNaN(value) && value <= 0) {
+              e.target.value = "";
+            }
+          }}
           className="w-full rounded-md border border-border px-3 py-2 text-sm"
         />
         {errors.duracionEstimadaHoras && (

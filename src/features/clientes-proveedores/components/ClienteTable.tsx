@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom'
-import { Search, Users } from 'lucide-react'
+import { Search, Users, Edit2 } from 'lucide-react'
 import type { Cliente, FiltrosCliente } from '../../../types/cliente.types'
 import { codigoTipoDocumento } from '../../../types/tercero.types'
 import { TableSkeletonRows } from '@/components/ui/TableSkeletonRows'
 import { EstadoVacio } from '@/components/ui/EstadoVacio'
 import { Tabla, TablaCard, Td, Th, controlClass, filaClass } from '@/components/ui/tabla'
 import { cn } from '@/lib/utils/utils'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   clientes: Cliente[]
@@ -14,9 +15,11 @@ interface Props {
   isLoading?: boolean
   /** Acción para el estado vacío sin filtros (p. ej. abrir "Nuevo cliente"). */
   accionVacio?: React.ReactNode
+  /** Callback cuando se solicita editar un cliente. */
+  onEditar?: (cliente: Cliente) => void
 }
 
-export function ClienteTable({ clientes, filtros, onFiltrosChange, isLoading, accionVacio }: Props) {
+export function ClienteTable({ clientes, filtros, onFiltrosChange, isLoading, accionVacio, onEditar }: Props) {
   const busqueda = filtros.documento ?? filtros.razonSocial ?? ''
 
   return (
@@ -50,11 +53,12 @@ export function ClienteTable({ clientes, filtros, onFiltrosChange, isLoading, ac
               <Th>Cliente</Th>
               <Th>Documento</Th>
               <Th>Contacto</Th>
+              {onEditar && <Th className="text-right">Acciones</Th>}
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
-              <TableSkeletonRows columns={3} />
+              <TableSkeletonRows columns={onEditar ? 4 : 3} />
             ) : (
               clientes.map((c) => (
                 <tr key={c.idCliente ?? c.id} className={filaClass}>
@@ -71,6 +75,18 @@ export function ClienteTable({ clientes, filtros, onFiltrosChange, isLoading, ac
                     <p>{c.tercero.email || c.tercero.correo || '—'}</p>
                     {c.tercero.telefono && <p className="text-xs tabular-nums text-muted-foreground">{c.tercero.telefono}</p>}
                   </Td>
+                  {onEditar && (
+                    <Td className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onEditar(c)}
+                        aria-label={`Editar cliente ${c.tercero.razonSocial}`}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                    </Td>
+                  )}
                 </tr>
               ))
             )}
