@@ -3,7 +3,8 @@ import { useDebounce } from 'use-debounce';
 import { Plus } from 'lucide-react';
 import { ClienteTable } from '../components/ClienteTable';
 import { ClienteForm } from '../components/ClienteForm';
-import { useClientes, useActualizarCliente, useCliente } from '../hooks/useClientes';
+import { useClientes, useActualizarCliente } from '../hooks/useClientes';
+import { valoresTerceroParaEditar } from '@/lib/utils/valoresIniciales';
 import { useCrearCliente } from '../hooks/useCrearCliente';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -24,7 +25,6 @@ export default function ClientesListPage() {
   const { data = [], isFetching, isError, refetch } = useClientes(debounced);
   const crear = useCrearCliente();
   const actualizar = useActualizarCliente();
-  const { data: clienteDetalle } = useCliente(clienteEditando?.idCliente ?? 0);
 
   const clientes = data ?? [];
 
@@ -44,18 +44,14 @@ export default function ClientesListPage() {
     ? 'Modifica los datos del cliente seleccionado.'
     : 'Ingresa el RUC o DNI y los datos se completan desde SUNAT/RENIEC.';
 
-  const valoresIniciales = clienteDetalle
+  // Se rellena desde la fila de la lista (trae tipo de documento, distrito y sector
+  // como objetos). Antes se usaba el detalle, que no trae ids de distrito ni de sector:
+  // el sector se reseteaba a 1 y CE/Pasaporte se convertían en DNI al guardar.
+  const valoresIniciales = clienteEditando
     ? {
-        tercero: {
-          idTipoDocumento: clienteDetalle.tipoDocumento === 'RUC' ? 1 : 2,
-          numeroDocumento: clienteDetalle.numeroDocumento,
-          razonSocial: clienteDetalle.razonSocial,
-          direccion: clienteDetalle.direccion ?? '',
-          telefono: clienteDetalle.telefono ?? '',
-          correo: clienteDetalle.correo ?? '',
-        },
-        idSectorEconomico: 1,
-        situacion: clienteDetalle.situacion,
+        tercero: valoresTerceroParaEditar(clienteEditando.tercero),
+        idSectorEconomico: clienteEditando.sectorEconomico?.idSectorEconomico ?? 1,
+        situacion: clienteEditando.situacion,
       }
     : undefined;
 
@@ -112,6 +108,7 @@ export default function ClientesListPage() {
         }}
       >
         <ClienteForm
+          key={clienteEditando ? `editar-${clienteEditando.idCliente}` : 'nuevo'}
           isSubmitting={isEditing ? actualizar.isPending : crear.isPending}
           serverError={isEditing
             ? actualizar.isError

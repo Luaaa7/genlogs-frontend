@@ -1,4 +1,4 @@
-import type { Distrito } from "@/api/distritosApi"
+import { ubicacionDistrito, type Distrito } from "@/api/distritosApi"
 
 interface DistritoSelectorProps {
   distritos: Distrito[] | undefined
@@ -39,7 +39,8 @@ export function DistritoSelector({
       </option>
       {distritos?.map((d) => (
         <option key={d.idDistrito} value={d.idDistrito}>
-          {d.nombreDistrito} - {d.provincia.nombreProvincia}, {d.provincia.departamento.nombreDepartamento}
+          {d.nombreDistrito}
+          {ubicacionDistrito(d) ? ` - ${ubicacionDistrito(d)}` : ""}
         </option>
       ))}
     </select>

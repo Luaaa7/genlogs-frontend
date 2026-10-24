@@ -1,6 +1,6 @@
 import { useFormContext } from 'react-hook-form'
 import { useQuery } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Loader2, Search, AlertCircle } from 'lucide-react'
 import type { ClienteFormValues } from '../../../lib/validators/rucDni.schema'
 import { useConsultarDocumento } from '../hooks/useConsultarDocumento'
@@ -57,7 +57,7 @@ const RAZON_AYUDA: Record<TipoDocumentoId, string> = {
 /** Campos del tercero (documento, datos fiscales y contacto) con autocompletado
  *  por RUC/DNI (RF-08). Debe ir dentro de un <FormProvider>. */
 export function CamposTercero() {
-  const { register, setValue, getValues, trigger, setError, watch, formState: { errors } } = useFormContext<ConTercero>()
+  const { register, setValue, getValues, trigger, setError, clearErrors, watch, formState: { errors } } = useFormContext<ConTercero>()
   const e = errors.tercero
   const consultar = useConsultarDocumento()
 
@@ -96,19 +96,26 @@ export function CamposTercero() {
     }
   }
 
-  // Maneja cambios en el tipo de documento
+  // Maneja cambios en el tipo de documento.
+  // Solo actúa cuando el usuario CAMBIA el tipo: en el primer render (formulario
+  // nuevo o en edición con datos cargados) no debe borrar ni validar el número,
+  // si no el campo aparecía en rojo ("obligatorio") sin haberlo tocado.
+  const tipoPrevio = useRef<TipoDocumentoId | undefined>(idTipoDocumento)
   useEffect(() => {
     if (idTipoDocumento === undefined) return
-    
-    // Limpiar campo de número de documento al cambiar tipo
-    setValue('tercero.numeroDocumento', '', { shouldValidate: true })
+    if (tipoPrevio.current === idTipoDocumento) return
+    tipoPrevio.current = idTipoDocumento
+
+    // Limpiar el número al cambiar el tipo, sin marcarlo como error todavía
+    setValue('tercero.numeroDocumento', '', { shouldValidate: false, shouldDirty: true })
+    clearErrors('tercero.numeroDocumento')
     
     // Para CE y Pasaporte, limpiar dirección ya que no hay autocompletado
     // Pero NO limpiar razonSocial para permitir edición manual
     if (idTipoDocumento === 3 || idTipoDocumento === 4) {
       setValue('tercero.direccion', '')
     }
-  }, [idTipoDocumento, setValue])
+  }, [idTipoDocumento, setValue, clearErrors])
 
   const errorDoc = e?.numeroDocumento?.message ?? (consultar.isError ? 'No se pudo consultar el documento. Completa los datos a mano.' : undefined)
   

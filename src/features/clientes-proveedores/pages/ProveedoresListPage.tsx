@@ -1,8 +1,11 @@
 import { useMemo, useState } from 'react'
-import { Plus, Search, Truck } from 'lucide-react'
-import { useProveedores, useCrearProveedor } from '../hooks/useProveedores'
+import { Edit2, Plus, Search, Truck } from 'lucide-react'
+import { useProveedores, useCrearProveedor, useActualizarProveedor } from '../hooks/useProveedores'
 import { codigoTipoDocumento } from '@/types/tercero.types'
 import { ProveedorForm } from '../components/ProveedorForm'
+import { valoresTerceroParaEditar } from '@/lib/utils/valoresIniciales'
+import type { Proveedor, ProveedorRequest } from '../../../types/proveedor.types'
+import type { ProveedorFormValues } from '../../../lib/validators/rucDni.schema'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
 import { TableSkeletonRows } from '@/components/ui/TableSkeletonRows'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -15,7 +18,9 @@ import { cn } from '@/lib/utils/utils'
 export default function ProveedoresListPage() {
   const { data = [], isLoading, isError, refetch } = useProveedores()
   const crear = useCrearProveedor()
+  const actualizar = useActualizarProveedor()
   const [mostrarForm, setMostrarForm] = useState(false)
+  const [editando, setEditando] = useState<Proveedor | null>(null)
   const [busqueda, setBusqueda] = useState('')
 
   // La lista completa ya viene del servidor: se filtra aquí.
@@ -27,8 +32,29 @@ export default function ProveedoresListPage() {
     )
   }, [data, busqueda])
 
+  const abrirNuevo = () => {
+    setEditando(null)
+    setMostrarForm(true)
+  }
+  const abrirEditar = (p: Proveedor) => {
+    setEditando(p)
+    setMostrarForm(true)
+  }
+  const cerrarPanel = () => {
+    setMostrarForm(false)
+    setEditando(null)
+  }
+  const enviar = (d: ProveedorRequest) => {
+    const idProveedor = editando ? (editando.idProveedor ?? editando.id) : undefined
+    if (editando && idProveedor != null) {
+      actualizar.mutate({ id: idProveedor, data: d }, { onSuccess: cerrarPanel })
+    } else {
+      crear.mutate(d, { onSuccess: cerrarPanel })
+    }
+  }
+
   const nuevo = (
-    <Button onClick={() => setMostrarForm(true)}>
+    <Button onClick={abrirNuevo}>
       <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
       Nuevo proveedor
     </Button>
@@ -75,11 +101,12 @@ export default function ProveedoresListPage() {
                 <Th>Documento</Th>
                 <Th>Dirección</Th>
                 <Th>Contacto</Th>
+                <Th className="text-right">Acciones</Th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <TableSkeletonRows columns={4} />
+                <TableSkeletonRows columns={5} />
               ) : (
                 filtrados.map((p) => (
                   <tr key={p.idProveedor ?? p.id} className={filaClass}>
@@ -95,6 +122,16 @@ export default function ProveedoresListPage() {
                       <p>{p.tercero.email || p.tercero.correo || '—'}</p>
                       {p.tercero.telefono && <p className="text-xs tabular-nums text-muted-foreground">{p.tercero.telefono}</p>}
                     </Td>
+                    <Td className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => abrirEditar(p)}
+                        aria-label={`Editar proveedor ${p.tercero.razonSocial}`}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                    </Td>
                   </tr>
                 ))
               )}
@@ -105,14 +142,20 @@ export default function ProveedoresListPage() {
 
       <PanelLateral
         abierto={mostrarForm}
-        titulo="Nuevo proveedor"
-        descripcion="Ingresa el RUC y los datos se completan desde SUNAT."
-        onCerrar={() => setMostrarForm(false)}
+        titulo={editando ? 'Editar proveedor' : 'Nuevo proveedor'}
+        descripcion={editando ? 'Modifica los datos del proveedor seleccionado.' : 'Ingresa el RUC y los datos se completan desde SUNAT.'}
+        onCerrar={cerrarPanel}
       >
         <ProveedorForm
-          isSubmitting={crear.isPending}
-          serverError={crear.isError ? 'No se pudo guardar el proveedor. Revisa los datos e intenta de nuevo.' : ''}
-          onSubmit={(d) => crear.mutate(d, { onSuccess: () => setMostrarForm(false) })}
+          key={editando ? `editar-${editando.idProveedor ?? editando.id}` : 'nuevo'}
+          defaultValues={editando ? ({ tercero: valoresTerceroParaEditar(editando.tercero), situacion: editando.situacion } as Partial<ProveedorFormValues>) : undefined}
+          isSubmitting={editando ? actualizar.isPending : crear.isPending}
+          serverError={
+            editando
+              ? actualizar.isError ? 'No se pudo actualizar el proveedor. Revisa los datos e intenta de nuevo.' : ''
+              : crear.isError ? 'No se pudo guardar el proveedor. Revisa los datos e intenta de nuevo.' : ''
+          }
+          onSubmit={enviar}
         />
       </PanelLateral>
     </div>

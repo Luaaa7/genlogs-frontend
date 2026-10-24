@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { proveedoresApi } from '../../../api/proveedoresApi';
 import { contactosClienteApi } from '../../../api/contactosClienteApi';
-import type { ContactoClienteRequest } from '../../../types/proveedor.types';
+import type { ContactoClienteRequest, ProveedorRequest } from '../../../types/proveedor.types';
 
 export const proveedoresKeys = { all: ['proveedores'] as const };
 
@@ -29,6 +29,14 @@ export const useCrearProveedor = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: proveedoresApi.crear,
+    onSuccess: () => qc.invalidateQueries({ queryKey: proveedoresKeys.all }),
+  });
+};
+
+export const useActualizarProveedor = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: ProveedorRequest }) => proveedoresApi.actualizar(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: proveedoresKeys.all }),
   });
 };

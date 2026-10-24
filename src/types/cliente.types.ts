@@ -12,6 +12,8 @@ export interface Cliente {
   /** Alias de lectura para componentes antiguos; el ID canónico es idCliente. */
   id: number
   tercero: Tercero
+  /** Viene anidado cuando el backend serializa la entidad (puede faltar). */
+  sectorEconomico?: { idSectorEconomico?: number } | null
   situacion: string
   status: 'A' | 'I'
 }

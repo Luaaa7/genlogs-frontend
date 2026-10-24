@@ -9,6 +9,39 @@ export interface ReporteVistaPreviaResponse<T = Record<string, unknown>> {
   columnas: string[]
 }
 
+/** Lo que responde POST /reportes/preview: encabezados + filas como arreglos de texto. */
+interface PreviewBackend {
+  // Formato actual: encabezados + filas como arreglos
+  encabezados?: string[]
+  filas?: string[][]
+  totalFilas?: number
+  // Formato anterior: filas como objetos
+  data?: Record<string, unknown>[]
+  total?: number
+}
+
+/** Convierte la respuesta del backend (filas como arreglos) al formato de la tabla (filas como objetos). */
+export function adaptarPreview<T = Record<string, unknown>>(
+  data: PreviewBackend,
+): ReporteVistaPreviaResponse<T> {
+  // Formato anterior ({ data: [...], total }): las filas ya son objetos.
+  if (Array.isArray(data.data)) {
+    const columnas = data.data.length > 0 ? Object.keys(data.data[0]) : []
+    return { filas: data.data as T[], total: data.total ?? data.data.length, columnas }
+  }
+  const usados = new Map<string, number>()
+  // Si un encabezado se repite se le agrega un sufijo para no pisar columnas.
+  const columnas = (data.encabezados ?? []).map((h) => {
+    const n = (usados.get(h) ?? 0) + 1
+    usados.set(h, n)
+    return n === 1 ? h : `${h} (${n})`
+  })
+  const filas = (data.filas ?? []).map(
+    (fila) => Object.fromEntries(columnas.map((c, i) => [c, fila[i] ?? null])) as T,
+  )
+  return { filas, total: data.totalFilas ?? filas.length, columnas }
+}
+
 /** Genera y descarga el archivo (PDF/Excel). */
 export async function generarReporte(request: ReporteRequest): Promise<Blob> {
   const { data } = await axiosClient.post("/reportes/generar", request, {
@@ -25,11 +58,8 @@ export async function obtenerVistaPrevia<T = Record<string, unknown>>(
   request: ReporteRequest,
 ): Promise<ReporteVistaPreviaResponse<T>> {
   try {
-    const { data } = await axiosClient.post<ReporteVistaPreviaResponse<T>>(
-      "/reportes/vista-previa",
-      request,
-    )
-    return data
+    const { data } = await axiosClient.post<PreviewBackend>("/reportes/preview", request)
+    return adaptarPreview<T>(data)
   } catch (err) {
     const axiosError = err as AxiosError
     if (axiosError.response?.status === 404) {

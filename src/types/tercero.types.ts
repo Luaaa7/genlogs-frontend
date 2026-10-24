@@ -32,6 +32,8 @@ export interface Tercero {
   correo?: string | null
   status: 'A' | 'I'
   tipoDocumento: TipoDocumentoRef | string
+  /** Viene anidado cuando el backend serializa la entidad (puede faltar). */
+  distrito?: { idDistrito?: number } | null
   nombreComercial: string | null
   email: string | null
 }
