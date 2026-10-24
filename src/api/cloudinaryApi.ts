@@ -21,6 +21,9 @@ export async function subirArchivo(
     // Los archivos grandes en redes lentas superan el timeout global de 60 s.
     timeout: 5 * 60_000,
     signal,
+    // El cuerpo es FormData. No heredar application/json del cliente HTTP;
+    // Axios/el navegador deben generar multipart/form-data con boundary.
+    headers: { "Content-Type": undefined },
     onUploadProgress: (evt) => {
       if (onProgress && evt.total) {
         onProgress(Math.min(100, Math.round((evt.loaded * 100) / evt.total)))

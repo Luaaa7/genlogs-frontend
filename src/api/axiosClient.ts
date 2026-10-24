@@ -16,8 +16,11 @@ const getApiBaseUrl = () => {
 export const axiosClient = axios.create({
   baseURL: getApiBaseUrl(),
   timeout: 60_000,
+  // No fijar Content-Type globalmente: las peticiones FormData necesitan que
+  // el navegador/Axios agregue multipart/form-data con su boundary. Axios
+  // establece application/json automáticamente cuando el cuerpo es un objeto.
   headers: {
-    "Content-Type": "application/json",
+    Accept: "application/json",
   },
 })
 
