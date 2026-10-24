@@ -42,7 +42,7 @@ export function UsuarioFormModal({ roles, onClose, onSubmit }: UsuarioFormModalP
   }
 
   return (
-    <PanelLateral abierto titulo="Nuevo usuario" descripcion="Tendrá que cambiar la contraseña temporal al ingresar." onCerrar={onClose}>
+    <PanelLateral abierto titulo="Nuevo usuario" descripcion="Compártele la contraseña temporal; podrá cambiarla desde ¿Olvidaste tu contraseña?" onCerrar={onClose}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <SeccionForm titulo="Datos personales">
           <Campo id="usr-nombres" label="Nombres completos">

@@ -127,7 +127,7 @@ export function ResetPasswordPage() {
         <div className="space-y-1">
           <h1 className="text-xl font-bold text-foreground">Enlace no disponible</h1>
           <p className="text-sm text-muted-foreground">
-            Este enlace venció o ya fue utilizado. Los enlaces duran 15 minutos y solo sirven una vez.
+            Este enlace venció o ya fue utilizado. Los enlaces duran 30 minutos y solo sirven una vez.
           </p>
         </div>
         <Link to="/recuperar-password" className={botonClass}>
