@@ -7,6 +7,7 @@ import { ReporteFiltroForm } from "../components/ReporteFiltroForm"
 import { ReporteVistaPrevia } from "../components/ReporteVistaPrevia"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { PageHeader } from "@/components/ui/PageHeader"
+import { reporteFiltroSchema } from "@/lib/validators/reporteFiltro.schema"
 import type { ReporteRequest, TipoReporte } from "@/types/reporte.types"
 
 const LABELS_TIPO: Record<TipoReporte, string> = {
@@ -24,14 +25,9 @@ export function ReportesPage() {
   const [formValues, setFormValues] = useState<Partial<ReporteRequest>>({})
   const [debouncedValues] = useDebounce(formValues, 500)
 
-  // Build request for preview when we have required fields
-  const previewRequest: ReporteRequest | null =
-    debouncedValues.tipoReporte &&
-    debouncedValues.fechaInicio &&
-    debouncedValues.fechaFin &&
-    debouncedValues.formato
-      ? (debouncedValues as ReporteRequest)
-      : null
+  // La vista previa solo se pide si el formulario es válido (fechas completas, rango correcto, máx. 365 días).
+  const validacion = reporteFiltroSchema.safeParse(debouncedValues)
+  const previewRequest: ReporteRequest | null = validacion.success ? validacion.data : null
 
   const { data: previewData, isLoading: previewLoading, isError: previewError, refetch: refetchPreview } =
     useVistaPreviaReporte(previewRequest)
