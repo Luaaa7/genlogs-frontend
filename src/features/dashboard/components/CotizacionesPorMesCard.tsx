@@ -55,7 +55,7 @@ export function CotizacionesPorMesCard({ porMes, actividad, className }: { porMe
           <div key={DIAS[d]} className="contents">
             <span className="text-[11px] leading-5 text-muted-foreground">{DIAS[d]}</span>
             {fila.map((n, s) => (
-              <span key={s} className={cn("h-5 rounded", HEAT[nivel(n)])} title={`${n} cotizaciones`} />
+              <span key={s} className={cn("h-5 rounded", HEAT[nivel(n)])} title={`${n} ${n === 1 ? 'cotización' : 'cotizaciones'}`} />
             ))}
           </div>
         ))}

@@ -14,7 +14,8 @@ interface FacturacionCardProps {
   className?: string
 }
 
-const miles = (v: number) => `${(v / 1000).toLocaleString("es-PE", { maximumFractionDigits: 1 })} mil`
+// Espacio no separable: el eje Y partía "25.5 mil" en dos líneas.
+const miles = (v: number) => `${(v / 1000).toLocaleString("es-PE", { maximumFractionDigits: 1 })}\u00A0mil`
 
 /** Curva de facturación mensual con el mejor mes marcado, y tres cifras debajo. */
 export function FacturacionCard({ historico, totalFacturado, variacion, className }: FacturacionCardProps) {
@@ -36,7 +37,7 @@ export function FacturacionCard({ historico, totalFacturado, variacion, classNam
             <AreaChart data={datos} margin={{ top: 28, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid vertical={false} stroke="var(--border)" />
               <XAxis dataKey="mes" axisLine={false} tickLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} />
-              <YAxis axisLine={false} tickLine={false} width={56} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} tickFormatter={miles} />
+              <YAxis axisLine={false} tickLine={false} width={64} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} tickFormatter={miles} />
               <Tooltip
                 cursor={{ stroke: "var(--border)" }}
                 formatter={(v) => [formatCurrency(Number(v)), "Facturado"]}

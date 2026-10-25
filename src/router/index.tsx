@@ -23,6 +23,7 @@ import ProveedoresListPage from '@/features/clientes-proveedores/pages/Proveedor
 import { EmpresasMinerasPage } from '@/features/empresas-mineras/pages/EmpresasMinerasPage'
 import { OrdenesCompraPage } from '@/features/ordenes-compra/pages/OrdenesCompraPage'
 import { FacturacionPage } from '@/features/facturacion/pages/FacturacionPage'
+import { NoEncontradaPage } from '@/router/NoEncontradaPage'
 
 export const router = createBrowserRouter([
   { element: <AuthLayout />, children: [
@@ -49,6 +50,7 @@ export const router = createBrowserRouter([
     { path: '/ordenes-compra', element: <OrdenesCompraPage /> },
     { path: '/facturacion', element: <FacturacionPage /> },
     { element: <RoleGuard allowedRoles={['ADMINISTRADOR']} />, children: [{ path: '/usuarios', element: <UsuariosPage /> }] },
+    // Cualquier otra ruta: página 404 dentro del layout (sin sesión, ProtectedRoute manda al login).
+    { path: '*', element: <NoEncontradaPage /> },
   ] }] },
-  { path: '*', element: <Navigate to="/dashboard" replace /> },
 ])

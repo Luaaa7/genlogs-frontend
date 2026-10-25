@@ -7,6 +7,9 @@ import { useAgregarContacto, useContactosTercero, useEliminarContacto } from '..
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EstadoBadge } from '@/components/ui/EstadoBadge';
 
+/** Campos del formulario de contacto con su etiqueta visible (con tildes). */
+const CAMPOS_CONTACTO = [['nombre', 'Nombre'], ['cargo', 'Cargo'], ['telefono', 'Teléfono'], ['email', 'Correo']] as const
+
 const input = 'rounded border border-border p-2 text-sm';
 
 /**
@@ -52,9 +55,9 @@ export function ContactoClienteList({ idTercero }: { idTercero: number }) {
       </ul>
 
       <form onSubmit={onSubmit} className="grid gap-2 sm:grid-cols-2" noValidate>
-        {(['nombre', 'cargo', 'telefono', 'email'] as const).map((f) => (
-          <label key={f} className="text-sm capitalize">
-            {f}
+        {CAMPOS_CONTACTO.map(([f, etiqueta]) => (
+          <label key={f} className="text-sm">
+            {etiqueta}
             <input {...register(f)} className={`${input} w-full`} />
             {errors[f] && <span className="text-xs text-destructive">{errors[f]?.message}</span>}
           </label>

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { facturacionApi } from '@/api/facturacionApi'
-import type { FacturacionFiltros, FacturaInput } from '@/types/facturacion.types'
+import type { FacturacionFiltros, FacturaInput, RegistrarPagoInput } from '@/types/facturacion.types'
 
 export const facturacionKeys = {
   all: ['facturacion'] as const,
@@ -22,7 +22,7 @@ export function useCrearFactura() {
 export function useRegistrarPago() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, monto }: { id: number; monto: number }) => facturacionApi.registrarPago(id, monto),
+    mutationFn: ({ id, pago }: { id: number; pago: RegistrarPagoInput }) => facturacionApi.registrarPago(id, pago),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: facturacionKeys.all }),
   })
 }
