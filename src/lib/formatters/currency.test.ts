@@ -3,14 +3,16 @@ import { formatCurrency, normalizarMoneda } from './currency';
 
 describe('currency formatter', () => {
   it('formats PEN correctly', () => {
-    expect(formatCurrency(1234.5, 'PEN')).toContain('S/');
+    expect(formatCurrency(1234.5, 'PEN')).toContain('PEN');
     expect(formatCurrency(1234.5, 'PEN')).toContain('1,234.50');
+    expect(formatCurrency(1234.5, 'S/')).toBe('PEN 1,234.50');
   });
 
   it('formats USD correctly', () => {
     const formatted = formatCurrency(1234.5, 'USD');
-    expect(formatted).toContain('US$');
+    expect(formatted).toContain('USD');
     expect(formatted).toContain('1,234.50');
+    expect(formatCurrency(1234.5, '$')).toBe('USD 1,234.50');
   });
 
   it('normalizes symbols to ISO codes', () => {

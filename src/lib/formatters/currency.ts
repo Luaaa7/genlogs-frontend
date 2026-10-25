@@ -26,26 +26,17 @@ export function normalizarMoneda(currency: string): string {
   return 'PEN';
 }
 
-/** Símbolo que se muestra para cada moneda. "US$" en vez de "USD" para que se lea como dólares. */
-const SIMBOLO_MONEDA: Record<string, string> = {
-  PEN: 'S/',
-  USD: 'US$',
-  EUR: '€',
-};
-
 /**
- * "S/ 1,234.50", "US$ 1,234.50" o "€ 1,234.50".
- * El número se formatea con Intl (separador de miles y 2 decimales) y el
- * símbolo se pone a mano: Intl con es-PE muestra "USD" y no "US$".
+ * "PEN 1,234.50", "USD 1,234.50" o "EUR 1,234.50": siempre el código de la
+ * moneda, igual que en los PDF y los reportes (nada de "S/", "$" o "US$").
  */
 export function formatCurrency(amount: number, currency = "PEN"): string {
   const currencyISO = normalizarMoneda(currency);
-  const simbolo = SIMBOLO_MONEDA[currencyISO] ?? currencyISO;
   const numero = new Intl.NumberFormat("es-PE", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(Math.abs(amount || 0));
-  return `${amount < 0 ? "-" : ""}${simbolo} ${numero}`;
+  return `${amount < 0 ? "-" : ""}${currencyISO} ${numero}`;
 }
 
 export function formatNumber(value: number): string {

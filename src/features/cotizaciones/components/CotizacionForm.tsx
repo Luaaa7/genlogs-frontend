@@ -13,7 +13,7 @@ interface CotizacionFormProps {
   isLoadingClientes?: boolean
 }
 
-const MONEDAS: Record<string, string> = { PEN: 'Soles (S/)', USD: 'Dólares (US$)', EUR: 'Euros (€)' }
+const MONEDAS: Record<string, string> = { PEN: 'Soles (PEN)', USD: 'Dólares (USD)', EUR: 'Euros (EUR)' }
 
 /** Grupo de opciones tipo "tarjeta" (radio) para valores cortos. */
 function OpcionesRadio<T extends string>({ name, legend, opciones, valor, onChange, error, columnas }: {
