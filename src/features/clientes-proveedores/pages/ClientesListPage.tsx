@@ -3,13 +3,13 @@ import { useDebounce } from 'use-debounce';
 import { Plus } from 'lucide-react';
 import { ClienteTable } from '../components/ClienteTable';
 import { ClienteForm } from '../components/ClienteForm';
-import { useClientes, useActualizarCliente } from '../hooks/useClientes';
-import { valoresTerceroParaEditar } from '@/lib/utils/valoresIniciales';
+import { useClientesPagina, useActualizarCliente, useCliente } from '../hooks/useClientes';
 import { useCrearCliente } from '../hooks/useCrearCliente';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PanelLateral } from '@/components/ui/PanelLateral';
 import { Button } from '@/components/ui/button';
+import { Paginacion } from '@/components/ui/tabla';
 import CargandoSpinner from '../../../components/ui/CargandoSpinner';
 import type { FiltrosCliente } from '../../../types/cliente.types';
 import type { Cliente } from '../../../types/cliente.types';
@@ -21,10 +21,16 @@ export default function ClientesListPage() {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null);
 
-  // Cambiamos a isFetching para cubrir tanto la carga inicial como las recargas por filtros
-  const { data = [], isFetching, isError, refetch } = useClientes(debounced);
+  const [pagina, setPagina] = useState(0);
+  const [tamano, setTamano] = useState(20);
+  // Paginación en el servidor: antes se cargaban los ~200 clientes de una vez.
+  const { data: resultado, isFetching, isLoading, isError, refetch } = useClientesPagina({ ...debounced, page: pagina, size: tamano });
+  const data = resultado?.content ?? [];
+  const total = resultado?.total ?? 0;
+  const totalPaginas = Math.max(1, Math.ceil(total / tamano));
   const crear = useCrearCliente();
   const actualizar = useActualizarCliente();
+  const { data: clienteDetalle } = useCliente(clienteEditando?.idCliente ?? 0);
 
   const clientes = data ?? [];
 
@@ -44,14 +50,18 @@ export default function ClientesListPage() {
     ? 'Modifica los datos del cliente seleccionado.'
     : 'Ingresa el RUC o DNI y los datos se completan desde SUNAT/RENIEC.';
 
-  // Se rellena desde la fila de la lista (trae tipo de documento, distrito y sector
-  // como objetos). Antes se usaba el detalle, que no trae ids de distrito ni de sector:
-  // el sector se reseteaba a 1 y CE/Pasaporte se convertían en DNI al guardar.
-  const valoresIniciales = clienteEditando
+  const valoresIniciales = clienteDetalle
     ? {
-        tercero: valoresTerceroParaEditar(clienteEditando.tercero),
-        idSectorEconomico: clienteEditando.sectorEconomico?.idSectorEconomico ?? 1,
-        situacion: clienteEditando.situacion,
+        tercero: {
+          idTipoDocumento: clienteDetalle.tipoDocumento === 'RUC' ? 1 : 2,
+          numeroDocumento: clienteDetalle.numeroDocumento,
+          razonSocial: clienteDetalle.razonSocial,
+          direccion: clienteDetalle.direccion ?? '',
+          telefono: clienteDetalle.telefono ?? '',
+          correo: clienteDetalle.correo ?? '',
+        },
+        idSectorEconomico: 1,
+        situacion: clienteDetalle.situacion,
       }
     : undefined;
 
@@ -74,7 +84,7 @@ export default function ClientesListPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         titulo="Clientes"
-        descripcion={<><span className="tabular-nums">{clientes.length}</span> clientes con sus contactos y unidades mineras</>}
+        descripcion={<><span className="tabular-nums">{total}</span> clientes con sus contactos y unidades mineras</>}
         acciones={nuevo}
       />
 
@@ -85,17 +95,32 @@ export default function ClientesListPage() {
         />
       )}
 
-{isFetching ? (
+      {isLoading ? (
         <CargandoSpinner texto="Cargando clientes..." />
       ) : (
-        <ClienteTable
-          clientes={clientes}
-          filtros={filtros}
-          onFiltrosChange={setFiltros}
-          isLoading={isFetching}
-          accionVacio={nuevo}
-          onEditar={handleEditar}
-        />
+        <div className="flex flex-col gap-3">
+          <ClienteTable
+            clientes={clientes}
+            filtros={filtros}
+            onFiltrosChange={(f) => { setFiltros(f); setPagina(0); }}
+            isLoading={isFetching}
+            accionVacio={nuevo}
+            onEditar={handleEditar}
+          />
+          {total > 0 && (
+            <div className="overflow-hidden rounded-xl border border-border bg-card [&>div]:border-t-0">
+              <Paginacion
+                pagina={pagina}
+                totalPaginas={totalPaginas}
+                total={total}
+                enPagina={clientes.length}
+                tamano={tamano}
+                onPagina={setPagina}
+                onTamano={(t) => { setTamano(t); setPagina(0); }}
+              />
+            </div>
+          )}
+        </div>
       )}
 
       <PanelLateral
@@ -108,7 +133,6 @@ export default function ClientesListPage() {
         }}
       >
         <ClienteForm
-          key={clienteEditando ? `editar-${clienteEditando.idCliente}` : 'nuevo'}
           isSubmitting={isEditing ? actualizar.isPending : crear.isPending}
           serverError={isEditing
             ? actualizar.isError

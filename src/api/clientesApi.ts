@@ -9,6 +9,13 @@ export const clientesApi = {
     const { data } = await axiosClient.get<PageResponse<Cliente> | Cliente[]>(RECURSO, { params: filtros })
     return Array.isArray(data) ? data : data.content ?? []
   },
+  /** Una página de clientes; el total viene en la cabecera X-Total-Count. */
+  listarPagina: async (filtros: FiltrosCliente & { page: number; size: number }): Promise<{ content: Cliente[]; total: number }> => {
+    const res = await axiosClient.get<Cliente[]>(RECURSO, { params: filtros })
+    const content = Array.isArray(res.data) ? res.data : []
+    const total = Number(res.headers['x-total-count'])
+    return { content, total: Number.isFinite(total) ? total : content.length }
+  },
   // GET/POST /clientes: sí pasan por ClienteResponse (DTO plano).
   obtener: (id: number) => axiosClient.get<ClienteDetalle>(`${RECURSO}/${id}`).then((r) => r.data),
   crear: (data: ClienteRequest) => axiosClient.post<ClienteDetalle>(RECURSO, data).then((r) => r.data),

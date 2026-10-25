@@ -18,7 +18,7 @@ export function TablaCard({ barra, children, pie }: { barra?: ReactNode; childre
 
 export function Tabla({ titulo, children, minWidth = 720 }: { titulo: string; children: ReactNode; minWidth?: number }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <table className="w-full text-sm" style={{ minWidth }}>
         <caption className="sr-only">{titulo}</caption>
         {children}

@@ -216,8 +216,8 @@ export const CotizacionesListPage: React.FC = () => {
             </Button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-sm">
+          <div className="relative overflow-x-auto">
+            <table className="w-full min-w-190 text-sm">
               <caption className="sr-only">Lista de cotizaciones</caption>
               <thead>
                 <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">

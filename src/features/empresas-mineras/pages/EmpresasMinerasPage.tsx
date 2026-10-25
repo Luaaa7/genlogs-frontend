@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { Building2, MapPin } from 'lucide-react'
 import { useEmpresasMineras } from '../hooks/useEmpresasMineras'
 import { MapaUnidades, type PuntoMapa } from '../components/MapaUnidades'
-import { useClientes } from '@/features/clientes-proveedores/hooks/useClientes'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
 import { EstadoBadge } from '@/components/ui/EstadoBadge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -31,8 +30,9 @@ const familiaDe = (nombre?: string) => {
 }
 const clasesDeEtapa = (nombre?: string) => familiaDe(nombre)?.clases
 
+// w-full en móvil: sin ancho fijo, el select toma el ancho del cliente con el nombre más largo y se sale de la pantalla.
 const selectClass =
-  'h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+  'h-10 w-full min-w-0 truncate rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto sm:max-w-xs'
 
 const idDe = (e: EmpresaMinera) => e.idEmpresaMinera ?? e.id ?? 0
 const nombreDe = (e: EmpresaMinera) => e.nombreUnidadMinera ?? e.nombre ?? 'Unidad minera'
@@ -45,7 +45,6 @@ const idEtapaDe = (e: EmpresaMinera) => e.etapaComercial?.idEtapaComercial
 
 export function EmpresasMinerasPage() {
   const { data = [], isLoading, isError, refetch } = useEmpresasMineras()
-  const { data: clientes = [] } = useClientes({ size: 500 })
 
   const [vista, setVista] = useState<'mapa' | 'tabla'>('mapa')
   const [filtroEtapa, setFiltroEtapa] = useState('')
@@ -53,9 +52,10 @@ export function EmpresasMinerasPage() {
   const [seleccion, setSeleccion] = useState<number | null>(null)
 
   const nombreCliente = useMemo(() => {
-    const mapa = new Map(clientes.map((c) => [c.idCliente ?? c.id, c.tercero?.nombreComercial || c.tercero?.razonSocial]))
+    // El nombre ya viene en cada unidad (cliente.tercero): antes se pedían aparte 500 clientes solo para esto.
+    const mapa = new Map(data.map((e) => [idClienteDe(e), e.cliente?.tercero?.nombreComercial || e.cliente?.tercero?.razonSocial]))
     return (id: number | undefined) => (id != null ? mapa.get(id) ?? `Cliente #${id}` : 'Sin cliente')
-  }, [clientes])
+  }, [data])
 
   // Etapas presentes en los datos, en el orden del flujo comercial
   const etapas = useMemo(() => {
@@ -155,9 +155,9 @@ export function EmpresasMinerasPage() {
         <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
           <section aria-label="Mapa de unidades mineras" className="rounded-xl border border-border bg-card p-3">
             {isLoading ? (
-              <Skeleton variant="rectangular" className="h-[520px]" />
+              <Skeleton variant="rectangular" className="h-130" />
             ) : (
-              <MapaUnidades puntos={puntos} seleccionado={actual ? idDe(actual) : null} onSeleccionar={setSeleccion} className="h-[520px]" />
+              <MapaUnidades puntos={puntos} seleccionado={actual ? idDe(actual) : null} onSeleccionar={setSeleccion} className="h-130" />
             )}
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-xs text-muted-foreground">
               {etapas.map((e) => (
@@ -212,7 +212,7 @@ export function EmpresasMinerasPage() {
               {isLoading ? (
                 <div className="flex flex-col gap-2 p-2">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-10" />)}</div>
               ) : (
-                <ul className="max-h-[360px] overflow-y-auto">
+                <ul className="max-h-90 overflow-y-auto">
                   {filtradas.map((e) => {
                     const activa = actual && idDe(e) === idDe(actual)
                     return (
@@ -243,8 +243,8 @@ export function EmpresasMinerasPage() {
         </div>
       ) : (
         <section className="overflow-hidden rounded-xl border border-border bg-card">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-sm">
+          <div className="relative overflow-x-auto">
+            <table className="w-full min-w-190 text-sm">
               <caption className="sr-only">Unidades mineras</caption>
               <thead>
                 <tr className="border-b border-border text-left text-xs text-muted-foreground">

@@ -154,22 +154,31 @@ export const CotizacionDetallePage: React.FC = () => {
     {
       label: ordenGenerada ? `Orden ${ordenGenerada.numeroOrdenCompra}` : 'Orden de compra',
       status: ordenGenerada ? 'completed' : 'pending',
-      href: ordenGenerada ? '/ordenes-compra' : undefined,
+      href: ordenGenerada ? `/ordenes-compra?idCotizacion=${cotizacionId}` : undefined,
+      pendiente: 'aún no hay',
     },
     {
       label: facturaGenerada ? `Factura ${facturaGenerada.codigoComprobante}` : 'Factura',
       status: facturaGenerada ? 'completed' : 'pending',
-      href: facturaGenerada ? '/facturacion' : undefined,
+      href: facturaGenerada ? `/facturacion?idOrdenCompra=${ordenGenerada?.idOrdenCompra}` : undefined,
+      pendiente: 'aún no hay',
     },
   ];
 
   // Una sola acción principal, la que corresponde al momento del flujo.
   let accionPrincipal: React.ReactNode = null;
-  if (estado === 'BORRADOR' || estado === 'ENVIADA') {
+  if (estado === 'BORRADOR') {
     accionPrincipal = (
       <Button onClick={() => setShowEnvioModal(true)}>
         <Send className="mr-2 h-4 w-4" aria-hidden="true" />
-        {estado === 'BORRADOR' ? 'Enviar al cliente' : 'Reenviar'}
+        Enviar al cliente
+      </Button>
+    );
+  } else if (estado === 'ENVIADA') {
+    // Ya se envió: el siguiente paso es la negociación (reenviar queda como acción secundaria).
+    accionPrincipal = (
+      <Button onClick={() => handleCambiarEstado(EstadoCotizacion.EN_NEGOCIACION)} disabled={isChangingState}>
+        Pasar a negociación
       </Button>
     );
   } else if (estado === 'EN_NEGOCIACION') {
@@ -214,10 +223,11 @@ export const CotizacionDetallePage: React.FC = () => {
               : <Download className="mr-2 h-4 w-4" aria-hidden="true" />}
             PDF
           </Button>
-          {estado !== 'BORRADOR' && estado !== 'ENVIADA' && (
+          {/* Reenviar solo mientras la cotización sigue viva (no en Rechazada, Anulada ni Vencida). */}
+          {(estado === 'ENVIADA' || estado === 'EN_NEGOCIACION' || estado === 'APROBADA') && (
             <Button variant="outline" onClick={() => setShowEnvioModal(true)}>
               <Send className="mr-2 h-4 w-4" aria-hidden="true" />
-              Enviar
+              Reenviar
             </Button>
           )}
 
@@ -272,8 +282,8 @@ export const CotizacionDetallePage: React.FC = () => {
             {detalles.length === 0 ? (
               <p className="px-5 pb-6 text-sm text-muted-foreground">Esta cotización aún no tiene ítems.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[560px] text-sm">
+              <div className="relative overflow-x-auto">
+                <table className="w-full min-w-140 text-sm">
                   <thead>
                     <tr className="border-y border-border text-left text-xs text-muted-foreground">
                       <th className="px-5 py-2.5 font-medium">Descripción</th>
