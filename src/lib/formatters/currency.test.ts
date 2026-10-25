@@ -9,7 +9,7 @@ describe('currency formatter', () => {
 
   it('formats USD correctly', () => {
     const formatted = formatCurrency(1234.5, 'USD');
-    expect(formatted).toContain('USD');
+    expect(formatted).toContain('US$');
     expect(formatted).toContain('1,234.50');
   });
 
