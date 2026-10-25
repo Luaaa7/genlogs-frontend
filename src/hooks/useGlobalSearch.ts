@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { clientesApi } from "@/api/clientesApi"
 import { cotizacionesApi } from "@/api/cotizacionesApi"
 import * as productosApi from "@/api/productosApi"
+import { codigoTipoDocumento } from "@/types/tercero.types"
 
 export interface ResultadoBusqueda {
   id: number
@@ -44,9 +45,9 @@ export function useGlobalSearch(termino: string) {
 
       return {
         clientes: clientes.slice(0, 5).map((c) => ({
-          id: c.id,
+          id: c.idCliente ?? c.id,
           titulo: c.tercero.razonSocial,
-          subtitulo: `${c.tercero.tipoDocumento} ${c.tercero.numeroDocumento}`,
+          subtitulo: `${codigoTipoDocumento(c.tercero.tipoDocumento)} ${c.tercero.numeroDocumento}`,
         })),
         cotizaciones: cotizacionesFiltradas.map((c) => ({
           id: (c.idCotizacion ?? c.id)!,

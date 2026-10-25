@@ -15,11 +15,28 @@ interface FacturacionCardProps {
 }
 
 // Espacio no separable: el eje Y partía "25.5 mil" en dos líneas.
-const miles = (v: number) => `${(v / 1000).toLocaleString("es-PE", { maximumFractionDigits: 1 })}\u00A0mil`
+const miles = (v: number) => (v === 0 ? "0" : `${(v / 1000).toLocaleString("es-PE", { maximumFractionDigits: 1 })}\u00A0mil`)
+
+/** El backend solo devuelve los meses con facturas: se completan los vacíos con 0
+ *  (hasta el mes actual) para que la curva no una meses lejanos como si fueran seguidos. */
+function completarMeses(historico: FacturacionHistoricoItem[], hoy: Date): FacturacionHistoricoItem[] {
+  const validos = historico.every((h) => /^\d{4}-\d{2}$/.test(h.mes))
+  if (!validos || historico.length === 0) return historico
+  const montos = new Map(historico.map((h) => [h.mes, h.monto]))
+  const [anio0, mes0] = historico[0].mes.split("-").map(Number)
+  const salida: FacturacionHistoricoItem[] = []
+  for (let d = new Date(anio0, mes0 - 1, 1); d <= new Date(hoy.getFullYear(), hoy.getMonth(), 1); d.setMonth(d.getMonth() + 1)) {
+    const clave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+    salida.push({ mes: clave, monto: montos.get(clave) ?? 0 })
+  }
+  return salida
+}
 
 /** Curva de facturación mensual con el mejor mes marcado, y tres cifras debajo. */
 export function FacturacionCard({ historico, totalFacturado, variacion, className }: FacturacionCardProps) {
-  const datos = historico.map((h) => ({ mes: etiquetaMes(h.mes), monto: h.monto }))
+  const hoy = new Date()
+  const mesActual = hoy.toLocaleDateString("es-PE", { month: "long" })
+  const datos = completarMeses(historico, hoy).map((h) => ({ mes: etiquetaMes(h.mes), monto: h.monto }))
   const pico = datos.reduce<(typeof datos)[number] | null>((mejor, d) => (!mejor || d.monto > mejor.monto ? d : mejor), null)
 
   return (
@@ -62,7 +79,7 @@ export function FacturacionCard({ historico, totalFacturado, variacion, classNam
 
       <dl className="mt-5 grid grid-cols-3 border-t border-border pt-5 text-center">
         <div>
-          <dt className="text-xs text-muted-foreground">Total facturado</dt>
+          <dt className="text-xs text-muted-foreground">Facturado en {mesActual}</dt>
           <dd className="mt-1.5 text-xl font-semibold tabular-nums text-viz-1">{miles(totalFacturado)}</dd>
         </div>
         <div className="border-x border-border">
@@ -70,7 +87,7 @@ export function FacturacionCard({ historico, totalFacturado, variacion, classNam
           <dd className="mt-1.5 text-xl font-semibold tabular-nums text-viz-1">{pico ? pico.mes : "—"}</dd>
         </div>
         <div>
-          <dt className="text-xs text-muted-foreground">Vs. mes anterior</dt>
+          <dt className="text-xs text-muted-foreground">{mesActual} vs. mes anterior</dt>
           <dd className={cn("mt-1.5 text-xl font-semibold tabular-nums", variacion < 0 ? "text-destructive" : "text-success")}>
             {variacion > 0 ? "+" : ""}{variacion.toFixed(1)}%
           </dd>

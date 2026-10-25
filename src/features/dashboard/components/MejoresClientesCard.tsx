@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom"
-import { formatCurrency } from "@/lib/formatters/currency"
-import { iniciales, type ClienteDestacado } from "../lib/calculos"
+import { formatearMontos, iniciales, type ClienteDestacado } from "../lib/calculos"
 
 // Franja superior de cada tarjeta: decorativa, en los tres colores de la paleta.
 const FRANJAS = ["bg-brand-navy", "bg-brand-blue", "bg-viz-3"]
@@ -27,7 +26,7 @@ export function MejoresClientesCard({ clientes }: { clientes: ClienteDestacado[]
                   {iniciales(c.nombre)}
                 </span>
                 <span className="text-[13px] font-semibold leading-snug text-foreground">{c.nombre}</span>
-                <span className="text-[15px] font-bold tabular-nums text-foreground">{formatCurrency(c.facturado)}</span>
+                <span className="text-[15px] font-bold tabular-nums text-foreground">{formatearMontos(c.montos)}</span>
                 <span className="text-xs text-muted-foreground">{c.comprobantes} {c.comprobantes === 1 ? "comprobante" : "comprobantes"}</span>
               </Link>
             </li>

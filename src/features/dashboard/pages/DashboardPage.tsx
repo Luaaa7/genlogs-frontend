@@ -14,15 +14,18 @@ import { MejoresClientesCard } from "../components/MejoresClientesCard"
 import {
   actividadPorDia,
   calcularPendientes,
+  contarFacturasVencidas,
   cotizacionesPorMes,
   cotizadoPorMes,
   etiquetaMes,
+  formatearMontos,
   mejoresClientes,
+  montoCotizadoPorMoneda,
+  resumenPendientes,
   tasaAprobacion,
 } from "../lib/calculos"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { formatCurrency } from "@/lib/formatters/currency"
 import { useAuthStore } from "@/features/auth/store/authStore"
 
 /** Saludo según la hora del día. */
@@ -66,10 +69,10 @@ export function DashboardPage() {
       // Tendencia de la tarjeta de cotizaciones: cuántas se emitieron cada mes
       serieCotizaciones: cotizacionesPorMes(cotizaciones, hoy, 6).map((m) => m.aprobadas + m.enCurso + m.rechazadas),
       vencenSemana: calcularPendientes(cotizaciones, [], hoy, 7).filter((p) => p.urgencia === "proximo").length,
-      facturasVencidas: calcularPendientes([], facturas, hoy, 0).filter((p) => p.urgencia === "vencido").length,
-      montoCotizado: cotizaciones
-        .filter((c) => (c.estadoCodigo ?? c.estadoCotizacion) !== "ANULADA")
-        .reduce((s, c) => s + (c.total ?? 0), 0),
+      facturasVencidas: contarFacturasVencidas(facturas, hoy),
+      // Los montos van por moneda: no se suman dólares con soles.
+      montoCotizado: formatearMontos(montoCotizadoPorMoneda(cotizaciones)),
+      pendientes: resumenPendientes(cotizaciones),
       clientes: mejoresClientes(facturas, hoy, 3),
     }
   }, [operativo, facturacionHistorico])
@@ -147,7 +150,7 @@ export function DashboardPage() {
               tono="navy"
               titulo="Cotizaciones pendientes"
               valor={String(indicadores.cotizacionesPendientes ?? 0)}
-              detalle={calculado.montoCotizado > 0 ? `${formatCurrency(calculado.montoCotizado)} cotizado` : undefined}
+              detalle={calculado.pendientes.cantidad > 0 ? `${formatearMontos(calculado.pendientes.montos)} por cerrar` : undefined}
               serie={calculado.serieCotizaciones}
               href="/cotizaciones"
             />

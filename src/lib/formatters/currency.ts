@@ -2,7 +2,7 @@
  * Normaliza un código de moneda a formato ISO 4217 de 3 letras.
  * Intl.NumberFormat exige códigos ISO (ej: USD, PEN, EUR) y no acepta símbolos ($, S/, €).
  */
-function normalizarMoneda(currency: string): string {
+export function normalizarMoneda(currency: string): string {
   const simboloAISO: Record<string, string> = {
     '$': 'USD',
     'US$': 'USD',

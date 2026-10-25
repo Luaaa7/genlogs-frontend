@@ -2,6 +2,7 @@ import type { Cotizacion } from "@/types/cotizacion.types"
 import type { Factura } from "@/types/facturacion.types"
 import type { CotizacionEstadoItem } from "@/types/dashboard.types"
 import { parsearFechaLocal } from "@/lib/formatters/fechaLocal"
+import { formatCurrency, normalizarMoneda } from "@/lib/formatters/currency"
 
 /** Cálculos del dashboard a partir de las listas de cotizaciones y facturas.
  *  Funciones puras: reciben los datos y "hoy", así son fáciles de probar. */
@@ -44,8 +45,69 @@ function fechaCorta(valor: string): string {
   return `${fecha.getDate()} ${MESES_CORTOS[fecha.getMonth()].toLowerCase()}.`
 }
 
+/** El backend manda el nombre del estado ("En negociación"); aquí se trabaja con
+ *  códigos ("EN_NEGOCIACION"). Acepta cualquiera de los dos. */
+export function normalizarEstado(valor?: string | null): string {
+  return valor
+    ? String(valor).normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase().replace(/\s+/g, "_")
+    : ""
+}
+
 function estadoCotizacion(c: Cotizacion) {
-  return c.estadoCodigo ?? c.estadoCotizacion
+  return normalizarEstado(c.estadoCodigo ?? c.estadoCotizacion ?? c.estado)
+}
+
+function estadoFactura(f: Factura) {
+  return normalizarEstado(f.estadoCodigo ?? f.estado)
+}
+
+// ── Montos por moneda (no se suman USD y PEN entre sí) ───────────────────────
+
+export type MontosPorMoneda = Record<string, number>
+
+export function sumarMonto(acumulado: MontosPorMoneda, monto: number, moneda?: string | null) {
+  const clave = normalizarMoneda(moneda ?? "PEN")
+  acumulado[clave] = (acumulado[clave] ?? 0) + monto
+}
+
+/** "US$ 12,240.00 · S/ 4,000.00" (una parte por moneda, la mayor primero). */
+export function formatearMontos(montos: MontosPorMoneda): string {
+  const partes = Object.entries(montos)
+    .filter(([, v]) => v !== 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([moneda, v]) => formatCurrency(v, moneda))
+  return partes.length ? partes.join(" · ") : formatCurrency(0)
+}
+
+/** Cotizaciones que siguen abiertas (pendientes de cerrar): cuántas y cuánto, por moneda. */
+export function resumenPendientes(cotizaciones: Cotizacion[]) {
+  const montos: MontosPorMoneda = {}
+  let cantidad = 0
+  for (const c of cotizaciones) {
+    if (!ESTADOS_ABIERTOS.has(estadoCotizacion(c))) continue
+    cantidad++
+    sumarMonto(montos, c.total ?? 0, c.monedaCodigo ?? c.moneda)
+  }
+  return { cantidad, montos }
+}
+
+/** Todo lo cotizado (menos anuladas), por moneda. */
+export function montoCotizadoPorMoneda(cotizaciones: Cotizacion[]): MontosPorMoneda {
+  const montos: MontosPorMoneda = {}
+  for (const c of cotizaciones) {
+    if (estadoCotizacion(c) === "ANULADA") continue
+    sumarMonto(montos, c.total ?? 0, c.monedaCodigo ?? c.moneda)
+  }
+  return montos
+}
+
+/** Facturas con saldo por cobrar cuyo vencimiento ya pasó, sin importar hace cuánto. */
+export function contarFacturasVencidas(facturas: Factura[], hoy: Date): number {
+  return facturas.filter((f) => {
+    if (FACTURA_CERRADA.has(estadoFactura(f)) || saldoFactura(f) <= 0) return false
+    const dias = diasHasta(f.fechaVencimiento, hoy)
+    return dias !== null && dias < 0
+  }).length
 }
 
 export function saldoFactura(f: Factura) {
@@ -109,9 +171,8 @@ export function calcularPendientes(
   })
 
   const deFacturas: Pendiente[] = facturas.flatMap((f) => {
-    const estado = f.estadoCodigo ?? f.estado ?? ""
     const saldo = saldoFactura(f)
-    if (FACTURA_CERRADA.has(estado) || saldo <= 0) return []
+    if (FACTURA_CERRADA.has(estadoFactura(f)) || saldo <= 0) return []
     const dias = diasHasta(f.fechaVencimiento, hoy)
     if (dias === null || dias > horizonteDias || dias < -VENCIDO_FACTURA_DIAS) return []
     return [{
@@ -161,7 +222,7 @@ export function cotizacionesPorMes(cotizaciones: Cotizacion[], hoy: Date, meses 
   for (const c of cotizaciones) {
     const fila = filas.find((f) => f.clave === claveMes(c.fechaCotizacion))
     if (!fila) continue
-    const estado = estadoCotizacion(c) ?? ""
+    const estado = estadoCotizacion(c)
     if (estado === "APROBADA") fila.aprobadas++
     else if (ESTADOS_ABIERTOS.has(estado)) fila.enCurso++
     else if (estado === "RECHAZADA" || estado === "VENCIDA") fila.rechazadas++
@@ -205,7 +266,7 @@ export function actividadPorDia(cotizaciones: Cotizacion[], hoy: Date, semanas =
 
 /** Aprobadas sobre respondidas (aprobadas + rechazadas). null si aún no hay respuestas. */
 export function tasaAprobacion(estados: CotizacionEstadoItem[]): number | null {
-  const contar = (codigos: string[]) => estados.filter((e) => codigos.includes(e.estado)).reduce((s, e) => s + e.cantidad, 0)
+  const contar = (codigos: string[]) => estados.filter((e) => codigos.includes(normalizarEstado(e.estado))).reduce((s, e) => s + e.cantidad, 0)
   const aprobadas = contar(["APROBADA", "ACEPTADA", "CONVERTIDA_OC"])
   const rechazadas = contar(["RECHAZADA"])
   const respondidas = aprobadas + rechazadas
@@ -214,19 +275,20 @@ export function tasaAprobacion(estados: CotizacionEstadoItem[]): number | null {
 
 // ── Mejores clientes ─────────────────────────────────────────────────────────
 
-export interface ClienteDestacado { nombre: string; idCliente?: number; facturado: number; comprobantes: number }
+export interface ClienteDestacado { nombre: string; idCliente?: number; facturado: number; comprobantes: number; montos: MontosPorMoneda }
 
 /** Clientes con más facturación del año en curso (facturas no anuladas). */
 export function mejoresClientes(facturas: Factura[], hoy: Date, limite = 3): ClienteDestacado[] {
   const porCliente = new Map<string, ClienteDestacado>()
   for (const f of facturas) {
-    if ((f.estadoCodigo ?? f.estado) === "ANULADA") continue
+    if (estadoFactura(f) === "ANULADA") continue
     const fecha = parsearFechaLocal(f.fechaEmision)
     if (!fecha || fecha.getFullYear() !== hoy.getFullYear()) continue
     const nombre = f.clienteNombre ?? f.cliente
     if (!nombre) continue
-    const actual = porCliente.get(nombre) ?? { nombre, idCliente: f.clienteId, facturado: 0, comprobantes: 0 }
+    const actual = porCliente.get(nombre) ?? { nombre, idCliente: f.clienteId, facturado: 0, comprobantes: 0, montos: {} }
     actual.facturado += f.total ?? 0
+    sumarMonto(actual.montos, f.total ?? 0, f.moneda)
     actual.comprobantes++
     porCliente.set(nombre, actual)
   }

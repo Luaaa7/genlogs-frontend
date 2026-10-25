@@ -6,7 +6,8 @@ export interface TokenResetInfo {
 }
 
 export async function login(data: LoginRequest): Promise<LoginResponse> {
-  const response = await axiosClient.post<LoginResponse>("/auth/login", data)
+  // Margen amplio: con el plan gratuito de Render el backend tarda ~50 s en despertar.
+  const response = await axiosClient.post<LoginResponse>("/auth/login", data, { timeout: 90_000 })
   return response.data
 }
 

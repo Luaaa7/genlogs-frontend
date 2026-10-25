@@ -129,7 +129,7 @@ export function useDuplicarCotizacion(): UseMutationResult<
       cotizacionesApi.duplicarCotizacion(cotizacionId),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['cotizaciones'] });
-      queryClient.setQueryData(['cotizaciones', data.id], data);
+      queryClient.setQueryData(['cotizaciones', data.idCotizacion ?? data.id], data);
     },
     onError: (error) => {
       console.error('Error al duplicar cotización:', error);

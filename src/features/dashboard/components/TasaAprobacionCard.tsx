@@ -1,11 +1,11 @@
-import { formatCurrency } from "@/lib/formatters/currency"
 import { DashboardCard } from "./DashboardCard"
 
 interface TasaAprobacionCardProps {
   /** Aprobadas sobre respondidas, 0–100; null si aún no hay respuestas. */
   tasa: number | null
   totalEmitidas: number
-  montoCotizado: number
+  /** Ya formateado por moneda, p. ej. "US$ 12,240.00 · S/ 4,000.00". */
+  montoCotizado: string
   vencenSemana: number
   facturasVencidas: number
 }
@@ -37,7 +37,7 @@ export function TasaAprobacionCard({ tasa, totalEmitidas, montoCotizado, vencenS
           <p className="text-3xl font-bold tracking-tight tabular-nums">{totalEmitidas}</p>
           <p className="text-[13px] text-muted-foreground">cotizaciones registradas</p>
           <p className="mt-2.5 text-[13px] text-muted-foreground">
-            <strong className="font-semibold tabular-nums text-foreground">{formatCurrency(montoCotizado)}</strong> cotizado
+            <strong className="font-semibold tabular-nums text-foreground">{montoCotizado}</strong> cotizado
           </p>
         </div>
       </div>
