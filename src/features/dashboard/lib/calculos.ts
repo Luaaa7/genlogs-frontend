@@ -1,6 +1,6 @@
 import type { Cotizacion } from "@/types/cotizacion.types"
 import type { Factura } from "@/types/facturacion.types"
-import type { CotizacionEstadoItem } from "@/types/dashboard.types"
+import type { CotizacionEstadoItem, FacturacionHistoricoItem } from "@/types/dashboard.types"
 import { parsearFechaLocal } from "@/lib/formatters/fechaLocal"
 import { formatCurrency, normalizarMoneda } from "@/lib/formatters/currency"
 
@@ -231,14 +231,50 @@ export function cotizacionesPorMes(cotizaciones: Cotizacion[], hoy: Date, meses 
 }
 
 /** Monto cotizado por mes (suma de totales), para comparar con lo facturado. */
-export function cotizadoPorMes(cotizaciones: Cotizacion[], hoy: Date, meses = 6) {
+export function cotizadoPorMes(cotizaciones: Cotizacion[], hoy: Date, meses = 6, moneda?: string) {
   const filas = ultimosMeses(hoy, meses).map((m) => ({ ...m, cotizado: 0 }))
   for (const c of cotizaciones) {
     if (estadoCotizacion(c) === "ANULADA") continue
+    if (moneda && normalizarMoneda(c.monedaCodigo ?? c.moneda ?? "PEN") !== moneda) continue
     const fila = filas.find((f) => f.clave === claveMes(c.fechaCotizacion))
     if (fila) fila.cotizado += c.total ?? 0
   }
   return filas
+}
+
+// ── Facturación mensual por moneda ───────────────────────────────────────────
+
+/** Monedas que aparecen en las cotizaciones y facturas (la de más movimiento primero). */
+export function monedasDelDashboard(cotizaciones: Cotizacion[], facturas: Factura[]): string[] {
+  const cuenta = new Map<string, number>()
+  const anotar = (m?: string | null) => {
+    const clave = normalizarMoneda(m ?? "PEN")
+    cuenta.set(clave, (cuenta.get(clave) ?? 0) + 1)
+  }
+  cotizaciones.forEach((c) => anotar(c.monedaCodigo ?? c.moneda))
+  facturas.forEach((f) => anotar(f.moneda))
+  return [...cuenta.entries()].sort((a, b) => b[1] - a[1]).map(([m]) => m)
+}
+
+/** Facturado por mes (total de facturas no anuladas) en UNA moneda; solo meses con facturas. */
+export function facturadoPorMes(facturas: Factura[], moneda: string): FacturacionHistoricoItem[] {
+  const porMes = new Map<string, number>()
+  for (const f of facturas) {
+    if (estadoFactura(f) === "ANULADA") continue
+    if (normalizarMoneda(f.moneda ?? "PEN") !== moneda) continue
+    const clave = claveMes(f.fechaEmision)
+    if (clave) porMes.set(clave, (porMes.get(clave) ?? 0) + (f.total ?? 0))
+  }
+  return [...porMes.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([mes, monto]) => ({ mes, monto }))
+}
+
+/** Lo facturado en el mes en curso y su variación frente al mes anterior (%). */
+export function resumenFacturacionMes(historico: FacturacionHistoricoItem[], hoy: Date) {
+  const clave = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+  const monto = (c: string) => historico.find((h) => h.mes === c)?.monto ?? 0
+  const actual = monto(clave(hoy))
+  const anterior = monto(clave(new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1)))
+  return { actual, variacion: anterior > 0 ? ((actual - anterior) / anterior) * 100 : 0 }
 }
 
 // ── Mapa de calor ────────────────────────────────────────────────────────────

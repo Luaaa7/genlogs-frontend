@@ -11,6 +11,7 @@ interface FacturacionCardProps {
   historico: FacturacionHistoricoItem[]
   totalFacturado: number
   variacion: number
+  moneda: string
   className?: string
 }
 
@@ -33,7 +34,7 @@ function completarMeses(historico: FacturacionHistoricoItem[], hoy: Date): Factu
 }
 
 /** Curva de facturación mensual con el mejor mes marcado, y tres cifras debajo. */
-export function FacturacionCard({ historico, totalFacturado, variacion, className }: FacturacionCardProps) {
+export function FacturacionCard({ historico, totalFacturado, variacion, moneda, className }: FacturacionCardProps) {
   const hoy = new Date()
   const mesActual = hoy.toLocaleDateString("es-PE", { month: "long" })
   const datos = completarMeses(historico, hoy).map((h) => ({ mes: etiquetaMes(h.mes), monto: h.monto }))
@@ -43,13 +44,13 @@ export function FacturacionCard({ historico, totalFacturado, variacion, classNam
     <DashboardCard
       id="dash-facturacion"
       titulo="Facturación mensual"
-      extra={<span className="text-xs text-muted-foreground">Soles, sin IGV</span>}
+      extra={<span className="text-xs text-muted-foreground">{moneda}, con IGV</span>}
       className={cn("flex flex-col", className)}
     >
       {datos.length === 0 ? (
         <SinDatos>Aún no hay facturas emitidas. La curva aparecerá con la primera factura.</SinDatos>
       ) : (
-        <div className="h-56 lg:h-auto lg:min-h-56 lg:flex-1" role="img" aria-label={`Facturación mensual; el mejor mes fue ${pico?.mes} con ${formatCurrency(pico?.monto ?? 0)}`}>
+        <div className="h-56 lg:h-auto lg:min-h-56 lg:flex-1" role="img" aria-label={`Facturación mensual; el mejor mes fue ${pico?.mes} con ${formatCurrency(pico?.monto ?? 0, moneda)}`}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={datos} margin={{ top: 28, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid vertical={false} stroke="var(--border)" />
@@ -57,7 +58,7 @@ export function FacturacionCard({ historico, totalFacturado, variacion, classNam
               <YAxis axisLine={false} tickLine={false} width={64} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} tickFormatter={miles} />
               <Tooltip
                 cursor={{ stroke: "var(--border)" }}
-                formatter={(v) => [formatCurrency(Number(v)), "Facturado"]}
+                formatter={(v) => [formatCurrency(Number(v), moneda), "Facturado"]}
                 contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--foreground)", fontSize: 13 }}
               />
               <Area type="monotone" dataKey="monto" stroke="var(--viz-1)" strokeWidth={3} fill="var(--viz-2)" fillOpacity={0.16} />

@@ -5,21 +5,21 @@ import { DashboardCard, SinDatos } from "./DashboardCard"
 export interface PuntoCotizadoFacturado { mes: string; cotizado: number; facturado: number }
 
 /** Dos líneas por mes: lo cotizado (sólida) y lo facturado (punteada). */
-export function CotizadoVsFacturadoCard({ datos }: { datos: PuntoCotizadoFacturado[] }) {
+export function CotizadoVsFacturadoCard({ datos, moneda }: { datos: PuntoCotizadoFacturado[]; moneda: string }) {
   const hayDatos = datos.some((d) => d.cotizado > 0 || d.facturado > 0)
 
   return (
-    <DashboardCard id="dash-cot-fac" titulo="Cotizado vs. facturado">
+    <DashboardCard id="dash-cot-fac" titulo="Cotizado vs. facturado" extra={<span className="text-xs text-muted-foreground">{moneda}</span>}>
       {!hayDatos ? (
         <SinDatos>Sin montos en los últimos meses.</SinDatos>
       ) : (
         <>
-          <div className="h-32" role="img" aria-label={datos.map((d) => `${d.mes}: cotizado ${formatCurrency(d.cotizado)}, facturado ${formatCurrency(d.facturado)}`).join("; ")}>
+          <div className="h-32" role="img" aria-label={datos.map((d) => `${d.mes}: cotizado ${formatCurrency(d.cotizado, moneda)}, facturado ${formatCurrency(d.facturado, moneda)}`).join("; ")}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={datos} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
                 <XAxis dataKey="mes" axisLine={false} tickLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} />
                 <Tooltip
-                  formatter={(v, nombre) => [formatCurrency(Number(v)), nombre]}
+                  formatter={(v, nombre) => [formatCurrency(Number(v), moneda), nombre]}
                   contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--foreground)", fontSize: 13 }}
                 />
                 <Line type="monotone" dataKey="cotizado" name="Cotizado" stroke="var(--viz-1)" strokeWidth={2.5} dot={false} />

@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { Plus, RefreshCw, AlertTriangle } from "lucide-react"
 import { useDashboardData } from "../hooks/useDashboardData"
@@ -17,6 +17,9 @@ import {
   contarFacturasVencidas,
   cotizacionesPorMes,
   cotizadoPorMes,
+  facturadoPorMes,
+  monedasDelDashboard,
+  resumenFacturacionMes,
   etiquetaMes,
   formatearMontos,
   mejoresClientes,
@@ -52,17 +55,25 @@ function DashboardSkeleton() {
 
 export function DashboardPage() {
   const nombreUsuario = useAuthStore((s) => s.nombreUsuario)
-  const { indicadores, facturacionHistorico, cotizacionesPorEstado, isLoading, isError, error, refetch } = useDashboardData()
+  const { indicadores, cotizacionesPorEstado, isLoading, isError, error, refetch } = useDashboardData()
   const operativo = useDashboardOperativo()
 
   const fechaHoy = new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
 
+  // Las gráficas de montos se ven en UNA moneda a la vez: no se mezclan dólares con soles.
+  const monedas = useMemo(() => monedasDelDashboard(operativo.cotizaciones, operativo.facturas), [operativo.cotizaciones, operativo.facturas])
+  const [monedaElegida, setMonedaElegida] = useState<string | null>(null)
+  const moneda = monedaElegida && monedas.includes(monedaElegida) ? monedaElegida : (monedas[0] ?? "PEN")
+
   const calculado = useMemo(() => {
     const hoy = new Date()
     const { cotizaciones, facturas } = operativo
-    const porMes6 = cotizadoPorMes(cotizaciones, hoy, 6)
+    const porMes6 = cotizadoPorMes(cotizaciones, hoy, 6, moneda)
+    const facturacionHistorico = facturadoPorMes(facturas, moneda)
     const facturadoPorEtiqueta = new Map(facturacionHistorico.map((h) => [etiquetaMes(h.mes), h.monto]))
     return {
+      facturacionHistorico,
+      resumenMes: resumenFacturacionMes(facturacionHistorico, hoy),
       porMes: cotizacionesPorMes(cotizaciones, hoy, 4),
       actividad: actividadPorDia(cotizaciones, hoy, 6),
       cotizadoVsFacturado: porMes6.map((m) => ({ mes: m.etiqueta, cotizado: m.cotizado, facturado: facturadoPorEtiqueta.get(m.etiqueta) ?? 0 })),
@@ -75,7 +86,7 @@ export function DashboardPage() {
       pendientes: resumenPendientes(cotizaciones),
       clientes: mejoresClientes(facturas, hoy, 3),
     }
-  }, [operativo, facturacionHistorico])
+  }, [operativo, moneda])
 
   const actualizar = () => {
     refetch()
@@ -90,7 +101,25 @@ export function DashboardPage() {
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">{fechaHoy}</p>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {monedas.length > 1 && (
+          <div role="group" aria-label="Moneda de las gráficas" className="inline-flex overflow-hidden rounded-md border border-border">
+            {monedas.map((m) => (
+              <button
+                key={m}
+                type="button"
+                aria-pressed={m === moneda}
+                onClick={() => setMonedaElegida(m)}
+                className={
+                  "px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
+                  (m === moneda ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-muted")
+                }
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+        )}
         <Button variant="outline" onClick={actualizar}>
           <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />
           Actualizar
@@ -139,9 +168,10 @@ export function DashboardPage() {
           <RequiereAtencionCard cotizaciones={operativo.cotizaciones} facturas={operativo.facturas} className="lg:col-span-7" />
 
           <FacturacionCard
-            historico={facturacionHistorico}
-            totalFacturado={indicadores.totalFacturado ?? 0}
-            variacion={indicadores.porcentajeVariacionFacturacion ?? 0}
+            historico={calculado.facturacionHistorico}
+            totalFacturado={calculado.resumenMes.actual}
+            variacion={calculado.resumenMes.variacion}
+            moneda={moneda}
             className="lg:col-span-5 lg:row-span-2"
           />
 
@@ -173,7 +203,7 @@ export function DashboardPage() {
               vencenSemana={calculado.vencenSemana}
               facturasVencidas={calculado.facturasVencidas}
             />
-            <CotizadoVsFacturadoCard datos={calculado.cotizadoVsFacturado} />
+            <CotizadoVsFacturadoCard datos={calculado.cotizadoVsFacturado} moneda={moneda} />
           </div>
 
           <div className="flex flex-col gap-4 lg:col-span-4">
