@@ -3,16 +3,25 @@
 import { z } from 'zod';
 import { CondicionPago, Moneda, EstadoCotizacion } from '@/types/cotizacion.types';
 
-export const cotizacionDetalleSchema = z.object({
-  id: z.number().optional(),
-  producto: z.string().trim().min(1, 'Escribe la descripción del ítem'),
-  servicio: z.string().optional(),
-  cantidad: z.number().min(1, 'La cantidad debe ser mayor a 0'),
-  precioUnitario: z.number({ message: 'Ingresa el precio unitario' }).positive('El precio unitario debe ser mayor a 0'),
-  margenPorcentaje: z.number().min(0).max(100, 'El margen debe estar entre 0 y 100%'),
-  subtotal: z.number().min(0),
-  descripcion: z.string().optional(),
-});
+export const cotizacionDetalleSchema = z
+  .object({
+    id: z.number().optional(),
+    /** Nombre del producto o servicio elegido del catálogo (se usa como descripción de la línea). */
+    producto: z.string().trim().min(1, 'Busca y elige un producto o servicio'),
+    servicio: z.string().optional(),
+    idProducto: z.number().optional(),
+    idServicio: z.number().optional(),
+    idUnidadMedida: z.number().optional(),
+    cantidad: z.number().min(1, 'La cantidad debe ser mayor a 0'),
+    precioUnitario: z.number({ message: 'Ingresa el precio unitario' }).positive('El precio unitario debe ser mayor a 0'),
+    margenPorcentaje: z.number().min(0).max(100, 'El margen debe estar entre 0 y 100%'),
+    subtotal: z.number().min(0),
+    descripcion: z.string().optional(),
+  })
+  .refine((d) => d.idProducto !== undefined || d.idServicio !== undefined, {
+    message: 'Elige un producto o servicio de la lista',
+    path: ['producto'],
+  });
 
 export type CotizacionDetalleFormData = z.infer<typeof cotizacionDetalleSchema>;
 

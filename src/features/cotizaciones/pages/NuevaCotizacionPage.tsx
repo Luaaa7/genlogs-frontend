@@ -55,7 +55,7 @@ export const NuevaCotizacionPage: React.FC = () => {
     !condicionPago && 'condición de pago',
     !moneda && 'moneda',
     items.length === 0 && 'al menos un ítem',
-    items.some((d) => !d?.producto?.trim()) && 'descripción de los ítems',
+    items.some((d) => d?.idProducto === undefined && d?.idServicio === undefined) && 'producto o servicio de cada ítem',
     items.some((d) => !(Number(d?.precioUnitario) > 0)) && 'precio de los ítems',
     items.some((d) => !(Number(d?.cantidad) >= 1)) && 'cantidad de los ítems',
   ].filter(Boolean) as string[];
