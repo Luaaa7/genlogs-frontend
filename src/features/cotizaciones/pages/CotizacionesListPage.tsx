@@ -41,6 +41,19 @@ const TAMANOS = [10, 20, 50];
 const selectClass =
   'h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
+
+/** "USD 98,000.00 · S/ 27,954.38": una parte por moneda, sin sumar dólares con soles (bug #3). */
+function textoPendiente(e: { montoTotalPendiente: number; montoPendientePorMoneda?: Record<string, number> }) {
+  const porMoneda = Object.entries(e.montoPendientePorMoneda ?? {}).filter(([, v]) => v > 0)
+  if (porMoneda.length === 0) {
+    return e.montoPendientePorMoneda ? formatearMoneda(0) : formatearMoneda(e.montoTotalPendiente)
+  }
+  return porMoneda
+    .sort(([, a], [, b]) => b - a)
+    .map(([moneda, v]) => formatearMoneda(v, moneda))
+    .join(' · ')
+}
+
 const idDe = (c: Cotizacion) => c.idCotizacion ?? c.id!;
 const codigoDe = (c: Cotizacion) => c.codigoCotizacion ?? c.codigo ?? `#${idDe(c)}`;
 const estadoDe = (c: Cotizacion) => c.estadoCodigo ?? c.estadoCotizacion ?? c.estado;
@@ -127,7 +140,7 @@ export const CotizacionesListPage: React.FC = () => {
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Cotizaciones</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {estadisticas
-              ? <><span className="tabular-nums">{estadisticas.totalCotizaciones}</span> cotizaciones · <span className="tabular-nums">{formatearMoneda(estadisticas.montoTotalPendiente)}</span> pendiente de aprobación</>
+              ? <><span className="tabular-nums">{estadisticas.totalCotizaciones}</span> cotizaciones · <span className="tabular-nums">{textoPendiente(estadisticas)}</span> pendiente de aprobación</>
               : 'Cotizaciones a clientes y su seguimiento'}
           </p>
         </div>
