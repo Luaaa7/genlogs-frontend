@@ -64,8 +64,8 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
           </Button>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[680px] text-sm">
+        <div className="relative overflow-x-auto">
+          <table className="w-full min-w-170 text-sm">
             <caption className="sr-only">Ítems de la cotización</caption>
             <thead>
               <tr className="border-y border-border text-left text-xs text-muted-foreground">

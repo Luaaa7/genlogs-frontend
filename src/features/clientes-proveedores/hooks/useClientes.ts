@@ -19,11 +19,20 @@ export const useClientes = (filtros: FiltrosCliente) =>
     initialDataUpdatedAt: 0,
   });
 
+/** Lista paginada en el servidor (para la pantalla de Clientes). */
+export const useClientesPagina = (filtros: FiltrosCliente & { page: number; size: number }) =>
+  useQuery({
+    queryKey: [...clientesKeys.all, 'pagina', filtros] as const,
+    queryFn: () => clientesApi.listarPagina(filtros),
+    placeholderData: keepPreviousData,
+  });
+
 export const useCliente = (id: number) =>
   useQuery({
     queryKey: clientesKeys.detalle(id),
     queryFn: () => clientesApi.obtener(id),
-    enabled: Number.isFinite(id),
+    // id 0 = ningún cliente elegido: antes igual pedía /clientes/0 en cada carga de la lista.
+    enabled: Number.isFinite(id) && id > 0,
   });
 
 export const useActualizarCliente = () => {
