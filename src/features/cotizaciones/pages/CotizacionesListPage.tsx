@@ -42,7 +42,7 @@ const selectClass =
   'h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 
-/** "USD 98,000.00 · S/ 27,954.38": una parte por moneda, sin sumar dólares con soles (bug #3). */
+/** "USD 98,000.00 · PEN 27,954.38": una parte por moneda, sin sumar dólares con soles (bug #3). */
 function textoPendiente(e: { montoTotalPendiente: number; montoPendientePorMoneda?: Record<string, number> }) {
   const porMoneda = Object.entries(e.montoPendientePorMoneda ?? {}).filter(([, v]) => v > 0)
   if (porMoneda.length === 0) {

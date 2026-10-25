@@ -25,7 +25,7 @@ export function formatearMoneda(
   monto: number,
   moneda: string = 'PEN'
 ): string {
-  // Mismo formato en todo el sistema: "S/ 1,234.50", "US$ 1,234.50".
+  // Mismo formato en todo el sistema: "PEN 1,234.50", "USD 1,234.50".
   return formatCurrency(monto, moneda);
 }
 
