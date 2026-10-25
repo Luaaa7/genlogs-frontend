@@ -36,7 +36,8 @@ export function formatCurrency(amount: number, currency = "PEN"): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(Math.abs(amount || 0));
-  return `${amount < 0 ? "-" : ""}${currencyISO} ${numero}`;
+  // Espacio no separable: "USD" y el número nunca quedan en líneas distintas.
+  return `${amount < 0 ? "-" : ""}${currencyISO}\u00A0${numero}`;
 }
 
 export function formatNumber(value: number): string {
