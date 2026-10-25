@@ -37,15 +37,20 @@ const RANGOS_RAPIDOS: { label: string; calcular: () => RangoFechas }[] = [
 ]
 
 export function ReporteFiltroForm({ onSubmit, enviando, onChange }: ReporteFiltroFormProps) {
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ReporteRequest>({
+  const { register, handleSubmit, setValue, watch, getValues, formState: { errors, isValid } } = useForm<ReporteRequest>({
     resolver: zodResolver(reporteFiltroSchema),
+    // Valida mientras se escribe: el aviso de rango inválido sale al instante y el botón se desactiva.
+    mode: "onChange",
     defaultValues: {
-      tipoReporte: "SERVICIOS",
+      tipoReporte: OPCIONES_TIPO[0].value, // primera opción de la lista ("Cotizaciones")
       formato: "EXCEL",
-      fechaInicio: "",
-      fechaFin: "",
+      // Periodo por defecto: el mes actual (las fechas son obligatorias).
+      ...mesActual(),
     },
   })
+
+  const fechaInicio = watch("fechaInicio")
+  const fechaFin = watch("fechaFin")
 
   // Use ref to avoid watch dependency in useEffect (react-hook-form watch is not memoizable)
   const onChangeRef = useRef(onChange)
@@ -54,11 +59,13 @@ export function ReporteFiltroForm({ onSubmit, enviando, onChange }: ReporteFiltr
   // Notify parent of changes for preview (debounced by parent)
   useEffect(() => {
     if (!onChangeRef.current) return
+    // Valores iniciales, para que la vista previa cargue con el periodo por defecto.
+    onChangeRef.current(getValues())
     const subscription = watch((values) => {
       onChangeRef.current?.(values)
     })
     return () => subscription.unsubscribe()
-  }, [watch])
+  }, [watch, getValues])
 
   function aplicarRango(rango: RangoFechas) {
     setValue("fechaInicio", rango.fechaInicio, { shouldValidate: true })
@@ -99,7 +106,8 @@ export function ReporteFiltroForm({ onSubmit, enviando, onChange }: ReporteFiltr
             <input
               id="rep-inicio"
               type="date"
-              {...register("fechaInicio")}
+              {...register("fechaInicio", { deps: ["fechaFin"] })}
+              max={fechaFin || undefined}
               aria-invalid={!!errors.fechaInicio}
               aria-describedby={describedBy("rep-inicio", { error: errors.fechaInicio })}
               className={inputFormClass}
@@ -109,7 +117,8 @@ export function ReporteFiltroForm({ onSubmit, enviando, onChange }: ReporteFiltr
             <input
               id="rep-fin"
               type="date"
-              {...register("fechaFin")}
+              {...register("fechaFin", { deps: ["fechaInicio"] })}
+              min={fechaInicio || undefined}
               aria-invalid={!!errors.fechaFin}
               aria-describedby={describedBy("rep-fin", { error: errors.fechaFin })}
               className={inputFormClass}
@@ -119,7 +128,7 @@ export function ReporteFiltroForm({ onSubmit, enviando, onChange }: ReporteFiltr
       </fieldset>
 
       <div className="flex justify-end border-t border-border pt-4">
-        <Button type="submit" disabled={enviando}>
+        <Button type="submit" disabled={enviando || !isValid}>
           {enviando
             ? <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
             : <Download className="mr-2 h-4 w-4" aria-hidden="true" />}
