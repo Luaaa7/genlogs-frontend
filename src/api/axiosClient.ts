@@ -55,7 +55,11 @@ axiosClient.interceptors.response.use(
     // refrescar o cerrar sesión. Un 403 puede ser simplemente "no tienes
     // permiso para esto puntual" con una sesión por lo demás válida, así que
     // NO debe desloguear: cada pantalla ya maneja su propio estado de error.
-    if (status === 401 && !originalRequest._retry) {
+    // Un 401 en /auth/* (login con contraseña incorrecta, refresh vencido) no
+    // es una sesión vencida: lo maneja la propia pantalla con su mensaje.
+    const esRutaAuth = String(originalRequest?.url ?? "").includes("/auth/")
+
+    if (status === 401 && !originalRequest._retry && !esRutaAuth) {
       console.warn(`[AUTH] 401 recibido en ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`)
       originalRequest._retry = true
 

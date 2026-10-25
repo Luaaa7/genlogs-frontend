@@ -27,8 +27,45 @@ import { cn } from '@/lib/utils/utils';
 import { AlertCircle, Check, ChevronDown, Clock, Download, Loader2, Send, ShoppingCart } from 'lucide-react';
 
 const ESTADOS_ABIERTOS = new Set<string>(['BORRADOR', 'ENVIADA', 'EN_NEGOCIACION']);
-/** Estados que se pueden elegir a mano (CADUCADA es alias de VENCIDA). */
-const ESTADOS_ELEGIBLES = [...new Set(Object.values(EstadoCotizacion))];
+
+/** Estados finales: una vez alcanzados, la cotización no puede cambiar de estado. */
+const ESTADOS_FINALES = new Set<EstadoCotizacion>([
+  EstadoCotizacion.APROBADA,
+  EstadoCotizacion.RECHAZADA,
+  EstadoCotizacion.VENCIDA,
+  EstadoCotizacion.ANULADA,
+]);
+
+/**
+ * Transiciones permitidas desde cada estado.
+ * Solo se muestran en el menú los estados a los que puede pasarse la cotización.
+ */
+const TRANSICIONES_ESTADOS: Record<EstadoCotizacion, EstadoCotizacion[]> = {
+  [EstadoCotizacion.BORRADOR]: [
+    EstadoCotizacion.ENVIADA,
+    EstadoCotizacion.EN_NEGOCIACION,
+    EstadoCotizacion.RECHAZADA,
+    EstadoCotizacion.ANULADA,
+  ],
+  [EstadoCotizacion.ENVIADA]: [
+    EstadoCotizacion.EN_NEGOCIACION,
+    EstadoCotizacion.APROBADA,
+    EstadoCotizacion.RECHAZADA,
+    EstadoCotizacion.ANULADA,
+  ],
+  [EstadoCotizacion.EN_NEGOCIACION]: [
+    EstadoCotizacion.APROBADA,
+    EstadoCotizacion.RECHAZADA,
+    EstadoCotizacion.ANULADA,
+  ],
+  [EstadoCotizacion.APROBADA]: [
+    EstadoCotizacion.RECHAZADA,
+    EstadoCotizacion.ANULADA,
+  ],
+  [EstadoCotizacion.RECHAZADA]: [],
+  [EstadoCotizacion.VENCIDA]: [],
+  [EstadoCotizacion.ANULADA]: [],
+};
 
 const MENU_ENTRADA = 'origin-top-right animate-in fade-in-0 zoom-in-95 duration-150 ease-out motion-reduce:animate-none';
 
@@ -143,6 +180,8 @@ export const CotizacionDetallePage: React.FC = () => {
   const cliente = cotizacion.clienteNombre ?? cotizacion.cliente ?? 'Cliente sin nombre';
   const aviso = vencimiento(cotizacion);
   const detalles = cotizacion.detalles ?? [];
+  const esEstadoFinal = ESTADOS_FINALES.has(estado);
+  const opcionesMenu = TRANSICIONES_ESTADOS[estado] ?? [];
 
   // Totales: los del servidor; si no vienen, se calculan de las líneas.
   const subtotal = cotizacion.subtotal ?? detalles.reduce((s, d) => s + (d.subtotal || 0), 0);
@@ -237,29 +276,37 @@ export const CotizacionDetallePage: React.FC = () => {
               onClick={() => setMenuEstado((v) => !v)}
               aria-expanded={menuEstado}
               aria-haspopup="menu"
+              disabled={esEstadoFinal}
+              className={esEstadoFinal ? 'opacity-50 cursor-not-allowed' : ''}
             >
               Cambiar estado
               <ChevronDown className={cn('ml-2 h-4 w-4 transition-transform', menuEstado && 'rotate-180')} aria-hidden="true" />
             </Button>
             {menuEstado && (
               <div role="menu" className={cn('absolute right-0 z-20 mt-2 w-52 rounded-xl border border-border bg-card py-1 shadow-lg shadow-black/5', MENU_ENTRADA)}>
-                {ESTADOS_ELEGIBLES.map((e) => (
-                  <button
-                    key={e}
-                    type="button"
-                    role="menuitemradio"
-                    aria-checked={e === estado}
-                    disabled={isChangingState || e === estado}
-                    onClick={() => handleCambiarEstado(e)}
-                    className={cn(
-                      'flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring disabled:cursor-default',
-                      e === estado ? 'font-medium text-accent' : 'text-foreground hover:bg-muted'
-                    )}
-                  >
-                    {mapearEstadoCotizacion(e)}
-                    {e === estado && <Check className="h-4 w-4" aria-hidden="true" />}
-                  </button>
-                ))}
+                {opcionesMenu.length === 0 ? (
+                  <div className="px-3 py-2 text-sm text-muted-foreground">
+                    No hay estados disponibles para cambiar.
+                  </div>
+                ) : (
+                  opcionesMenu.map((e) => (
+                    <button
+                      key={e}
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={e === estado}
+                      disabled={isChangingState || e === estado}
+                      onClick={() => handleCambiarEstado(e)}
+                      className={cn(
+                        'flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring disabled:cursor-default',
+                        e === estado ? 'font-medium text-accent' : 'text-foreground hover:bg-muted'
+                      )}
+                    >
+                      {mapearEstadoCotizacion(e)}
+                      {e === estado && <Check className="h-4 w-4" aria-hidden="true" />}
+                    </button>
+                  ))
+                )}
               </div>
             )}
           </div>

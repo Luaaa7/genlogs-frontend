@@ -158,6 +158,8 @@ export const cotizacionesApi = {
     totalCotizaciones: number
     totalPorEstado: Record<string, number>
     montoTotalPendiente: number
+    /** Pendiente por moneda ({ USD: 98000, PEN: 27954.38 }); no se suman monedas distintas. */
+    montoPendientePorMoneda?: Record<string, number>
     tasaAprobacion: number
   }> {
     const response = await axiosClient.get("/cotizaciones/estadisticas")

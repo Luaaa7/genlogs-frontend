@@ -26,14 +26,18 @@ export function normalizarMoneda(currency: string): string {
   return 'PEN';
 }
 
+/**
+ * "PEN 1,234.50", "USD 1,234.50" o "EUR 1,234.50": siempre el código de la
+ * moneda, igual que en los PDF y los reportes (nada de "S/", "$" o "US$").
+ */
 export function formatCurrency(amount: number, currency = "PEN"): string {
   const currencyISO = normalizarMoneda(currency);
-  return new Intl.NumberFormat("es-PE", {
-    style: "currency",
-    currency: currencyISO,
+  const numero = new Intl.NumberFormat("es-PE", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount)
+  }).format(Math.abs(amount || 0));
+  // Espacio no separable: "USD" y el número nunca quedan en líneas distintas.
+  return `${amount < 0 ? "-" : ""}${currencyISO}\u00A0${numero}`;
 }
 
 export function formatNumber(value: number): string {
