@@ -5,10 +5,10 @@ import { CondicionPago, Moneda, EstadoCotizacion } from '@/types/cotizacion.type
 
 export const cotizacionDetalleSchema = z.object({
   id: z.number().optional(),
-  producto: z.string().optional(),
+  producto: z.string().trim().min(1, 'Escribe la descripción del ítem'),
   servicio: z.string().optional(),
   cantidad: z.number().min(1, 'La cantidad debe ser mayor a 0'),
-  precioUnitario: z.number().min(0, 'El precio unitario no puede ser negativo'),
+  precioUnitario: z.number({ message: 'Ingresa el precio unitario' }).positive('El precio unitario debe ser mayor a 0'),
   margenPorcentaje: z.number().min(0).max(100, 'El margen debe estar entre 0 y 100%'),
   subtotal: z.number().min(0),
   descripcion: z.string().optional(),

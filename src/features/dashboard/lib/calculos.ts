@@ -123,7 +123,7 @@ export function calcularPendientes(
       urgencia: dias < 0 ? ("vencido" as const) : ("proximo" as const),
       monto: saldo,
       moneda: f.moneda ?? "PEN",
-      href: "/facturacion",
+      href: f.idOrdenCompra ? `/facturacion?idOrdenCompra=${f.idOrdenCompra}` : "/facturacion",
       accion: "Registrar cobro",
       dias,
     }]
@@ -214,7 +214,7 @@ export function tasaAprobacion(estados: CotizacionEstadoItem[]): number | null {
 
 // ── Mejores clientes ─────────────────────────────────────────────────────────
 
-export interface ClienteDestacado { nombre: string; facturado: number; comprobantes: number }
+export interface ClienteDestacado { nombre: string; idCliente?: number; facturado: number; comprobantes: number }
 
 /** Clientes con más facturación del año en curso (facturas no anuladas). */
 export function mejoresClientes(facturas: Factura[], hoy: Date, limite = 3): ClienteDestacado[] {
@@ -225,7 +225,7 @@ export function mejoresClientes(facturas: Factura[], hoy: Date, limite = 3): Cli
     if (!fecha || fecha.getFullYear() !== hoy.getFullYear()) continue
     const nombre = f.clienteNombre ?? f.cliente
     if (!nombre) continue
-    const actual = porCliente.get(nombre) ?? { nombre, facturado: 0, comprobantes: 0 }
+    const actual = porCliente.get(nombre) ?? { nombre, idCliente: f.clienteId, facturado: 0, comprobantes: 0 }
     actual.facturado += f.total ?? 0
     actual.comprobantes++
     porCliente.set(nombre, actual)

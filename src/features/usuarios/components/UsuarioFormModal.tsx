@@ -5,6 +5,7 @@ import { Campo, SeccionForm } from "@/components/ui/campo"
 import { inputFormClass } from "@/components/ui/campoEstilos"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { Button } from "@/components/ui/button"
+import { nombreRolLegible } from "@/lib/formatters/roles"
 
 interface UsuarioFormModalProps {
   roles: Rol[]
@@ -73,7 +74,7 @@ export function UsuarioFormModal({ roles, onClose, onSubmit }: UsuarioFormModalP
           <Campo id="usr-rol" label="Rol">
             <select id="usr-rol" className={inputFormClass} value={form.idRol} onChange={(e) => setForm({ ...form, idRol: Number(e.target.value) })} required>
               <option value={0} disabled>Selecciona un rol</option>
-              {roles.map((rol) => <option key={rol.idRol} value={rol.idRol}>{rol.nombreRol}</option>)}
+              {roles.map((rol) => <option key={rol.idRol} value={rol.idRol}>{nombreRolLegible(rol.nombreRol)}</option>)}
             </select>
           </Campo>
           <Campo id="usr-password" label="Contraseña temporal" ayuda="Mínimo 8 caracteres.">

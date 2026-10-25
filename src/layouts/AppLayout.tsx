@@ -26,6 +26,7 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { useTheme } from '@/hooks/useTheme';
 import { GlobalSearchDialog } from '@/components/ui/GlobalSearchDialog';
 import { cn } from '@/lib/utils/utils';
+import { nombreRolLegible } from '@/lib/formatters/roles';
 
 type NavItem = { label: string; path: string; icon: React.ElementType; soloAdmin?: boolean };
 type NavGroup = { titulo: string; items: NavItem[] };
@@ -316,7 +317,7 @@ export function AppLayout() {
                 </span>
                 <span className="hidden max-w-36 flex-col items-start leading-tight xl:flex">
                   <span className="w-full truncate text-left text-sm font-medium text-foreground">{nombreUsuario ?? 'Usuario'}</span>
-                  <span className="w-full truncate text-left text-xs capitalize text-muted-foreground">{nombreRol?.toLowerCase() ?? ''}</span>
+                  <span className="w-full truncate text-left text-xs text-muted-foreground">{nombreRolLegible(nombreRol)}</span>
                 </span>
                 <ChevronDown className={cn('hidden h-4 w-4 text-muted-foreground transition-transform sm:block', isUserMenuOpen && 'rotate-180')} aria-hidden="true" />
               </button>
@@ -328,7 +329,7 @@ export function AppLayout() {
                 >
                   <div className="border-b border-border px-3 py-2.5">
                     <p className="truncate text-sm font-medium text-foreground">{nombreUsuario ?? 'Usuario'}</p>
-                    <p className="truncate text-xs capitalize text-muted-foreground">{nombreRol?.toLowerCase() ?? ''}</p>
+                    <p className="truncate text-xs text-muted-foreground">{nombreRolLegible(nombreRol)}</p>
                   </div>
                   <button
                     type="button"

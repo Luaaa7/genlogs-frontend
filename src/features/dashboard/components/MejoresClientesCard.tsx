@@ -19,7 +19,7 @@ export function MejoresClientesCard({ clientes }: { clientes: ClienteDestacado[]
           {clientes.map((c, i) => (
             <li key={c.nombre}>
               <Link
-                to="/clientes"
+                to={c.idCliente ? `/clientes/${c.idCliente}` : "/clientes"}
                 className="flex h-full flex-col items-center gap-1.5 overflow-hidden rounded-xl border border-border bg-card px-4 pb-4 text-center transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <span className={`-mx-4 h-10 self-stretch ${FRANJAS[i % FRANJAS.length]}`} aria-hidden="true" />

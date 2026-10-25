@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/ui/PageHeader"
 import { EstadoVacio } from "@/components/ui/EstadoVacio"
 import { Tabla, TablaCard, Td, Th, filaClass } from "@/components/ui/tabla"
 import { Button } from "@/components/ui/button"
+import { nombreRolLegible } from "@/lib/formatters/roles"
 
 export function UsuariosPage() {
   const { usuarios, roles, loading, error, agregar, alternarBloqueo, eliminar, recargar } = useUsuarios()
@@ -98,7 +99,7 @@ export function UsuariosPage() {
                       <p className="text-xs text-muted-foreground">{usuario.nombreUsuario}</p>
                     </Td>
                     <Td>{usuario.correo}</Td>
-                    <Td className="capitalize">{usuario.nombreRol?.toLowerCase()}</Td>
+                    <Td>{nombreRolLegible(usuario.nombreRol)}</Td>
                     <Td>
                       <EstadoBadge tono={usuario.bloqueado ? "destructive" : "success"}>
                         {usuario.bloqueado ? "Bloqueado" : "Activo"}

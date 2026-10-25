@@ -6,6 +6,7 @@ import type { CrearCotizacionFormData } from '@/lib/validators/cotizacion.schema
 import { formatearMoneda, calcularSubtotal, calcularTotalConMargen } from '@/lib/formatters/codigoCotizacion';
 import { Button } from '@/components/ui/button';
 import { Package, Plus, Trash2 } from 'lucide-react';
+import { MarcaObligatorio } from '@/components/ui/campo';
 import { cn } from '@/lib/utils/utils';
 
 interface CotizacionDetalleFormProps {
@@ -68,9 +69,9 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
             <caption className="sr-only">Ítems de la cotización</caption>
             <thead>
               <tr className="border-y border-border text-left text-xs text-muted-foreground">
-                <th className="px-5 py-2.5 font-medium sm:pl-6">Descripción</th>
-                <th className="w-24 px-2 py-2.5 text-right font-medium">Cant.</th>
-                <th className="w-32 px-2 py-2.5 text-right font-medium">P. unitario</th>
+                <th className="px-5 py-2.5 font-medium sm:pl-6">Descripción<MarcaObligatorio /></th>
+                <th className="w-24 px-2 py-2.5 text-right font-medium">Cantidad<MarcaObligatorio /></th>
+                <th className="w-32 px-2 py-2.5 text-right font-medium">Precio unitario<MarcaObligatorio /></th>
                 <th className="w-24 px-2 py-2.5 text-right font-medium">Margen %</th>
                 <th className="w-32 px-2 py-2.5 text-right font-medium">Subtotal</th>
                 <th className="w-12 px-2 py-2.5 sm:pr-4"><span className="sr-only">Quitar</span></th>

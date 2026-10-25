@@ -47,6 +47,19 @@ export const NuevaCotizacionPage: React.FC = () => {
   const igv = subtotal * IGV;
   const cliente = clientes.find((c) => (c.idCliente ?? c.id) === clienteId);
 
+  // Lo mínimo para poder crear: mientras falte algo, el botón queda desactivado
+  // y se dice qué falta (el detalle de cada error sale en su campo al enviar).
+  const items = detalles ?? [];
+  const faltantes = [
+    !clienteId && 'cliente',
+    !condicionPago && 'condición de pago',
+    !moneda && 'moneda',
+    items.length === 0 && 'al menos un ítem',
+    items.some((d) => !d?.producto?.trim()) && 'descripción de los ítems',
+    items.some((d) => !(Number(d?.precioUnitario) > 0)) && 'precio de los ítems',
+    items.some((d) => !(Number(d?.cantidad) >= 1)) && 'cantidad de los ítems',
+  ].filter(Boolean) as string[];
+
   const onSubmit = (data: CrearCotizacionFormData) => {
     crearCotizacion(data as unknown as CreateCotizacionRequest, {
       onSuccess: (creada) => navigate(`/cotizaciones/${creada.idCotizacion ?? creada.id}`),
@@ -89,10 +102,15 @@ export const NuevaCotizacionPage: React.FC = () => {
             )}
 
             <div className="flex flex-col gap-2">
-              <Button type="submit" disabled={isPending} className="w-full">
+              <Button type="submit" disabled={isPending || faltantes.length > 0} aria-describedby={faltantes.length ? 'cot-faltantes' : undefined} className="w-full">
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
                 {isPending ? 'Creando…' : 'Crear cotización'}
               </Button>
+              {faltantes.length > 0 && (
+                <p id="cot-faltantes" className="text-center text-xs text-muted-foreground">
+                  Falta: {faltantes.join(', ')}.
+                </p>
+              )}
               <Button variant="ghost" asChild className="w-full">
                 <Link to="/cotizaciones">Cancelar</Link>
               </Button>

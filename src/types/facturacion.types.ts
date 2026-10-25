@@ -39,3 +39,5 @@ export interface Factura {
 }
 export interface FacturaInput { idOrdenCompra: number; idTipoComprobante: number; idEstadoFacturacion?: number; idCondicionPago: number; idMoneda: number; serieComprobante: string; numeroComprobante?: string; fechaEmision?: string; fechaVencimiento?: string; montoPagado?: number; observaciones?: string }
 export interface FacturacionFiltros { estadoCodigo?: EstadoFacturacion; tipoCodigo?: TipoComprobante; idOrdenCompra?: number; page?: number; size?: number }
+/** Cuerpo de PATCH /facturacion/{id}/pago. fechaPago en formato aaaa-mm-dd. */
+export interface RegistrarPagoInput { montoPagado: number; fechaPago: string; medioPago: string; numeroOperacion?: string }

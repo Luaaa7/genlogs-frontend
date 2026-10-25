@@ -1,10 +1,12 @@
 import { useCallback, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Ban, Download, Loader2, Receipt, Wallet } from 'lucide-react'
 import { useAnularFactura, useFacturas, useRegistrarPago } from '../hooks/useFacturacion'
 import { RegistrarPagoDialog } from '../components/RegistrarPagoDialog'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { facturacionApi } from '@/api/facturacionApi'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
+import { FiltroActivo } from '@/components/ui/FiltroActivo'
 import { TableSkeletonRows } from '@/components/ui/TableSkeletonRows'
 import { EstadoBadge } from '@/components/ui/EstadoBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -68,8 +70,11 @@ export function FacturacionPage() {
   const [errorAccion, setErrorAccion] = useState<string | null>(null)
   // Con un filtro de estado se trae todo y se filtra aquí con el estado real
   // (así "Vencida" sí muestra las facturas vencidas). Sin filtro, paginación del backend.
+  // ?idOrdenCompra=7 llega desde una cotización o el dashboard: muestra solo la factura de esa orden.
+  const [params] = useSearchParams()
+  const idOrdenCompra = Number(params.get('idOrdenCompra')) || undefined
   const { data: datos, isLoading, isError, refetch } = useFacturas(
-    estado ? { page: 0, size: 1000 } : { page: pagina, size: tamano },
+    estado ? { idOrdenCompra, page: 0, size: 1000 } : { idOrdenCompra, page: pagina, size: tamano },
   )
   const filtradas = estado ? (datos?.content ?? []).filter((f) => estadoReal(f) === estado) : null
   const data = datos && (filtradas
@@ -113,6 +118,12 @@ export function FacturacionPage() {
       />
 
       <FiltroChips etiqueta="Filtrar por estado" opciones={OPCIONES} valor={estado} onChange={(v) => { setEstado(v); setPagina(0) }} />
+
+      {idOrdenCompra && (
+        <FiltroActivo verTodas="/facturacion">
+          Comprobantes de la orden <span className="font-medium tabular-nums">{facturas[0]?.numeroOrdenCompra ?? `#${idOrdenCompra}`}</span>
+        </FiltroActivo>
+      )}
 
       {(isError || errorAccion) && (
         <ErrorBanner message={errorAccion ?? 'No se pudieron cargar los comprobantes.'} onRetry={errorAccion ? undefined : () => refetch()} />
@@ -235,9 +246,9 @@ export function FacturacionPage() {
         isLoading={registrarPago.isPending}
         error={registrarPago.isError ? `No se pudo registrar el pago. ${mensajeError(registrarPago.error)}`.trim() : null}
         onCancel={cerrarPago}
-        onConfirm={(monto) => {
+        onConfirm={(pago) => {
           if (!pagando) return
-          registrarPago.mutate({ id: idDe(pagando), monto }, { onSuccess: () => setPagando(null) })
+          registrarPago.mutate({ id: idDe(pagando), pago }, { onSuccess: () => setPagando(null) })
         }}
       />
 
