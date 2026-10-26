@@ -8,7 +8,8 @@ import { ServicioCard, ServicioCardSkeleton } from "../components/ServicioCard"
 import { CategoriaServicioSelector } from "../components/CategoriaServicioSelector"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
-import type { Servicio, ServicioFormValues } from "@/types/servicio.types"
+import type { Servicio } from "@/types/servicio.types"
+import type { ServicioConImagen } from "@/api/serviciosApi"
 
 export function CatalogoServiciosPage() {
   const [mostrarForm, setMostrarForm] = useState(false)
@@ -59,7 +60,7 @@ export function CatalogoServiciosPage() {
     })
   }
 
-  function handleSubmit(valores: ServicioFormValues) {
+  function handleSubmit(valores: ServicioConImagen) {
     if (servicioEditando) {
       actualizar.mutate(valores, {
         onSuccess: () => setMostrarForm(false),
