@@ -142,7 +142,9 @@ export function CamposTercero() {
     ? 'No se pudo cargar el catálogo de distritos. Pulsa "Reintentar".'
     : cargandoDistritos
     ? 'Cargando catálogo de distritos...'
-    : 'Selecciona el distrito del cliente.'
+    : selectedDistrito
+    ? 'Distrito elegido. Usa "Cambiar" para elegir otro.'
+    : 'Escribe y elige el distrito: se muestran la provincia, el departamento y el UBIGEO.'
 
   // Mensaje de ayuda para razonSocial
   const ayudaRazon = idTipoDocumento
@@ -279,18 +281,6 @@ export function CamposTercero() {
               <Button type="button" variant="outline" onClick={() => void reintentarDistritos()} disabled={recargandoDistritos}>
                 {recargandoDistritos ? 'Cargando…' : 'Reintentar'}
               </Button>
-            )}
-            {selectedDistrito && (
-              <input
-                id="tercero-ubigeo"
-                type="text"
-                readOnly
-                value={selectedDistrito.ubigeo}
-                className={`${inputFormClass} max-w-40 bg-muted`}
-                tabIndex={-1}
-                aria-readonly="true"
-                placeholder="UBIGEO"
-              />
             )}
           </div>
         </Campo>
