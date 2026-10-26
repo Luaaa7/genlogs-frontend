@@ -9,6 +9,7 @@ import { describedBy, inputFormClass } from '@/components/ui/campoEstilos'
 import { Button } from '@/components/ui/button'
 import { listarDistritos } from '@/api/distritosApi'
 import { DistritoSelector } from './DistritoSelector'
+import { esDistritoExtranjero } from '@/lib/terceroExtranjero'
 
 /** Lo que comparten cliente y proveedor: los datos del tercero. */
 type ConTercero = { tercero: ClienteFormValues['tercero'] }
@@ -57,7 +58,7 @@ const RAZON_AYUDA: Record<TipoDocumentoId, string> = {
 /** Campos del tercero (documento, datos fiscales y contacto) con autocompletado
  *  por RUC/DNI (RF-08). Debe ir dentro de un <FormProvider>. */
 export function CamposTercero() {
-  const { register, setValue, getValues, setError, clearErrors, watch, formState: { errors } } = useFormContext<ConTercero>()
+  const { register, setValue, getValues, setError, clearErrors, setFocus, watch, formState: { errors } } = useFormContext<ConTercero>()
   const e = errors.tercero
   const consultar = useConsultarDocumento()
 
@@ -69,6 +70,7 @@ export function CamposTercero() {
 
   const idDistritoSeleccionado = watch('tercero.idDistrito') as number | undefined
   const selectedDistrito = distritos?.find((d) => d.idDistrito === idDistritoSeleccionado)
+  const esExtranjero = esDistritoExtranjero(selectedDistrito)
 
   // Observa el tipo de documento para actualizar placeholders, etiquetas y ayudas
   const idTipoDocumento = watch('tercero.idTipoDocumento') as TipoDocumentoId | undefined
@@ -153,6 +155,13 @@ export function CamposTercero() {
     const distrito = distritos?.find((d) => d.idDistrito === idDistrito)
     if (distrito?.ubigeo) {
       setValue('tercero.ubigeo', distrito.ubigeo)
+    }
+    if (esDistritoExtranjero(distrito)) {
+      // "Extranjero": se abre el campo para escribir la ciudad y el país, y se lleva el foco ahí.
+      setTimeout(() => setFocus('tercero.lugarExtranjero'), 0)
+    } else {
+      setValue('tercero.lugarExtranjero', '')
+      clearErrors('tercero.lugarExtranjero')
     }
   }
 
@@ -285,6 +294,29 @@ export function CamposTercero() {
             )}
           </div>
         </Campo>
+        {esExtranjero && (
+          <Campo
+            id="tercero-lugar-extranjero"
+            label="Ciudad y país"
+            ayuda="Por ejemplo: Santiago, Chile. Se guarda junto a la dirección."
+            error={e?.lugarExtranjero?.message}
+            obligatorio
+          >
+            <input
+              id="tercero-lugar-extranjero"
+              autoComplete="address-level2"
+              placeholder="Santiago, Chile"
+              maxLength={120}
+              {...register('tercero.lugarExtranjero')}
+              aria-invalid={!!e?.lugarExtranjero}
+              aria-describedby={describedBy('tercero-lugar-extranjero', {
+                error: e?.lugarExtranjero,
+                ayuda: 'Por ejemplo: Santiago, Chile. Se guarda junto a la dirección.',
+              })}
+              className={inputFormClass}
+            />
+          </Campo>
+        )}
         <div className="grid gap-4 sm:grid-cols-2">
           <Campo id="tercero-telefono" label="Teléfono" opcional>
             <input
