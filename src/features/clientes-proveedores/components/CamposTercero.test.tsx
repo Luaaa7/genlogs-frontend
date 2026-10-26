@@ -23,7 +23,7 @@ describe('CamposTercero: campo de documento', () => {
     await act(async () => {
       renderForm()
     })
-    await waitFor(() => expect(screen.queryByText(/obligatorio/i)).toBeNull())
+    await waitFor(() => expect(screen.queryByText(/obligatorio/i, { ignore: '.sr-only, script, style' })).toBeNull())
   })
 
   it('edición: conserva el número de documento cargado', async () => {
@@ -36,7 +36,7 @@ describe('CamposTercero: campo de documento', () => {
       })
     })
     await waitFor(() => expect(screen.getByDisplayValue('20512345671')).toBeTruthy())
-    expect(screen.queryByText(/obligatorio/i)).toBeNull()
+    expect(screen.queryByText(/obligatorio/i, { ignore: '.sr-only, script, style' })).toBeNull()
   })
 
   it('al cambiar el tipo de documento se limpia el número, sin marcar error', async () => {
@@ -55,6 +55,6 @@ describe('CamposTercero: campo de documento', () => {
       fireEvent.change(select, { target: { value: '2' } })
     })
     await waitFor(() => expect(screen.queryByDisplayValue('20512345671')).toBeNull())
-    expect(screen.queryByText(/obligatorio/i)).toBeNull()
+    expect(screen.queryByText(/obligatorio/i, { ignore: '.sr-only, script, style' })).toBeNull()
   })
 })

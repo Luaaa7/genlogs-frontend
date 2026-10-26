@@ -3,7 +3,7 @@
 import React from 'react';
 import { useForm, useWatch, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { crearCotizacionSchema, type CrearCotizacionFormData } from '@/lib/validators/cotizacion.schema';
 import { useCrearCotizacion } from '../hooks/useCrearCotizacion';
 import { CotizacionForm } from '../components/CotizacionForm';
@@ -22,13 +22,16 @@ const IGV = 0.18;
  *  izquierda; resumen con el total y la acción de crear, fijo a la derecha. */
 export const NuevaCotizacionPage: React.FC = () => {
   const navigate = useNavigate();
+  // Desde la ficha del cliente se llega con ?cliente=ID: ese cliente ya queda elegido (#74).
+  const [searchParams] = useSearchParams();
+  const clienteDeUrl = Number(searchParams.get('cliente'));
   const { data: clientes = [], isLoading: cargandoClientes } = useClientes({});
 
   const methods = useForm<CrearCotizacionFormData>({
     resolver: zodResolver(crearCotizacionSchema),
     mode: 'onTouched',
     defaultValues: {
-      clienteId: undefined as number | undefined,
+      clienteId: Number.isInteger(clienteDeUrl) && clienteDeUrl > 0 ? clienteDeUrl : (undefined as number | undefined),
       condicionPago: undefined,
       moneda: undefined,
       observaciones: '',
@@ -55,7 +58,7 @@ export const NuevaCotizacionPage: React.FC = () => {
     !condicionPago && 'condición de pago',
     !moneda && 'moneda',
     items.length === 0 && 'al menos un ítem',
-    items.some((d) => d?.idProducto === undefined && d?.idServicio === undefined) && 'producto o servicio de cada ítem',
+    items.some((d) => !d?.producto?.trim()) && 'descripción de los ítems',
     items.some((d) => !(Number(d?.precioUnitario) > 0)) && 'precio de los ítems',
     items.some((d) => !(Number(d?.cantidad) >= 1)) && 'cantidad de los ítems',
   ].filter(Boolean) as string[];
