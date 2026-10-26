@@ -1,68 +1,169 @@
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts"
-import type { CotizacionesMes } from "../lib/calculos"
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts"
+import type { CotizacionEstadoItem } from "@/types/dashboard.types"
+import { formatNumber, formatPercentage } from "@/lib/formatters/currency"
 import { cn } from "@/lib/utils/utils"
-import { DashboardCard, SinDatos } from "./DashboardCard"
 
-const SERIES = [
-  { clave: "aprobadas", label: "Aprobadas", color: "var(--viz-1)" },
-  { clave: "enCurso", label: "En curso", color: "var(--viz-2)" },
-  { clave: "rechazadas", label: "Rechazadas o vencidas", color: "var(--viz-3)" },
-] as const
+interface CotizacionesPorEstadoChartProps {
+  data: CotizacionEstadoItem[]
+  className?: string
+}
 
-const DIAS = ["Lun", "Mar", "Mié", "Jue", "Vie"]
-const HEAT = ["bg-heat-0", "bg-heat-1", "bg-heat-2", "bg-heat-3", "bg-heat-4"]
+const ESTADO_COLORES: Record<string, string> = {
+  APROBADA: "var(--success)",
+  PENDIENTE: "var(--chart-5)",
+  RECHAZADA: "var(--destructive)",
+  BORRADOR: "var(--muted-foreground)",
+  ENVIADA: "var(--chart-1)",
+  EN_NEGOCIACION: "var(--chart-3)",
+  ACEPTADA: "var(--success)",
+  CONVERTIDA_OC: "var(--primary)",
+  VENCIDA: "var(--warning)",
+}
 
-/** Barras apiladas por mes + mapa de calor de cotizaciones creadas por día. */
-export function CotizacionesPorMesCard({ porMes, actividad, className }: { porMes: CotizacionesMes[]; actividad: number[][]; className?: string }) {
-  const hayDatos = porMes.some((m) => m.aprobadas + m.enCurso + m.rechazadas > 0)
-  const maximo = Math.max(1, ...actividad.flat())
-  const nivel = (n: number) => (n === 0 ? 0 : Math.min(4, Math.ceil((n / maximo) * 4)))
+const ESTADO_ETIQUETAS: Record<string, string> = {
+  APROBADA: "Aprobada",
+  PENDIENTE: "Pendiente",
+  RECHAZADA: "Rechazada",
+  BORRADOR: "Borrador",
+  ENVIADA: "Enviada",
+  EN_NEGOCIACION: "En negociación",
+  ACEPTADA: "Aceptada",
+  CONVERTIDA_OC: "Convertida a OC",
+  VENCIDA: "Vencida",
+}
+
+function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<{ value: number; name: string; color: string; payload: CotizacionEstadoItem }> }) {
+  if (!active || !payload || !payload[0]) return null
+
+  const item = payload[0].payload
+  const total = payload.reduce((acc, p) => acc + p.value, 0)
 
   return (
-    <DashboardCard id="dash-cot-mes" titulo="Cotizaciones por mes" className={className}>
-      {!hayDatos ? (
-        <SinDatos>Sin cotizaciones en los últimos meses.</SinDatos>
-      ) : (
-        <>
-          <div className="h-44" role="img" aria-label={porMes.map((m) => `${m.mes}: ${m.aprobadas} aprobadas, ${m.enCurso} en curso, ${m.rechazadas} rechazadas o vencidas`).join("; ")}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={porMes} margin={{ top: 4, right: 0, left: 0, bottom: 0 }} barSize={32}>
-                <XAxis dataKey="mes" axisLine={false} tickLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} />
-                <Tooltip
-                  cursor={{ fill: "var(--muted)" }}
-                  contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--foreground)", fontSize: 13 }}
-                />
-                {SERIES.map((s, i) => (
-                  <Bar key={s.clave} dataKey={s.clave} name={s.label} stackId="estado" fill={s.color} radius={i === SERIES.length - 1 ? [4, 4, 0, 0] : 0} />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <ul className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
-            {SERIES.map((s) => (
-              <li key={s.clave} className="inline-flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: s.color }} aria-hidden="true" />
-                {s.label}
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+    <div className="rounded-lg border border-border bg-background p-3 shadow-lg min-w-45">
+      <p className="text-sm font-medium" style={{ color: payload[0].color }}>
+        {ESTADO_ETIQUETAS[item.estado] ?? item.estado}
+      </p>
+      <p className="text-xs text-muted-foreground mt-1">
+        Cantidad: <span className="font-medium text-foreground">{formatNumber(item.cantidad)}</span>
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Porcentaje: <span className="font-medium text-foreground">{formatPercentage(item.porcentaje)}</span>
+      </p>
+      <p className="text-xs text-muted-foreground mt-1">
+        Total: <span className="font-medium text-foreground">{formatNumber(total)}</span>
+      </p>
+    </div>
+  )
+}
 
-      <h3 className="mt-6 mb-3 text-[13px] font-semibold">Cotizaciones creadas por día</h3>
-      <div className="grid grid-cols-[32px_repeat(6,minmax(0,1fr))] gap-1" role="img" aria-label="Mapa de calor de cotizaciones creadas por día hábil en las últimas 6 semanas">
-        {actividad.map((fila, d) => (
-          <div key={DIAS[d]} className="contents">
-            <span className="text-[11px] leading-5 text-muted-foreground">{DIAS[d]}</span>
-            {fila.map((n, s) => (
-              <span key={s} className={cn("h-5 rounded", HEAT[nivel(n)])} title={`${n} ${n === 1 ? 'cotización' : 'cotizaciones'}`} />
-            ))}
-          </div>
-        ))}
+function CustomLegend({ payload = [] }: { payload?: Array<{ value: string; color: string; payload?: CotizacionEstadoItem }> }) {
+  return (
+    <div className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5">
+      {payload.map((entry, index) => (
+        <div key={index} className="flex items-center gap-1.5">
+          <div
+            className="h-2.5 w-2.5 rounded-full"
+            style={{ backgroundColor: entry.color }}
+          />
+          <span className="text-xs text-muted-foreground">
+            {ESTADO_ETIQUETAS[String(entry.value)] ?? String(entry.value)}
+          </span>
+          <span className="text-xs font-medium text-foreground">
+            ({formatNumber(Number(entry.payload?.cantidad ?? 0))})
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export function CotizacionesPorEstadoChart({ data, className }: CotizacionesPorEstadoChartProps) {
+  const safeData = Array.isArray(data) ? data : []
+
+  // 3) Datos inválidos (NaN): el backend puede mandar `cantidad`/`porcentaje`
+  // como null, undefined o string no numérico. Se descartan los valores no
+  // numéricos o <= 0 ANTES de pasárselos a la gráfica (evita "(NaN)" en la
+  // leyenda y sectores de tamaño 0) y se recalcula el porcentaje cuando el
+  // recibido no es válido.
+  const entradas = safeData.filter(
+    (item) => Number.isFinite(Number(item.cantidad)) && Number(item.cantidad) > 0
+  )
+  const totalCantidad = entradas.reduce((acc, item) => acc + Number(item.cantidad), 0)
+
+  const chartData = entradas.map((item) => {
+    const estado = String(item.estado ?? "").trim() || "DESCONOCIDO"
+    const cantidad = Number(item.cantidad)
+    const porcentajeBackend = Number(item.porcentaje)
+    const porcentaje =
+      Number.isFinite(porcentajeBackend) && porcentajeBackend > 0
+        ? porcentajeBackend
+        : totalCantidad > 0
+          ? (cantidad / totalCantidad) * 100
+          : 0
+    return {
+      ...item,
+      estado,
+      cantidad,
+      porcentaje,
+      label: ESTADO_ETIQUETAS[estado] ?? estado,
+      color: ESTADO_COLORES[estado] ?? "var(--chart-1)",
+    }
+  })
+
+  if (chartData.length === 0) {
+    return (
+      <div className={cn("rounded-lg border border-border p-8 text-center", className)}>
+        <p className="text-sm text-muted-foreground">Sin cotizaciones registradas</p>
       </div>
-      <div className="mt-2.5 flex items-center justify-end gap-1 text-[11px] text-muted-foreground" aria-hidden="true">
-        Menos {HEAT.map((c) => <span key={c} className={cn("h-3 w-3 rounded-sm", c)} />)} Más
+    )
+  }
+
+  return (
+    <div className={cn("flex flex-col rounded-lg border border-border p-4", className)}>
+      <h2 className="mb-3 shrink-0 text-sm font-semibold">Cotizaciones por estado</h2>
+
+      {/* 1) Contenedor responsivo y centrado (ejes X/Y): el área tiene un alto
+          que cabe exactamente en la tarjeta del dashboard (h-72 con su padding
+          y título ≈ 216 px disponibles), así la dona ya no desborda ni se
+          recorta en el borde inferior del contenedor. */}
+      <div className="flex h-52 w-full min-w-0 flex-col items-center justify-center">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart margin={{ top: 8, right: 16, bottom: 8, left: 16 }}>
+            <Pie
+              data={chartData}
+              cx="50%"
+              cy="50%"
+              // 2) Radios proporcionales: en recharts 3 un porcentaje se aplica
+              // sobre maxRadius (calculado con width/height/cx/cy), así la dona
+              // se encoge sola con el contenedor y deja el anillo exterior
+              // libre para las etiquetas de porcentaje sin pisarse.
+              innerRadius="52%"
+              outerRadius="75%"
+              fill="var(--chart-1)"
+              paddingAngle={2}
+              dataKey="cantidad"
+              nameKey="estado"
+              label={false}
+              labelLine={false}
+            >
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} />
+            {/* 2) Leyenda en la parte inferior y centrada; recharts reserva su
+                alto propio y el área del gráfico no se monta encima. */}
+            <Legend layout="horizontal" align="center" verticalAlign="bottom" content={<CustomLegend />} />
+          </PieChart>
+        </ResponsiveContainer>
       </div>
-    </DashboardCard>
+    </div>
   )
 }
