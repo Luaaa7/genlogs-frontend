@@ -7,6 +7,7 @@ import { LoginPage } from '@/features/auth/components/LoginPage'
 import { ForgotPasswordPage } from '@/features/auth/components/ForgotPasswordPage'
 import { ResetPasswordPage } from '@/features/auth/components/ResetPasswordPage'
 import { UsuariosPage } from '@/features/usuarios/components/UsuariosPage'
+import { ConfiguracionIgvPage } from '@/features/configuracion/pages/ConfiguracionIgvPage'
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage'
 import { CatalogoProductosPage } from '@/features/catalogo-repuestos/pages/CatalogoProductosPage'
 import { ProductoDetallePage } from '@/features/catalogo-repuestos/pages/ProductoDetallePage'
@@ -49,7 +50,7 @@ export const router = createBrowserRouter([
     { path: '/cotizaciones/:id', element: <CotizacionDetallePage /> },
     { path: '/ordenes-compra', element: <OrdenesCompraPage /> },
     { path: '/facturacion', element: <FacturacionPage /> },
-    { element: <RoleGuard allowedRoles={['ADMINISTRADOR']} />, children: [{ path: '/usuarios', element: <UsuariosPage /> }] },
+    { element: <RoleGuard allowedRoles={['ADMINISTRADOR']} />, children: [{ path: '/usuarios', element: <UsuariosPage /> }, { path: '/configuracion/igv', element: <ConfiguracionIgvPage /> }] },
     // Cualquier otra ruta: página 404 dentro del layout (sin sesión, ProtectedRoute manda al login).
     { path: '*', element: <NoEncontradaPage /> },
   ] }] },

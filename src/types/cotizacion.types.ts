@@ -58,6 +58,8 @@ export interface Cotizacion {
   subtotal: number
   igv: number
   total: number
+  /** % de IGV con que se creó (18). Las anteriores al cambio pueden no traerlo. */
+  porcentajeIgv?: number
   detalles: CotizacionDetalle[]
   seguimientos?: SeguimientoCotizacion[]
   adjuntos?: AdjuntoCotizacion[]

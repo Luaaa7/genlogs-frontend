@@ -1,4 +1,5 @@
-import { useForm } from "react-hook-form"
+import { useState } from "react"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useQuery } from "@tanstack/react-query"
 import { listarCategoriasServicio } from "@/api/categoriasServicioApi"
@@ -8,15 +9,17 @@ import { FileUploader } from "@/components/ui/FileUploader"
 import { servicioSchema } from "@/lib/validators/servicio.schema"
 import { CategoriaServicioSelector } from "./CategoriaServicioSelector"
 import type { ServicioFormValues } from "@/types/servicio.types"
+import type { ServicioConImagen } from "@/api/serviciosApi"
 
 interface ServicioFormProps {
   valoresIniciales?: Partial<ServicioFormValues>
-  onSubmit: (valores: ServicioFormValues) => void
+  /** Recibe los datos del formulario y, si se subió una foto, su URL en `imagenUrl`. */
+  onSubmit: (valores: ServicioConImagen) => void
   enviando?: boolean
 }
 
 export function ServicioForm({ valoresIniciales, onSubmit, enviando }: ServicioFormProps) {
-  const { register, handleSubmit, setValue, getValues, formState: { errors } } = useForm<ServicioFormValues>({
+  const { register, handleSubmit, setValue, getValues, control, formState: { errors } } = useForm<ServicioFormValues>({
     resolver: zodResolver(servicioSchema),
     defaultValues: {
       idCategoriaServicio: valoresIniciales?.idCategoriaServicio,
@@ -45,8 +48,11 @@ export function ServicioForm({ valoresIniciales, onSubmit, enviando }: ServicioF
     queryFn: listarSectoresEconomicos,
   })
 
-  // Use getValues directly to avoid React Compiler warning about watch()
-  const idsSectoresSeleccionados = getValues("idsSectores") ?? []
+  // useWatch hace que los checkboxes y la categoría se actualicen al hacer clic
+  // (con getValues la pantalla no se volvía a pintar y parecía que no se marcaban).
+  const idsSectoresSeleccionados = useWatch({ control, name: "idsSectores" }) ?? []
+  const idCategoriaSeleccionada = useWatch({ control, name: "idCategoriaServicio" })
+  const [imagenUrl, setImagenUrl] = useState<string>()
 
   function toggleSector(id: number) {
     const actuales = getValues("idsSectores") ?? []
@@ -58,7 +64,7 @@ export function ServicioForm({ valoresIniciales, onSubmit, enviando }: ServicioF
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit((valores) => onSubmit({ ...valores, imagenUrl }))} className="flex flex-col gap-4">
       <div>
         <label className="text-sm font-medium">Código de servicio</label>
         <input
@@ -82,7 +88,7 @@ export function ServicioForm({ valoresIniciales, onSubmit, enviando }: ServicioF
         <CategoriaServicioSelector
           categorias={categorias}
           isLoading={cargandoCategorias}
-          value={getValues("idCategoriaServicio")}
+          value={idCategoriaSeleccionada}
           onChange={(id) => setValue("idCategoriaServicio", id, { shouldValidate: true })}
           className="w-full rounded-md border border-border px-3 py-2 text-sm"
         />
@@ -181,10 +187,8 @@ export function ServicioForm({ valoresIniciales, onSubmit, enviando }: ServicioF
       <FileUploader
         tipo="imagen"
         label="Imagen del servicio"
-        onUploaded={(resultado) => {
-          console.log("Imagen subida:", resultado)
-          // TODO: conectar con ServicioImagenController cuando el servicio ya tenga id
-        }}
+        // La foto se sube al elegirla; al guardar el servicio queda asociada como imagen principal.
+        onUploaded={(resultado) => setImagenUrl(resultado.url)}
       />
 
       <button
