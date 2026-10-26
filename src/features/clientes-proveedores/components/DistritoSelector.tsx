@@ -1,6 +1,11 @@
 import { ubicacionDistrito, type Distrito } from "@/api/distritosApi"
 
 interface DistritoSelectorProps {
+  /** id del select: lo une con el <label> del Campo (#15). */
+  id?: string
+  /** ids de la ayuda y el error del Campo (describedBy). */
+  describedBy?: string
+  invalid?: boolean
   distritos: Distrito[] | undefined
   isLoading: boolean
   value: number | undefined
@@ -11,6 +16,9 @@ interface DistritoSelectorProps {
 }
 
 export function DistritoSelector({
+  id,
+  describedBy,
+  invalid,
   distritos,
   isLoading,
   value,
@@ -29,6 +37,9 @@ export function DistritoSelector({
 
   return (
     <select
+      id={id}
+      aria-describedby={describedBy}
+      aria-invalid={invalid || undefined}
       value={value ?? ""}
       onChange={(e) => onChange(Number(e.target.value))}
       disabled={isDisabled}

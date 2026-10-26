@@ -13,6 +13,10 @@ interface TableSkeletonRowsProps {
 export function TableSkeletonRows({ rows = 5, columns }: TableSkeletonRowsProps) {
   return (
     <>
+      {/* Las filas fantasma son aria-hidden: esta avisa al lector de pantalla que se está cargando. */}
+      <tr className="sr-only">
+        <td colSpan={columns} role="status">Cargando…</td>
+      </tr>
       {Array.from({ length: rows }).map((_, i) => (
         <tr key={i} className="border-t border-border" aria-hidden="true">
           {Array.from({ length: columns }).map((_, j) => (

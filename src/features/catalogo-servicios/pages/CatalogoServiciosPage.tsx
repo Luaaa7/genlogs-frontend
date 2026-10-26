@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { avisar } from "@/lib/avisos"
 import { useQuery } from "@tanstack/react-query"
 import { Wrench } from "lucide-react"
 import { listarCategoriasServicio } from "@/api/categoriasServicioApi"
@@ -63,11 +64,17 @@ export function CatalogoServiciosPage() {
   function handleSubmit(valores: ServicioConImagen) {
     if (servicioEditando) {
       actualizar.mutate(valores, {
-        onSuccess: () => setMostrarForm(false),
+        onSuccess: () => {
+          setMostrarForm(false)
+          avisar(`Servicio ${valores.nombreServicio} actualizado`)
+        },
       })
     } else {
       crear.mutate(valores, {
-        onSuccess: () => setMostrarForm(false),
+        onSuccess: () => {
+          setMostrarForm(false)
+          avisar(`Servicio ${valores.nombreServicio} registrado`)
+        },
       })
     }
   }

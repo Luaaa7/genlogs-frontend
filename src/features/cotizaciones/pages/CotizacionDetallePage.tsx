@@ -84,14 +84,17 @@ function vencimiento(c: Cotizacion): { texto: string; tono: 'warning' | 'destruc
 
 function DetalleSkeleton() {
   return (
-    <div className="flex flex-col gap-6" aria-hidden="true">
-      <Skeleton className="h-8 w-64" />
-      <Skeleton className="h-5 w-96 max-w-full" />
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Skeleton variant="rectangular" className="h-80 lg:col-span-2" />
-        <Skeleton variant="rectangular" className="h-80" />
+    <>
+      <p role="status" className="sr-only">Cargando la cotización…</p>
+      <div className="flex flex-col gap-6" aria-hidden="true">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-5 w-96 max-w-full" />
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Skeleton variant="rectangular" className="h-80 lg:col-span-2" />
+          <Skeleton variant="rectangular" className="h-80" />
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

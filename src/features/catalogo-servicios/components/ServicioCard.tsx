@@ -16,7 +16,7 @@ export function ServicioCard({ servicio, onEditar, onDesactivar }: ServicioCardP
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs text-muted-foreground">{servicio.codigoServicio}</p>
-          <h3 className="text-base font-semibold">{servicio.nombreServicio}</h3>
+          <h2 className="text-base font-semibold">{servicio.nombreServicio}</h2>
         </div>
         {inactivo && (
           <EstadoBadge tono="destructive">Inactivo</EstadoBadge>
