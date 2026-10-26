@@ -10,13 +10,7 @@ export const terceroSchema = z.object({
   telefono: z.string().optional(),
   correo: z.union([z.string().email('Correo no válido'), z.literal('')]).optional(),
   ubigeo: z.string().optional(),
-  /** Solo cuando el distrito es "Extranjero": ciudad y país (se guarda en la dirección). */
-  lugarExtranjero: z.string().optional(),
 }).superRefine((v, ctx) => {
-  // Distrito "Extranjero" (UBIGEO 90xxxx): hay que decir dónde (si no está ya en la dirección)
-  if ((v.ubigeo ?? '').startsWith('90') && !v.lugarExtranjero?.trim() && !v.direccion?.trim()) {
-    ctx.addIssue({ code: 'custom', path: ['lugarExtranjero'], message: 'Escribe la ciudad y el país' })
-  }
   // RUC: 11 dígitos
   if (v.idTipoDocumento === 1 && !/^\d{11}$/.test(v.numeroDocumento)) {
     ctx.addIssue({ code: 'custom', path: ['numeroDocumento'], message: 'El RUC debe tener 11 dígitos' })

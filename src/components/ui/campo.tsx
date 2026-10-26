@@ -28,9 +28,7 @@ export function Campo({ id, label, ayuda, error, opcional, obligatorio, classNam
       </label>
       {children}
       {ayuda && !error && <p id={`${id}-ayuda`} className="text-xs text-muted-foreground">{ayuda}</p>}
-      {/* Sin role="alert": con varios errores se anunciaban todos seguidos (#62). El error se lee al
-          enfocar el campo (aria-describedby) y react-hook-form lleva el foco al primer campo con error. */}
-      {error && <p id={`${id}-error`} className="text-xs text-destructive">{error}</p>}
+      {error && <p id={`${id}-error`} role="alert" className="text-xs text-destructive">{error}</p>}
     </div>
   )
 }

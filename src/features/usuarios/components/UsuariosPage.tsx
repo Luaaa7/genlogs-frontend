@@ -1,8 +1,6 @@
 import { useState } from "react"
 import { Plus, RefreshCw, Users as UsersIcon } from "lucide-react"
 import { UsuarioFormModal } from "./UsuarioFormModal"
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
-import type { UsuarioResponse } from "@/types/usuario"
 import { useUsuarios } from "../hooks/useUsuarios"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { TableSkeletonRows } from "@/components/ui/TableSkeletonRows"
@@ -14,12 +12,10 @@ import { Button } from "@/components/ui/button"
 import { nombreRolLegible } from "@/lib/formatters/roles"
 
 export function UsuariosPage() {
-  const { usuarios, roles, loading, error, agregar, editar, alternarBloqueo, eliminar, recargar } = useUsuarios()
+  const { usuarios, roles, loading, error, agregar, alternarBloqueo, eliminar, recargar } = useUsuarios()
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [operandoId, setOperandoId] = useState<number | null>(null)
   const [accionError, setAccionError] = useState<string | null>(null)
-  const [editando, setEditando] = useState<UsuarioResponse | null>(null)
-  const [porEliminar, setPorEliminar] = useState<UsuarioResponse | null>(null)
 
   async function cambiarBloqueo(idUsuario: number, bloqueado: boolean) {
     setOperandoId(idUsuario)
@@ -33,7 +29,8 @@ export function UsuariosPage() {
     }
   }
 
-  async function eliminarUsuario(idUsuario: number) {
+  async function eliminarUsuario(idUsuario: number, nombres: string) {
+    if (!window.confirm(`¿Eliminar a ${nombres}? Ya no podrá iniciar sesión.`)) return
     setOperandoId(idUsuario)
     setAccionError(null)
     try {
@@ -42,7 +39,6 @@ export function UsuariosPage() {
       setAccionError("No se pudo eliminar el usuario. Recuerda que no puedes eliminar tu propio usuario.")
     } finally {
       setOperandoId(null)
-      setPorEliminar(null)
     }
   }
 
@@ -124,16 +120,7 @@ export function UsuariosPage() {
                         variant="outline"
                         size="sm"
                         disabled={operandoId === usuario.idUsuario}
-                        onClick={() => setEditando(usuario)}
-                        aria-label={`Editar a ${usuario.nombres}`}
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={operandoId === usuario.idUsuario}
-                        onClick={() => setPorEliminar(usuario)}
+                        onClick={() => void eliminarUsuario(usuario.idUsuario, usuario.nombres)}
                         aria-label={`Eliminar a ${usuario.nombres}`}
                       >
                         Eliminar
@@ -158,34 +145,6 @@ export function UsuariosPage() {
           }}
         />
       )}
-
-      {editando && (
-        <UsuarioFormModal
-          key={editando.idUsuario}
-          roles={roles}
-          usuario={editando}
-          onClose={() => setEditando(null)}
-          onSubmit={async (data) => {
-            await editar(editando.idUsuario, {
-              idRol: data.idRol,
-              nombres: data.nombres,
-              correo: data.correo,
-              iniciales: data.iniciales,
-            })
-            setEditando(null)
-          }}
-        />
-      )}
-
-      <ConfirmDialog
-        open={porEliminar != null}
-        title={`¿Eliminar a ${porEliminar?.nombres ?? ""}?`}
-        description="Ya no podrá iniciar sesión. Si tiene cotizaciones registradas, se desactiva y su historial se conserva."
-        confirmLabel="Eliminar"
-        isLoading={porEliminar != null && operandoId === porEliminar.idUsuario}
-        onConfirm={() => porEliminar && void eliminarUsuario(porEliminar.idUsuario)}
-        onCancel={() => setPorEliminar(null)}
-      />
     </div>
   )
 }

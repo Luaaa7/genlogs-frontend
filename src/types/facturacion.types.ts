@@ -34,8 +34,6 @@ export interface Factura {
   subtotal?: number
   igv?: number
   total: number
-  /** % de IGV de la factura (18). */
-  porcentajeIgv?: number
   saldoPendiente?: number
   detalles?: DetalleFacturacion[]
 }

@@ -9,7 +9,6 @@ import { describedBy, inputFormClass } from '@/components/ui/campoEstilos'
 import { Button } from '@/components/ui/button'
 import { listarDistritos } from '@/api/distritosApi'
 import { DistritoSelector } from './DistritoSelector'
-import { esDistritoExtranjero } from '@/lib/terceroExtranjero'
 
 /** Lo que comparten cliente y proveedor: los datos del tercero. */
 type ConTercero = { tercero: ClienteFormValues['tercero'] }
@@ -58,11 +57,11 @@ const RAZON_AYUDA: Record<TipoDocumentoId, string> = {
 /** Campos del tercero (documento, datos fiscales y contacto) con autocompletado
  *  por RUC/DNI (RF-08). Debe ir dentro de un <FormProvider>. */
 export function CamposTercero() {
-  const { register, setValue, getValues, setError, clearErrors, setFocus, watch, formState: { errors } } = useFormContext<ConTercero>()
+  const { register, setValue, getValues, trigger, setError, clearErrors, watch, formState: { errors } } = useFormContext<ConTercero>()
   const e = errors.tercero
   const consultar = useConsultarDocumento()
 
-  const { data: distritos, isLoading: cargandoDistritos, isError: errorDistritos, refetch: reintentarDistritos, isFetching: recargandoDistritos } = useQuery({
+  const { data: distritos, isLoading: cargandoDistritos, isError: errorDistritos } = useQuery({
     queryKey: ['distritos'],
     queryFn: listarDistritos,
     staleTime: 10 * 60_000,
@@ -70,31 +69,19 @@ export function CamposTercero() {
 
   const idDistritoSeleccionado = watch('tercero.idDistrito') as number | undefined
   const selectedDistrito = distritos?.find((d) => d.idDistrito === idDistritoSeleccionado)
-  const esExtranjero = esDistritoExtranjero(selectedDistrito)
 
   // Observa el tipo de documento para actualizar placeholders, etiquetas y ayudas
   const idTipoDocumento = watch('tercero.idTipoDocumento') as TipoDocumentoId | undefined
 
   // Completa razón social y dirección desde Factiliza (vía backend)
   async function buscarDocumento() {
-    const numero = getValues('tercero.numeroDocumento')?.trim() ?? ''
+    const numero = getValues('tercero.numeroDocumento')?.trim()
     const tipo = idTipoDocumento
+    if (!numero || !tipo) return
+    
     // Solo RUC (1) y DNI (2) tienen consulta automática
     if (tipo !== 1 && tipo !== 2) return
-
-    // Antes "Buscar" no hacía nada si el número estaba incompleto; ahora dice por qué (#41).
-    const largo = tipo === 1 ? 11 : 8
-    const nombre = tipo === 1 ? 'RUC' : 'DNI'
-    if (!new RegExp(`^\\d{${largo}}$`).test(numero)) {
-      setError('tercero.numeroDocumento', {
-        type: 'manual',
-        message: numero
-          ? `El ${nombre} debe tener ${largo} dígitos (tiene ${numero.replace(/\D/g, '').length}).`
-          : `Escribe el ${nombre} antes de buscar.`,
-      })
-      return
-    }
-    clearErrors('tercero.numeroDocumento')
+    if (!/^\d{8}$|^\d{11}$/.test(numero)) return
     
     try {
       const datos = await consultar.mutateAsync(numero)
@@ -139,12 +126,10 @@ export function CamposTercero() {
 
   // Mensaje de ayuda para distrito
   const ayudaDistrito = errorDistritos
-    ? 'No se pudo cargar el catálogo de distritos. Pulsa "Reintentar".'
+    ? 'No se pudo cargar el catálogo de distritos. Puedes ingresar el código manualmente.'
     : cargandoDistritos
     ? 'Cargando catálogo de distritos...'
-    : selectedDistrito
-    ? 'Distrito elegido. Usa "Cambiar" para elegir otro.'
-    : 'Escribe y elige el distrito: se muestran la provincia, el departamento y el UBIGEO.'
+    : 'Selecciona el distrito del cliente.'
 
   // Mensaje de ayuda para razonSocial
   const ayudaRazon = idTipoDocumento
@@ -158,20 +143,13 @@ export function CamposTercero() {
     if (distrito?.ubigeo) {
       setValue('tercero.ubigeo', distrito.ubigeo)
     }
-    if (esDistritoExtranjero(distrito)) {
-      // "Extranjero": se abre el campo para escribir la ciudad y el país, y se lleva el foco ahí.
-      setTimeout(() => setFocus('tercero.lugarExtranjero'), 0)
-    } else {
-      setValue('tercero.lugarExtranjero', '')
-      clearErrors('tercero.lugarExtranjero')
-    }
   }
 
   return (
     <>
       <SeccionForm titulo="Identificación">
         <div className="grid gap-4 sm:grid-cols-[180px_1fr]">
-          <Campo id="tercero-tipo" label="Tipo de documento" obligatorio>
+          <Campo id="tercero-tipo" label="Tipo de documento">
             <select
               id="tercero-tipo"
               {...register('tercero.idTipoDocumento', { valueAsNumber: true })}
@@ -187,7 +165,6 @@ export function CamposTercero() {
             label="Número de documento"
             error={errorDoc}
             ayuda={ayudaDoc}
-            obligatorio
           >
             <div className="flex gap-2">
               <input
@@ -197,7 +174,6 @@ export function CamposTercero() {
                 placeholder={idTipoDocumento ? PLACEHOLDERS[idTipoDocumento] : 'Ej: 20512345671'}
                 {...register('tercero.numeroDocumento')}
                 aria-invalid={!!errorDoc}
-                aria-describedby={describedBy('tercero-numero', { error: errorDoc, ayuda: ayudaDoc })}
                 className={inputFormClass}
                 disabled={!idTipoDocumento}
               />
@@ -222,7 +198,6 @@ export function CamposTercero() {
           label={idTipoDocumento ? RAZON_SOCIAL_LABELS[idTipoDocumento] : 'Razón social / Nombres y apellidos'}
           error={e?.razonSocial?.message}
           ayuda={ayudaRazon}
-          obligatorio
         >
           <input
             id="tercero-razon"
@@ -230,14 +205,14 @@ export function CamposTercero() {
             placeholder={idTipoDocumento === 1 ? 'Empresa S.A.C.' : 'Juan Pérez Gómez'}
             {...register('tercero.razonSocial')}
             aria-invalid={!!e?.razonSocial}
-            aria-describedby={describedBy('tercero-razon', { error: e?.razonSocial, ayuda: ayudaRazon })}
+            aria-describedby={describedBy('tercero-razon', { error: e?.razonSocial })}
             className={inputFormClass}
           />
         </Campo>
 
         {/* Indicador de modo simulado */}
         {consultar.data?.simulado && (
-          <div role="status" className="flex items-center gap-2 text-sm text-warning-text">
+          <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
             <AlertCircle className="h-4 w-4" aria-hidden="true" />
             <span>Modo simulado: la consulta a SUNAT/RENIEC no está conectada. Los datos son de prueba.</span>
           </div>
@@ -263,13 +238,9 @@ export function CamposTercero() {
           label="Distrito"
           ayuda={ayudaDistrito}
           error={e?.idDistrito?.message}
-          obligatorio
         >
           <div className="flex gap-2">
             <DistritoSelector
-              id="tercero-distrito"
-              describedBy={describedBy('tercero-distrito', { error: e?.idDistrito, ayuda: ayudaDistrito })}
-              invalid={!!e?.idDistrito}
               distritos={distritos}
               isLoading={cargandoDistritos || errorDistritos}
               value={idDistritoSeleccionado}
@@ -277,36 +248,20 @@ export function CamposTercero() {
               className={inputFormClass}
               disabled={errorDistritos}
             />
-            {errorDistritos && (
-              <Button type="button" variant="outline" onClick={() => void reintentarDistritos()} disabled={recargandoDistritos}>
-                {recargandoDistritos ? 'Cargando…' : 'Reintentar'}
-              </Button>
+            {selectedDistrito && (
+              <input
+                id="tercero-ubigeo"
+                type="text"
+                readOnly
+                value={selectedDistrito.ubigeo}
+                className={`${inputFormClass} max-w-40 bg-muted`}
+                tabIndex={-1}
+                aria-readonly="true"
+                placeholder="UBIGEO"
+              />
             )}
           </div>
         </Campo>
-        {esExtranjero && (
-          <Campo
-            id="tercero-lugar-extranjero"
-            label="Ciudad y país"
-            ayuda="Por ejemplo: Santiago, Chile. Se guarda junto a la dirección."
-            error={e?.lugarExtranjero?.message}
-            obligatorio
-          >
-            <input
-              id="tercero-lugar-extranjero"
-              autoComplete="address-level2"
-              placeholder="Santiago, Chile"
-              maxLength={120}
-              {...register('tercero.lugarExtranjero')}
-              aria-invalid={!!e?.lugarExtranjero}
-              aria-describedby={describedBy('tercero-lugar-extranjero', {
-                error: e?.lugarExtranjero,
-                ayuda: 'Por ejemplo: Santiago, Chile. Se guarda junto a la dirección.',
-              })}
-              className={inputFormClass}
-            />
-          </Campo>
-        )}
         <div className="grid gap-4 sm:grid-cols-2">
           <Campo id="tercero-telefono" label="Teléfono" opcional>
             <input
@@ -315,13 +270,10 @@ export function CamposTercero() {
               maxLength={15}
               autoComplete="tel"
               placeholder="+51 984 215 330"
-              {...register('tercero.telefono', {
-                // Solo números y "+". Va dentro de register para que el valor sí llegue al formulario.
-                onChange: (ev) => {
-                  const limpio = ev.target.value.replace(/[^0-9+]/g, '')
-                  if (limpio !== ev.target.value) setValue('tercero.telefono', limpio)
-                },
-              })}
+              {...register('tercero.telefono')}
+              onChange={(ev) => {
+                ev.target.value = ev.target.value.replace(/[^0-9+]/g, '')
+              }}
               className={inputFormClass}
             />
           </Campo>
@@ -333,6 +285,14 @@ export function CamposTercero() {
               autoComplete="email"
               placeholder="compras@empresa.pe"
               {...register('tercero.correo')}
+              onChange={(ev) => {
+                const valor = ev.target.value
+                if (valor && !valor.includes('@')) {
+                  setError('tercero.correo', { type: 'pattern', message: 'El correo debe incluir el carácter @' })
+                } else {
+                  void trigger('tercero.correo')
+                }
+              }}
               aria-invalid={!!e?.correo}
               aria-describedby={describedBy('tercero-correo', { error: e?.correo })}
               className={inputFormClass}

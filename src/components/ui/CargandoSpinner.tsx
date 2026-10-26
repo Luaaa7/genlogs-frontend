@@ -38,7 +38,7 @@ export default function CargandoSpinner({
           />
         ))}
       </svg>
-      <p className="text-muted-foreground font-medium mt-3">{texto}</p>
+      <p className="text-gray-500 font-medium mt-3">{texto}</p>
     </div>
   );
 }

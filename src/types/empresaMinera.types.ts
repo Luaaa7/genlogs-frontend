@@ -13,7 +13,7 @@ export interface EmpresaMineraMineral { idEmpresaMinera: number; idMineral: numb
 export interface EmpresaMinera {
   idEmpresaMinera: number
   id?: number
-  cliente?: { idCliente: number; tercero?: { razonSocial?: string; nombreComercial?: string | null; numeroDocumento?: string | null } }
+  cliente?: { idCliente: number; tercero?: { razonSocial?: string; nombreComercial?: string | null } }
   nombreUnidadMinera: string
   nombre?: string
   latitud: number

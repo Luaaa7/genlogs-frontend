@@ -5,8 +5,8 @@ import {
   registrarServicio,
   actualizarServicio,
   desactivarServicio,
-  type ServicioConImagen,
 } from "@/api/serviciosApi"
+import type { ServicioFormValues } from "@/types/servicio.types"
 
 export function useServicios(idCategoriaServicio?: number, soloActivos = true) {
   return useQuery({
@@ -26,7 +26,7 @@ export function useServicio(id: number | undefined) {
 export function useCrearServicio() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (valores: ServicioConImagen) => registrarServicio(valores),
+    mutationFn: (valores: ServicioFormValues) => registrarServicio(valores),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["servicios"] })
     },
@@ -36,7 +36,7 @@ export function useCrearServicio() {
 export function useActualizarServicio(id: number) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (valores: ServicioConImagen) => actualizarServicio(id, valores),
+    mutationFn: (valores: ServicioFormValues) => actualizarServicio(id, valores),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["servicios"] })
       queryClient.invalidateQueries({ queryKey: ["servicio", id] })

@@ -11,7 +11,7 @@ export default function CargandoCarrito({ texto = 'Cargando repuestos...' }: Pro
     >
       <svg
         viewBox="0 0 512 512"
-        className="w-28 h-28 text-foreground carrito-rebota"
+        className="w-28 h-28 text-gray-800 carrito-rebota"
         aria-hidden="true"
       >
         <g
@@ -58,7 +58,7 @@ l-1970 0 -10 38 c-6 20 -44 181 -86 357 -42 175 -83 332 -91 347 -29 55 -46
           />
         </g>
       </svg>
-      <p className="text-muted-foreground font-medium mt-3">{texto}</p>
+      <p className="text-gray-500 font-medium mt-3">{texto}</p>
     </div>
   );
 }

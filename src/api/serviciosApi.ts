@@ -21,23 +21,13 @@ export async function buscarServicioPorId(id: number): Promise<Servicio> {
   return data
 }
 
-/** Datos del formulario + la URL de la foto que se subió con el FileUploader (opcional). */
-export type ServicioConImagen = ServicioFormValues & { imagenUrl?: string }
-
-/** Asocia una imagen ya subida (Cloudinary) al servicio, como imagen principal. */
-export async function asociarImagenServicio(idServicio: number, urlImagen: string): Promise<void> {
-  await axiosClient.post(`/servicios/${idServicio}/imagenes`, { urlImagen, esPrincipal: true })
-}
-
-export async function registrarServicio({ imagenUrl, ...valores }: ServicioConImagen): Promise<Servicio> {
+export async function registrarServicio(valores: ServicioFormValues): Promise<Servicio> {
   const { data } = await axiosClient.post<Servicio>("/servicios", valores)
-  if (imagenUrl) await asociarImagenServicio(data.idServicio, imagenUrl)
   return data
 }
 
-export async function actualizarServicio(id: number, { imagenUrl, ...valores }: ServicioConImagen): Promise<Servicio> {
+export async function actualizarServicio(id: number, valores: ServicioFormValues): Promise<Servicio> {
   const { data } = await axiosClient.put<Servicio>(`/servicios/${id}`, valores)
-  if (imagenUrl) await asociarImagenServicio(id, imagenUrl)
   return data
 }
 

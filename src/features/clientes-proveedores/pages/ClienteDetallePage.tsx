@@ -17,14 +17,11 @@ export default function ClienteDetallePage() {
 
   if (isLoading) {
     return (
-      <>
-        <p role="status" className="sr-only">Cargando datos del cliente…</p>
-        <div className="flex flex-col gap-6" aria-hidden="true">
-          <Skeleton className="h-8 w-72" />
-          <Skeleton variant="rectangular" className="h-32" />
-          <Skeleton variant="rectangular" className="h-48" />
-        </div>
-      </>
+      <div className="flex flex-col gap-6" aria-hidden="true">
+        <Skeleton className="h-8 w-72" />
+        <Skeleton variant="rectangular" className="h-32" />
+        <Skeleton variant="rectangular" className="h-48" />
+      </div>
     )
   }
 
@@ -53,7 +50,7 @@ export default function ClienteDetallePage() {
         descripcion={<span className="tabular-nums">{cliente.tipoDocumento} {cliente.numeroDocumento}</span>}
         acciones={
           <Button asChild>
-            <Link to={`/cotizaciones/nueva?cliente=${cliente.idCliente}`}><FileText className="mr-2 h-4 w-4" aria-hidden="true" />Nueva cotización</Link>
+            <Link to="/cotizaciones/nueva"><FileText className="mr-2 h-4 w-4" aria-hidden="true" />Nueva cotización</Link>
           </Button>
         }
       />

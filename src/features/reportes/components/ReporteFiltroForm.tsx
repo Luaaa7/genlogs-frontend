@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react"
-import { useForm, useWatch } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Download, Loader2 } from "lucide-react"
 import { reporteFiltroSchema } from "@/lib/validators/reporteFiltro.schema"
@@ -37,7 +37,7 @@ const RANGOS_RAPIDOS: { label: string; calcular: () => RangoFechas }[] = [
 ]
 
 export function ReporteFiltroForm({ onSubmit, enviando, onChange }: ReporteFiltroFormProps) {
-  const { register, handleSubmit, setValue, control, formState: { errors, isValid } } = useForm<ReporteRequest>({
+  const { register, handleSubmit, setValue, watch, getValues, formState: { errors, isValid } } = useForm<ReporteRequest>({
     resolver: zodResolver(reporteFiltroSchema),
     // Valida mientras se escribe: el aviso de rango inválido sale al instante y el botón se desactiva.
     mode: "onChange",
@@ -49,21 +49,23 @@ export function ReporteFiltroForm({ onSubmit, enviando, onChange }: ReporteFiltr
     },
   })
 
-  // useWatch (en vez de watch()) es compatible con el compilador de React: sin la advertencia de lint.
-  const valores = useWatch({ control })
-  const fechaInicio = valores.fechaInicio
-  const fechaFin = valores.fechaFin
+  const fechaInicio = watch("fechaInicio")
+  const fechaFin = watch("fechaFin")
 
-  // Ref para no volver a disparar el efecto si el padre pasa otra función en cada render
+  // Use ref to avoid watch dependency in useEffect (react-hook-form watch is not memoizable)
   const onChangeRef = useRef(onChange)
-  useEffect(() => {
-    onChangeRef.current = onChange
-  }, [onChange])
+  onChangeRef.current = onChange
 
-  // Avisa al padre de cada cambio (también al inicio, con el periodo por defecto) para la vista previa
+  // Notify parent of changes for preview (debounced by parent)
   useEffect(() => {
-    onChangeRef.current?.(valores)
-  }, [valores])
+    if (!onChangeRef.current) return
+    // Valores iniciales, para que la vista previa cargue con el periodo por defecto.
+    onChangeRef.current(getValues())
+    const subscription = watch((values) => {
+      onChangeRef.current?.(values)
+    })
+    return () => subscription.unsubscribe()
+  }, [watch, getValues])
 
   function aplicarRango(rango: RangoFechas) {
     setValue("fechaInicio", rango.fechaInicio, { shouldValidate: true })

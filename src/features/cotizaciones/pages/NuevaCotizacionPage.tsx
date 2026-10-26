@@ -3,7 +3,7 @@
 import React from 'react';
 import { useForm, useWatch, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { crearCotizacionSchema, type CrearCotizacionFormData } from '@/lib/validators/cotizacion.schema';
 import { useCrearCotizacion } from '../hooks/useCrearCotizacion';
 import { CotizacionForm } from '../components/CotizacionForm';
@@ -15,23 +15,20 @@ import { Button } from '@/components/ui/button';
 import { calcularSubtotal, formatearMoneda, mapearCondicionPago } from '@/lib/formatters/codigoCotizacion';
 import type { CreateCotizacionRequest } from '@/types/cotizacion.types';
 import { Loader2 } from 'lucide-react';
-import { useIgvVigente } from '@/features/configuracion/hooks/useIgv';
 
+const IGV = 0.18;
 
 /** Nueva cotización en una sola pantalla: datos generales e ítems a la
  *  izquierda; resumen con el total y la acción de crear, fijo a la derecha. */
 export const NuevaCotizacionPage: React.FC = () => {
   const navigate = useNavigate();
-  // Desde la ficha del cliente se llega con ?cliente=ID: ese cliente ya queda elegido (#74).
-  const [searchParams] = useSearchParams();
-  const clienteDeUrl = Number(searchParams.get('cliente'));
   const { data: clientes = [], isLoading: cargandoClientes } = useClientes({});
 
   const methods = useForm<CrearCotizacionFormData>({
     resolver: zodResolver(crearCotizacionSchema),
     mode: 'onTouched',
     defaultValues: {
-      clienteId: Number.isInteger(clienteDeUrl) && clienteDeUrl > 0 ? clienteDeUrl : (undefined as number | undefined),
+      clienteId: undefined as number | undefined,
       condicionPago: undefined,
       moneda: undefined,
       observaciones: '',
@@ -40,8 +37,6 @@ export const NuevaCotizacionPage: React.FC = () => {
   });
 
   const { mutate: crearCotizacion, isPending, isError, error } = useCrearCotizacion();
-  // La tasa que rige hoy (configurable por el administrador en IGV).
-  const { porcentaje: porcentajeIgv } = useIgvVigente();
 
   const [clienteId, moneda, condicionPago, detalles] = useWatch({
     control: methods.control,
@@ -49,7 +44,7 @@ export const NuevaCotizacionPage: React.FC = () => {
   });
   const monedaActual = moneda || 'PEN';
   const subtotal = (detalles ?? []).reduce((s, d) => s + calcularSubtotal(d?.cantidad || 0, d?.precioUnitario || 0), 0);
-  const igv = subtotal * (porcentajeIgv / 100);
+  const igv = subtotal * IGV;
   const cliente = clientes.find((c) => (c.idCliente ?? c.id) === clienteId);
 
   // Lo mínimo para poder crear: mientras falte algo, el botón queda desactivado
@@ -60,7 +55,7 @@ export const NuevaCotizacionPage: React.FC = () => {
     !condicionPago && 'condición de pago',
     !moneda && 'moneda',
     items.length === 0 && 'al menos un ítem',
-    items.some((d) => !d?.producto?.trim()) && 'descripción de los ítems',
+    items.some((d) => d?.idProducto === undefined && d?.idServicio === undefined) && 'producto o servicio de cada ítem',
     items.some((d) => !(Number(d?.precioUnitario) > 0)) && 'precio de los ítems',
     items.some((d) => !(Number(d?.cantidad) >= 1)) && 'cantidad de los ítems',
   ].filter(Boolean) as string[];
@@ -96,7 +91,7 @@ export const NuevaCotizacionPage: React.FC = () => {
             <dl className="grid grid-cols-[1fr_auto] gap-y-2 border-t border-border pt-4 text-sm">
               <dt className="text-muted-foreground">Subtotal</dt>
               <dd className="text-right tabular-nums">{formatearMoneda(subtotal, monedaActual)}</dd>
-              <dt className="text-muted-foreground">IGV ({porcentajeIgv.toLocaleString('es-PE', { maximumFractionDigits: 2 })}%)</dt>
+              <dt className="text-muted-foreground">IGV (18%)</dt>
               <dd className="text-right tabular-nums">{formatearMoneda(igv, monedaActual)}</dd>
               <dt className="text-base font-semibold">Total</dt>
               <dd className="text-right text-base font-semibold tabular-nums">{formatearMoneda(subtotal + igv, monedaActual)}</dd>

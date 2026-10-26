@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Building2, MapPin, Search, X } from 'lucide-react'
+import { Building2, MapPin } from 'lucide-react'
 import { useEmpresasMineras } from '../hooks/useEmpresasMineras'
 import { MapaUnidades, type PuntoMapa } from '../components/MapaUnidades'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
@@ -30,10 +30,6 @@ const familiaDe = (nombre?: string) => {
 }
 const clasesDeEtapa = (nombre?: string) => familiaDe(nombre)?.clases
 
-/** Minúsculas y sin tildes: "COMPAÑIA" y "compañia", "Antamina" y "ANTAMINA" se encuentran igual. */
-const normalizar = (s?: string | null) =>
-  (s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
-
 // w-full en móvil: sin ancho fijo, el select toma el ancho del cliente con el nombre más largo y se sale de la pantalla.
 const selectClass =
   'h-10 w-full min-w-0 truncate rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto sm:max-w-xs'
@@ -52,7 +48,7 @@ export function EmpresasMinerasPage() {
 
   const [vista, setVista] = useState<'mapa' | 'tabla'>('mapa')
   const [filtroEtapa, setFiltroEtapa] = useState('')
-  const [busqueda, setBusqueda] = useState('')
+  const [filtroCliente, setFiltroCliente] = useState('')
   const [seleccion, setSeleccion] = useState<number | null>(null)
 
   const nombreCliente = useMemo(() => {
@@ -75,20 +71,15 @@ export function EmpresasMinerasPage() {
 
   const clientesConUnidades = useMemo(() => [...new Set(data.map((e) => idClienteDe(e)).filter((id): id is number => id != null))], [data])
 
-  // Búsqueda por cliente (razón social o nombre comercial), RUC o nombre de la unidad,
-  // sin importar mayúsculas, minúsculas ni tildes.
-  const filtradas = useMemo(() => {
-    const q = normalizar(busqueda)
-    const digitos = busqueda.replace(/\D/g, '')
-    const esDocumento = q !== '' && /^\d+$/.test(q)
-    return data.filter((e) => {
-      if (filtroEtapa && String(idEtapaDe(e)) !== filtroEtapa) return false
-      if (!q) return true
-      const t = e.cliente?.tercero
-      if (esDocumento) return (t?.numeroDocumento ?? '').startsWith(digitos)
-      return [t?.razonSocial, t?.nombreComercial, nombreDe(e)].some((v) => normalizar(v).includes(q))
-    })
-  }, [data, filtroEtapa, busqueda])
+  const filtradas = useMemo(
+    () =>
+      data.filter(
+        (e) =>
+          (!filtroEtapa || String(idEtapaDe(e)) === filtroEtapa) &&
+          (!filtroCliente || String(idClienteDe(e)) === filtroCliente)
+      ),
+    [data, filtroEtapa, filtroCliente]
+  )
 
   const puntos: PuntoMapa[] = useMemo(
     () =>
@@ -139,29 +130,11 @@ export function EmpresasMinerasPage() {
           <option value="">Todas las etapas</option>
           {etapas.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}
         </select>
-        <label className="sr-only" htmlFor="em-buscar">Buscar cliente o unidad minera</label>
-        <div className="relative w-full sm:w-80">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-          <input
-            id="em-buscar"
-            type="search"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar cliente, RUC o unidad minera"
-            autoComplete="off"
-            className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-search-cancel-button]:hidden"
-          />
-          {busqueda && (
-            <button
-              type="button"
-              onClick={() => setBusqueda('')}
-              aria-label="Limpiar búsqueda"
-              className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <X className="h-4 w-4" aria-hidden="true" />
-            </button>
-          )}
-        </div>
+        <label className="sr-only" htmlFor="em-cliente">Cliente</label>
+        <select id="em-cliente" value={filtroCliente} onChange={(e) => setFiltroCliente(e.target.value)} className={selectClass}>
+          <option value="">Todos los clientes</option>
+          {clientesConUnidades.map((id) => <option key={id} value={id}>{nombreCliente(id)}</option>)}
+        </select>
       </div>
 
       {isError && <ErrorBanner message="No se pudieron cargar las empresas mineras." onRetry={() => refetch()} />}
@@ -175,7 +148,7 @@ export function EmpresasMinerasPage() {
             {data.length === 0 ? 'Aún no hay unidades mineras registradas' : 'Ninguna unidad coincide con los filtros'}
           </h2>
           <p className="max-w-sm text-sm text-muted-foreground">
-            {data.length === 0 ? 'Se registran desde la ficha de cada cliente.' : 'Prueba con otro nombre, RUC o etapa.'}
+            {data.length === 0 ? 'Se registran desde la ficha de cada cliente.' : 'Prueba con otra etapa o cliente.'}
           </p>
         </div>
       ) : vista === 'mapa' ? (

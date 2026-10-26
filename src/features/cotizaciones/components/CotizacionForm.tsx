@@ -5,9 +5,8 @@ import type { CrearCotizacionFormData } from '@/lib/validators/cotizacion.schema
 import { CondicionPago, Moneda } from '@/types/cotizacion.types'
 import { mapearCondicionPago } from '@/lib/formatters/codigoCotizacion'
 import { Campo, MarcaObligatorio } from '@/components/ui/campo'
-import { describedBy, textareaFormClass } from '@/components/ui/campoEstilos'
+import { describedBy, inputFormClass, textareaFormClass } from '@/components/ui/campoEstilos'
 import { cn } from '@/lib/utils/utils'
-import { ClienteBuscador } from './ClienteBuscador'
 
 interface CotizacionFormProps {
   clientes: Cliente[]
@@ -59,20 +58,31 @@ export const CotizacionForm: React.FC<CotizacionFormProps> = ({ clientes, isLoad
         <p className="text-xs text-muted-foreground"><span className="text-destructive" aria-hidden="true">*</span> Obligatorio</p>
       </div>
 
-      <Campo id="cot-cliente" label="Cliente" obligatorio error={errors.clienteId?.message} ayuda="Busca por RUC, DNI o razón social. Si no es cliente, puedes registrarlo aquí mismo.">
+      <Campo id="cot-cliente" label="Cliente" obligatorio error={errors.clienteId?.message} ayuda={clientes.length === 0 && !isLoadingClientes ? 'Aún no hay clientes: regístralo primero en Clientes.' : undefined}>
         <Controller
           name="clienteId"
           control={control}
           render={({ field }) => (
-            <ClienteBuscador
+            <select
               id="cot-cliente"
-              clientes={clientes}
-              isLoading={isLoadingClientes}
-              value={field.value ? Number(field.value) : undefined}
-              onChange={field.onChange}
-              invalid={!!errors.clienteId}
-              describedBy={describedBy('cot-cliente', { error: errors.clienteId, ayuda: true })}
-            />
+              name={field.name}
+              ref={field.ref}
+              onBlur={field.onBlur}
+              value={field.value ? String(field.value) : ''}
+              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+              disabled={isLoadingClientes}
+              required
+              aria-invalid={!!errors.clienteId}
+              aria-describedby={describedBy('cot-cliente', { error: errors.clienteId })}
+              className={inputFormClass}
+            >
+              <option value="">{isLoadingClientes ? 'Cargando clientes…' : 'Selecciona un cliente'}</option>
+              {clientes.map((cliente) => (
+                <option key={cliente.idCliente ?? cliente.id} value={cliente.idCliente ?? cliente.id}>
+                  {cliente.tercero.razonSocial} · {cliente.tercero.numeroDocumento}
+                </option>
+              ))}
+            </select>
           )}
         />
       </Campo>
