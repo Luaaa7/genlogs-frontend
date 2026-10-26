@@ -15,8 +15,8 @@ import { Button } from '@/components/ui/button';
 import { calcularSubtotal, formatearMoneda, mapearCondicionPago } from '@/lib/formatters/codigoCotizacion';
 import type { CreateCotizacionRequest } from '@/types/cotizacion.types';
 import { Loader2 } from 'lucide-react';
+import { useIgvVigente } from '@/features/configuracion/hooks/useIgv';
 
-const IGV = 0.18;
 
 /** Nueva cotización en una sola pantalla: datos generales e ítems a la
  *  izquierda; resumen con el total y la acción de crear, fijo a la derecha. */
@@ -40,6 +40,8 @@ export const NuevaCotizacionPage: React.FC = () => {
   });
 
   const { mutate: crearCotizacion, isPending, isError, error } = useCrearCotizacion();
+  // La tasa que rige hoy (configurable por el administrador en IGV).
+  const { porcentaje: porcentajeIgv } = useIgvVigente();
 
   const [clienteId, moneda, condicionPago, detalles] = useWatch({
     control: methods.control,
@@ -47,7 +49,7 @@ export const NuevaCotizacionPage: React.FC = () => {
   });
   const monedaActual = moneda || 'PEN';
   const subtotal = (detalles ?? []).reduce((s, d) => s + calcularSubtotal(d?.cantidad || 0, d?.precioUnitario || 0), 0);
-  const igv = subtotal * IGV;
+  const igv = subtotal * (porcentajeIgv / 100);
   const cliente = clientes.find((c) => (c.idCliente ?? c.id) === clienteId);
 
   // Lo mínimo para poder crear: mientras falte algo, el botón queda desactivado
@@ -94,7 +96,7 @@ export const NuevaCotizacionPage: React.FC = () => {
             <dl className="grid grid-cols-[1fr_auto] gap-y-2 border-t border-border pt-4 text-sm">
               <dt className="text-muted-foreground">Subtotal</dt>
               <dd className="text-right tabular-nums">{formatearMoneda(subtotal, monedaActual)}</dd>
-              <dt className="text-muted-foreground">IGV (18%)</dt>
+              <dt className="text-muted-foreground">IGV ({porcentajeIgv.toLocaleString('es-PE', { maximumFractionDigits: 2 })}%)</dt>
               <dd className="text-right tabular-nums">{formatearMoneda(igv, monedaActual)}</dd>
               <dt className="text-base font-semibold">Total</dt>
               <dd className="text-right text-base font-semibold tabular-nums">{formatearMoneda(subtotal + igv, monedaActual)}</dd>

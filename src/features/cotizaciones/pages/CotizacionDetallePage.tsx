@@ -188,7 +188,9 @@ export const CotizacionDetallePage: React.FC = () => {
 
   // Totales: los del servidor; si no vienen, se calculan de las líneas.
   const subtotal = cotizacion.subtotal ?? detalles.reduce((s, d) => s + (d.subtotal || 0), 0);
-  const igv = cotizacion.igv ?? subtotal * 0.18;
+  // % propio de la cotización: un cambio de tasa no altera las anteriores.
+  const porcentajeIgv = cotizacion.porcentajeIgv ?? 18;
+  const igv = cotizacion.igv ?? subtotal * (porcentajeIgv / 100);
   const total = cotizacion.total ?? subtotal + igv;
 
   const pasos: PipelineStep[] = [
@@ -366,7 +368,7 @@ export const CotizacionDetallePage: React.FC = () => {
             <dl className="grid grid-cols-[1fr_auto] justify-items-end gap-x-6 gap-y-2 border-t border-border px-5 py-4 text-sm">
               <dt className="text-muted-foreground">Subtotal</dt>
               <dd className="tabular-nums">{formatearMoneda(subtotal, moneda)}</dd>
-              <dt className="text-muted-foreground">IGV (18%)</dt>
+              <dt className="text-muted-foreground">IGV ({Number(porcentajeIgv).toLocaleString('es-PE', { maximumFractionDigits: 2 })}%)</dt>
               <dd className="tabular-nums">{formatearMoneda(igv, moneda)}</dd>
               <dt className="text-base font-semibold">Total</dt>
               <dd className="text-base font-semibold tabular-nums">{formatearMoneda(total, moneda)}</dd>
