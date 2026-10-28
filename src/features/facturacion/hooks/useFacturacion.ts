@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { facturacionApi } from '@/api/facturacionApi'
-import type { EmitirFacturaInput, EnviarComprobanteInput, FacturacionFiltros, FacturaInput, RegistrarPagoInput } from '@/types/facturacion.types'
+import type { EmitirFacturaInput, EnviarComprobanteInput, EstadoFacturacion, FacturacionFiltros, FacturaInput, RegistrarPagoInput } from '@/types/facturacion.types'
 
 export const facturacionKeys = {
   all: ['facturacion'] as const,
@@ -62,5 +62,13 @@ export function useSunatConfig() {
 export function useEnviarFactura() {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: EnviarComprobanteInput }) => facturacionApi.enviar(id, data),
+  })
+}
+/** Cambio manual de estado (Emitida / Vencida). Pago parcial y Pagada salen de registrar pago. */
+export function useCambiarEstadoFactura(id: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (codigo: EstadoFacturacion) => facturacionApi.cambiarEstado(id, codigo),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: facturacionKeys.all }),
   })
 }

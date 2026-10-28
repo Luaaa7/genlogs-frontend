@@ -89,6 +89,7 @@ export function OrdenesCompraPage() {
                       <Td>
                         <EstadoOrdenSelect
                           idOrden={o.idOrdenCompra ?? o.id ?? 0}
+                          idCotizacion={o.idCotizacion}
                           estadoActual={o.estadoCodigo ?? o.estado ?? ''}
                           numero={o.numeroOrdenCompra ?? o.numero ?? ''}
                           onError={setErrorEstado}
