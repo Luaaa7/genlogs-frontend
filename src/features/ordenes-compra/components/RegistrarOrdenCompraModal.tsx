@@ -11,6 +11,8 @@ interface RegistrarOrdenCompraModalProps {
   onCreada?: () => void
 }
 
+const FORMATO_OC = /^[0-9]{4}-[1-9][0-9]*0$/
+
 const campo =
   'mt-1 block w-full rounded-md border border-border p-2 text-sm shadow-sm focus:border-accent focus:outline-none'
 
@@ -40,6 +42,10 @@ export const RegistrarOrdenCompraModal: React.FC<RegistrarOrdenCompraModalProps>
     e.preventDefault()
     if (!numero.trim()) {
       setError('Escribe el número de la orden de compra del cliente.')
+      return
+    }
+    if (!FORMATO_OC.test(numero.trim())) {
+      setError('El número debe tener el formato 0107-10: cuatro dígitos, un guion y un sufijo que termine en 0 (10, 20, 30…).')
       return
     }
     setError(null)
@@ -84,7 +90,10 @@ export const RegistrarOrdenCompraModal: React.FC<RegistrarOrdenCompraModalProps>
             <label htmlFor="oc-numero" className="block text-sm font-medium text-foreground">
               Número de orden de compra del cliente <span className="text-destructive">*</span>
             </label>
-            <input id="oc-numero" value={numero} onChange={(e) => setNumero(e.target.value)} className={campo} placeholder="Ej. 0017-10" />
+            <input id="oc-numero" value={numero} onChange={(e) => setNumero(e.target.value)} className={campo} placeholder="Ej. 0107-10" aria-describedby="oc-numero-ayuda" />
+            <p id="oc-numero-ayuda" className="mt-1 text-xs text-muted-foreground">
+              Formato: cuatro dígitos, guion y sufijo de 10 en 10 (0107-10, 0107-20…).
+            </p>
           </div>
           <div>
             <label htmlFor="oc-fecha" className="block text-sm font-medium text-foreground">
