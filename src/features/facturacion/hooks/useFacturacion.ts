@@ -19,6 +19,18 @@ export function useCrearFactura() {
   })
 }
 
+export function useTiposComprobante() {
+  return useQuery({ queryKey: ['tipos-comprobante'], queryFn: facturacionApi.tiposComprobante, staleTime: 60 * 60 * 1000 })
+}
+
+export function useSubirArchivoFactura() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, archivo }: { id: number; archivo: File }) => facturacionApi.subirArchivo(id, archivo),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: facturacionKeys.all }),
+  })
+}
+
 export function useRegistrarPago() {
   const queryClient = useQueryClient()
   return useMutation({

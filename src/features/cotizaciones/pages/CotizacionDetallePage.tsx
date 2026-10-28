@@ -11,6 +11,7 @@ import { SeguimientoTimeline } from '../components/SeguimientoTimeline';
 import { AdjuntoCotizacionUploader } from '../components/AdjuntoCotizacionUploader';
 import { ConfirmacionEnvioModal } from '../components/ConfirmacionEnvioModal';
 import { RegistrarOrdenCompraModal } from '@/features/ordenes-compra/components/RegistrarOrdenCompraModal';
+import { RegistrarFacturaModal } from '@/features/facturacion/components/RegistrarFacturaModal';
 import { PipelineBreadcrumb, type PipelineStep } from '@/components/ui/PipelineBreadcrumb';
 import { Button } from '@/components/ui/button';
 import { EstadoBadge } from '@/components/ui/EstadoBadge';
@@ -25,7 +26,7 @@ import {
 } from '@/lib/formatters/codigoCotizacion';
 import { formatearFechaCorta, parsearFechaLocal } from '@/lib/formatters/fechaLocal';
 import { cn } from '@/lib/utils/utils';
-import { AlertCircle, Check, ChevronDown, Clock, Download, Loader2, Send, ShoppingCart } from 'lucide-react';
+import { AlertCircle, Check, ChevronDown, Clock, Download, Loader2, Receipt, Send, ShoppingCart } from 'lucide-react';
 
 const ESTADOS_ABIERTOS = new Set<string>(['BORRADOR', 'ENVIADA', 'EN_NEGOCIACION']);
 
@@ -119,6 +120,7 @@ export const CotizacionDetallePage: React.FC = () => {
 
   const [showEnvioModal, setShowEnvioModal] = useState(false);
   const [showOrdenModal, setShowOrdenModal] = useState(false);
+  const [showFacturaModal, setShowFacturaModal] = useState(false);
   const [menuEstado, setMenuEstado] = useState(false);
   const [errorAccion, setErrorAccion] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -232,6 +234,13 @@ export const CotizacionDetallePage: React.FC = () => {
       <Button onClick={() => handleCambiarEstado(EstadoCotizacion.APROBADA)} disabled={isChangingState}>
         <Check className="mr-2 h-4 w-4" aria-hidden="true" />
         Marcar como aprobada
+      </Button>
+    );
+  } else if (estado === 'APROBADA' && ordenGenerada && !facturaGenerada) {
+    accionPrincipal = (
+      <Button onClick={() => setShowFacturaModal(true)}>
+        <Receipt className="mr-2 h-4 w-4" aria-hidden="true" />
+        Registrar factura
       </Button>
     );
   } else if (estado === 'APROBADA' && !ordenGenerada) {
@@ -420,6 +429,17 @@ export const CotizacionDetallePage: React.FC = () => {
         </aside>
       </div>
 
+      {ordenGenerada && (
+        <RegistrarFacturaModal
+          isOpen={showFacturaModal}
+          onClose={() => setShowFacturaModal(false)}
+          idOrdenCompra={ordenGenerada.idOrdenCompra}
+          numeroOrdenCompra={ordenGenerada.numeroOrdenCompra}
+          idCondicionPago={ordenGenerada.idCondicionPago ?? cotizacion.idCondicionPago}
+          idMoneda={cotizacion.idMoneda}
+          detalles={detalles}
+        />
+      )}
       <RegistrarOrdenCompraModal
         isOpen={showOrdenModal}
         onClose={() => setShowOrdenModal(false)}

@@ -1,6 +1,6 @@
 import { axiosClient } from './axiosClient'
 import type { PageResponse } from '@/types/common.types'
-import type { EstadoFacturacion, Factura, FacturaInput, FacturacionFiltros, RegistrarPagoInput } from '@/types/facturacion.types'
+import type { EstadoFacturacion, Factura, FacturaInput, FacturacionFiltros, RegistrarPagoInput, TipoComprobanteCatalogo } from '@/types/facturacion.types'
 
 export const facturacionApi = {
   listar: async (filtros: FacturacionFiltros = {}): Promise<PageResponse<Factura>> => {
@@ -9,6 +9,13 @@ export const facturacionApi = {
   },
   obtener: (id: number) => axiosClient.get<Factura>(`/facturacion/${id}`).then((r) => r.data),
   crear: (data: FacturaInput) => axiosClient.post<Factura>('/facturacion', data).then((r) => r.data),
+  tiposComprobante: () => axiosClient.get<TipoComprobanteCatalogo[]>('/tipos-comprobante').then((r) => r.data),
+  /** POST /facturacion/{id}/archivo — sube el documento emitido por SUNAT (reemplaza el anterior). */
+  subirArchivo: (id: number, archivo: File) => {
+    const form = new FormData()
+    form.append('archivo', archivo)
+    return axiosClient.post<Factura>(`/facturacion/${id}/archivo`, form).then((r) => r.data)
+  },
   /** PATCH /facturacion/{id}/pago — suma el monto; el backend pasa a PARCIAL o PAGADA. */
   registrarPago: (id: number, pago: RegistrarPagoInput) =>
     axiosClient.patch<Factura>(`/facturacion/${id}/pago`, pago).then((r) => r.data),

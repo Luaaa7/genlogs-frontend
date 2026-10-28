@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Ban, Download, Loader2, Receipt, Wallet } from 'lucide-react'
-import { useAnularFactura, useFacturas, useRegistrarPago } from '../hooks/useFacturacion'
+import { Ban, Download, FileText, Loader2, Receipt, Upload, Wallet } from 'lucide-react'
+import { useAnularFactura, useFacturas, useRegistrarPago, useSubirArchivoFactura } from '../hooks/useFacturacion'
 import { RegistrarPagoDialog } from '../components/RegistrarPagoDialog'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { facturacionApi } from '@/api/facturacionApi'
@@ -86,11 +86,26 @@ export function FacturacionPage() {
   const [anulando, setAnulando] = useState<Factura | null>(null)
   const registrarPago = useRegistrarPago()
   const anular = useAnularFactura()
+  const subirArchivo = useSubirArchivoFactura()
+  const [subiendoId, setSubiendoId] = useState<number | null>(null)
   const mensajeError = (err: unknown) =>
     (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? ''
   const { reset: resetPago } = registrarPago
   const cerrarPago = useCallback(() => { setPagando(null); resetPago() }, [resetPago])
   const cerrarAnular = useCallback(() => setAnulando(null), [])
+
+  function subirDocumento(f: Factura, archivo: File | undefined) {
+    if (!archivo) return
+    setErrorAccion(null)
+    setSubiendoId(idDe(f))
+    subirArchivo.mutate(
+      { id: idDe(f), archivo },
+      {
+        onError: (err) => setErrorAccion(`No se pudo subir el documento de ${codigoDe(f)}. ${mensajeError(err)}`.trim()),
+        onSettled: () => setSubiendoId(null),
+      },
+    )
+  }
 
   async function descargar(f: Factura) {
     setErrorAccion(null)
@@ -193,6 +208,34 @@ export function FacturacionPage() {
                       <Td alinear="derecha" className="whitespace-nowrap">{saldoDe(f) > 0 ? formatearMoneda(saldoDe(f), moneda) : '—'}</Td>
                       <Td className="text-right">
                         <div className="flex items-center justify-end gap-1">
+                        {f.urlArchivo && (
+                          <a
+                            href={f.urlArchivo}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label={`Ver documento de SUNAT de ${codigoDe(f)}`}
+                            title="Ver documento de SUNAT"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            <FileText className="h-4 w-4" aria-hidden="true" />
+                          </a>
+                        )}
+                        <label
+                          title={f.urlArchivo ? 'Reemplazar documento de SUNAT' : 'Subir documento de SUNAT'}
+                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-within:ring-2 focus-within:ring-ring"
+                        >
+                          {subiendoId === idDe(f)
+                            ? <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                            : <Upload className="h-4 w-4" aria-hidden="true" />}
+                          <span className="sr-only">{f.urlArchivo ? 'Reemplazar' : 'Subir'} documento de SUNAT de {codigoDe(f)}</span>
+                          <input
+                            type="file"
+                            accept="application/pdf,.pdf"
+                            className="sr-only"
+                            disabled={subiendoId === idDe(f)}
+                            onChange={(e) => { subirDocumento(f, e.target.files?.[0]); e.target.value = '' }}
+                          />
+                        </label>
                         {puedePagar && (
                           <button
                             type="button"

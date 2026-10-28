@@ -22,6 +22,8 @@ export interface Factura {
   fechaVencimiento: string
   montoPagado: number
   observaciones?: string | null
+  /** Documento emitido por SUNAT que se subió (null si aún no se adjunta). */
+  urlArchivo?: string | null
   tipoComprobante?: TipoComprobante
   estadoCodigo?: EstadoFacturacion
   numeroOrdenCompra?: string
@@ -39,7 +41,9 @@ export interface Factura {
   saldoPendiente?: number
   detalles?: DetalleFacturacion[]
 }
-export interface FacturaInput { idOrdenCompra: number; idTipoComprobante: number; idEstadoFacturacion?: number; idCondicionPago: number; idMoneda: number; serieComprobante: string; numeroComprobante?: string; fechaEmision?: string; fechaVencimiento?: string; montoPagado?: number; observaciones?: string }
+/** Línea de la factura: exactamente uno de idProducto / idServicio. */
+export interface LineaFacturaInput { idProducto?: number; idServicio?: number; descripcionPersonalizada?: string; cantidad: number; precioUnitario: number; descuentoUnitario?: number }
+export interface FacturaInput { idOrdenCompra: number; idTipoComprobante: number; idEstadoFacturacion?: number; idCondicionPago: number; idMoneda: number; serieComprobante: string; numeroComprobante: string; fechaEmision?: string; fechaVencimiento?: string; montoPagado?: number; observaciones?: string; lineas: LineaFacturaInput[] }
 export interface FacturacionFiltros { estadoCodigo?: EstadoFacturacion; tipoCodigo?: TipoComprobante; idOrdenCompra?: number; page?: number; size?: number }
 /** Cuerpo de PATCH /facturacion/{id}/pago. fechaPago en formato aaaa-mm-dd. */
 export interface RegistrarPagoInput { montoPagado: number; fechaPago: string; medioPago: string; numeroOperacion?: string }
