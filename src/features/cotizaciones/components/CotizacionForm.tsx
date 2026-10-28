@@ -14,6 +14,7 @@ interface CotizacionFormProps {
   isLoadingClientes?: boolean
 }
 
+// El catálogo de monedas del sistema solo tiene PEN y USD; EUR no se ofrece.
 const MONEDAS: Record<string, string> = { PEN: 'Soles (PEN)', USD: 'Dólares (USD)', EUR: 'Euros (EUR)' }
 
 /** Grupo de opciones tipo "tarjeta" (radio) para valores cortos. */
@@ -100,7 +101,7 @@ export const CotizacionForm: React.FC<CotizacionFormProps> = ({ clientes, isLoad
           <OpcionesRadio
             name="cot-moneda"
             legend="Moneda"
-            opciones={Object.values(Moneda).map((m) => ({ valor: m, label: MONEDAS[m] ?? m }))}
+            opciones={Object.values(Moneda).filter((m) => m !== 'EUR').map((m) => ({ valor: m, label: MONEDAS[m] ?? m }))}
             valor={field.value}
             onChange={field.onChange}
             error={errors.moneda?.message}
