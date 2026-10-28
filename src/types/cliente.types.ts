@@ -28,6 +28,10 @@ export interface ClienteDetalle {
   idCliente: number
   idTercero: number
   tipoDocumento: string
+  /** Ids para precargar el formulario de edición (backend nuevo; pueden faltar). */
+  idTipoDocumento?: number | null
+  idDistrito?: number | null
+  idSectorEconomico?: number | null
   numeroDocumento: string
   razonSocial: string
   direccion?: string | null
