@@ -14,6 +14,7 @@ import { ProductoDetallePage } from '@/features/catalogo-repuestos/pages/Product
 import { NuevoProductoPage } from '@/features/catalogo-repuestos/pages/NuevoProductoPage'
 import { EditarProductoPage } from '@/features/catalogo-repuestos/pages/EditarProductoPage'
 import { CatalogoServiciosPage } from '@/features/catalogo-servicios/pages/CatalogoServiciosPage'
+import { ServicioFormPage } from '@/features/catalogo-servicios/pages/ServicioFormPage'
 import { ReportesPage } from '@/features/reportes/pages/ReportesPage'
 import { CotizacionesListPage } from '@/features/cotizaciones/pages/CotizacionesListPage'
 import { NuevaCotizacionPage } from '@/features/cotizaciones/pages/NuevaCotizacionPage'
@@ -44,6 +45,8 @@ export const router = createBrowserRouter([
     { path: '/catalogo-repuestos/:id', element: <ProductoDetallePage /> },
     { path: '/catalogo-repuestos/:id/editar', element: <EditarProductoPage /> },
     { path: '/catalogo-servicios', element: <CatalogoServiciosPage /> },
+    { path: '/catalogo-servicios/nuevo', element: <ServicioFormPage /> },
+    { path: '/catalogo-servicios/:id/editar', element: <ServicioFormPage /> },
     { path: '/reportes', element: <ReportesPage /> },
     { path: '/cotizaciones', element: <CotizacionesListPage /> },
     { path: '/cotizaciones/nueva', element: <NuevaCotizacionPage /> },

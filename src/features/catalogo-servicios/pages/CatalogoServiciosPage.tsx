@@ -1,20 +1,18 @@
 import { useMemo, useState } from "react"
-import { avisar } from "@/lib/avisos"
+import { useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import { Wrench } from "lucide-react"
 import { listarCategoriasServicio } from "@/api/categoriasServicioApi"
-import { useServicios, useCrearServicio, useActualizarServicio, useDesactivarServicio } from "../hooks/useServicios"
-import { ServicioForm } from "../components/ServicioForm"
+import { useServicios, useDesactivarServicio } from "../hooks/useServicios"
 import { ServicioCard, ServicioCardSkeleton } from "../components/ServicioCard"
 import { CategoriaServicioSelector } from "../components/CategoriaServicioSelector"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
 import type { Servicio } from "@/types/servicio.types"
-import type { ServicioConImagen } from "@/api/serviciosApi"
 
 export function CatalogoServiciosPage() {
-  const [mostrarForm, setMostrarForm] = useState(false)
-  const [servicioEditando, setServicioEditando] = useState<Servicio | null>(null)
+  // Nuevo y Editar abren su propia página (antes el formulario salía arriba del catálogo).
+  const navigate = useNavigate()
   const [servicioADesactivar, setServicioADesactivar] = useState<Servicio | null>(null)
   const [busqueda, setBusqueda] = useState("")
   const [idCategoria, setIdCategoria] = useState<number | undefined>(undefined)
@@ -25,8 +23,6 @@ export function CatalogoServiciosPage() {
     queryFn: listarCategoriasServicio,
   })
   const { data: servicios, isLoading, isError } = useServicios(idCategoria, !mostrarInactivos)
-  const crear = useCrearServicio()
-  const actualizar = useActualizarServicio(servicioEditando?.idServicio ?? 0)
   const desactivar = useDesactivarServicio()
 
   // La búsqueda por texto se resuelve en el cliente: el endpoint solo filtra por categoría y estado.
@@ -41,13 +37,11 @@ export function CatalogoServiciosPage() {
   }, [servicios, busqueda])
 
   function handleNuevo() {
-    setServicioEditando(null)
-    setMostrarForm(true)
+    navigate("/catalogo-servicios/nuevo")
   }
 
   function handleEditar(servicio: Servicio) {
-    setServicioEditando(servicio)
-    setMostrarForm(true)
+    navigate(`/catalogo-servicios/${servicio.idServicio}/editar`)
   }
 
   function handleDesactivar(servicio: Servicio) {
@@ -59,24 +53,6 @@ export function CatalogoServiciosPage() {
     desactivar.mutate(servicioADesactivar.idServicio, {
       onSuccess: () => setServicioADesactivar(null),
     })
-  }
-
-  function handleSubmit(valores: ServicioConImagen) {
-    if (servicioEditando) {
-      actualizar.mutate(valores, {
-        onSuccess: () => {
-          setMostrarForm(false)
-          avisar(`Servicio ${valores.nombreServicio} actualizado`)
-        },
-      })
-    } else {
-      crear.mutate(valores, {
-        onSuccess: () => {
-          setMostrarForm(false)
-          avisar(`Servicio ${valores.nombreServicio} registrado`)
-        },
-      })
-    }
   }
 
   const hayFiltros = busqueda.trim() !== "" || idCategoria !== undefined
@@ -95,42 +71,6 @@ export function CatalogoServiciosPage() {
           + Nuevo servicio
         </button>
       </div>
-
-      {mostrarForm && (
-        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">
-              {servicioEditando ? "Editar servicio" : "Nuevo servicio"}
-            </h2>
-            <button onClick={() => setMostrarForm(false)} className="text-sm text-muted-foreground hover:text-foreground">
-              Cancelar
-            </button>
-          </div>
-          <ServicioForm
-            key={servicioEditando?.idServicio ?? "nuevo"}
-            valoresIniciales={
-              servicioEditando
-                ? {
-                    idCategoriaServicio: servicioEditando.categoriaServicio?.idCategoriaServicio,
-                    idUnidadMedida: servicioEditando.unidadMedida?.idUnidadMedida,
-                    codigoServicio: servicioEditando.codigoServicio,
-                    nombreServicio: servicioEditando.nombreServicio,
-                    duracionEstimadaHoras: servicioEditando.duracionEstimadaHoras,
-                    visibleWeb: servicioEditando.visibleWeb,
-                    descripcion: servicioEditando.descripcion,
-                  }
-                : undefined
-            }
-            onSubmit={handleSubmit}
-            enviando={crear.isPending || actualizar.isPending}
-          />
-          {(crear.isError || actualizar.isError) && (
-            <p role="alert" className="mt-3 text-sm text-destructive">
-              No se pudo guardar el servicio. Revisa los datos e intenta de nuevo.
-            </p>
-          )}
-        </div>
-      )}
 
       <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-sm">
         <input
