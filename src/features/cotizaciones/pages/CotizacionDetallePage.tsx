@@ -10,6 +10,7 @@ import { useFacturas } from '@/features/facturacion/hooks/useFacturacion';
 import { SeguimientoTimeline } from '../components/SeguimientoTimeline';
 import { AdjuntoCotizacionUploader } from '../components/AdjuntoCotizacionUploader';
 import { ConfirmacionEnvioModal } from '../components/ConfirmacionEnvioModal';
+import { RegistrarOrdenCompraModal } from '@/features/ordenes-compra/components/RegistrarOrdenCompraModal';
 import { PipelineBreadcrumb, type PipelineStep } from '@/components/ui/PipelineBreadcrumb';
 import { Button } from '@/components/ui/button';
 import { EstadoBadge } from '@/components/ui/EstadoBadge';
@@ -117,6 +118,7 @@ export const CotizacionDetallePage: React.FC = () => {
   const facturaGenerada = facturasData?.content?.find((f) => f.idOrdenCompra === ordenGenerada?.idOrdenCompra);
 
   const [showEnvioModal, setShowEnvioModal] = useState(false);
+  const [showOrdenModal, setShowOrdenModal] = useState(false);
   const [menuEstado, setMenuEstado] = useState(false);
   const [errorAccion, setErrorAccion] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -234,8 +236,9 @@ export const CotizacionDetallePage: React.FC = () => {
     );
   } else if (estado === 'APROBADA' && !ordenGenerada) {
     accionPrincipal = (
-      <Button asChild>
-        <Link to="/ordenes-compra"><ShoppingCart className="mr-2 h-4 w-4" aria-hidden="true" />Registrar orden de compra</Link>
+      <Button onClick={() => setShowOrdenModal(true)}>
+        <ShoppingCart className="mr-2 h-4 w-4" aria-hidden="true" />
+        Registrar orden de compra
       </Button>
     );
   }
@@ -417,6 +420,13 @@ export const CotizacionDetallePage: React.FC = () => {
         </aside>
       </div>
 
+      <RegistrarOrdenCompraModal
+        isOpen={showOrdenModal}
+        onClose={() => setShowOrdenModal(false)}
+        idCotizacion={cotizacionId || 0}
+        idCondicionPago={cotizacion.idCondicionPago}
+        codigoCotizacion={cotizacion.codigoCotizacion ?? cotizacion.codigo}
+      />
       <ConfirmacionEnvioModal
         isOpen={showEnvioModal}
         onClose={() => setShowEnvioModal(false)}
