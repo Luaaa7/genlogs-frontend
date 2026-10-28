@@ -19,7 +19,6 @@ export const clientesApi = {
   // GET/POST /clientes: sí pasan por ClienteResponse (DTO plano).
   obtener: (id: number) => axiosClient.get<ClienteDetalle>(`${RECURSO}/${id}`).then((r) => r.data),
   crear: (data: ClienteRequest) => axiosClient.post<ClienteDetalle>(RECURSO, data).then((r) => r.data),
-  // Nota: el backend no tiene PUT /clientes/{id} todavía — este método no
-  // tiene a quién llamar y ninguna pantalla lo invoca hoy.
+  // PUT /clientes/{id}: edita los datos del tercero y el sector.
   actualizar: (id: number, data: ClienteRequest) => axiosClient.put<ClienteDetalle>(`${RECURSO}/${id}`, data).then((r) => r.data),
 }

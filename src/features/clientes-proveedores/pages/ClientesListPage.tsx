@@ -58,6 +58,7 @@ export default function ClientesListPage() {
   // Antes se forzaba a 1 y al guardar se pisaba el sector verdadero (#2).
   const normalizar = (t?: string | null) => (t ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
   const idSectorReal =
+    clienteDetalle?.idSectorEconomico ??
     clienteEditando?.sectorEconomico?.idSectorEconomico ??
     sectores.find((s) => normalizar(s.nombreSector) === normalizar(clienteDetalle?.sectorEconomico))?.idSectorEconomico;
   const TIPO_DOC: Record<string, number> = { RUC: 1, DNI: 2, CE: 3, PASAPORTE: 4 };
@@ -68,7 +69,9 @@ export default function ClientesListPage() {
   const valoresIniciales = detalleListo && clienteDetalle
     ? {
         tercero: {
-          idTipoDocumento: TIPO_DOC[(clienteDetalle.tipoDocumento ?? '').toUpperCase()] ?? 1,
+          idTipoDocumento: clienteDetalle.idTipoDocumento ?? TIPO_DOC[(clienteDetalle.tipoDocumento ?? '').toUpperCase()] ?? 1,
+          // Sin esto el formulario abría sin distrito y no dejaba guardar.
+          idDistrito: clienteDetalle.idDistrito ?? clienteEditando?.tercero?.distrito?.idDistrito ?? undefined,
           numeroDocumento: clienteDetalle.numeroDocumento,
           razonSocial: clienteDetalle.razonSocial,
           direccion: clienteDetalle.direccion ?? '',
