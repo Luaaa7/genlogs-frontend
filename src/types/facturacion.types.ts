@@ -24,6 +24,12 @@ export interface Factura {
   observaciones?: string | null
   /** Documento emitido por SUNAT que se subió (null si aún no se adjunta). */
   urlArchivo?: string | null
+  /** SIMULADO (prueba, sin valor tributario), PROVEEDOR (real) o null si se registró desde el portal de SUNAT. */
+  sunatModo?: 'SIMULADO' | 'PROVEEDOR' | string | null
+  sunatEstado?: string | null
+  sunatMensaje?: string | null
+  /** Correo del cliente para "Enviar al cliente". */
+  clienteEmail?: string | null
   tipoComprobante?: TipoComprobante
   estadoCodigo?: EstadoFacturacion
   numeroOrdenCompra?: string
@@ -47,3 +53,9 @@ export interface FacturaInput { idOrdenCompra: number; idTipoComprobante: number
 export interface FacturacionFiltros { estadoCodigo?: EstadoFacturacion; tipoCodigo?: TipoComprobante; idOrdenCompra?: number; page?: number; size?: number }
 /** Cuerpo de PATCH /facturacion/{id}/pago. fechaPago en formato aaaa-mm-dd. */
 export interface RegistrarPagoInput { montoPagado: number; fechaPago: string; medioPago: string; numeroOperacion?: string }
+/** POST /facturacion/emitir: como FacturaInput pero sin serie ni número (los pone el sistema). */
+export type EmitirFacturaInput = Omit<FacturaInput, 'serieComprobante' | 'numeroComprobante' | 'idEstadoFacturacion' | 'montoPagado' | 'observaciones'>
+/** GET /facturacion/sunat */
+export interface SunatConfig { modo: 'SIMULADO' | 'PROVEEDOR' | string; simulado: boolean; serieFactura: string; serieBoleta: string }
+/** POST /facturacion/{id}/enviar (mismo cuerpo que el envío de cotizaciones). */
+export interface EnviarComprobanteInput { correoDestinatario: string; asunto: string; mensaje: string; incluirDetalles: boolean }

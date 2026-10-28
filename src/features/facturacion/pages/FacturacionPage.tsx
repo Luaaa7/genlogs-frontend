@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Ban, Download, FileText, Loader2, Receipt, Upload, Wallet } from 'lucide-react'
+import { Ban, Download, FileText, Loader2, Receipt, Send, Upload, Wallet } from 'lucide-react'
 import { useAnularFactura, useFacturas, useRegistrarPago, useSubirArchivoFactura } from '../hooks/useFacturacion'
 import { RegistrarPagoDialog } from '../components/RegistrarPagoDialog'
+import { EnviarFacturaModal } from '../components/EnviarFacturaModal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { facturacionApi } from '@/api/facturacionApi'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
@@ -84,6 +85,7 @@ export function FacturacionPage() {
 
   const [pagando, setPagando] = useState<Factura | null>(null)
   const [anulando, setAnulando] = useState<Factura | null>(null)
+  const [enviando, setEnviando] = useState<Factura | null>(null)
   const registrarPago = useRegistrarPago()
   const anular = useAnularFactura()
   const subirArchivo = useSubirArchivoFactura()
@@ -195,6 +197,14 @@ export function FacturacionPage() {
                       <Td className="whitespace-nowrap">
                         <p className="font-medium tabular-nums">{codigoDe(f)}</p>
                         {tipo && <p className="text-xs text-muted-foreground">{TIPOS_COMPROBANTE[tipo] ?? tipo}</p>}
+                        {f.sunatModo === 'SIMULADO' && (
+                          <span
+                            title="Emitida en modo simulación: no se envió a SUNAT y no tiene valor tributario"
+                            className="mt-1 inline-block rounded bg-warning/15 px-1.5 py-0.5 text-[11px] font-medium text-warning-text"
+                          >
+                            Simulación
+                          </span>
+                        )}
                       </Td>
                       <Td>{f.clienteNombre ?? f.cliente ?? '—'}</Td>
                       <Td className="whitespace-nowrap tabular-nums">{f.numeroOrdenCompra ?? `#${f.idOrdenCompra}`}</Td>
@@ -236,6 +246,17 @@ export function FacturacionPage() {
                             onChange={(e) => { subirDocumento(f, e.target.files?.[0]); e.target.value = '' }}
                           />
                         </label>
+                        {real !== 'ANULADA' && (
+                          <button
+                            type="button"
+                            onClick={() => setEnviando(f)}
+                            aria-label={`Enviar ${codigoDe(f)} al cliente`}
+                            title="Enviar al cliente"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            <Send className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                        )}
                         {puedePagar && (
                           <button
                             type="button"
@@ -294,6 +315,10 @@ export function FacturacionPage() {
           registrarPago.mutate({ id: idDe(pagando), pago }, { onSuccess: () => setPagando(null) })
         }}
       />
+
+      {enviando && (
+        <EnviarFacturaModal factura={enviando} codigo={codigoDe(enviando)} onClose={() => setEnviando(null)} />
+      )}
 
       <ConfirmDialog
         open={!!anulando}
