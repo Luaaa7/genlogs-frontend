@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react'
-import { FileText, Loader2, Trash2, X } from 'lucide-react'
-import { useCrearFactura, useSubirArchivoFactura, useTiposComprobante } from '../hooks/useFacturacion'
+import { FileText, FlaskConical, Loader2, Trash2, X } from 'lucide-react'
+import { useCrearFactura, useEmitirFactura, useSubirArchivoFactura, useSunatConfig, useTiposComprobante } from '../hooks/useFacturacion'
+import { avisar } from '@/lib/avisos'
 import type { CotizacionDetalle } from '@/types/cotizacion.types'
 
 interface RegistrarFacturaModalProps {
@@ -42,8 +43,12 @@ function mensajeDe(err: unknown, porDefecto: string): string {
 }
 
 /**
- * Registra una factura (o boleta) que ya emitió SUNAT: se guarda su serie y número,
- * las líneas (precargadas de la cotización y editables) y el documento que generó SUNAT.
+ * Dos formas de dar de alta el comprobante:
+ * - "Emitir desde GENLOGS": el sistema pone serie y número y lo manda al emisor
+ *   configurado (hoy SIMULADO: no llega a SUNAT y el PDF lleva marca de agua).
+ * - "Registrar uno ya emitido": se copia la serie y número del portal de SUNAT y se
+ *   sube su documento.
+ * En ambos, las líneas vienen precargadas de la cotización y se pueden editar.
  */
 export const RegistrarFacturaModal: React.FC<RegistrarFacturaModalProps> = ({
   isOpen,
@@ -57,6 +62,8 @@ export const RegistrarFacturaModal: React.FC<RegistrarFacturaModalProps> = ({
   const { data: tipos = [] } = useTiposComprobante()
   const { mutateAsync: crear, isPending: creando } = useCrearFactura()
   const { mutateAsync: subir, isPending: subiendo } = useSubirArchivoFactura()
+  const { mutateAsync: emitirFactura, isPending: emitiendo } = useEmitirFactura()
+  const { data: sunat } = useSunatConfig()
 
   const lineasIniciales = useMemo<LineaEditable[]>(
     () =>
@@ -82,13 +89,20 @@ export const RegistrarFacturaModal: React.FC<RegistrarFacturaModalProps> = ({
   const [lineas, setLineas] = useState<LineaEditable[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [idCreada, setIdCreada] = useState<number | null>(null)
+  const [forma, setForma] = useState<'emitir' | 'registrar'>('emitir')
 
   if (!isOpen) return null
 
   const lineasActuales = lineas ?? lineasIniciales
-  const tipoElegido = tipos.find((t) => t.idTipoComprobante === idTipo) ?? tipos.find((t) => t.codigoTipo === 'FACTURA') ?? tipos[0]
+  const emitir = forma === 'emitir'
+  // Desde GENLOGS solo se emiten facturas y boletas; las notas se registran con su documento.
+  const tiposVisibles = emitir ? tipos.filter((t) => t.codigoTipo === 'FACTURA' || t.codigoTipo === 'BOLETA') : tipos
+  const tipoElegido =
+    tiposVisibles.find((t) => t.idTipoComprobante === idTipo) ?? tiposVisibles.find((t) => t.codigoTipo === 'FACTURA') ?? tiposVisibles[0]
   const serieActual = serie ?? (tipoElegido ? `${tipoElegido.seriePrefijo}001` : '')
-  const ocupado = creando || subiendo
+  const serieEmision = tipoElegido?.codigoTipo === 'BOLETA' ? sunat?.serieBoleta ?? 'B001' : sunat?.serieFactura ?? 'F001'
+  const simulado = sunat?.simulado ?? true
+  const ocupado = creando || subiendo || emitiendo
 
   const cambiarLinea = (clave: number, cambios: Partial<LineaEditable>) =>
     setLineas(lineasActuales.map((l) => (l.clave === clave ? { ...l, ...cambios } : l)))
@@ -117,12 +131,38 @@ export const RegistrarFacturaModal: React.FC<RegistrarFacturaModalProps> = ({
     }
 
     if (!tipoElegido) return setError('Aún no se cargaron los tipos de comprobante. Inténtalo de nuevo.')
-    if (!SERIE.test(serieActual.trim())) return setError('La serie debe ser una letra y tres números, por ejemplo F001.')
-    if (!NUMERO.test(numero.trim())) return setError('El número del comprobante debe tener entre 1 y 8 dígitos.')
+    if (!emitir && !SERIE.test(serieActual.trim())) return setError('La serie debe ser una letra y tres números, por ejemplo F001.')
+    if (!emitir && !NUMERO.test(numero.trim())) return setError('El número del comprobante debe tener entre 1 y 8 dígitos.')
     if (lineasActuales.length === 0) return setError('La factura necesita al menos un ítem.')
     for (const l of lineasActuales) {
       if (!(Number(l.cantidad) > 0)) return setError(`La cantidad de "${l.nombre}" debe ser mayor que 0.`)
       if (!(Number(l.precio) >= 0) || l.precio.trim() === '') return setError(`Revisa el precio de "${l.nombre}".`)
+    }
+
+    const lineasPayload = lineasActuales.map((l) => ({
+      idProducto: l.idProducto,
+      idServicio: l.idServicio,
+      cantidad: Number(l.cantidad),
+      precioUnitario: Number(l.precio),
+      descuentoUnitario: l.descuento || undefined,
+    }))
+
+    if (emitir) {
+      try {
+        const factura = await emitirFactura({
+          idOrdenCompra,
+          idTipoComprobante: tipoElegido.idTipoComprobante,
+          idCondicionPago,
+          idMoneda,
+          fechaEmision: fecha || undefined,
+          lineas: lineasPayload,
+        })
+        avisar(`${tipoElegido.nombreTipo} ${factura.codigoComprobante ?? ''} emitida${factura.sunatModo === 'SIMULADO' ? ' (simulación)' : ''}`.replace(/\s+/g, ' '))
+        onClose()
+      } catch (err) {
+        setError(mensajeDe(err, 'No se pudo emitir el comprobante. Revisa los datos e inténtalo de nuevo.'))
+      }
+      return
     }
 
     try {
@@ -134,13 +174,7 @@ export const RegistrarFacturaModal: React.FC<RegistrarFacturaModalProps> = ({
         serieComprobante: serieActual.trim(),
         numeroComprobante: numero.trim(),
         fechaEmision: fecha || undefined,
-        lineas: lineasActuales.map((l) => ({
-          idProducto: l.idProducto,
-          idServicio: l.idServicio,
-          cantidad: Number(l.cantidad),
-          precioUnitario: Number(l.precio),
-          descuentoUnitario: l.descuento || undefined,
-        })),
+        lineas: lineasPayload,
       })
       const id = factura.idFacturacion ?? factura.id
       if (id) setIdCreada(id)
@@ -154,18 +188,52 @@ export const RegistrarFacturaModal: React.FC<RegistrarFacturaModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4" role="dialog" aria-modal="true">
       <div className="my-auto w-full max-w-2xl rounded-lg bg-card p-6 shadow-xl">
         <div className="flex items-center justify-between border-b pb-3">
-          <h3 className="text-lg font-semibold text-foreground">Registrar factura</h3>
+          <h3 className="text-lg font-semibold text-foreground">{emitir ? 'Emitir comprobante' : 'Registrar factura'}</h3>
           <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground" aria-label="Cerrar">
             <X className="h-5 w-5" />
           </button>
         </div>
+        <div role="radiogroup" aria-label="Cómo dar de alta el comprobante" className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {([
+            ['emitir', 'Emitir desde GENLOGS', 'El sistema pone la serie y el número.'],
+            ['registrar', 'Registrar uno ya emitido', 'Lo emitiste en el portal de SUNAT.'],
+          ] as const).map(([valor, titulo, ayuda]) => (
+            <button
+              key={valor}
+              type="button"
+              role="radio"
+              aria-checked={forma === valor}
+              disabled={ocupado || idCreada !== null}
+              onClick={() => { setForma(valor); setIdTipo(null); setSerie(null); setError(null) }}
+              className={`rounded-lg border p-3 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                forma === valor ? 'border-accent bg-accent/5' : 'border-border hover:bg-muted'
+              }`}
+            >
+              <span className="block font-medium text-foreground">{titulo}</span>
+              <span className="block text-xs text-muted-foreground">{ayuda}</span>
+            </button>
+          ))}
+        </div>
+
         <p className="mt-3 text-sm text-muted-foreground">
-          Registra el comprobante que ya emitió SUNAT{numeroOrdenCompra ? ` para la orden ${numeroOrdenCompra}` : ''}.
+          {emitir
+            ? `Se emitirá como ${serieEmision}-(siguiente número)${numeroOrdenCompra ? ` para la orden ${numeroOrdenCompra}` : ''}.`
+            : `Registra el comprobante que ya emitió SUNAT${numeroOrdenCompra ? ` para la orden ${numeroOrdenCompra}` : ''}.`}
         </p>
+
+        {emitir && simulado && (
+          <p className="mt-3 flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning-text">
+            <FlaskConical className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>
+              <strong>Modo simulación:</strong> no se envía a SUNAT y no tiene valor tributario. El PDF sale con la marca de agua
+              “SIMULACIÓN”.
+            </span>
+          </p>
+        )}
 
         <form onSubmit={enviar} className="mt-4 space-y-4">
           <fieldset disabled={ocupado || idCreada !== null} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className={`grid grid-cols-1 gap-4 ${emitir ? '' : 'sm:grid-cols-3'}`}>
               <div>
                 <label htmlFor="fa-tipo" className="block text-sm font-medium text-foreground">Tipo de comprobante</label>
                 <select
@@ -177,11 +245,12 @@ export const RegistrarFacturaModal: React.FC<RegistrarFacturaModalProps> = ({
                     setSerie(null)
                   }}
                 >
-                  {tipos.map((t) => (
+                  {tiposVisibles.map((t) => (
                     <option key={t.idTipoComprobante} value={t.idTipoComprobante}>{t.nombreTipo}</option>
                   ))}
                 </select>
               </div>
+              {!emitir && (<>
               <div>
                 <label htmlFor="fa-serie" className="block text-sm font-medium text-foreground">
                   Serie <span className="text-destructive">*</span>
@@ -194,8 +263,11 @@ export const RegistrarFacturaModal: React.FC<RegistrarFacturaModalProps> = ({
                 </label>
                 <input id="fa-numero" value={numero} onChange={(e) => setNumero(e.target.value.replace(/\D/g, ''))} maxLength={8} inputMode="numeric" className={campo} placeholder="00000001" />
               </div>
+              </>)}
             </div>
-            <p className="-mt-2 text-xs text-muted-foreground">Serie y número tal como salen en el documento de SUNAT (F001-00000001).</p>
+            {!emitir && (
+              <p className="-mt-2 text-xs text-muted-foreground">Serie y número tal como salen en el documento de SUNAT (F001-00000001).</p>
+            )}
 
             <div>
               <label htmlFor="fa-fecha" className="block text-sm font-medium text-foreground">Fecha de emisión</label>
@@ -239,6 +311,7 @@ export const RegistrarFacturaModal: React.FC<RegistrarFacturaModalProps> = ({
               </ul>
             </div>
 
+            {!emitir && (
             <div>
               <label htmlFor="fa-archivo" className="block text-sm font-medium text-foreground">
                 Documento de SUNAT <span className="text-muted-foreground">(PDF, opcional)</span>
@@ -256,6 +329,7 @@ export const RegistrarFacturaModal: React.FC<RegistrarFacturaModalProps> = ({
                 </p>
               )}
             </div>
+            )}
           </fieldset>
 
           {error && (
@@ -270,7 +344,7 @@ export const RegistrarFacturaModal: React.FC<RegistrarFacturaModalProps> = ({
             </button>
             <button type="submit" disabled={ocupado} className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:opacity-50">
               {ocupado && <Loader2 className="h-4 w-4 animate-spin" />}
-              {idCreada ? 'Reintentar subida' : 'Registrar factura'}
+              {idCreada ? 'Reintentar subida' : emitir ? (simulado ? 'Emitir (simulación)' : 'Emitir') : 'Registrar factura'}
             </button>
           </div>
         </form>

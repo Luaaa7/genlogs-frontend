@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { facturacionApi } from '@/api/facturacionApi'
-import type { FacturacionFiltros, FacturaInput, RegistrarPagoInput } from '@/types/facturacion.types'
+import type { EmitirFacturaInput, EnviarComprobanteInput, FacturacionFiltros, FacturaInput, RegistrarPagoInput } from '@/types/facturacion.types'
 
 export const facturacionKeys = {
   all: ['facturacion'] as const,
@@ -44,5 +44,23 @@ export function useAnularFactura() {
   return useMutation({
     mutationFn: (id: number) => facturacionApi.anular(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: facturacionKeys.all }),
+  })
+}
+export function useEmitirFactura() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: EmitirFacturaInput) => facturacionApi.emitir(data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: facturacionKeys.all }),
+  })
+}
+
+/** Modo de emisión configurado en el backend (SUNAT_MODO). */
+export function useSunatConfig() {
+  return useQuery({ queryKey: ['facturacion', 'sunat'], queryFn: facturacionApi.sunatConfig, staleTime: 10 * 60 * 1000 })
+}
+
+export function useEnviarFactura() {
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: EnviarComprobanteInput }) => facturacionApi.enviar(id, data),
   })
 }
