@@ -45,9 +45,12 @@ const ESTADOS_FINALES = new Set<EstadoCotizacion>([
  * Solo se muestran en el menú los estados a los que puede pasarse la cotización.
  */
 const TRANSICIONES_ESTADOS: Record<EstadoCotizacion, EstadoCotizacion[]> = {
+  // Aprobada también desde Borrador: a veces el cliente acepta sin que se le haya
+  // enviado por el sistema (por teléfono, en persona o por su propio correo).
   [EstadoCotizacion.BORRADOR]: [
     EstadoCotizacion.ENVIADA,
     EstadoCotizacion.EN_NEGOCIACION,
+    EstadoCotizacion.APROBADA,
     EstadoCotizacion.RECHAZADA,
     EstadoCotizacion.ANULADA,
   ],
