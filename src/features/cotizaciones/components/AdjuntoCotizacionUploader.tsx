@@ -200,7 +200,7 @@ export const AdjuntoCotizacionUploader: React.FC<AdjuntoCotizacionUploaderProps>
                       {adjunto.nombreArchivo}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {formatearTamanioArchivo(adjunto.tamanio)} •{' '}
+                      {adjunto.tamanio > 0 && `${formatearTamanioArchivo(adjunto.tamanio)} • `}
                       {formatearFecha(adjunto.fechaSubida || new Date())}
                       {adjunto.subidoPor && ` • Por: ${adjunto.subidoPor}`}
                     </p>

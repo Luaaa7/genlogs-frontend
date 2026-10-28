@@ -80,8 +80,9 @@ export const cotizacionesApi = {
       urlArchivo: a.urlArchivo,
       urlCloudinary: a.urlArchivo,
       tipoArchivo: String(a.nombreArchivo ?? '').split('.').pop() ?? '',
-      tamanio: 0,
-      subidoPor: '',
+      tamanio: a.tamanio ?? 0,
+      fechaSubida: a.fechaSubida ?? undefined,
+      subidoPor: a.subidoPor ?? '',
     }))
     /* eslint-enable @typescript-eslint/no-explicit-any */
     // El backend manda el nombre del estado ("En negociación"); la pantalla
