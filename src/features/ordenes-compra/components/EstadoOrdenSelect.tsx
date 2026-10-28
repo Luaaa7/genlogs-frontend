@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import type { AxiosError } from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/features/auth/store/authStore'
+import { avisar } from '@/lib/avisos'
 import { Check, ChevronDown, Loader2 } from 'lucide-react'
 import { useCambiarEstadoOrdenCompra } from '../hooks/useOrdenesCompra'
 import { EstadoBadge, type EstadoBadgeTono } from '@/components/ui/EstadoBadge'
@@ -104,9 +105,17 @@ export function EstadoOrdenSelect({ idOrden, idCotizacion, estadoActual, numero,
   function elegir(nuevo: EstadoOrdenCompra) {
     setAbierto(false)
     mutate(nuevo, {
-      // Orden atendida = siguiente paso, la factura: se abre su cotización con el formulario listo.
-      onSuccess: () => {
-        if (nuevo === 'ATENDIDA' && idCotizacion) navigate(`/cotizaciones/${idCotizacion}?facturar=1`)
+      // Orden atendida = el backend emite sola la factura (o boleta) y se va a verla.
+      // Si no pudo (por ejemplo, ítems sin catálogo), se abre la cotización para emitirla a mano.
+      onSuccess: (orden) => {
+        if (nuevo !== 'ATENDIDA') return
+        if (orden?.comprobanteEmitido) {
+          avisar(`Orden ${numero} atendida: se emitió el comprobante ${orden.comprobanteEmitido}`)
+          navigate(`/facturacion?idOrdenCompra=${idOrden}`)
+        } else if (orden?.avisoComprobante) {
+          onError(`La orden ${numero} quedó atendida, pero el comprobante no se emitió solo: ${orden.avisoComprobante}`)
+          if (idCotizacion) navigate(`/cotizaciones/${idCotizacion}?facturar=1`)
+        }
       },
       onError: (err) =>
         onError(`No se pudo cambiar el estado de la orden ${numero}. ${(err as AxiosError<{ message?: string }>).response?.data?.message ?? ''}`.trim()),

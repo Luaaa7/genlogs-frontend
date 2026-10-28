@@ -22,6 +22,10 @@ export interface OrdenCompra {
   moneda?: string
   total: number
   estado?: string
+  /** Al pasar a ATENDIDA: comprobante que se emitió solo (F001-00000008). */
+  comprobanteEmitido?: string | null
+  /** Al pasar a ATENDIDA: por qué no se pudo emitir solo. */
+  avisoComprobante?: string | null
 }
 export interface OrdenCompraInput { idCotizacion: number; idEstadoOrdenCompra?: number; idCondicionPago: number; numeroOrdenCompra: string; fechaEmisionCliente?: string; fechaRecepcion?: string; urlArchivo?: string; observaciones?: string }
 export interface OrdenCompraFiltros { estadoCodigo?: EstadoOrdenCompra; idCotizacion?: number; page?: number; size?: number }

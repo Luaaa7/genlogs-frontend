@@ -69,9 +69,9 @@ export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando }:
   }
 
   return (
-    <form onSubmit={handleSubmit((valores) => onSubmit({ ...valores, imagenUrl }))} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit((valores) => onSubmit({ ...valores, imagenUrl }))} className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
       <div>
-        <label className="text-sm font-medium">Código de servicio</label>
+        <label className="mb-1.5 block text-sm font-medium text-foreground">Código de servicio</label>
         <input
           {...register("codigoServicio")}
           className="w-full rounded-md border border-border px-3 py-2 text-sm"
@@ -80,7 +80,7 @@ export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando }:
       </div>
 
       <div>
-        <label className="text-sm font-medium">Nombre del servicio</label>
+        <label className="mb-1.5 block text-sm font-medium text-foreground">Nombre del servicio</label>
         <input
           {...register("nombreServicio")}
           className="w-full rounded-md border border-border px-3 py-2 text-sm"
@@ -89,7 +89,7 @@ export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando }:
       </div>
 
       <div>
-        <label className="text-sm font-medium">Categoría de servicio</label>
+        <label className="mb-1.5 block text-sm font-medium text-foreground">Categoría de servicio</label>
         <CategoriaServicioSelector
           categorias={categorias}
           isLoading={cargandoCategorias}
@@ -103,7 +103,7 @@ export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando }:
       </div>
 
       <div>
-        <label className="text-sm font-medium">Unidad de medida</label>
+        <label className="mb-1.5 block text-sm font-medium text-foreground">Unidad de medida</label>
         <select
           value={Number.isFinite(idUnidadSeleccionada) ? idUnidadSeleccionada : ""}
           onChange={(e) =>
@@ -125,7 +125,7 @@ export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando }:
       </div>
 
       <div>
-        <label className="text-sm font-medium">Duración estimada (horas)</label>
+        <label className="mb-1.5 block text-sm font-medium text-foreground">Duración estimada (horas)</label>
         <input
           type="number"
           step="0.5"
@@ -162,8 +162,13 @@ export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando }:
         )}
       </div>
 
-      <div>
-        <label className="text-sm font-medium">Descripción</label>
+      <div className="flex items-center gap-2 sm:pt-8">
+        <input type="checkbox" {...register("visibleWeb")} id="visibleWeb" />
+        <label htmlFor="visibleWeb" className="text-sm">Visible en la web pública</label>
+      </div>
+
+      <div className="sm:col-span-2">
+        <label className="mb-1.5 block text-sm font-medium text-foreground">Descripción</label>
         <textarea
           {...register("descripcion")}
           rows={3}
@@ -172,8 +177,8 @@ export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando }:
         {errors.descripcion && <p className="text-sm text-destructive">{errors.descripcion.message}</p>}
       </div>
 
-      <div>
-        <label className="text-sm font-medium mb-2 block">Sectores económicos</label>
+      <div className="sm:col-span-2">
+        <label className="mb-2 block text-sm font-medium text-foreground">Sectores económicos</label>
         <div className="flex flex-wrap gap-3">
           {cargandoSectores && <p className="text-sm text-muted-foreground">Cargando sectores...</p>}
           {sectores?.map((sector) => (
@@ -189,11 +194,7 @@ export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando }:
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <input type="checkbox" {...register("visibleWeb")} id="visibleWeb" />
-        <label htmlFor="visibleWeb" className="text-sm">Visible en la web pública</label>
-      </div>
-
+      <div className="sm:col-span-2">
       <FileUploader
         tipo="imagen"
         label="Imagen del servicio"
@@ -201,7 +202,9 @@ export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando }:
         onUploaded={(resultado) => setImagenUrl(resultado.url)}
       />
 
-      <div className="mt-2 flex justify-end gap-3 border-t border-border pt-4">
+      </div>
+
+      <div className="mt-2 flex justify-end gap-3 border-t border-border pt-4 sm:col-span-2">
         {onCancel && (
           <button
             type="button"

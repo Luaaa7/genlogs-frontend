@@ -52,7 +52,7 @@ export function ServicioFormPage() {
   }
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
       <Link
         to="/catalogo-servicios"
         className="inline-flex w-fit items-center gap-1.5 rounded text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -86,7 +86,7 @@ export function ServicioFormPage() {
       )}
 
       {(!editando || servicio) && (
-        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-8">
           <ServicioForm
             key={servicio?.idServicio ?? "nuevo"}
             valoresIniciales={
