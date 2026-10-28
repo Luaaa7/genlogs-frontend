@@ -29,14 +29,27 @@ export async function asociarImagenServicio(idServicio: number, urlImagen: strin
   await axiosClient.post(`/servicios/${idServicio}/imagenes`, { urlImagen, esPrincipal: true })
 }
 
+/**
+ * El backend recibe la entidad Servicio: categoría y unidad de medida van como objetos
+ * anidados ({ idCategoriaServicio }, { idUnidadMedida }), no como ids sueltos.
+ */
+function aCuerpoServicio(valores: ServicioFormValues) {
+  const { idCategoriaServicio, idUnidadMedida, ...resto } = valores
+  return {
+    ...resto,
+    categoriaServicio: { idCategoriaServicio },
+    unidadMedida: { idUnidadMedida },
+  }
+}
+
 export async function registrarServicio({ imagenUrl, ...valores }: ServicioConImagen): Promise<Servicio> {
-  const { data } = await axiosClient.post<Servicio>("/servicios", valores)
+  const { data } = await axiosClient.post<Servicio>("/servicios", aCuerpoServicio(valores))
   if (imagenUrl) await asociarImagenServicio(data.idServicio, imagenUrl)
   return data
 }
 
 export async function actualizarServicio(id: number, { imagenUrl, ...valores }: ServicioConImagen): Promise<Servicio> {
-  const { data } = await axiosClient.put<Servicio>(`/servicios/${id}`, valores)
+  const { data } = await axiosClient.put<Servicio>(`/servicios/${id}`, aCuerpoServicio(valores))
   if (imagenUrl) await asociarImagenServicio(id, imagenUrl)
   return data
 }
