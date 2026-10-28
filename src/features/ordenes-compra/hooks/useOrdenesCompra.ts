@@ -32,3 +32,11 @@ export function useCambiarEstadoOrdenCompra(id: number) {
     },
   })
 }
+
+export function useSubirArchivoOrdenCompra() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, archivo }: { id: number; archivo: File }) => ordenesCompraApi.subirArchivo(id, archivo),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ordenesCompraKeys.all }),
+  })
+}

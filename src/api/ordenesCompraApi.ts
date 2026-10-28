@@ -11,4 +11,9 @@ export const ordenesCompraApi = {
   crear: (data: OrdenCompraInput) => axiosClient.post<OrdenCompra>('/ordenes-compra', data).then((r) => r.data),
   cambiarEstado: (id: number, estado: EstadoOrdenCompra) =>
     axiosClient.patch<OrdenCompra>(`/ordenes-compra/${id}/estado`, { codigoEstado: estado }).then((r) => r.data),
+  subirArchivo: (id: number, archivo: File) => {
+    const form = new FormData()
+    form.append('archivo', archivo)
+    return axiosClient.post<OrdenCompra>(`/ordenes-compra/${id}/archivo`, form).then((r) => r.data)
+  },
 }

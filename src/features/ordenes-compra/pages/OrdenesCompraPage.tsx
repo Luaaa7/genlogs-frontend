@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { FileText, ShoppingCart } from 'lucide-react'
-import { useOrdenesCompra } from '../hooks/useOrdenesCompra'
+import { FileText, ShoppingCart, Upload } from 'lucide-react'
+import { useOrdenesCompra, useSubirArchivoOrdenCompra } from '../hooks/useOrdenesCompra'
 import { EstadoOrdenSelect } from '../components/EstadoOrdenSelect'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
 import { TableSkeletonRows } from '@/components/ui/TableSkeletonRows'
@@ -26,6 +26,21 @@ export function OrdenesCompraPage() {
   const { data, isLoading, isError, refetch } = useOrdenesCompra({ estadoCodigo: estado, page: pagina, size: tamano })
   const ordenes = data?.content ?? []
   const [errorEstado, setErrorEstado] = useState<string | null>(null)
+  const { mutate: subirArchivo, isPending: subiendo, variables } = useSubirArchivoOrdenCompra()
+
+  const alElegirArchivo = (id: number, archivo?: File) => {
+    if (!archivo) return
+    setErrorEstado(null)
+    subirArchivo(
+      { id, archivo },
+      {
+        onError: (err) => {
+          const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+          setErrorEstado(msg ?? 'No se pudo subir el documento de la orden.')
+        },
+      },
+    )
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -96,18 +111,33 @@ export function OrdenesCompraPage() {
                         />
                       </Td>
                       <Td alinear="derecha" className="whitespace-nowrap font-medium">{formatearMoneda(o.total ?? 0, o.moneda ?? 'PEN')}</Td>
-                      <Td className="text-right">
+                      <Td className="whitespace-nowrap text-right">
                         {o.urlArchivo && (
                           <a
                             href={o.urlArchivo}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1 rounded text-[13px] font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            className="mr-3 inline-flex items-center gap-1 rounded text-[13px] font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           >
                             <FileText className="h-3.5 w-3.5" aria-hidden="true" />
                             Ver orden
                           </a>
                         )}
+                        <label className="inline-flex cursor-pointer items-center gap-1 rounded text-[13px] font-medium text-accent hover:underline focus-within:ring-2 focus-within:ring-ring">
+                          <Upload className="h-3.5 w-3.5" aria-hidden="true" />
+                          {subiendo && variables?.id === (o.idOrdenCompra ?? o.id) ? 'Subiendo…' : o.urlArchivo ? 'Reemplazar' : 'Subir orden'}
+                          <input
+                            type="file"
+                            accept="application/pdf,.pdf,image/png,image/jpeg"
+                            className="sr-only"
+                            disabled={subiendo}
+                            aria-label={`Subir documento de la orden ${o.numeroOrdenCompra ?? o.numero}`}
+                            onChange={(e) => {
+                              alElegirArchivo(o.idOrdenCompra ?? o.id ?? 0, e.target.files?.[0])
+                              e.target.value = ''
+                            }}
+                          />
+                        </label>
                       </Td>
                     </tr>
                   )
