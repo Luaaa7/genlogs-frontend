@@ -15,10 +15,12 @@ interface ServicioFormProps {
   valoresIniciales?: Partial<ServicioFormValues>
   /** Recibe los datos del formulario y, si se subió una foto, su URL en `imagenUrl`. */
   onSubmit: (valores: ServicioConImagen) => void
+  /** Botón "Cancelar" junto a Guardar (vuelve al catálogo). */
+  onCancel?: () => void
   enviando?: boolean
 }
 
-export function ServicioForm({ valoresIniciales, onSubmit, enviando }: ServicioFormProps) {
+export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando }: ServicioFormProps) {
   const { register, handleSubmit, setValue, getValues, control, formState: { errors } } = useForm<ServicioFormValues>({
     resolver: zodResolver(servicioSchema),
     defaultValues: {
@@ -52,6 +54,9 @@ export function ServicioForm({ valoresIniciales, onSubmit, enviando }: ServicioF
   // (con getValues la pantalla no se volvía a pintar y parecía que no se marcaban).
   const idsSectoresSeleccionados = useWatch({ control, name: "idsSectores" }) ?? []
   const idCategoriaSeleccionada = useWatch({ control, name: "idCategoriaServicio" })
+  // Select controlado: las unidades llegan después de pintar el formulario y, sin esto,
+  // al editar se veía "Selecciona una unidad" aunque el servicio ya tenía una.
+  const idUnidadSeleccionada = useWatch({ control, name: "idUnidadMedida" })
   const [imagenUrl, setImagenUrl] = useState<string>()
 
   function toggleSector(id: number) {
@@ -100,7 +105,12 @@ export function ServicioForm({ valoresIniciales, onSubmit, enviando }: ServicioF
       <div>
         <label className="text-sm font-medium">Unidad de medida</label>
         <select
-          {...register("idUnidadMedida", { valueAsNumber: true })}
+          value={Number.isFinite(idUnidadSeleccionada) ? idUnidadSeleccionada : ""}
+          onChange={(e) =>
+            setValue("idUnidadMedida", e.target.value === "" ? (undefined as unknown as number) : Number(e.target.value), {
+              shouldValidate: true,
+            })
+          }
           disabled={cargandoUnidades}
           className="w-full rounded-md border border-border px-3 py-2 text-sm"
         >
@@ -191,13 +201,25 @@ export function ServicioForm({ valoresIniciales, onSubmit, enviando }: ServicioF
         onUploaded={(resultado) => setImagenUrl(resultado.url)}
       />
 
-      <button
-        type="submit"
-        disabled={enviando}
-        className="mt-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-      >
-        {enviando ? "Guardando..." : "Guardar servicio"}
-      </button>
+      <div className="mt-2 flex justify-end gap-3 border-t border-border pt-4">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={enviando}
+            className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
+          >
+            Cancelar
+          </button>
+        )}
+        <button
+          type="submit"
+          disabled={enviando}
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+        >
+          {enviando ? "Guardando..." : "Guardar servicio"}
+        </button>
+      </div>
     </form>
   )
 }
