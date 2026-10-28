@@ -4,17 +4,17 @@ import { Ban, Download, FileText, Loader2, Receipt, Send, Upload, Wallet } from 
 import { useAnularFactura, useFacturas, useRegistrarPago, useSubirArchivoFactura } from '../hooks/useFacturacion'
 import { RegistrarPagoDialog } from '../components/RegistrarPagoDialog'
 import { EnviarFacturaModal } from '../components/EnviarFacturaModal'
+import { EstadoFacturaSelect } from '../components/EstadoFacturaSelect'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { facturacionApi } from '@/api/facturacionApi'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
 import { FiltroActivo } from '@/components/ui/FiltroActivo'
 import { TableSkeletonRows } from '@/components/ui/TableSkeletonRows'
-import { EstadoBadge } from '@/components/ui/EstadoBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { FiltroChips } from '@/components/ui/FiltroChips'
 import { EstadoVacio } from '@/components/ui/EstadoVacio'
 import { Paginacion, Tabla, TablaCard, Td, Th, filaClass } from '@/components/ui/tabla'
-import { ESTADOS_FACTURA, TIPOS_COMPROBANTE, estadoDe } from '@/lib/formatters/estados'
+import { ESTADOS_FACTURA, TIPOS_COMPROBANTE } from '@/lib/formatters/estados'
 import { formatearMoneda } from '@/lib/formatters/codigoCotizacion'
 import { formatearFechaCorta, parsearFechaLocal } from '@/lib/formatters/fechaLocal'
 import type { EstadoFacturacion, Factura } from '@/types/facturacion.types'
@@ -186,7 +186,6 @@ export function FacturacionPage() {
               ) : (
                 facturas.map((f) => {
                   const real = estadoReal(f)
-                  const e = estadoDe(ESTADOS_FACTURA, real)
                   const puedePagar = real !== 'ANULADA' && real !== 'PAGADA' && saldoDe(f) > 0
                   const puedeAnular = real !== 'ANULADA' && real !== 'PAGADA' && (f.montoPagado ?? 0) === 0
                   const nota = notaCobro(f)
@@ -213,7 +212,16 @@ export function FacturacionPage() {
                         <p className="tabular-nums">{formatearFechaCorta(f.fechaVencimiento)}</p>
                         {nota && <p className={`text-xs ${nota.clase}`}>{nota.texto}</p>}
                       </Td>
-                      <Td><EstadoBadge tono={e.tono}>{e.label}</EstadoBadge></Td>
+                      <Td>
+                        <EstadoFacturaSelect
+                          idFactura={idDe(f)}
+                          estadoActual={real}
+                          numero={codigoDe(f)}
+                          puedeAnular={puedeAnular}
+                          onAnular={() => setAnulando(f)}
+                          onError={setErrorAccion}
+                        />
+                      </Td>
                       <Td alinear="derecha" className="whitespace-nowrap font-medium">{formatearMoneda(f.total ?? 0, moneda)}</Td>
                       <Td alinear="derecha" className="whitespace-nowrap">{saldoDe(f) > 0 ? formatearMoneda(saldoDe(f), moneda) : '—'}</Td>
                       <Td className="text-right">

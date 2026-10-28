@@ -1,7 +1,7 @@
 // src/features/cotizaciones/pages/CotizacionDetallePage.tsx
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useCotizacion } from '../hooks/useCotizaciones';
 import { useCambiarEstado } from '../hooks/useCambiarEstado';
 import { useDescargarPDF } from '../hooks/useCotizacionesMutations';
@@ -120,7 +120,14 @@ export const CotizacionDetallePage: React.FC = () => {
 
   const [showEnvioModal, setShowEnvioModal] = useState(false);
   const [showOrdenModal, setShowOrdenModal] = useState(false);
-  const [showFacturaModal, setShowFacturaModal] = useState(false);
+  // ?facturar=1 llega desde Órdenes de compra al marcar la orden como Atendida:
+  // la cotización se abre con el formulario de la factura listo.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [showFacturaModal, setShowFacturaModal] = useState(() => searchParams.get('facturar') === '1');
+  const cerrarFactura = () => {
+    setShowFacturaModal(false);
+    if (searchParams.has('facturar')) setSearchParams({}, { replace: true });
+  };
   const [menuEstado, setMenuEstado] = useState(false);
   const [errorAccion, setErrorAccion] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -146,7 +153,12 @@ export const CotizacionDetallePage: React.FC = () => {
     cambiarEstado(
       { estadoNuevo: nuevo, observaciones: '' },
       {
-        onSuccess: () => setMenuEstado(false),
+        onSuccess: () => {
+          setMenuEstado(false);
+          // Al aprobarla, el siguiente paso es registrar la orden de compra del cliente:
+          // se abre ese formulario directamente en vez de dejar al usuario buscando el botón.
+          if (nuevo === EstadoCotizacion.APROBADA && !ordenGenerada) setShowOrdenModal(true);
+        },
         onError: (e) => setErrorAccion(`No se pudo cambiar el estado a "${mapearEstadoCotizacion(nuevo)}". ${e.response?.data?.message ?? ''}`.trim()),
       }
     );
@@ -429,10 +441,10 @@ export const CotizacionDetallePage: React.FC = () => {
         </aside>
       </div>
 
-      {ordenGenerada && (
+      {ordenGenerada && !facturaGenerada && (
         <RegistrarFacturaModal
           isOpen={showFacturaModal}
-          onClose={() => setShowFacturaModal(false)}
+          onClose={cerrarFactura}
           idOrdenCompra={ordenGenerada.idOrdenCompra}
           numeroOrdenCompra={ordenGenerada.numeroOrdenCompra}
           idCondicionPago={ordenGenerada.idCondicionPago ?? cotizacion.idCondicionPago}

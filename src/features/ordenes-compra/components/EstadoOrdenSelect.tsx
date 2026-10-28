@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { AxiosError } from 'axios'
+import { useNavigate } from 'react-router-dom'
+import { useAuthStore } from '@/features/auth/store/authStore'
 import { Check, ChevronDown, Loader2 } from 'lucide-react'
 import { useCambiarEstadoOrdenCompra } from '../hooks/useOrdenesCompra'
 import { EstadoBadge, type EstadoBadgeTono } from '@/components/ui/EstadoBadge'
@@ -8,7 +10,7 @@ import { ESTADOS_ORDEN, estadoDe } from '@/lib/formatters/estados'
 import { cn } from '@/lib/utils'
 import type { EstadoOrdenCompra } from '@/types/ordenCompra.types'
 
-/** Estados finales: ya no se pueden cambiar (el backend también lo bloquea). */
+/** Estados finales: solo un ADMINISTRADOR puede corregirlos (el backend también lo controla). */
 const ESTADOS_FINALES = new Set<string>(['ATENDIDA', 'ANULADA'])
 
 /** Punto de color de cada opción, del mismo tono que su etiqueta. */
@@ -25,6 +27,8 @@ const ANCHO_MENU = 208
 
 interface Props {
   idOrden: number
+  /** Cotización de origen: al marcar la orden como Atendida se va ahí a facturar. */
+  idCotizacion?: number
   estadoActual: string
   numero: string
   onError: (mensaje: string) => void
@@ -34,7 +38,9 @@ interface Props {
  * Etiqueta del estado + botón "Cambiar" que abre un menú con los estados.
  * El menú va en un portal porque la tabla recorta lo que sobresale.
  */
-export function EstadoOrdenSelect({ idOrden, estadoActual, numero, onError }: Props) {
+export function EstadoOrdenSelect({ idOrden, idCotizacion, estadoActual, numero, onError }: Props) {
+  const navigate = useNavigate()
+  const esAdmin = (useAuthStore((s) => s.nombreRol) ?? '').toUpperCase() === 'ADMINISTRADOR'
   const { mutate, isPending } = useCambiarEstadoOrdenCompra(idOrden)
   const actual = estadoDe(ESTADOS_ORDEN, estadoActual)
 
@@ -91,12 +97,17 @@ export function EstadoOrdenSelect({ idOrden, estadoActual, numero, onError }: Pr
 
   const badge = <EstadoBadge tono={actual.tono}>{actual.label}</EstadoBadge>
 
-  // Atendida y Anulada no tienen vuelta atrás: solo se muestra la etiqueta.
-  if (ESTADOS_FINALES.has(estadoActual)) return badge
+  // Atendida y Anulada: los demás solo ven la etiqueta; un administrador puede corregirlas.
+  const esFinal = ESTADOS_FINALES.has(estadoActual)
+  if (esFinal && !esAdmin) return badge
 
   function elegir(nuevo: EstadoOrdenCompra) {
     setAbierto(false)
     mutate(nuevo, {
+      // Orden atendida = siguiente paso, la factura: se abre su cotización con el formulario listo.
+      onSuccess: () => {
+        if (nuevo === 'ATENDIDA' && idCotizacion) navigate(`/cotizaciones/${idCotizacion}?facturar=1`)
+      },
       onError: (err) =>
         onError(`No se pudo cambiar el estado de la orden ${numero}. ${(err as AxiosError<{ message?: string }>).response?.data?.message ?? ''}`.trim()),
     })
@@ -122,7 +133,7 @@ export function EstadoOrdenSelect({ idOrden, estadoActual, numero, onError }: Pr
             abierto && 'bg-muted text-foreground',
           )}
         >
-          {isPending ? 'Guardando…' : 'Cambiar'}
+          {isPending ? 'Guardando…' : esFinal ? 'Corregir' : 'Cambiar'}
           {isPending ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
           ) : (
@@ -140,7 +151,9 @@ export function EstadoOrdenSelect({ idOrden, estadoActual, numero, onError }: Pr
             style={{ top: posicion?.top ?? -9999, left: posicion?.left ?? -9999, width: ANCHO_MENU }}
             className="fixed z-[90] rounded-lg border border-border bg-card p-1 shadow-lg animate-in fade-in-0 zoom-in-95 duration-150 motion-reduce:animate-none"
           >
-            <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Cambiar estado</p>
+            <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              {esFinal ? 'Corregir estado (administrador)' : 'Cambiar estado'}
+            </p>
             {opciones.map(([codigo, e]) => {
               const esActual = codigo === estadoActual
               return (
