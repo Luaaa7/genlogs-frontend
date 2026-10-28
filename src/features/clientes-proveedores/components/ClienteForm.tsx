@@ -6,6 +6,7 @@ import { clienteSchema, type ClienteFormValues } from '../../../lib/validators/r
 import type { ClienteRequest } from '../../../types/cliente.types'
 import { listarSectoresEconomicos } from '@/api/sectoresEconomicosApi'
 import { CamposTercero } from './CamposTercero'
+import { unirLugarExtranjero } from '@/lib/terceroExtranjero'
 import { Campo, SeccionForm } from '@/components/ui/campo'
 import { describedBy, inputFormClass } from '@/components/ui/campoEstilos'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
@@ -54,7 +55,7 @@ export function ClienteForm({ onSubmit, isSubmitting, serverError, valoresInicia
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={handleSubmit((d) => onSubmit(d as ClienteRequest))} className="flex flex-col gap-5" noValidate>
+      <form onSubmit={handleSubmit((d) => onSubmit(unirLugarExtranjero(d) as ClienteRequest))} className="flex flex-col gap-5" noValidate>
         <CamposTercero />
 
         <SeccionForm titulo="Clasificación">

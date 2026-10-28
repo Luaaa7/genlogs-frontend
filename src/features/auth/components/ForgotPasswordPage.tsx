@@ -48,8 +48,9 @@ export function ForgotPasswordPage() {
           <p className="text-sm text-muted-foreground">Ingresa el correo asociado a tu cuenta.</p>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Correo</label>
+            <label htmlFor="olvido-correo" className="text-sm font-medium text-foreground">Correo</label>
             <IconInput
+              id="olvido-correo"
               icon={<Mail size={16} />}
               type="email"
               autoComplete="email"
@@ -61,7 +62,7 @@ export function ForgotPasswordPage() {
           </div>
 
           {error && (
-            <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
+            <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
           )}
 
           <button

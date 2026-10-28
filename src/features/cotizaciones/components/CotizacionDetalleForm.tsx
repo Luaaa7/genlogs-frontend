@@ -16,7 +16,7 @@ interface CotizacionDetalleFormProps {
 
 // Inputs compactos de las líneas (mismos tokens que los formularios)
 const celdaInput =
-  'h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 aria-[invalid=true]:border-destructive';
+  'h-9 w-full rounded-md border border-input bg-background px-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring aria-[invalid=true]:border-destructive';
 
 // Columnas en pantallas anchas: ítem | cantidad | precio | margen | subtotal | quitar.
 // Se decide por el ancho de esta tarjeta (container query), no por el de la ventana.

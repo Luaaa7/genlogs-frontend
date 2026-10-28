@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react"
-import { listarUsuarios, crearUsuario, cambiarBloqueoUsuario, eliminarUsuario } from "@/api/usuariosApi"
+import { listarUsuarios, crearUsuario, actualizarUsuario, cambiarBloqueoUsuario, eliminarUsuario } from "@/api/usuariosApi"
 import { listarRoles } from "@/api/rolesApi"
-import type { UsuarioRequest, UsuarioResponse, Rol } from "@/types/usuario"
+import type { UsuarioRequest, UsuarioResponse, UsuarioUpdateRequest, Rol } from "@/types/usuario"
 
 export function useUsuarios() {
   const [usuarios, setUsuarios] = useState<UsuarioResponse[]>([])
@@ -50,6 +50,11 @@ export function useUsuarios() {
     setUsuarios((prev) => [...prev, nuevo])
   }
 
+  async function editar(idUsuario: number, data: UsuarioUpdateRequest) {
+    const actualizado = await actualizarUsuario(idUsuario, data)
+    setUsuarios((prev) => prev.map((u) => (u.idUsuario === idUsuario ? actualizado : u)))
+  }
+
   async function alternarBloqueo(idUsuario: number, bloqueadoActual: boolean) {
     const actualizado = await cambiarBloqueoUsuario(idUsuario, !bloqueadoActual)
     setUsuarios((prev) => prev.map((u) => (u.idUsuario === idUsuario ? actualizado : u)))
@@ -60,5 +65,5 @@ export function useUsuarios() {
     setUsuarios((prev) => prev.filter((u) => u.idUsuario !== idUsuario))
   }
 
-  return { usuarios, roles, loading, error, agregar, alternarBloqueo, eliminar, recargar: cargar }
+  return { usuarios, roles, loading, error, agregar, editar, alternarBloqueo, eliminar, recargar: cargar }
 }

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { avisar } from "@/lib/avisos"
 import { useQuery } from "@tanstack/react-query"
 import { Wrench } from "lucide-react"
 import { listarCategoriasServicio } from "@/api/categoriasServicioApi"
@@ -8,7 +9,8 @@ import { ServicioCard, ServicioCardSkeleton } from "../components/ServicioCard"
 import { CategoriaServicioSelector } from "../components/CategoriaServicioSelector"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
-import type { Servicio, ServicioFormValues } from "@/types/servicio.types"
+import type { Servicio } from "@/types/servicio.types"
+import type { ServicioConImagen } from "@/api/serviciosApi"
 
 export function CatalogoServiciosPage() {
   const [mostrarForm, setMostrarForm] = useState(false)
@@ -59,14 +61,20 @@ export function CatalogoServiciosPage() {
     })
   }
 
-  function handleSubmit(valores: ServicioFormValues) {
+  function handleSubmit(valores: ServicioConImagen) {
     if (servicioEditando) {
       actualizar.mutate(valores, {
-        onSuccess: () => setMostrarForm(false),
+        onSuccess: () => {
+          setMostrarForm(false)
+          avisar(`Servicio ${valores.nombreServicio} actualizado`)
+        },
       })
     } else {
       crear.mutate(valores, {
-        onSuccess: () => setMostrarForm(false),
+        onSuccess: () => {
+          setMostrarForm(false)
+          avisar(`Servicio ${valores.nombreServicio} registrado`)
+        },
       })
     }
   }
