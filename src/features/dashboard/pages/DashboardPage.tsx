@@ -41,6 +41,8 @@ function saludo() {
 
 function DashboardSkeleton() {
   return (
+    <>
+    <p role="status" className="sr-only">Cargando el panel…</p>
     <div className="grid gap-4 lg:grid-cols-12" aria-hidden="true">
       <Skeleton variant="rectangular" className="h-64 lg:col-span-7" />
       <Skeleton variant="rectangular" className="h-64 lg:col-span-5 lg:row-span-2 lg:h-auto" />
@@ -50,6 +52,7 @@ function DashboardSkeleton() {
       <Skeleton variant="rectangular" className="h-96 lg:col-span-4" />
       <Skeleton variant="rectangular" className="h-96 lg:col-span-4" />
     </div>
+    </>
   )
 }
 

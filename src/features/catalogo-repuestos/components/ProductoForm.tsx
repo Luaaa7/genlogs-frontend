@@ -422,7 +422,7 @@ export function ProductoForm({
                 <li key={img.idProductoImagen} className="relative h-20 w-20 overflow-hidden rounded-md border border-border">
                   <img src={img.urlImagen} alt="Imagen del producto" className="h-full w-full object-cover" />
                   {img.esPrincipal && (
-                    <span className="absolute inset-x-0 bottom-0 bg-primary/80 px-1 py-0.5 text-center text-[10px] text-primary-foreground">
+                    <span className="absolute inset-x-0 bottom-0 bg-primary/80 px-1 py-0.5 text-center text-xs text-primary-foreground">
                       Principal
                     </span>
                   )}

@@ -46,8 +46,10 @@ export const SelectorCatalogoItem: React.FC<SelectorCatalogoItemProps> = ({
     return () => clearTimeout(t)
   }, [valor])
 
-  const { data: pagina } = useProductos({ nombre: busqueda || undefined, size: MAX_RESULTADOS })
-  const { data: servicios = [] } = useServicios()
+  const { data: pagina, isFetching: buscandoProductos, isError: errorProductos } = useProductos({ nombre: busqueda || undefined, size: MAX_RESULTADOS })
+  const { data: servicios = [], isLoading: cargandoServicios, isError: errorServicios } = useServicios()
+  // Mientras se escribe (antes de que pase la espera) o llega la respuesta, se avisa que está buscando
+  const buscando = buscandoProductos || cargandoServicios || busqueda !== valor.trim()
 
   const productos = pagina?.content ?? []
   const serviciosFiltrados = useMemo(() => {
@@ -58,6 +60,8 @@ export const SelectorCatalogoItem: React.FC<SelectorCatalogoItemProps> = ({
   }, [servicios, busqueda])
 
   const sinResultados = productos.length === 0 && serviciosFiltrados.length === 0
+  // Si el servidor falla, decirlo: antes salía "No hay productos" y parecía que el catálogo estaba vacío.
+  const errorCatalogo = errorProductos && errorServicios ? 'productos y servicios' : errorProductos ? 'productos' : errorServicios ? 'servicios' : null
 
   const elegir = (item: ItemCatalogo) => {
     onSeleccionar(item)
@@ -96,7 +100,7 @@ export const SelectorCatalogoItem: React.FC<SelectorCatalogoItemProps> = ({
         }}
         title={seleccionado ? 'Ítem del catálogo' : 'Elige una opción de la lista'}
         className={cn(
-          'h-9 w-full rounded-md border border-input bg-background pl-8 pr-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 aria-[invalid=true]:border-destructive',
+          'h-9 w-full rounded-md border border-input bg-background pl-8 pr-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring aria-[invalid=true]:border-destructive',
           seleccionado && 'font-medium',
         )}
       />
@@ -150,7 +154,17 @@ export const SelectorCatalogoItem: React.FC<SelectorCatalogoItemProps> = ({
             </div>
           )}
 
-          {sinResultados && (
+          {errorCatalogo && (
+            <p role="alert" className="px-2.5 py-3 text-sm text-destructive">
+              No se pudo cargar el catálogo de {errorCatalogo}. Revisa tu conexión o vuelve a iniciar sesión.
+            </p>
+          )}
+
+          {sinResultados && buscando && !errorCatalogo && (
+            <p role="status" className="px-2.5 py-3 text-sm text-muted-foreground">Buscando…</p>
+          )}
+
+          {sinResultados && !buscando && !errorCatalogo && (
             <p className="px-2.5 py-3 text-sm text-muted-foreground">
               No hay productos ni servicios con ese nombre. Si falta, créalo primero en el catálogo.
             </p>

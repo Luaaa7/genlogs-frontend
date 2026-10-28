@@ -6,11 +6,13 @@ import type { ContactoCliente } from '../../../types/proveedor.types';
 import { useAgregarContacto, useContactosTercero, useEliminarContacto } from '../hooks/useProveedores';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EstadoBadge } from '@/components/ui/EstadoBadge';
+import { ErrorBanner } from '@/components/ui/ErrorBanner';
+import { Campo } from '@/components/ui/campo';
+import { describedBy, inputFormClass } from '@/components/ui/campoEstilos';
+import { avisar } from '@/lib/avisos';
 
 /** Campos del formulario de contacto con su etiqueta visible (con tildes). */
-const CAMPOS_CONTACTO = [['nombre', 'Nombre'], ['cargo', 'Cargo'], ['telefono', 'Teléfono'], ['email', 'Correo']] as const
-
-const input = 'rounded border border-border p-2 text-sm';
+const CAMPOS_CONTACTO = [['nombre', 'Nombre', 'name'], ['cargo', 'Cargo', 'organization-title'], ['telefono', 'Teléfono', 'tel'], ['email', 'Correo', 'email']] as const
 
 /**
  * Los contactos cuelgan del Tercero (no del Cliente/Proveedor directamente),
@@ -28,7 +30,15 @@ export function ContactoClienteList({ idTercero }: { idTercero: number }) {
   });
 
   const onSubmit = handleSubmit((v) =>
-    agregar.mutate({ ...v, nombres: v.nombre, correo: v.email, esPrincipal: !!v.principal }, { onSuccess: () => reset() }),
+    agregar.mutate(
+      { ...v, nombres: v.nombre, correo: v.email, esPrincipal: !!v.principal },
+      {
+        onSuccess: () => {
+          reset();
+          avisar(`Contacto ${v.nombre} agregado`);
+        },
+      },
+    ),
   );
 
   return (
@@ -44,7 +54,9 @@ export function ContactoClienteList({ idTercero }: { idTercero: number }) {
               <div className="text-muted-foreground">{c.cargo} · {c.telefono} · {c.email ?? c.correo}</div>
             </div>
             <button
+              type="button"
               onClick={() => setContactoAEliminar(c)}
+              aria-label={`Eliminar a ${c.nombre ?? c.nombres}`}
               disabled={eliminar.isPending}
               className="text-destructive hover:underline disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
             >
@@ -54,17 +66,35 @@ export function ContactoClienteList({ idTercero }: { idTercero: number }) {
         ))}
       </ul>
 
-      <form onSubmit={onSubmit} className="grid gap-2 sm:grid-cols-2" noValidate>
-        {CAMPOS_CONTACTO.map(([f, etiqueta]) => (
-          <label key={f} className="text-sm">
-            {etiqueta}
-            <input {...register(f)} className={`${input} w-full`} />
-            {errors[f] && <span className="text-xs text-destructive">{errors[f]?.message}</span>}
-          </label>
-        ))}
+      {eliminar.isError && (
+        <ErrorBanner message="No se pudo eliminar el contacto. Intenta de nuevo." />
+      )}
+
+      <form onSubmit={onSubmit} className="grid gap-3 sm:grid-cols-2" noValidate>
+        {CAMPOS_CONTACTO.map(([f, etiqueta, autoComplete]) => {
+          const id = `contacto-${f}`;
+          return (
+            <Campo key={f} id={id} label={etiqueta} error={errors[f]?.message} obligatorio={f === 'nombre'}>
+              <input
+                id={id}
+                type={f === 'email' ? 'email' : f === 'telefono' ? 'tel' : 'text'}
+                autoComplete={autoComplete}
+                {...register(f)}
+                aria-invalid={!!errors[f]}
+                aria-describedby={describedBy(id, { error: errors[f] })}
+                className={inputFormClass}
+              />
+            </Campo>
+          );
+        })}
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" {...register('principal')} /> Contacto principal
         </label>
+        {agregar.isError && (
+          <div className="sm:col-span-2">
+            <ErrorBanner message="No se pudo agregar el contacto. Revisa los datos e intenta de nuevo." />
+          </div>
+        )}
         <button
           type="submit"
           disabled={agregar.isPending}
@@ -88,7 +118,12 @@ export function ContactoClienteList({ idTercero }: { idTercero: number }) {
         onConfirm={() => {
           if (!contactoAEliminar) return;
           eliminar.mutate(contactoAEliminar.id ?? contactoAEliminar.idContacto, {
-            onSuccess: () => setContactoAEliminar(null),
+            onSuccess: () => {
+              avisar(`Contacto ${contactoAEliminar.nombre ?? contactoAEliminar.nombres} eliminado`);
+              setContactoAEliminar(null);
+            },
+            // Si falla, se cierra el diálogo y se muestra el error arriba del formulario.
+            onError: () => setContactoAEliminar(null),
           });
         }}
         onCancel={() => setContactoAEliminar(null)}

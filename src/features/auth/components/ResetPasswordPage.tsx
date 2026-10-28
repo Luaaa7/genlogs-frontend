@@ -178,8 +178,9 @@ export function ResetPasswordPage() {
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-foreground">Contraseña nueva</label>
+        <label htmlFor="reset-nueva" className="text-sm font-medium text-foreground">Contraseña nueva</label>
         <PasswordInput
+          id="reset-nueva"
           icon={<Lock size={16} />}
           autoComplete="new-password"
           minLength={8}
@@ -191,8 +192,9 @@ export function ResetPasswordPage() {
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-foreground">Confirmar contraseña</label>
+        <label htmlFor="reset-confirmar" className="text-sm font-medium text-foreground">Confirmar contraseña</label>
         <PasswordInput
+          id="reset-confirmar"
           icon={<Lock size={16} />}
           autoComplete="new-password"
           minLength={8}

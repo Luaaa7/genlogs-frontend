@@ -51,7 +51,7 @@ export function ProductoCard({ producto }: { producto: Producto }) {
 
       <div className="flex flex-1 flex-col gap-1 p-3">
         <p className="text-xs text-muted-foreground">{producto.codigoProducto}</p>
-        <h3 className="line-clamp-2 text-sm font-medium leading-snug">{producto.nombreProducto}</h3>
+        <h2 className="line-clamp-2 text-sm font-medium leading-snug">{producto.nombreProducto}</h2>
         <div className="mt-auto flex flex-wrap items-center gap-x-2 pt-1 text-xs text-muted-foreground">
           {producto.marcaNombre && <span className="font-medium text-foreground">{producto.marcaNombre}</span>}
           {producto.categoriaNombre && <span className="truncate">{producto.categoriaNombre}</span>}

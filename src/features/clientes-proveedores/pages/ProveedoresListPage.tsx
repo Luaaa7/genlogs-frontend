@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { avisar } from '@/lib/avisos'
 import { Edit2, Plus, Search, Truck } from 'lucide-react'
 import { useProveedores, useCrearProveedor, useActualizarProveedor } from '../hooks/useProveedores'
 import { codigoTipoDocumento } from '@/types/tercero.types'
@@ -47,9 +48,9 @@ export default function ProveedoresListPage() {
   const enviar = (d: ProveedorRequest) => {
     const idProveedor = editando ? (editando.idProveedor ?? editando.id) : undefined
     if (editando && idProveedor != null) {
-      actualizar.mutate({ id: idProveedor, data: d }, { onSuccess: cerrarPanel })
+      actualizar.mutate({ id: idProveedor, data: d }, { onSuccess: () => { cerrarPanel(); avisar(`Proveedor ${d.tercero.razonSocial} actualizado`) } })
     } else {
-      crear.mutate(d, { onSuccess: cerrarPanel })
+      crear.mutate(d, { onSuccess: () => { cerrarPanel(); avisar(`Proveedor ${d.tercero.razonSocial} registrado`) } })
     }
   }
 

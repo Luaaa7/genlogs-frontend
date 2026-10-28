@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useDebounce } from 'use-debounce';
 import { Plus } from 'lucide-react';
 import { ClienteTable } from '../components/ClienteTable';
@@ -11,6 +12,8 @@ import { PanelLateral } from '@/components/ui/PanelLateral';
 import { Button } from '@/components/ui/button';
 import { Paginacion } from '@/components/ui/tabla';
 import CargandoSpinner from '../../../components/ui/CargandoSpinner';
+import { avisar } from '@/lib/avisos';
+import { listarSectoresEconomicos } from '@/api/sectoresEconomicosApi';
 import type { FiltrosCliente } from '../../../types/cliente.types';
 import type { Cliente } from '../../../types/cliente.types';
 import type { ClienteRequest } from '../../../types/cliente.types';
@@ -30,7 +33,8 @@ export default function ClientesListPage() {
   const totalPaginas = Math.max(1, Math.ceil(total / tamano));
   const crear = useCrearCliente();
   const actualizar = useActualizarCliente();
-  const { data: clienteDetalle } = useCliente(clienteEditando?.idCliente ?? 0);
+  const { data: clienteDetalle, isError: errorDetalle } = useCliente(clienteEditando?.idCliente ?? 0);
+  const { data: sectores = [] } = useQuery({ queryKey: ['sectores-economicos'], queryFn: listarSectoresEconomicos, staleTime: 10 * 60_000 });
 
   const clientes = data ?? [];
 
@@ -50,26 +54,47 @@ export default function ClientesListPage() {
     ? 'Modifica los datos del cliente seleccionado.'
     : 'Ingresa el RUC o DNI y los datos se completan desde SUNAT/RENIEC.';
 
-  const valoresIniciales = clienteDetalle
+  // El sector real del cliente: el id si vino en la fila, si no por su nombre en el catálogo.
+  // Antes se forzaba a 1 y al guardar se pisaba el sector verdadero (#2).
+  const normalizar = (t?: string | null) => (t ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  const idSectorReal =
+    clienteEditando?.sectorEconomico?.idSectorEconomico ??
+    sectores.find((s) => normalizar(s.nombreSector) === normalizar(clienteDetalle?.sectorEconomico))?.idSectorEconomico;
+  const TIPO_DOC: Record<string, number> = { RUC: 1, DNI: 2, CE: 3, PASAPORTE: 4 };
+
+  // El detalle del cliente que se está editando ya llegó (y es el de ESE cliente, no el anterior).
+  const detalleListo = !!clienteDetalle && clienteDetalle.idCliente === clienteEditando?.idCliente;
+
+  const valoresIniciales = detalleListo && clienteDetalle
     ? {
         tercero: {
-          idTipoDocumento: clienteDetalle.tipoDocumento === 'RUC' ? 1 : 2,
+          idTipoDocumento: TIPO_DOC[(clienteDetalle.tipoDocumento ?? '').toUpperCase()] ?? 1,
           numeroDocumento: clienteDetalle.numeroDocumento,
           razonSocial: clienteDetalle.razonSocial,
           direccion: clienteDetalle.direccion ?? '',
           telefono: clienteDetalle.telefono ?? '',
           correo: clienteDetalle.correo ?? '',
         },
-        idSectorEconomico: 1,
+        ...(idSectorReal != null ? { idSectorEconomico: idSectorReal } : {}),
         situacion: clienteDetalle.situacion,
       }
     : undefined;
 
   const handleSubmit = (data: ClienteRequest) => {
     if (isEditing && clienteEditando) {
-      actualizar.mutate({ id: clienteEditando.idCliente, data }, { onSuccess: () => setMostrarForm(false) });
+      actualizar.mutate({ id: clienteEditando.idCliente, data }, {
+        onSuccess: () => {
+          setMostrarForm(false);
+          avisar(`Cliente ${data.tercero.razonSocial} actualizado`);
+        },
+      });
     } else {
-      crear.mutate(data, { onSuccess: () => setMostrarForm(false) });
+      crear.mutate(data, {
+        onSuccess: () => {
+          setMostrarForm(false);
+          avisar(`Cliente ${data.tercero.razonSocial} registrado`);
+        },
+      });
     }
   };
 
@@ -132,7 +157,16 @@ export default function ClientesListPage() {
           setClienteEditando(null);
         }}
       >
+        {isEditing && !detalleListo ? (
+          errorDetalle ? (
+            <ErrorBanner message="No se pudieron cargar los datos del cliente." />
+          ) : (
+            <CargandoSpinner texto="Cargando datos del cliente..." />
+          )
+        ) : (
         <ClienteForm
+          // Se vuelve a montar al cambiar de cliente: useForm solo lee los valores iniciales al montarse.
+          key={isEditing ? `editar-${clienteEditando?.idCliente}` : 'nuevo'}
           isSubmitting={isEditing ? actualizar.isPending : crear.isPending}
           serverError={isEditing
             ? actualizar.isError
@@ -144,6 +178,7 @@ export default function ClientesListPage() {
           valoresIniciales={valoresIniciales as import('../../../lib/validators/rucDni.schema').ClienteFormValues | undefined}
           onSubmit={handleSubmit}
         />
+        )}
       </PanelLateral>
     </div>
   );
