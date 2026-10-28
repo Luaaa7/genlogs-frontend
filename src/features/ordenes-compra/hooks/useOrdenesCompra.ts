@@ -26,6 +26,8 @@ export function useCambiarEstadoOrdenCompra(id: number) {
     mutationFn: (estado: EstadoOrdenCompra) => ordenesCompraApi.cambiarEstado(id, estado),
     onSuccess: (data) => {
       queryClient.setQueryData(ordenesCompraKeys.detalle(id), data)
+      // Al atenderla puede haberse emitido su factura: se recarga Facturación también.
+      void queryClient.invalidateQueries({ queryKey: ['facturacion'] })
       return queryClient.invalidateQueries({ queryKey: ordenesCompraKeys.all })
     },
   })

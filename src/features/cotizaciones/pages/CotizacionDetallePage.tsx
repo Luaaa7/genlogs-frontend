@@ -2,6 +2,8 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { avisar } from '@/lib/avisos';
 import { useCotizacion } from '../hooks/useCotizaciones';
 import { useCambiarEstado } from '../hooks/useCambiarEstado';
 import { useDescargarPDF } from '../hooks/useCotizacionesMutations';
@@ -120,6 +122,7 @@ export const CotizacionDetallePage: React.FC = () => {
 
   const [showEnvioModal, setShowEnvioModal] = useState(false);
   const [showOrdenModal, setShowOrdenModal] = useState(false);
+  const queryClient = useQueryClient();
   // ?facturar=1 llega desde Órdenes de compra al marcar la orden como Atendida:
   // la cotización se abre con el formulario de la factura listo.
   const [searchParams, setSearchParams] = useSearchParams();
@@ -155,9 +158,12 @@ export const CotizacionDetallePage: React.FC = () => {
       {
         onSuccess: () => {
           setMenuEstado(false);
-          // Al aprobarla, el siguiente paso es registrar la orden de compra del cliente:
-          // se abre ese formulario directamente en vez de dejar al usuario buscando el botón.
-          if (nuevo === EstadoCotizacion.APROBADA && !ordenGenerada) setShowOrdenModal(true);
+          // Al aprobarla, el backend registra sola la orden de compra: se recarga para
+          // que aparezca en el recorrido (Cotización → Orden → Factura).
+          if (nuevo === EstadoCotizacion.APROBADA) {
+            void queryClient.invalidateQueries({ queryKey: ['ordenes-compra'] });
+            avisar('Cotización aprobada: su orden de compra se registró automáticamente');
+          }
         },
         onError: (e) => setErrorAccion(`No se pudo cambiar el estado a "${mapearEstadoCotizacion(nuevo)}". ${e.response?.data?.message ?? ''}`.trim()),
       }
