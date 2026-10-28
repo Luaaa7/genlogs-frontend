@@ -24,12 +24,13 @@ import {
 } from 'lucide-react';
 import logoGenlogs from '../assets/GENLOGS.png';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { usePermisos } from '@/lib/permisos';
 import { useTheme } from '@/hooks/useTheme';
 import { GlobalSearchDialog } from '@/components/ui/GlobalSearchDialog';
 import { cn } from '@/lib/utils/utils';
 import { nombreRolLegible } from '@/lib/formatters/roles';
 
-type NavItem = { label: string; path: string; icon: React.ElementType; soloAdmin?: boolean };
+type NavItem = { label: string; path: string; icon: React.ElementType; soloAdmin?: boolean; permiso?: 'verCotizacionesYOrdenes' | 'verCatalogosYEmpresas' };
 type NavGroup = { titulo: string; items: NavItem[] };
 
 /** Una sola navegación para todo el sistema (antes había un nav superior y
@@ -39,8 +40,8 @@ const NAV_GROUPS: NavGroup[] = [
     titulo: 'Operación',
     items: [
       { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-      { label: 'Cotizaciones', path: '/cotizaciones', icon: FileText },
-      { label: 'Órdenes de compra', path: '/ordenes-compra', icon: ShoppingCart },
+      { label: 'Cotizaciones', path: '/cotizaciones', icon: FileText, permiso: 'verCotizacionesYOrdenes' },
+      { label: 'Órdenes de compra', path: '/ordenes-compra', icon: ShoppingCart, permiso: 'verCotizacionesYOrdenes' },
       { label: 'Facturación', path: '/facturacion', icon: Receipt },
     ],
   },
@@ -49,9 +50,9 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Clientes', path: '/clientes', icon: Users },
       { label: 'Proveedores', path: '/proveedores', icon: Truck },
-      { label: 'Empresas mineras', path: '/empresas-mineras', icon: Building2 },
-      { label: 'Repuestos', path: '/catalogo-repuestos', icon: Package },
-      { label: 'Servicios', path: '/catalogo-servicios', icon: Wrench },
+      { label: 'Empresas mineras', path: '/empresas-mineras', icon: Building2, permiso: 'verCatalogosYEmpresas' },
+      { label: 'Repuestos', path: '/catalogo-repuestos', icon: Package, permiso: 'verCatalogosYEmpresas' },
+      { label: 'Servicios', path: '/catalogo-servicios', icon: Wrench, permiso: 'verCatalogosYEmpresas' },
     ],
   },
   {
@@ -100,11 +101,12 @@ function inicialesDe(nombre: string | null) {
  *  en el drawer móvil, para que el estado "seleccionado" sea idéntico. */
 function NavLateral({ esAdmin, onNavigate }: { esAdmin: boolean; onNavigate?: () => void }) {
   const { pathname } = useLocation();
+  const permisos = usePermisos();
 
   return (
     <nav aria-label="Módulos" className="flex flex-col px-3 pb-6">
       {NAV_GROUPS.map((grupo) => {
-        const items = grupo.items.filter((item) => !item.soloAdmin || esAdmin);
+        const items = grupo.items.filter((item) => (!item.soloAdmin || esAdmin) && (!item.permiso || permisos[item.permiso]));
         if (items.length === 0) return null;
         return (
           <div key={grupo.titulo}>
@@ -213,7 +215,9 @@ export function AppLayout() {
 
   // El "Menú" de la barra inferior cuenta como activo cuando estamos en algo
   // que no vive en los 4 accesos fijos (para que siempre haya un ítem resaltado).
-  const isMenuSectionActive = !BOTTOM_NAV.some((item) => estaActivo(location.pathname, item.path));
+  const permisosNav = usePermisos();
+  const bottomNav = BOTTOM_NAV.filter((item) => !item.permiso || permisosNav[item.permiso]);
+  const isMenuSectionActive = !bottomNav.some((item) => estaActivo(location.pathname, item.path));
 
   // El menú de usuario se abre/cierra con click (no solo hover), para que
   // funcione igual con mouse, teclado y táctil; se cierra al hacer click fuera.
@@ -396,7 +400,7 @@ export function AppLayout() {
         aria-label="Navegación principal"
       >
         <div className="grid grid-cols-5">
-          {BOTTOM_NAV.map((item) => {
+          {bottomNav.map((item) => {
             const activo = estaActivo(location.pathname, item.path);
             return (
               <Link

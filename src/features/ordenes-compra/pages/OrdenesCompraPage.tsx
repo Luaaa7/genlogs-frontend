@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FileText, ShoppingCart, Upload } from 'lucide-react'
+import { usePermisos } from '@/lib/permisos'
 import { useOrdenesCompra, useSubirArchivoOrdenCompra } from '../hooks/useOrdenesCompra'
 import { EstadoOrdenSelect } from '../components/EstadoOrdenSelect'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
@@ -26,6 +27,7 @@ export function OrdenesCompraPage() {
   const { data, isLoading, isError, refetch } = useOrdenesCompra({ estadoCodigo: estado, page: pagina, size: tamano })
   const ordenes = data?.content ?? []
   const [errorEstado, setErrorEstado] = useState<string | null>(null)
+  const { gestionarOrdenes } = usePermisos()
   const { mutate: subirArchivo, isPending: subiendo, variables } = useSubirArchivoOrdenCompra()
 
   const alElegirArchivo = (id: number, archivo?: File) => {
@@ -123,7 +125,7 @@ export function OrdenesCompraPage() {
                             Ver orden
                           </a>
                         )}
-                        <label className="inline-flex cursor-pointer items-center gap-1 rounded text-[13px] font-medium text-accent hover:underline focus-within:ring-2 focus-within:ring-ring">
+                        {gestionarOrdenes && <label className="inline-flex cursor-pointer items-center gap-1 rounded text-[13px] font-medium text-accent hover:underline focus-within:ring-2 focus-within:ring-ring">
                           <Upload className="h-3.5 w-3.5" aria-hidden="true" />
                           {subiendo && variables?.id === (o.idOrdenCompra ?? o.id) ? 'Subiendo…' : o.urlArchivo ? 'Reemplazar' : 'Subir orden'}
                           <input
@@ -137,7 +139,7 @@ export function OrdenesCompraPage() {
                               e.target.value = ''
                             }}
                           />
-                        </label>
+                        </label>}
                       </Td>
                     </tr>
                   )

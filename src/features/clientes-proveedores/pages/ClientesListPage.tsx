@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useDebounce } from 'use-debounce';
 import { Plus } from 'lucide-react';
+import { usePermisos } from '@/lib/permisos';
 import { ClienteTable } from '../components/ClienteTable';
 import { ClienteForm } from '../components/ClienteForm';
 import { useClientesPagina, useActualizarCliente, useCliente } from '../hooks/useClientes';
@@ -19,6 +20,7 @@ import type { Cliente } from '../../../types/cliente.types';
 import type { ClienteRequest } from '../../../types/cliente.types';
 
 export default function ClientesListPage() {
+  const { editarClientesYProveedores } = usePermisos();
   const [filtros, setFiltros] = useState<FiltrosCliente>({});
   const [debounced] = useDebounce(filtros, 300);
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -101,12 +103,12 @@ export default function ClientesListPage() {
     }
   };
 
-  const nuevo = (
+  const nuevo = editarClientesYProveedores ? (
     <Button onClick={handleNuevo}>
       <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
       Nuevo cliente
     </Button>
-  );
+  ) : undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -133,7 +135,7 @@ export default function ClientesListPage() {
             onFiltrosChange={(f) => { setFiltros(f); setPagina(0); }}
             isLoading={isFetching}
             accionVacio={nuevo}
-            onEditar={handleEditar}
+            onEditar={editarClientesYProveedores ? handleEditar : undefined}
           />
           {total > 0 && (
             <div className="overflow-hidden rounded-xl border border-border bg-card [&>div]:border-t-0">

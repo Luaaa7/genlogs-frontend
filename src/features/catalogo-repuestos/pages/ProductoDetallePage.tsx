@@ -1,3 +1,4 @@
+import { usePermisos } from '@/lib/permisos'
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft, Loader2, Pencil, Trash2 } from "lucide-react"
 import { mensajeErrorApi } from "@/api/productosApi"
@@ -21,6 +22,7 @@ function DetalleSkeleton() {
 }
 
 export function ProductoDetallePage() {
+  const { editarCatalogos } = usePermisos()
   const { id } = useParams<{ id: string }>()
   const idProducto = Number(id)
   const navigate = useNavigate()
@@ -69,7 +71,7 @@ export function ProductoDetallePage() {
         <>
           <ProductoDetalle
             producto={producto}
-            acciones={
+            acciones={editarCatalogos ? (
               <>
                 <Button asChild variant="outline" size="sm">
                   <Link to={`/catalogo-repuestos/${producto.idProducto}/editar`}>
@@ -92,7 +94,7 @@ export function ProductoDetallePage() {
                   Eliminar
                 </Button>
               </>
-            }
+            ) : undefined}
           />
           {eliminar.isError && (
             <p role="alert" className="text-sm text-destructive">

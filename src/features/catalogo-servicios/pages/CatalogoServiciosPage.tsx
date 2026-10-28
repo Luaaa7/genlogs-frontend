@@ -1,3 +1,4 @@
+import { usePermisos } from '@/lib/permisos'
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
@@ -11,6 +12,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
 import type { Servicio } from "@/types/servicio.types"
 
 export function CatalogoServiciosPage() {
+  const { editarCatalogos } = usePermisos()
   // Nuevo y Editar abren su propia página (antes el formulario salía arriba del catálogo).
   const navigate = useNavigate()
   const [servicioADesactivar, setServicioADesactivar] = useState<Servicio | null>(null)
@@ -64,12 +66,12 @@ export function CatalogoServiciosPage() {
           <h1 className="text-2xl font-semibold text-foreground">Catálogo de servicios</h1>
           <p className="text-sm text-muted-foreground">Define los servicios y su duración estimada.</p>
         </div>
-        <button
+        {editarCatalogos && <button
           onClick={handleNuevo}
           className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
         >
           + Nuevo servicio
-        </button>
+        </button>}
       </div>
 
       <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-sm">
@@ -131,8 +133,8 @@ export function CatalogoServiciosPage() {
           <ServicioCard
             key={servicio.idServicio}
             servicio={servicio}
-            onEditar={handleEditar}
-            onDesactivar={handleDesactivar}
+            onEditar={editarCatalogos ? handleEditar : undefined}
+            onDesactivar={editarCatalogos ? handleDesactivar : undefined}
           />
         ))}
       </div>

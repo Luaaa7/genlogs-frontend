@@ -1,3 +1,4 @@
+import { usePermisos } from '@/lib/permisos'
 import { useMemo, useState } from 'react'
 import { avisar } from '@/lib/avisos'
 import { Edit2, Plus, Search, Truck } from 'lucide-react'
@@ -17,6 +18,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils/utils'
 
 export default function ProveedoresListPage() {
+  const { editarClientesYProveedores } = usePermisos()
   const { data = [], isLoading, isError, refetch } = useProveedores()
   const crear = useCrearProveedor()
   const actualizar = useActualizarProveedor()
@@ -54,12 +56,12 @@ export default function ProveedoresListPage() {
     }
   }
 
-  const nuevo = (
+  const nuevo = editarClientesYProveedores ? (
     <Button onClick={abrirNuevo}>
       <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
       Nuevo proveedor
     </Button>
-  )
+  ) : undefined
 
   return (
     <div className="flex flex-col gap-6">
@@ -124,14 +126,14 @@ export default function ProveedoresListPage() {
                       {p.tercero.telefono && <p className="text-xs tabular-nums text-muted-foreground">{p.tercero.telefono}</p>}
                     </Td>
                     <Td className="text-right">
-                      <Button
+                      {editarClientesYProveedores && <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => abrirEditar(p)}
                         aria-label={`Editar proveedor ${p.tercero.razonSocial}`}
                       >
                         <Edit2 className="h-4 w-4" />
-                      </Button>
+                      </Button>}
                     </Td>
                   </tr>
                 ))

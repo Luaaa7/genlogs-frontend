@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCotizaciones, useCotizacionesEstadisticas } from '../hooks/useCotizaciones';
+import { usePermisos } from '@/lib/permisos';
 import { useDuplicarCotizacion } from '../hooks/useCotizacionesMutations';
 import { cotizacionesApi } from '@/api/cotizacionesApi';
 import {
@@ -92,6 +93,7 @@ export const CotizacionesListPage: React.FC = () => {
   const { data, isLoading, isError, error, refetch } = useCotizaciones(filtros);
   const { data: estadisticas } = useCotizacionesEstadisticas();
   const { mutate: duplicarCotizacion, isPending: isDuplicarPending } = useDuplicarCotizacion();
+  const { editarCotizaciones } = usePermisos();
 
   const cambiarFiltros = (nuevos: Partial<CotizacionesFilterParams>) =>
     setFiltros((prev) => ({ ...prev, ...nuevos, page: 0 }));
@@ -144,12 +146,14 @@ export const CotizacionesListPage: React.FC = () => {
               : 'Cotizaciones a clientes y su seguimiento'}
           </p>
         </div>
-        <Button asChild>
-          <Link to="/cotizaciones/nueva">
-            <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-            Nueva cotización
-          </Link>
-        </Button>
+        {editarCotizaciones && (
+          <Button asChild>
+            <Link to="/cotizaciones/nueva">
+              <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+              Nueva cotización
+            </Link>
+          </Button>
+        )}
       </div>
 
       {/* Filtro por estado */}
@@ -224,9 +228,11 @@ export const CotizacionesListPage: React.FC = () => {
                 ? 'Prueba con otro estado o moneda, o crea una nueva.'
                 : 'Crea la primera para empezar a hacer seguimiento a tus clientes.'}
             </p>
-            <Button asChild className="mt-2">
-              <Link to="/cotizaciones/nueva"><Plus className="mr-2 h-4 w-4" aria-hidden="true" />Nueva cotización</Link>
-            </Button>
+            {editarCotizaciones && (
+              <Button asChild className="mt-2">
+                <Link to="/cotizaciones/nueva"><Plus className="mr-2 h-4 w-4" aria-hidden="true" />Nueva cotización</Link>
+              </Button>
+            )}
           </div>
         ) : (
           <div className="relative overflow-x-auto">
@@ -274,7 +280,7 @@ export const CotizacionesListPage: React.FC = () => {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex justify-end gap-1">
-                            <button
+                            {editarCotizaciones && <button
                               type="button"
                               onClick={() => handleDuplicar(c)}
                               disabled={isDuplicarPending}
@@ -283,7 +289,7 @@ export const CotizacionesListPage: React.FC = () => {
                               className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
                               <Copy className="h-4 w-4" aria-hidden="true" />
-                            </button>
+                            </button>}
                             <button
                               type="button"
                               onClick={() => handleDescargar(c)}

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import type { AxiosError } from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/features/auth/store/authStore'
+import { usePermisos } from '@/lib/permisos'
 import { avisar } from '@/lib/avisos'
 import { Check, ChevronDown, Loader2 } from 'lucide-react'
 import { useCambiarEstadoOrdenCompra } from '../hooks/useOrdenesCompra'
@@ -42,6 +43,7 @@ interface Props {
 export function EstadoOrdenSelect({ idOrden, idCotizacion, estadoActual, numero, onError }: Props) {
   const navigate = useNavigate()
   const esAdmin = (useAuthStore((s) => s.nombreRol) ?? '').toUpperCase() === 'ADMINISTRADOR'
+  const { gestionarOrdenes } = usePermisos()
   const { mutate, isPending } = useCambiarEstadoOrdenCompra(idOrden)
   const actual = estadoDe(ESTADOS_ORDEN, estadoActual)
 
@@ -100,7 +102,7 @@ export function EstadoOrdenSelect({ idOrden, idCotizacion, estadoActual, numero,
 
   // Atendida y Anulada: los demás solo ven la etiqueta; un administrador puede corregirlas.
   const esFinal = ESTADOS_FINALES.has(estadoActual)
-  if (esFinal && !esAdmin) return badge
+  if (!gestionarOrdenes || (esFinal && !esAdmin)) return badge
 
   function elegir(nuevo: EstadoOrdenCompra) {
     setAbierto(false)

@@ -16,6 +16,7 @@ import { RegistrarOrdenCompraModal } from '@/features/ordenes-compra/components/
 import { RegistrarFacturaModal } from '@/features/facturacion/components/RegistrarFacturaModal';
 import { PipelineBreadcrumb, type PipelineStep } from '@/components/ui/PipelineBreadcrumb';
 import { Button } from '@/components/ui/button';
+import { usePermisos } from '@/lib/permisos';
 import { EstadoBadge } from '@/components/ui/EstadoBadge';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -107,6 +108,7 @@ function DetalleSkeleton() {
 
 export const CotizacionDetallePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const permisos = usePermisos();
   const cotizacionId = id ? Number(id) : null;
 
   const { data: cotizacion, isLoading, isError, refetch } = useCotizacion(cotizacionId);
@@ -234,7 +236,7 @@ export const CotizacionDetallePage: React.FC = () => {
     },
   ];
 
-  // Una sola acción principal, la que corresponde al momento del flujo.
+  // Una sola acción principal, la que corresponde al momento del flujo (según lo que el rol puede hacer).
   let accionPrincipal: React.ReactNode = null;
   if (estado === 'BORRADOR') {
     accionPrincipal = (
@@ -273,6 +275,12 @@ export const CotizacionDetallePage: React.FC = () => {
     );
   }
 
+  // El backend ya bloquea lo no permitido; aquí solo se esconden los botones.
+  if (estado === 'BORRADOR' && !permisos.editarCotizaciones) accionPrincipal = null;
+  if ((estado === 'ENVIADA' || estado === 'EN_NEGOCIACION') && !permisos.cambiarEstadoCotizacion) accionPrincipal = null;
+  if (estado === 'APROBADA' && ordenGenerada && !facturaGenerada && !permisos.emitirFactura) accionPrincipal = null;
+  if (estado === 'APROBADA' && !ordenGenerada && !permisos.gestionarOrdenes) accionPrincipal = null;
+
   return (
     <div className="flex flex-col gap-6">
       {/* Encabezado: código, estado y vencimiento; acciones a la derecha */}
@@ -301,14 +309,14 @@ export const CotizacionDetallePage: React.FC = () => {
             PDF
           </Button>
           {/* Reenviar solo mientras la cotización sigue viva (no en Rechazada, Anulada ni Vencida). */}
-          {(estado === 'ENVIADA' || estado === 'EN_NEGOCIACION' || estado === 'APROBADA') && (
+          {permisos.editarCotizaciones && (estado === 'ENVIADA' || estado === 'EN_NEGOCIACION' || estado === 'APROBADA') && (
             <Button variant="outline" onClick={() => setShowEnvioModal(true)}>
               <Send className="mr-2 h-4 w-4" aria-hidden="true" />
               Reenviar
             </Button>
           )}
 
-          <div className="relative" ref={menuRef}>
+          {permisos.cambiarEstadoCotizacion && <div className="relative" ref={menuRef}>
             <Button
               variant="outline"
               onClick={() => setMenuEstado((v) => !v)}
@@ -347,7 +355,7 @@ export const CotizacionDetallePage: React.FC = () => {
                 )}
               </div>
             )}
-          </div>
+          </div>}
 
           {accionPrincipal}
         </div>
@@ -424,7 +432,7 @@ export const CotizacionDetallePage: React.FC = () => {
           <AdjuntoCotizacionUploader
             cotizacionId={cotizacionId}
             adjuntos={cotizacion.adjuntos || []}
-            readonly={estado !== EstadoCotizacion.BORRADOR}
+            readonly={estado !== EstadoCotizacion.BORRADOR || !permisos.editarCotizaciones}
           />
         </div>
 

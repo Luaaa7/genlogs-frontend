@@ -1,3 +1,4 @@
+import { usePermisos } from '@/lib/permisos'
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useDebounce } from "use-debounce"
@@ -22,6 +23,7 @@ const selectClass =
   "h-10 rounded-lg border border-border bg-card px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 
 export function CatalogoProductosPage() {
+  const { editarCatalogos } = usePermisos()
   const [texto, setTexto] = useState("")
   const [campo, setCampo] = useState<CampoBusqueda>("nombre")
   const [idCategoria, setIdCategoria] = useState<number | undefined>(undefined)
@@ -76,12 +78,14 @@ export function CatalogoProductosPage() {
             </p>
           )}
         </div>
-        <Button asChild>
-          <Link to="/catalogo-repuestos/nuevo">
-            <Plus className="mr-1 h-4 w-4" aria-hidden="true" />
-            Nuevo producto
-          </Link>
-        </Button>
+        {editarCatalogos && (
+          <Button asChild>
+            <Link to="/catalogo-repuestos/nuevo">
+              <Plus className="mr-1 h-4 w-4" aria-hidden="true" />
+              Nuevo producto
+            </Link>
+          </Button>
+        )}
       </div>
 
       <div

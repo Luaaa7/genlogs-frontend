@@ -15,7 +15,9 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { FiltroChips } from '@/components/ui/FiltroChips'
 import { EstadoVacio } from '@/components/ui/EstadoVacio'
 import { Paginacion, Tabla, TablaCard, Td, Th, filaClass } from '@/components/ui/tabla'
-import { ESTADOS_FACTURA, TIPOS_COMPROBANTE } from '@/lib/formatters/estados'
+import { ESTADOS_FACTURA, TIPOS_COMPROBANTE, estadoDe } from '@/lib/formatters/estados'
+import { EstadoBadge } from '@/components/ui/EstadoBadge'
+import { usePermisos } from '@/lib/permisos'
 import { formatearMoneda } from '@/lib/formatters/codigoCotizacion'
 import { formatearFechaCorta, parsearFechaLocal } from '@/lib/formatters/fechaLocal'
 import type { EstadoFacturacion, Factura } from '@/types/facturacion.types'
@@ -65,6 +67,7 @@ function notaCobro(f: Factura): { texto: string; clase: string } | null {
 }
 
 export function FacturacionPage() {
+  const permisos = usePermisos()
   const [estado, setEstado] = useState<EstadoFacturacion | undefined>()
   const [pagina, setPagina] = useState(0)
   const [tamano, setTamano] = useState(10)
@@ -184,8 +187,8 @@ export function FacturacionPage() {
               ) : (
                 facturas.map((f) => {
                   const real = estadoReal(f)
-                  const puedePagar = real !== 'ANULADA' && real !== 'PAGADA' && saldoDe(f) > 0
-                  const puedeAnular = real !== 'ANULADA' && real !== 'PAGADA' && (f.montoPagado ?? 0) === 0
+                  const puedePagar = permisos.registrarPago && real !== 'ANULADA' && real !== 'PAGADA' && saldoDe(f) > 0
+                  const puedeAnular = permisos.anularFactura && real !== 'ANULADA' && real !== 'PAGADA' && (f.montoPagado ?? 0) === 0
                   const nota = notaCobro(f)
                   const tipo = f.tipoComprobante ?? f.tipo
                   const moneda = f.moneda ?? 'PEN'
@@ -214,14 +217,14 @@ export function FacturacionPage() {
                         </p>
                       </Td>
                       <Td>
-                        <EstadoFacturaSelect
+                        {permisos.anularFactura ? <EstadoFacturaSelect
                           idFactura={idDe(f)}
                           estadoActual={real}
                           numero={codigoDe(f)}
                           puedeAnular={puedeAnular}
                           onAnular={() => setAnulando(f)}
                           onError={setErrorAccion}
-                        />
+                        /> : <EstadoBadge tono={estadoDe(ESTADOS_FACTURA, real).tono}>{estadoDe(ESTADOS_FACTURA, real).label}</EstadoBadge>}
                       </Td>
                       <Td alinear="derecha" className="whitespace-nowrap">
                         <p className="font-medium">{formatearMoneda(f.total ?? 0, moneda)}</p>
@@ -233,7 +236,7 @@ export function FacturacionPage() {
                       </Td>
                       <Td className="text-right">
                         <div className="flex items-center justify-end gap-0.5">
-                        {real !== 'ANULADA' && (
+                        {permisos.enviarFactura && real !== 'ANULADA' && (
                           <button
                             type="button"
                             onClick={() => setEnviando(f)}
@@ -256,7 +259,7 @@ export function FacturacionPage() {
                             ? <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
                             : <Download className="h-4 w-4" aria-hidden="true" />}
                         </button>
-                        <MasAccionesFactura
+                        {(permisos.emitirFactura || permisos.registrarPago || permisos.anularFactura) && <MasAccionesFactura
                           codigo={codigoDe(f)}
                           urlDocumento={f.urlArchivo}
                           subiendo={subiendoId === idDe(f)}
@@ -265,7 +268,7 @@ export function FacturacionPage() {
                           onSubir={(archivo) => subirDocumento(f, archivo)}
                           onPagar={() => setPagando(f)}
                           onAnular={() => setAnulando(f)}
-                        />
+                        />}
                         </div>
                       </Td>
                     </tr>
