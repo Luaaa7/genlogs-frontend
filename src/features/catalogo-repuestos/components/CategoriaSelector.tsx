@@ -81,7 +81,10 @@ export function CategoriaSelector({
     staleTime: 5 * 60_000,
   })
 
-  const opciones = useMemo(() => ordenarComoArbol(data ?? []), [data])
+  const opciones = useMemo(
+    () => ordenarComoArbol((data ?? []).filter((c) => c.nombreCategoria !== "Catálogo GENLOGS")),
+    [data]
+  )
 
   if (isError) {
     return (
@@ -115,10 +118,8 @@ export function CategoriaSelector({
           {isLoading ? "Cargando categorías…" : placeholder}
         </option>
       )}
-      {opciones.map(({ categoria, profundidad }) => (
+      {opciones.map(({ categoria }) => (
         <option key={categoria.idCategoriaProducto} value={categoria.idCategoriaProducto}>
-          {"\u00A0\u00A0".repeat(profundidad)}
-          {profundidad > 0 ? "↳ " : ""}
           {categoria.nombreCategoria}
         </option>
       ))}
