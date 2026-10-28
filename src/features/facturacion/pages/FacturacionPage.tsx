@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Ban, Download, FileText, Loader2, Receipt, Send, Upload, Wallet } from 'lucide-react'
+import { Download, Loader2, Receipt, Send } from 'lucide-react'
 import { useAnularFactura, useFacturas, useRegistrarPago, useSubirArchivoFactura } from '../hooks/useFacturacion'
 import { RegistrarPagoDialog } from '../components/RegistrarPagoDialog'
 import { EnviarFacturaModal } from '../components/EnviarFacturaModal'
 import { EstadoFacturaSelect } from '../components/EstadoFacturaSelect'
+import { MasAccionesFactura } from '../components/MasAccionesFactura'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { facturacionApi } from '@/api/facturacionApi'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
@@ -166,23 +167,20 @@ export function FacturacionPage() {
             descripcion={estado ? 'Prueba con otro estado.' : 'Se emiten a partir de una orden de compra atendida.'}
           />
         ) : (
-          <Tabla titulo="Comprobantes" minWidth={860}>
+          <Tabla titulo="Comprobantes" minWidth={780}>
             <thead>
               <tr>
                 <Th>Comprobante</Th>
                 <Th>Cliente</Th>
-                <Th>Orden</Th>
                 <Th>Emitido</Th>
-                <Th>Vence</Th>
                 <Th>Estado</Th>
-                <Th alinear="derecha">Total</Th>
-                <Th alinear="derecha">Saldo</Th>
+                <Th alinear="derecha">Importe</Th>
                 <Th><span className="sr-only">Acciones</span></Th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <TableSkeletonRows columns={9} />
+                <TableSkeletonRows columns={6} />
               ) : (
                 facturas.map((f) => {
                   const real = estadoReal(f)
@@ -205,12 +203,15 @@ export function FacturacionPage() {
                           </span>
                         )}
                       </Td>
-                      <Td>{f.clienteNombre ?? f.cliente ?? '—'}</Td>
-                      <Td className="whitespace-nowrap tabular-nums">{f.numeroOrdenCompra ?? `#${f.idOrdenCompra}`}</Td>
-                      <Td className="whitespace-nowrap tabular-nums">{formatearFechaCorta(f.fechaEmision)}</Td>
+                      <Td className="min-w-44 max-w-72">
+                        <p className="line-clamp-2 font-medium" title={f.clienteNombre ?? f.cliente ?? undefined}>{f.clienteNombre ?? f.cliente ?? '—'}</p>
+                        <p className="text-xs text-muted-foreground tabular-nums">Orden {f.numeroOrdenCompra ?? `#${f.idOrdenCompra}`}</p>
+                      </Td>
                       <Td className="whitespace-nowrap">
-                        <p className="tabular-nums">{formatearFechaCorta(f.fechaVencimiento)}</p>
-                        {nota && <p className={`text-xs ${nota.clase}`}>{nota.texto}</p>}
+                        <p className="tabular-nums">{formatearFechaCorta(f.fechaEmision)}</p>
+                        <p className={`text-xs tabular-nums ${nota ? nota.clase : 'text-muted-foreground'}`}>
+                          {nota ? nota.texto : `Vence ${formatearFechaCorta(f.fechaVencimiento)}`}
+                        </p>
                       </Td>
                       <Td>
                         <EstadoFacturaSelect
@@ -222,38 +223,16 @@ export function FacturacionPage() {
                           onError={setErrorAccion}
                         />
                       </Td>
-                      <Td alinear="derecha" className="whitespace-nowrap font-medium">{formatearMoneda(f.total ?? 0, moneda)}</Td>
-                      <Td alinear="derecha" className="whitespace-nowrap">{saldoDe(f) > 0 ? formatearMoneda(saldoDe(f), moneda) : '—'}</Td>
-                      <Td className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                        {f.urlArchivo && (
-                          <a
-                            href={f.urlArchivo}
-                            target="_blank"
-                            rel="noreferrer"
-                            aria-label={`Ver documento de SUNAT de ${codigoDe(f)}`}
-                            title="Ver documento de SUNAT"
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          >
-                            <FileText className="h-4 w-4" aria-hidden="true" />
-                          </a>
+                      <Td alinear="derecha" className="whitespace-nowrap">
+                        <p className="font-medium">{formatearMoneda(f.total ?? 0, moneda)}</p>
+                        {/* Saldo solo si ya hubo pagos (si no, es igual al total y sobra). */}
+                        {saldoDe(f) > 0 && saldoDe(f) < (f.total ?? 0) && (
+                          <p className="text-xs text-warning-text">Saldo {formatearMoneda(saldoDe(f), moneda)}</p>
                         )}
-                        <label
-                          title={f.urlArchivo ? 'Reemplazar documento de SUNAT' : 'Subir documento de SUNAT'}
-                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-within:ring-2 focus-within:ring-ring"
-                        >
-                          {subiendoId === idDe(f)
-                            ? <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-                            : <Upload className="h-4 w-4" aria-hidden="true" />}
-                          <span className="sr-only">{f.urlArchivo ? 'Reemplazar' : 'Subir'} documento de SUNAT de {codigoDe(f)}</span>
-                          <input
-                            type="file"
-                            accept="application/pdf,.pdf"
-                            className="sr-only"
-                            disabled={subiendoId === idDe(f)}
-                            onChange={(e) => { subirDocumento(f, e.target.files?.[0]); e.target.value = '' }}
-                          />
-                        </label>
+                        {real === 'PAGADA' && <p className="text-xs text-success">Pagada</p>}
+                      </Td>
+                      <Td className="text-right">
+                        <div className="flex items-center justify-end gap-0.5">
                         {real !== 'ANULADA' && (
                           <button
                             type="button"
@@ -263,28 +242,6 @@ export function FacturacionPage() {
                             className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           >
                             <Send className="h-4 w-4" aria-hidden="true" />
-                          </button>
-                        )}
-                        {puedePagar && (
-                          <button
-                            type="button"
-                            onClick={() => setPagando(f)}
-                            aria-label={`Registrar pago de ${codigoDe(f)}`}
-                            title="Registrar pago"
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          >
-                            <Wallet className="h-4 w-4" aria-hidden="true" />
-                          </button>
-                        )}
-                        {puedeAnular && (
-                          <button
-                            type="button"
-                            onClick={() => setAnulando(f)}
-                            aria-label={`Anular ${codigoDe(f)}`}
-                            title="Anular comprobante"
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          >
-                            <Ban className="h-4 w-4" aria-hidden="true" />
                           </button>
                         )}
                         <button
@@ -299,6 +256,16 @@ export function FacturacionPage() {
                             ? <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
                             : <Download className="h-4 w-4" aria-hidden="true" />}
                         </button>
+                        <MasAccionesFactura
+                          codigo={codigoDe(f)}
+                          urlDocumento={f.urlArchivo}
+                          subiendo={subiendoId === idDe(f)}
+                          puedePagar={puedePagar}
+                          puedeAnular={puedeAnular}
+                          onSubir={(archivo) => subirDocumento(f, archivo)}
+                          onPagar={() => setPagando(f)}
+                          onAnular={() => setAnulando(f)}
+                        />
                         </div>
                       </Td>
                     </tr>
