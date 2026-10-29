@@ -197,14 +197,6 @@ export function FacturacionPage() {
                       <Td className="whitespace-nowrap">
                         <p className="font-medium tabular-nums">{codigoDe(f)}</p>
                         {tipo && <p className="text-xs text-muted-foreground">{TIPOS_COMPROBANTE[tipo] ?? tipo}</p>}
-                        {f.sunatModo === 'SIMULADO' && (
-                          <span
-                            title="Emitida en modo simulación: no se envió a SUNAT y no tiene valor tributario"
-                            className="mt-1 inline-block rounded bg-warning/15 px-1.5 py-0.5 text-[11px] font-medium text-warning-text"
-                          >
-                            Simulación
-                          </span>
-                        )}
                       </Td>
                       <Td className="min-w-44 max-w-72">
                         <p className="line-clamp-2 font-medium" title={f.clienteNombre ?? f.cliente ?? undefined}>{f.clienteNombre ?? f.cliente ?? '—'}</p>

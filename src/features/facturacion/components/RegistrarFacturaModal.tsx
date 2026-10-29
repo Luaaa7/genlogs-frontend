@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { FileText, FlaskConical, Loader2, Trash2, X } from 'lucide-react'
+import { FileText, Loader2, Trash2, X } from 'lucide-react'
 import { useCrearFactura, useEmitirFactura, useSubirArchivoFactura, useSunatConfig, useTiposComprobante } from '../hooks/useFacturacion'
 import { avisar } from '@/lib/avisos'
 import type { CotizacionDetalle } from '@/types/cotizacion.types'
@@ -101,7 +101,6 @@ export const RegistrarFacturaModal: React.FC<RegistrarFacturaModalProps> = ({
     tiposVisibles.find((t) => t.idTipoComprobante === idTipo) ?? tiposVisibles.find((t) => t.codigoTipo === 'FACTURA') ?? tiposVisibles[0]
   const serieActual = serie ?? (tipoElegido ? `${tipoElegido.seriePrefijo}001` : '')
   const serieEmision = tipoElegido?.codigoTipo === 'BOLETA' ? sunat?.serieBoleta ?? 'B001' : sunat?.serieFactura ?? 'F001'
-  const simulado = sunat?.simulado ?? true
   const ocupado = creando || subiendo || emitiendo
 
   const cambiarLinea = (clave: number, cambios: Partial<LineaEditable>) =>
@@ -157,7 +156,7 @@ export const RegistrarFacturaModal: React.FC<RegistrarFacturaModalProps> = ({
           fechaEmision: fecha || undefined,
           lineas: lineasPayload,
         })
-        avisar(`${tipoElegido.nombreTipo} ${factura.codigoComprobante ?? ''} emitida${factura.sunatModo === 'SIMULADO' ? ' (simulación)' : ''}`.replace(/\s+/g, ' '))
+        avisar(`${tipoElegido.nombreTipo} ${factura.codigoComprobante ?? ''} emitida`.replace(/\s+/g, ' '))
         onClose()
       } catch (err) {
         setError(mensajeDe(err, 'No se pudo emitir el comprobante. Revisa los datos e inténtalo de nuevo.'))
@@ -221,15 +220,6 @@ export const RegistrarFacturaModal: React.FC<RegistrarFacturaModalProps> = ({
             : `Registra el comprobante que ya emitió SUNAT${numeroOrdenCompra ? ` para la orden ${numeroOrdenCompra}` : ''}.`}
         </p>
 
-        {emitir && simulado && (
-          <p className="mt-3 flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning-text">
-            <FlaskConical className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-            <span>
-              <strong>Modo simulación:</strong> no se envía a SUNAT y no tiene valor tributario. El PDF sale con la marca de agua
-              “SIMULACIÓN”.
-            </span>
-          </p>
-        )}
 
         <form onSubmit={enviar} className="mt-4 space-y-4">
           <fieldset disabled={ocupado || idCreada !== null} className="space-y-4">
@@ -344,7 +334,7 @@ export const RegistrarFacturaModal: React.FC<RegistrarFacturaModalProps> = ({
             </button>
             <button type="submit" disabled={ocupado} className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:opacity-50">
               {ocupado && <Loader2 className="h-4 w-4 animate-spin" />}
-              {idCreada ? 'Reintentar subida' : emitir ? (simulado ? 'Emitir (simulación)' : 'Emitir') : 'Registrar factura'}
+              {idCreada ? 'Reintentar subida' : emitir ? 'Emitir' : 'Registrar factura'}
             </button>
           </div>
         </form>
