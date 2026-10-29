@@ -28,7 +28,6 @@ function mensajeDe(err: unknown): string {
  */
 export function EnviarFacturaModal({ factura, codigo, onClose }: Props) {
   const id = factura.idFacturacion ?? factura.id ?? 0
-  const simulado = factura.sunatModo === 'SIMULADO'
   const { mutate, isPending } = useEnviarFactura()
 
   const [correo, setCorreo] = useState(factura.clienteEmail ?? '')
@@ -84,9 +83,6 @@ export function EnviarFacturaModal({ factura, codigo, onClose }: Props) {
             <Paperclip className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
             {factura.urlArchivo ? 'Se adjunta el documento de SUNAT' : `Se adjunta el PDF: ${codigo}.pdf`}
           </p>
-          {simulado && !factura.urlArchivo && (
-            <p className="text-xs text-warning-text">Es una emisión de prueba: el PDF lleva la marca de agua “SIMULACIÓN”.</p>
-          )}
 
           <label className="flex items-center gap-2 text-sm text-foreground">
             <input type="checkbox" checked={incluirTotal} onChange={(e) => setIncluirTotal(e.target.checked)} className="h-4 w-4 rounded border-border" />
