@@ -295,7 +295,7 @@ export function AppLayout() {
   return (
     <div className="flex min-h-screen bg-background font-sans text-foreground antialiased">
       {/* Menú lateral fijo — escritorio (lg+) */}
-      <aside className="sticky top-0 hidden h-screen w-62 shrink-0 flex-col overflow-y-auto bg-sidebar pt-4 lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-62 shrink-0 flex-col overflow-y-auto bg-sidebar pt-4 lg:flex print:hidden">
         <div className="px-3">
           <LogoLateral />
         </div>
@@ -304,7 +304,7 @@ export function AppLayout() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Barra superior: ruta, búsqueda, tema y usuario */}
-        <header className="sticky top-0 z-40 flex h-16 items-center gap-3 border-b border-border bg-card px-4 sm:px-6 lg:px-8">
+        <header className="sticky top-0 z-40 flex h-16 print:hidden items-center gap-3 border-b border-border bg-card px-4 sm:px-6 lg:px-8">
           {/* En móvil/tablet no hay menú lateral: el logo va aquí */}
           <Link
             to="/dashboard"
@@ -426,7 +426,7 @@ export function AppLayout() {
 
       {/* Barra de navegación inferior — solo móvil/tablet (hasta lg) */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] lg:hidden print:hidden"
         aria-label="Navegación principal"
       >
         <div className="grid grid-cols-5">

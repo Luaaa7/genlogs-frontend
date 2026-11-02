@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react"
 import { Link } from "react-router-dom"
-import { Plus, RefreshCw, AlertTriangle } from "lucide-react"
+import { Plus, Printer, RefreshCw, AlertTriangle } from "lucide-react"
 import { useDashboardData } from "../hooks/useDashboardData"
 import { useDashboardOperativo } from "../hooks/useDashboardOperativo"
 import { RequiereAtencionCard } from "../components/RequiereAtencionCard"
@@ -104,7 +104,7 @@ export function DashboardPage() {
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">{fechaHoy}</p>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 print:hidden">
         {monedas.length > 1 && (
           <div role="group" aria-label="Moneda de las gráficas" className="inline-flex overflow-hidden rounded-md border border-border">
             {monedas.map((m) => (
@@ -126,6 +126,10 @@ export function DashboardPage() {
         <Button variant="outline" onClick={actualizar}>
           <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />
           Actualizar
+        </Button>
+        <Button variant="outline" onClick={() => window.print()}>
+          <Printer className="mr-2 h-4 w-4" aria-hidden="true" />
+          Imprimir
         </Button>
         <Button asChild>
           <Link to="/cotizaciones/nueva">
