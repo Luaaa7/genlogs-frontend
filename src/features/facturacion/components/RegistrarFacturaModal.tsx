@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { FileText, Loader2, Trash2, X } from 'lucide-react'
 import { useCrearFactura, useEmitirFactura, useSubirArchivoFactura, useSunatConfig, useTiposComprobante } from '../hooks/useFacturacion'
 import { avisar } from '@/lib/avisos'
@@ -59,6 +60,7 @@ export const RegistrarFacturaModal: React.FC<RegistrarFacturaModalProps> = ({
   idMoneda,
   detalles,
 }) => {
+  const navigate = useNavigate()
   const { data: tipos = [] } = useTiposComprobante()
   const { mutateAsync: crear, isPending: creando } = useCrearFactura()
   const { mutateAsync: subir, isPending: subiendo } = useSubirArchivoFactura()
@@ -158,6 +160,7 @@ export const RegistrarFacturaModal: React.FC<RegistrarFacturaModalProps> = ({
         })
         avisar(`${tipoElegido.nombreTipo} ${factura.codigoComprobante ?? ''} emitida`.replace(/\s+/g, ' '))
         onClose()
+        navigate(`/facturacion?idOrdenCompra=${idOrdenCompra}&ver=1`)
       } catch (err) {
         setError(mensajeDe(err, 'No se pudo emitir el comprobante. Revisa los datos e inténtalo de nuevo.'))
       }

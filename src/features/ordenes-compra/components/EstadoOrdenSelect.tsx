@@ -113,7 +113,7 @@ export function EstadoOrdenSelect({ idOrden, idCotizacion, estadoActual, numero,
         if (nuevo !== 'ATENDIDA') return
         if (orden?.comprobanteEmitido) {
           avisar(`Orden ${numero} atendida: se emitió el comprobante ${orden.comprobanteEmitido}`)
-          navigate(`/facturacion?idOrdenCompra=${idOrden}`)
+          navigate(`/facturacion?idOrdenCompra=${idOrden}&ver=1`)
         } else if (orden?.avisoComprobante) {
           onError(`La orden ${numero} quedó atendida, pero el comprobante no se emitió solo: ${orden.avisoComprobante}`)
           if (idCotizacion) navigate(`/cotizaciones/${idCotizacion}?facturar=1`)

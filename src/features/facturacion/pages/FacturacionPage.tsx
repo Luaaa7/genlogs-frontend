@@ -1,9 +1,10 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Download, Loader2, Receipt, Send } from 'lucide-react'
+import { Download, Eye, Loader2, Receipt, Send } from 'lucide-react'
 import { useAnularFactura, useFacturas, useRegistrarPago, useSubirArchivoFactura } from '../hooks/useFacturacion'
 import { RegistrarPagoDialog } from '../components/RegistrarPagoDialog'
 import { EnviarFacturaModal } from '../components/EnviarFacturaModal'
+import { VistaPreviaComprobante } from '../components/VistaPreviaComprobante'
 import { EstadoFacturaSelect } from '../components/EstadoFacturaSelect'
 import { MasAccionesFactura } from '../components/MasAccionesFactura'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -76,7 +77,7 @@ export function FacturacionPage() {
   // Con un filtro de estado se trae todo y se filtra aquí con el estado real
   // (así "Vencida" sí muestra las facturas vencidas). Sin filtro, paginación del backend.
   // ?idOrdenCompra=7 llega desde una cotización o el dashboard: muestra solo la factura de esa orden.
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
   const idOrdenCompra = Number(params.get('idOrdenCompra')) || undefined
   const { data: datos, isLoading, isError, refetch } = useFacturas(
     estado ? { idOrdenCompra, page: 0, size: 1000 } : { idOrdenCompra, page: pagina, size: tamano },
@@ -90,6 +91,16 @@ export function FacturacionPage() {
   const [pagando, setPagando] = useState<Factura | null>(null)
   const [anulando, setAnulando] = useState<Factura | null>(null)
   const [enviando, setEnviando] = useState<Factura | null>(null)
+  const [viendo, setViendo] = useState<Factura | null>(null)
+  // ?ver=1 llega al atender una orden o emitir un comprobante: se muestra el comprobante recién emitido.
+  const pedirVer = params.get('ver') === '1'
+  useEffect(() => {
+    if (!pedirVer || facturas.length === 0) return
+    setViendo(facturas[0])
+    const siguiente = new URLSearchParams(params)
+    siguiente.delete('ver')
+    setParams(siguiente, { replace: true })
+  }, [pedirVer, facturas, params, setParams])
   const registrarPago = useRegistrarPago()
   const anular = useAnularFactura()
   const subirArchivo = useSubirArchivoFactura()
@@ -228,6 +239,17 @@ export function FacturacionPage() {
                       </Td>
                       <Td className="text-right">
                         <div className="flex items-center justify-end gap-0.5">
+                        {real !== 'ANULADA' && (
+                          <button
+                            type="button"
+                            onClick={() => setViendo(f)}
+                            aria-label={`Ver comprobante ${codigoDe(f)}`}
+                            title="Ver comprobante"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            <Eye className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                        )}
                         {permisos.enviarFactura && real !== 'ANULADA' && (
                           <button
                             type="button"
@@ -285,6 +307,15 @@ export function FacturacionPage() {
           registrarPago.mutate({ id: idDe(pagando), pago }, { onSuccess: () => setPagando(null) })
         }}
       />
+
+      {viendo && (
+        <VistaPreviaComprobante
+          idFactura={idDe(viendo)}
+          codigo={codigoDe(viendo)}
+          onClose={() => setViendo(null)}
+          onEnviar={permisos.enviarFactura ? () => { setEnviando(viendo); setViendo(null) } : undefined}
+        />
+      )}
 
       {enviando && (
         <EnviarFacturaModal factura={enviando} codigo={codigoDe(enviando)} onClose={() => setEnviando(null)} />
