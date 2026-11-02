@@ -7,7 +7,11 @@ interface Props {
   /** Nombre del archivo al descargar (sin .pdf). */
   nombreArchivo: string
   /** Pide el PDF al servidor. */
-  cargar: () => Promise<Blob>
+  cargar?: () => Promise<Blob>
+  /** Alternativa a `cargar`: un archivo que ya está en internet (p. ej. la orden subida por el cliente). */
+  urlDirecta?: string
+  /** Con `urlDirecta`: si el archivo es una imagen (JPG/PNG) en vez de un PDF. */
+  esImagen?: boolean
   onClose: () => void
   /** Si se pasa, aparece el botón "Enviar al cliente" (solo para quien puede enviar). */
   onEnviar?: () => void
@@ -20,12 +24,17 @@ const boton =
  * Ventana con la vista previa de un PDF (comprobante, cotización…) y sus acciones:
  * descargar, imprimir y, si se pide, enviar al cliente. Se monta solo cuando se abre.
  */
-export function VistaPreviaPdf({ titulo, nombreArchivo, cargar, onClose, onEnviar }: Props) {
+export function VistaPreviaPdf({ titulo, nombreArchivo, cargar, urlDirecta, esImagen = false, onClose, onEnviar }: Props) {
   const [url, setUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const marco = useRef<HTMLIFrameElement>(null)
 
   useEffect(() => {
+    if (urlDirecta) {
+      setUrl(urlDirecta)
+      return
+    }
+    if (!cargar) return
     let actual: string | null = null
     let cancelado = false
     cargar()
@@ -50,6 +59,11 @@ export function VistaPreviaPdf({ titulo, nombreArchivo, cargar, onClose, onEnvia
 
   function descargar() {
     if (!url) return
+    // Un archivo de otro sitio no se puede forzar a descargar desde aquí: se abre aparte.
+    if (urlDirecta) {
+      window.open(url, '_blank', 'noopener,noreferrer')
+      return
+    }
     const enlace = document.createElement('a')
     enlace.href = url
     enlace.download = `${nombreArchivo}.pdf`
@@ -57,8 +71,14 @@ export function VistaPreviaPdf({ titulo, nombreArchivo, cargar, onClose, onEnvia
   }
 
   function imprimir() {
-    marco.current?.contentWindow?.focus()
-    marco.current?.contentWindow?.print()
+    try {
+      if (urlDirecta && esImagen) throw new Error('imagen')
+      marco.current?.contentWindow?.focus()
+      marco.current?.contentWindow?.print()
+    } catch {
+      // Archivo de otro sitio (o imagen): se abre en una pestaña para imprimirlo desde ahí.
+      if (url) window.open(url, '_blank', 'noopener,noreferrer')
+    }
   }
 
   return (
@@ -85,7 +105,8 @@ export function VistaPreviaPdf({ titulo, nombreArchivo, cargar, onClose, onEnvia
             </div>
           )}
           {error && <p role="alert" className="p-4 text-sm text-destructive">{error}</p>}
-          {url && <iframe ref={marco} src={url} title={titulo} className="h-full w-full" />}
+          {url && esImagen && <img src={url} alt={titulo} className="h-full w-full object-contain" />}
+          {url && !esImagen && <iframe ref={marco} src={url} title={titulo} className="h-full w-full" />}
         </div>
 
         <div className="mt-3 flex flex-wrap justify-end gap-2">

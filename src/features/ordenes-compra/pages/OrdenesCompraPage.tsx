@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { FileText, ShoppingCart, Upload } from 'lucide-react'
+import { Eye, ShoppingCart, Upload } from 'lucide-react'
+import { VistaPreviaPdf } from '@/components/ui/VistaPreviaPdf'
 import { usePermisos } from '@/lib/permisos'
 import { useOrdenesCompra, useSubirArchivoOrdenCompra } from '../hooks/useOrdenesCompra'
 import { EstadoOrdenSelect } from '../components/EstadoOrdenSelect'
@@ -27,6 +28,8 @@ export function OrdenesCompraPage() {
   const { data, isLoading, isError, refetch } = useOrdenesCompra({ estadoCodigo: estado, page: pagina, size: tamano })
   const ordenes = data?.content ?? []
   const [errorEstado, setErrorEstado] = useState<string | null>(null)
+  // Orden del cliente (PDF o imagen) que se está viendo en la ventana
+  const [viendoOrden, setViendoOrden] = useState<{ url: string; numero: string } | null>(null)
   const { gestionarOrdenes } = usePermisos()
   const { mutate: subirArchivo, isPending: subiendo, variables } = useSubirArchivoOrdenCompra()
 
@@ -115,15 +118,16 @@ export function OrdenesCompraPage() {
                       <Td alinear="derecha" className="whitespace-nowrap font-medium">{formatearMoneda(o.total ?? 0, o.moneda ?? 'PEN')}</Td>
                       <Td className="whitespace-nowrap text-right">
                         {o.urlArchivo && (
-                          <a
-                            href={o.urlArchivo}
-                            target="_blank"
-                            rel="noreferrer"
+                          <button
+                            type="button"
+                            onClick={() => setViendoOrden({ url: o.urlArchivo as string, numero: o.numeroOrdenCompra ?? o.numero ?? '' })}
+                            aria-label={`Ver el documento de la orden ${o.numeroOrdenCompra ?? o.numero}`}
+                            title="Ver el documento que envió el cliente"
                             className="mr-3 inline-flex items-center gap-1 rounded text-[13px] font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           >
-                            <FileText className="h-3.5 w-3.5" aria-hidden="true" />
-                            Ver orden
-                          </a>
+                            <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+                            Ver
+                          </button>
                         )}
                         {gestionarOrdenes && <label className="inline-flex cursor-pointer items-center gap-1 rounded text-[13px] font-medium text-accent hover:underline focus-within:ring-2 focus-within:ring-ring">
                           <Upload className="h-3.5 w-3.5" aria-hidden="true" />
@@ -149,6 +153,16 @@ export function OrdenesCompraPage() {
           </Tabla>
         )}
       </TablaCard>
+
+      {viendoOrden && (
+        <VistaPreviaPdf
+          titulo={`Orden de compra ${viendoOrden.numero}`}
+          nombreArchivo={`orden-${viendoOrden.numero}`}
+          urlDirecta={viendoOrden.url}
+          esImagen={/\.(png|jpe?g|webp)(\?|$)/i.test(viendoOrden.url)}
+          onClose={() => setViendoOrden(null)}
+        />
+      )}
     </div>
   )
 }
