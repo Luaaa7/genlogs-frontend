@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { calcularSubtotal, formatearMoneda, mapearCondicionPago } from '@/lib/formatters/codigoCotizacion';
 import type { CreateCotizacionRequest } from '@/types/cotizacion.types';
 import { Loader2 } from 'lucide-react';
+import { avisar } from '@/lib/avisos';
 import { useIgvVigente } from '@/features/configuracion/hooks/useIgv';
 
 
@@ -67,7 +68,10 @@ export const NuevaCotizacionPage: React.FC = () => {
 
   const onSubmit = (data: CrearCotizacionFormData) => {
     crearCotizacion(data as unknown as CreateCotizacionRequest, {
-      onSuccess: (creada) => navigate(`/cotizaciones/${creada.idCotizacion ?? creada.id}`),
+      onSuccess: (creada) => {
+        avisar('Cotización registrada correctamente como borrador');
+        navigate(`/cotizaciones/${creada.idCotizacion ?? creada.id}`);
+      },
     });
   };
 

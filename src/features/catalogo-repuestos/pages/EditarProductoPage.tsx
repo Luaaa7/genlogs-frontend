@@ -1,3 +1,4 @@
+import { avisar } from "@/lib/avisos"
 import { useLocation, useNavigate, useParams } from "react-router-dom"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { mensajeErrorApi } from "@/api/productosApi"
@@ -27,6 +28,7 @@ export function EditarProductoPage() {
       { values: productoFormToRequest(values), medios },
       {
         onSuccess: ({ mediosFallidos }) => {
+          avisar("Producto actualizado correctamente")
           if (mediosFallidos > 0) {
             navigate(location.pathname, {
               replace: true,

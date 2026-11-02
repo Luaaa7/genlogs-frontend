@@ -1,3 +1,4 @@
+import { avisar } from '@/lib/avisos'
 import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Download, Eye, Loader2, Receipt, Send } from 'lucide-react'
@@ -304,7 +305,7 @@ export function FacturacionPage() {
         onCancel={cerrarPago}
         onConfirm={(pago) => {
           if (!pagando) return
-          registrarPago.mutate({ id: idDe(pagando), pago }, { onSuccess: () => setPagando(null) })
+          registrarPago.mutate({ id: idDe(pagando), pago }, { onSuccess: () => { setPagando(null); avisar('Pago registrado correctamente') } })
         }}
       />
 
@@ -332,7 +333,7 @@ export function FacturacionPage() {
           if (!anulando) return
           setErrorAccion(null)
           anular.mutate(idDe(anulando), {
-            onSuccess: () => setAnulando(null),
+            onSuccess: () => { avisar(`Comprobante ${codigoDe(anulando)} anulado`); setAnulando(null) },
             onError: (err) => {
               setAnulando(null)
               setErrorAccion(`No se pudo anular ${codigoDe(anulando)}. ${mensajeError(err)}`.trim())

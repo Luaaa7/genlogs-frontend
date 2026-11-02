@@ -1,3 +1,4 @@
+import { avisar } from "@/lib/avisos"
 import { usePermisos } from '@/lib/permisos'
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft, Loader2, Pencil, Trash2 } from "lucide-react"
@@ -38,7 +39,10 @@ export function ProductoDetallePage() {
     )
     if (!confirmado) return
     eliminar.mutate(producto.idProducto, {
-      onSuccess: () => navigate("/catalogo-repuestos", { replace: true }),
+      onSuccess: () => {
+        avisar(`Producto ${producto.nombreProducto} eliminado`)
+        navigate("/catalogo-repuestos", { replace: true })
+      },
     })
   }
 

@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom"
+import { avisar } from "@/lib/avisos"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { mensajeErrorApi } from "@/api/productosApi"
 import { useCrearProducto } from "@/hooks/useCrearProducto"
@@ -16,6 +17,7 @@ export function NuevoProductoPage() {
       { values: productoFormToRequest(values), medios },
       {
         onSuccess: ({ producto, mediosFallidos }) => {
+          avisar(`Producto ${producto.nombreProducto} registrado correctamente`)
           if (mediosFallidos > 0) {
             // El producto ya existe: se lleva al usuario a editarlo para reintentar los archivos.
             navigate(`/catalogo-repuestos/${producto.idProducto}/editar`, {
