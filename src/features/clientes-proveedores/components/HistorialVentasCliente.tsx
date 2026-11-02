@@ -9,6 +9,7 @@ import { Paginacion, Tabla, Td, Th, filaClass } from '@/components/ui/tabla'
 import { usePaginacionLocal } from '@/hooks/usePaginacionLocal'
 import { ESTADOS_FACTURA, estadoDe } from '@/lib/formatters/estados'
 import { formatearMoneda } from '@/lib/formatters/codigoCotizacion'
+import { normalizarMoneda } from '@/lib/formatters/currency'
 import { formatearFechaCorta, parsearFechaLocal } from '@/lib/formatters/fechaLocal'
 import type { Factura } from '@/types/facturacion.types'
 
@@ -44,7 +45,7 @@ export function HistorialVentasCliente({ idCliente }: { idCliente: number }) {
     const porMoneda = new Map<string, { facturado: number; cobrado: number; pendiente: number; cantidad: number }>()
     for (const f of data) {
       if (anulada(f)) continue
-      const moneda = f.moneda ?? 'PEN'
+      const moneda = normalizarMoneda(f.moneda ?? 'PEN')
       const actual = porMoneda.get(moneda) ?? { facturado: 0, cobrado: 0, pendiente: 0, cantidad: 0 }
       actual.facturado += f.total ?? 0
       actual.cobrado += f.montoPagado ?? 0
