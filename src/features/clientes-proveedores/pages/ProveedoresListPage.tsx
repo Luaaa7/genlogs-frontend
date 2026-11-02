@@ -13,7 +13,8 @@ import { TableSkeletonRows } from '@/components/ui/TableSkeletonRows'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { PanelLateral } from '@/components/ui/PanelLateral'
 import { EstadoVacio } from '@/components/ui/EstadoVacio'
-import { Tabla, TablaCard, Td, Th, controlClass, filaClass } from '@/components/ui/tabla'
+import { Paginacion, Tabla, TablaCard, Td, Th, controlClass, filaClass } from '@/components/ui/tabla'
+import { usePaginacionLocal } from '@/hooks/usePaginacionLocal'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils/utils'
 
@@ -34,6 +35,8 @@ export default function ProveedoresListPage() {
       [p.tercero.razonSocial, p.tercero.nombreComercial, p.tercero.numeroDocumento].some((v) => v?.toLowerCase().includes(q))
     )
   }, [data, busqueda])
+
+  const pag = usePaginacionLocal(filtrados)
 
   const abrirNuevo = () => {
     setEditando(null)
@@ -74,6 +77,9 @@ export default function ProveedoresListPage() {
       {isError && <ErrorBanner message="No se pudo cargar la lista de proveedores." onRetry={() => refetch()} />}
 
       <TablaCard
+        pie={!isLoading && (
+          <Paginacion pagina={pag.pagina} totalPaginas={pag.totalPaginas} total={pag.total} enPagina={pag.enPagina} tamano={pag.tamano} onPagina={pag.onPagina} onTamano={pag.onTamano} />
+        )}
         barra={
           <div className="relative flex w-full items-center sm:w-96">
             <Search className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
@@ -111,7 +117,7 @@ export default function ProveedoresListPage() {
               {isLoading ? (
                 <TableSkeletonRows columns={5} />
               ) : (
-                filtrados.map((p) => (
+                pag.visibles.map((p) => (
                   <tr key={p.idProveedor ?? p.id} className={filaClass}>
                     <Td>
                       <p className="font-medium text-foreground">{p.tercero.razonSocial}</p>

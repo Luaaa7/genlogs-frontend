@@ -9,6 +9,8 @@ import { ServicioCard, ServicioCardSkeleton } from "../components/ServicioCard"
 import { CategoriaServicioSelector } from "../components/CategoriaServicioSelector"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
+import { Paginacion } from "@/components/ui/tabla"
+import { usePaginacionLocal } from "@/hooks/usePaginacionLocal"
 import type { Servicio } from "@/types/servicio.types"
 
 export function CatalogoServiciosPage() {
@@ -37,6 +39,8 @@ export function CatalogoServiciosPage() {
         s.codigoServicio.toLowerCase().includes(termino)
     )
   }, [servicios, busqueda])
+
+  const pag = usePaginacionLocal(serviciosFiltrados)
 
   function handleNuevo() {
     navigate("/catalogo-servicios/nuevo")
@@ -129,7 +133,7 @@ export function CatalogoServiciosPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading && Array.from({ length: 6 }).map((_, i) => <ServicioCardSkeleton key={i} />)}
-        {serviciosFiltrados.map((servicio) => (
+        {pag.visibles.map((servicio) => (
           <ServicioCard
             key={servicio.idServicio}
             servicio={servicio}
@@ -138,6 +142,12 @@ export function CatalogoServiciosPage() {
           />
         ))}
       </div>
+
+      {!isLoading && (
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <Paginacion pagina={pag.pagina} totalPaginas={pag.totalPaginas} total={pag.total} enPagina={pag.enPagina} tamano={pag.tamano} onPagina={pag.onPagina} onTamano={pag.onTamano} />
+        </div>
+      )}
 
       <ConfirmDialog
         open={servicioADesactivar !== null}

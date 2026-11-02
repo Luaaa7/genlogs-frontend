@@ -9,12 +9,14 @@ import { TableSkeletonRows } from "@/components/ui/TableSkeletonRows"
 import { EstadoBadge } from "@/components/ui/EstadoBadge"
 import { PageHeader } from "@/components/ui/PageHeader"
 import { EstadoVacio } from "@/components/ui/EstadoVacio"
-import { Tabla, TablaCard, Td, Th, filaClass } from "@/components/ui/tabla"
+import { Paginacion, Tabla, TablaCard, Td, Th, filaClass } from "@/components/ui/tabla"
+import { usePaginacionLocal } from "@/hooks/usePaginacionLocal"
 import { Button } from "@/components/ui/button"
 import { nombreRolLegible } from "@/lib/formatters/roles"
 
 export function UsuariosPage() {
   const { usuarios, roles, loading, error, agregar, editar, alternarBloqueo, eliminar, recargar } = useUsuarios()
+  const pag = usePaginacionLocal(usuarios)
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [operandoId, setOperandoId] = useState<number | null>(null)
   const [accionError, setAccionError] = useState<string | null>(null)
@@ -73,7 +75,11 @@ export function UsuariosPage() {
         <ErrorBanner message={error || accionError || ""} onRetry={error ? () => void recargar() : undefined} />
       )}
 
-      <TablaCard>
+      <TablaCard
+        pie={!loading && !error && (
+          <Paginacion pagina={pag.pagina} totalPaginas={pag.totalPaginas} total={pag.total} enPagina={pag.enPagina} tamano={pag.tamano} onPagina={pag.onPagina} onTamano={pag.onTamano} />
+        )}
+      >
         {!loading && !error && usuarios.length === 0 ? (
           <EstadoVacio
             icono={<UsersIcon className="h-5.5 w-5.5" />}
@@ -96,7 +102,7 @@ export function UsuariosPage() {
               {loading ? (
                 <TableSkeletonRows columns={5} />
               ) : (
-                usuarios.map((usuario) => (
+                pag.visibles.map((usuario) => (
                   <tr key={usuario.idUsuario} className={filaClass}>
                     <Td>
                       <p className="font-medium text-foreground">{usuario.nombres}</p>
