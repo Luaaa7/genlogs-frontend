@@ -7,6 +7,9 @@ export const facturacionApi = {
     const { data } = await axiosClient.get<PageResponse<Factura>>('/facturacion', { params: filtros })
     return data
   },
+  /** GET /facturacion/cliente/{id} — todos los comprobantes de un cliente (historial de ventas). */
+  listarPorCliente: (idCliente: number) =>
+    axiosClient.get<Factura[]>(`/facturacion/cliente/${idCliente}`).then((r) => r.data),
   obtener: (id: number) => axiosClient.get<Factura>(`/facturacion/${id}`).then((r) => r.data),
   crear: (data: FacturaInput) => axiosClient.post<Factura>('/facturacion', data).then((r) => r.data),
   /** POST /facturacion/emitir — el sistema pone serie y número y lo manda al emisor (simulado o real). */

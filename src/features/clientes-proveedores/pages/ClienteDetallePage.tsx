@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom'
 import { AlertCircle, Building2, FileText, MapPin } from 'lucide-react'
 import { useCliente } from '../hooks/useClientes'
 import { ContactoClienteList } from '../components/ContactoClienteList'
+import { HistorialVentasCliente } from '../components/HistorialVentasCliente'
 import { useEmpresaMineraPorCliente } from '@/features/empresas-mineras/hooks/useEmpresasMineras'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/button'
@@ -81,6 +82,8 @@ export default function ClienteDetallePage() {
             <h2 id="contactos-t" className="mb-4 text-base font-semibold">Contactos</h2>
             <ContactoClienteList idTercero={cliente.idTercero} />
           </section>
+
+          <HistorialVentasCliente idCliente={cliente.idCliente} />
         </div>
 
         <section aria-labelledby="unidades-t" className="rounded-xl border border-border bg-card p-5">
