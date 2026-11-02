@@ -1,6 +1,6 @@
 // src/features/cotizaciones/components/CotizacionDetalleForm.tsx
 
-import React, { useCallback } from 'react';
+import React, { useState } from 'react';
 import { useFormContext, useFieldArray, useWatch } from 'react-hook-form';
 import type { CrearCotizacionFormData } from '@/lib/validators/cotizacion.schema';
 import { formatearMoneda, calcularSubtotal, calcularTotalConMargen } from '@/lib/formatters/codigoCotizacion';
@@ -9,6 +9,7 @@ import { Package, Plus, Trash2 } from 'lucide-react';
 import { MarcaObligatorio } from '@/components/ui/campo';
 import { cn } from '@/lib/utils/utils';
 import { SelectorCatalogoItem, type ItemCatalogo } from './SelectorCatalogoItem';
+import { AgregarItemModal } from './AgregarItemModal';
 
 interface CotizacionDetalleFormProps {
   moneda: string;
@@ -31,9 +32,9 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
   const { fields, append, remove } = useFieldArray({ control, name: 'detalles' });
   const detalles = useWatch({ control, name: 'detalles' });
 
-  const agregarDetalle = useCallback(() => {
-    append({ producto: '', cantidad: 1, precioUnitario: 0, margenPorcentaje: 0, subtotal: 0 });
-  }, [append]);
+  // "Agregar ítem" abre una ventana con el catálogo; el ítem entra a la lista ya completo.
+  const [agregando, setAgregando] = useState(false);
+  const agregarDetalle = () => setAgregando(true);
 
   // Al escribir se pierde el vínculo con el catálogo hasta que se elija una opción.
   const escribirItem = (index: number, texto: string) => {
@@ -199,6 +200,14 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
             })}
           </ul>
         </div>
+      )}
+
+      {agregando && (
+        <AgregarItemModal
+          moneda={moneda}
+          onAgregar={(item) => append(item)}
+          onCerrar={() => setAgregando(false)}
+        />
       )}
     </section>
   );

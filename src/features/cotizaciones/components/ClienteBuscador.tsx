@@ -128,7 +128,8 @@ export function ClienteBuscador({ id, clientes, isLoading = false, value, onChan
 
   return (
     <div className="relative">
-      <div className="relative">
+      <div className="flex gap-2">
+      <div className="relative min-w-0 flex-1">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <input
           ref={inputRef}
@@ -154,6 +155,11 @@ export function ClienteBuscador({ id, clientes, isLoading = false, value, onChan
           onKeyDown={onKeyDown}
           className={cn(inputFormClass, 'pl-9')}
         />
+      </div>
+      <Button type="button" variant="outline" className="shrink-0" onClick={() => setCreando(true)} disabled={isLoading}>
+        <Plus className="mr-1 h-4 w-4" aria-hidden="true" />
+        Nuevo cliente
+      </Button>
       </div>
 
       {abierto && consulta !== '' && (

@@ -1,16 +1,17 @@
 // src/features/cotizaciones/pages/NuevaCotizacionPage.tsx
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm, useWatch, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { ConfirmarCotizacionModal } from '../components/ConfirmarCotizacionModal';
+import { CotizacionCreadaModal } from '../components/CotizacionCreadaModal';
 import { crearCotizacionSchema, type CrearCotizacionFormData } from '@/lib/validators/cotizacion.schema';
 import { useCrearCotizacion } from '../hooks/useCrearCotizacion';
 import { CotizacionForm } from '../components/CotizacionForm';
 import { CotizacionDetalleForm } from '../components/CotizacionDetalleForm';
 import { useClientes } from '@/features/clientes-proveedores/hooks/useClientes';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { Button } from '@/components/ui/button';
 import { calcularSubtotal, formatearMoneda, mapearCondicionPago } from '@/lib/formatters/codigoCotizacion';
 import type { CreateCotizacionRequest } from '@/types/cotizacion.types';
@@ -28,17 +29,21 @@ export const NuevaCotizacionPage: React.FC = () => {
   const clienteDeUrl = Number(searchParams.get('cliente'));
   const { data: clientes = [], isLoading: cargandoClientes } = useClientes({});
 
+  const valoresIniciales = {
+    clienteId: Number.isInteger(clienteDeUrl) && clienteDeUrl > 0 ? clienteDeUrl : (undefined as number | undefined),
+    condicionPago: undefined,
+    moneda: undefined,
+    observaciones: '',
+    detalles: [],
+  };
   const methods = useForm<CrearCotizacionFormData>({
     resolver: zodResolver(crearCotizacionSchema),
     mode: 'onTouched',
-    defaultValues: {
-      clienteId: Number.isInteger(clienteDeUrl) && clienteDeUrl > 0 ? clienteDeUrl : (undefined as number | undefined),
-      condicionPago: undefined,
-      moneda: undefined,
-      observaciones: '',
-      detalles: [],
-    },
+    defaultValues: valoresIniciales,
   });
+  // Ventanas: primero se revisa el resumen; al guardar, aviso de éxito.
+  const [porConfirmar, setPorConfirmar] = useState<CrearCotizacionFormData | null>(null);
+  const [creada, setCreada] = useState<{ id: number; codigo: string } | null>(null);
 
   const { mutate: crearCotizacion, isPending, isError, error } = useCrearCotizacion();
   // La tasa que rige hoy (configurable por el administrador en IGV).
@@ -66,11 +71,16 @@ export const NuevaCotizacionPage: React.FC = () => {
     items.some((d) => !(Number(d?.cantidad) >= 1)) && 'cantidad de los ítems',
   ].filter(Boolean) as string[];
 
-  const onSubmit = (data: CrearCotizacionFormData) => {
-    crearCotizacion(data as unknown as CreateCotizacionRequest, {
-      onSuccess: (creada) => {
+  const onSubmit = (data: CrearCotizacionFormData) => setPorConfirmar(data);
+
+  const confirmar = () => {
+    if (!porConfirmar) return;
+    crearCotizacion(porConfirmar as unknown as CreateCotizacionRequest, {
+      onSuccess: (nueva) => {
         avisar('Cotización registrada correctamente como borrador');
-        navigate(`/cotizaciones/${creada.idCotizacion ?? creada.id}`);
+        setPorConfirmar(null);
+        const idNueva = (nueva.idCotizacion ?? nueva.id) as number;
+        setCreada({ id: idNueva, codigo: nueva.codigoCotizacion ?? `#${idNueva}` });
       },
     });
   };
@@ -106,14 +116,11 @@ export const NuevaCotizacionPage: React.FC = () => {
               <dd className="text-right text-base font-semibold tabular-nums">{formatearMoneda(subtotal + igv, monedaActual)}</dd>
             </dl>
 
-            {isError && (
-              <ErrorBanner message={error?.response?.data?.message ?? 'No se pudo crear la cotización. Revisa los datos e inténtalo de nuevo.'} />
-            )}
 
             <div className="flex flex-col gap-2">
               <Button type="submit" disabled={isPending || faltantes.length > 0} aria-describedby={faltantes.length ? 'cot-faltantes' : undefined} className="w-full">
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
-                {isPending ? 'Creando…' : 'Crear cotización'}
+                Revisar y crear
               </Button>
               {faltantes.length > 0 && (
                 <p id="cot-faltantes" className="text-center text-xs text-muted-foreground">
@@ -127,6 +134,40 @@ export const NuevaCotizacionPage: React.FC = () => {
           </aside>
         </form>
       </FormProvider>
+
+      {porConfirmar && (
+        <ConfirmarCotizacionModal
+          cliente={cliente?.tercero.razonSocial ?? '—'}
+          condicion={porConfirmar.condicionPago ? mapearCondicionPago(porConfirmar.condicionPago) : '—'}
+          moneda={porConfirmar.moneda}
+          observaciones={porConfirmar.observaciones}
+          items={porConfirmar.detalles.map((d) => ({
+            producto: d.producto,
+            cantidad: d.cantidad,
+            precioUnitario: d.precioUnitario,
+            subtotal: calcularSubtotal(d.cantidad || 0, d.precioUnitario || 0),
+          }))}
+          subtotal={subtotal}
+          igv={igv}
+          porcentajeIgv={porcentajeIgv}
+          isPending={isPending}
+          error={isError ? (error?.response?.data?.message ?? 'No se pudo crear la cotización. Revisa los datos e inténtalo de nuevo.') : undefined}
+          onConfirmar={confirmar}
+          onVolver={() => setPorConfirmar(null)}
+        />
+      )}
+
+      {creada && (
+        <CotizacionCreadaModal
+          id={creada.id}
+          codigo={creada.codigo}
+          onVer={() => navigate(`/cotizaciones/${creada.id}`)}
+          onOtra={() => {
+            methods.reset(valoresIniciales);
+            setCreada(null);
+          }}
+        />
+      )}
     </div>
   );
 };
