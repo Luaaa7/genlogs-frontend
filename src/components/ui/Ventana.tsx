@@ -25,11 +25,17 @@ export function Ventana({ titulo, descripcion, onCerrar, acciones, ancho = 'max-
     cerrarRef.current = onCerrar
   }, [onCerrar])
 
+  // Si hay otra ventana encima (p. ej. "crear repuesto"), esta deja de reaccionar a Escape.
+  const cerrableRef = useRef(cerrable)
+  useEffect(() => {
+    cerrableRef.current = cerrable
+  }, [cerrable])
+
   useEffect(() => {
     const anterior = document.activeElement as HTMLElement | null
     ref.current?.querySelector<HTMLElement>('input, select, textarea')?.focus() ?? ref.current?.focus()
     const alTeclear = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && cerrable) cerrarRef.current()
+      if (e.key === 'Escape' && cerrableRef.current) cerrarRef.current()
     }
     document.addEventListener('keydown', alTeclear)
     document.body.style.overflow = 'hidden'
@@ -38,7 +44,7 @@ export function Ventana({ titulo, descripcion, onCerrar, acciones, ancho = 'max-
       document.body.style.overflow = ''
       anterior?.focus()
     }
-  }, [cerrable])
+  }, [])
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onSubmit={(e) => e.stopPropagation()}>

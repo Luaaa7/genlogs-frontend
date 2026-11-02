@@ -6,6 +6,8 @@ import { MarcaObligatorio } from '@/components/ui/campo'
 import { inputFormClass } from '@/components/ui/campoEstilos'
 import { formatearMoneda, calcularSubtotal } from '@/lib/formatters/codigoCotizacion'
 import { SelectorCatalogoItem, type ItemCatalogo } from './SelectorCatalogoItem'
+import { RepuestoRapidoModal } from './RepuestoRapidoModal'
+import { usePermisos } from '@/lib/permisos'
 
 export interface ItemNuevo {
   producto: string
@@ -34,6 +36,8 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
   const [margen, setMargen] = useState('0')
   const [intento, setIntento] = useState(false)
   const [agregados, setAgregados] = useState(0)
+  const [creandoRepuesto, setCreandoRepuesto] = useState(false)
+  const { editarCatalogos } = usePermisos()
 
   const cant = Number(cantidad)
   const prec = Number(precio)
@@ -83,6 +87,7 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
       descripcion="Busca el producto o servicio en el catálogo e indica cantidad y precio."
       onCerrar={onCerrar}
       ancho="max-w-xl"
+      cerrable={!creandoRepuesto}
       acciones={
         <>
           <Button type="button" variant="ghost" onClick={onCerrar}>{agregados > 0 ? 'Listo' : 'Cancelar'}</Button>
@@ -111,6 +116,14 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
             invalido={err(!item)}
           />
           {err(!item) && <p className="mt-1 text-xs text-destructive">Busca y elige un producto o servicio de la lista.</p>}
+          {editarCatalogos && !item && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              ¿No está en el catálogo?{' '}
+              <button type="button" onClick={() => setCreandoRepuesto(true)} className="font-medium text-accent underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                + Crear repuesto nuevo
+              </button>
+            </p>
+          )}
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <label className="block text-sm font-medium text-foreground">
@@ -140,6 +153,17 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
           <p role="alert" className="text-sm text-destructive">Falta completar: {faltantes.join(', ')}.</p>
         )}
       </div>
+      {creandoRepuesto && (
+        <RepuestoRapidoModal
+          nombreInicial={texto.trim()}
+          onCerrar={() => setCreandoRepuesto(false)}
+          onCreado={(nuevo) => {
+            setItem(nuevo)
+            setTexto(nuevo.nombre)
+            setCreandoRepuesto(false)
+          }}
+        />
+      )}
     </Ventana>
   )
 }
