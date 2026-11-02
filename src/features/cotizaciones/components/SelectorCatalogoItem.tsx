@@ -1,6 +1,6 @@
 import React, { useEffect, useId, useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
-import { useProductos } from '@/hooks/useProductos'
+import { useCatalogoCompletoProductos } from '@/hooks/useProductos'
 import { useServicios } from '@/features/catalogo-servicios/hooks/useServicios'
 import { cn } from '@/lib/utils/utils'
 
@@ -26,6 +26,8 @@ interface SelectorCatalogoItemProps {
 
 const MAX_RESULTADOS = 8
 
+const normalizar = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+
 /** Buscador de productos y servicios del catálogo para una línea de cotización. */
 export const SelectorCatalogoItem: React.FC<SelectorCatalogoItemProps> = ({
   valor,
@@ -46,18 +48,29 @@ export const SelectorCatalogoItem: React.FC<SelectorCatalogoItemProps> = ({
     return () => clearTimeout(t)
   }, [valor])
 
-  const { data: pagina, isFetching: buscandoProductos, isError: errorProductos } = useProductos({ nombre: busqueda || undefined, size: MAX_RESULTADOS })
+  const { data: catalogo = [], isLoading: cargandoProductos, isError: errorProductos } = useCatalogoCompletoProductos()
   const { data: servicios = [], isLoading: cargandoServicios, isError: errorServicios } = useServicios()
   // Mientras se escribe (antes de que pase la espera) o llega la respuesta, se avisa que está buscando
-  const buscando = buscandoProductos || cargandoServicios || busqueda !== valor.trim()
+  const buscando = cargandoProductos || cargandoServicios || busqueda !== valor.trim()
 
-  const productos = pagina?.content ?? []
-  const serviciosFiltrados = useMemo(() => {
-    const q = busqueda.toLowerCase()
-    return servicios
-      .filter((s) => !q || s.nombreServicio.toLowerCase().includes(q) || s.codigoServicio.toLowerCase().includes(q))
-      .slice(0, MAX_RESULTADOS)
-  }, [servicios, busqueda])
+  // La búsqueda se hace en pantalla: sin importar tildes ni mayúsculas, con varias
+  // palabras en cualquier orden, y por nombre, código o marca.
+  const palabras = useMemo(() => normalizar(busqueda).split(/[^a-z0-9]+/).filter(Boolean), [busqueda])
+  const coincide = (...textos: (string | undefined | null)[]) => {
+    if (palabras.length === 0) return true
+    const pajar = normalizar(textos.filter(Boolean).join(' '))
+    return palabras.every((w) => pajar.includes(w))
+  }
+  const productos = useMemo(
+    () => catalogo.filter((p) => coincide(p.nombreProducto, p.codigoProducto, p.marcaNombre)).slice(0, MAX_RESULTADOS),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [catalogo, palabras],
+  )
+  const serviciosFiltrados = useMemo(
+    () => servicios.filter((s) => coincide(s.nombreServicio, s.codigoServicio)).slice(0, MAX_RESULTADOS),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [servicios, palabras],
+  )
 
   const sinResultados = productos.length === 0 && serviciosFiltrados.length === 0
   // Si el servidor falla, decirlo: antes salía "No hay productos" y parecía que el catálogo estaba vacío.
@@ -166,7 +179,7 @@ export const SelectorCatalogoItem: React.FC<SelectorCatalogoItemProps> = ({
 
           {sinResultados && !buscando && !errorCatalogo && (
             <p className="px-2.5 py-3 text-sm text-muted-foreground">
-              No hay productos ni servicios con ese nombre. Si falta, créalo primero en el catálogo.
+              No hay productos ni servicios con ese nombre o código. Si falta, créalo primero en el catálogo.
             </p>
           )}
         </div>

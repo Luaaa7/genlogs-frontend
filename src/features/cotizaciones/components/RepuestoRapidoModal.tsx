@@ -5,6 +5,8 @@ import { Ventana } from '@/components/ui/Ventana'
 import { Button } from '@/components/ui/button'
 import { MarcaObligatorio } from '@/components/ui/campo'
 import { inputFormClass } from '@/components/ui/campoEstilos'
+import { FileUploader } from '@/components/ui/FileUploader'
+import type { ImagenNueva } from '@/types/producto.types'
 import { CategoriaSelector } from '@/features/catalogo-repuestos/components/CategoriaSelector'
 import { listarMarcas } from '@/api/marcasApi'
 import { listarUnidadesMedida } from '@/api/unidadesMedidaApi'
@@ -30,6 +32,9 @@ export function RepuestoRapidoModal({ nombreInicial = '', onCreado, onCerrar }: 
   const [marca, setMarca] = useState<number | undefined>()
   const [visibleWeb, setVisibleWeb] = useState(true)
   const [intento, setIntento] = useState(false)
+  // Fotos opcionales: ya quedan en Cloudinary y se asocian al crear; la primera es la principal.
+  const [imagenes, setImagenes] = useState<ImagenNueva[]>([])
+  const [subiendo, setSubiendo] = useState(false)
   const { mutate, isPending, error } = useCrearProducto()
 
   const { data: unidades, isLoading: cargandoUnidades } = useQuery({ queryKey: ['unidades-medida'], queryFn: listarUnidadesMedida, staleTime: 5 * 60_000 })
@@ -45,7 +50,7 @@ export function RepuestoRapidoModal({ nombreInicial = '', onCreado, onCerrar }: 
 
   function guardar() {
     setIntento(true)
-    if (faltantes.length > 0 || !categoria || !unidad) return
+    if (faltantes.length > 0 || !categoria || !unidad || subiendo) return
     mutate(
       {
         values: {
@@ -57,7 +62,7 @@ export function RepuestoRapidoModal({ nombreInicial = '', onCreado, onCerrar }: 
           visibleWeb,
           caracteristicas: [],
         },
-        medios: { imagenes: [], documentos: [] },
+        medios: { imagenes, documentos: [] },
       },
       {
         onSuccess: ({ producto }) => {
@@ -80,14 +85,14 @@ export function RepuestoRapidoModal({ nombreInicial = '', onCreado, onCerrar }: 
   return (
     <Ventana
       titulo="Nuevo repuesto"
-      descripcion="Solo lo obligatorio. Las fotos y la ficha técnica se completan luego en el catálogo."
+      descripcion="Lo obligatorio y, si quieres, fotos. La ficha técnica y los documentos se completan luego en el catálogo."
       onCerrar={onCerrar}
-      cerrable={!isPending}
+      cerrable={!isPending && !subiendo}
       ancho="max-w-xl"
       acciones={
         <>
           <Button type="button" variant="ghost" onClick={onCerrar} disabled={isPending}>Cancelar</Button>
-          <Button type="button" onClick={guardar} disabled={isPending}>
+          <Button type="button" onClick={guardar} disabled={isPending || subiendo}>
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
             {isPending ? 'Guardando…' : 'Crear y usar en la cotización'}
           </Button>
@@ -133,6 +138,24 @@ export function RepuestoRapidoModal({ nombreInicial = '', onCreado, onCerrar }: 
           <input type="checkbox" className="h-4 w-4" checked={visibleWeb} onChange={(e) => setVisibleWeb(e.target.checked)} />
           Mostrar en el catálogo web
         </label>
+      </div>
+
+      <div className="mt-4">
+        <FileUploader
+          tipo="imagen"
+          multiple
+          maxArchivos={5}
+          label="Fotos del repuesto (opcional)"
+          onUploaded={(r) => setImagenes((prev) => [...prev, { url: r.url, esPrincipal: prev.length === 0 }])}
+          onRemoved={(r) =>
+            setImagenes((prev) => {
+              const resto = prev.filter((i) => i.url !== r.url)
+              return resto.length > 0 && !resto.some((i) => i.esPrincipal) ? resto.map((i, n) => (n === 0 ? { ...i, esPrincipal: true } : i)) : resto
+            })
+          }
+          onUploadingChange={setSubiendo}
+          disabled={isPending}
+        />
       </div>
       {intento && faltantes.length > 0 && <p role="alert" className="mt-4 text-sm text-destructive">Falta completar: {faltantes.join(', ')}.</p>}
       {error != null && <p role="alert" className="mt-4 text-sm text-destructive">{mensajeErrorApi(error, 'No se pudo crear el repuesto. Revisa los datos e intenta de nuevo (¿el código ya existe?).')}</p>}

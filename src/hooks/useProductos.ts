@@ -32,6 +32,27 @@ export function useProductos(filtros: ProductoFiltros) {
   })
 }
 
+const TAMANO_PAGINA_CATALOGO = 100
+
+/** Todo el catálogo de productos (pide las páginas de 100 en paralelo). Sirve para
+ *  buscadores que filtran en pantalla —sin tildes, por varias palabras y por
+ *  código— y se renueva solo cuando se crea o edita un producto. */
+export function useCatalogoCompletoProductos() {
+  return useQuery({
+    queryKey: [...productosKeys.all, "catalogo-completo"] as const,
+    queryFn: async (): Promise<Producto[]> => {
+      const primera = await productosApi.listarProductos({ page: 0, size: TAMANO_PAGINA_CATALOGO, sortBy: "nombreProducto", sortDir: "ASC" })
+      const restantes = await Promise.all(
+        Array.from({ length: Math.max(primera.totalPages - 1, 0) }, (_, i) =>
+          productosApi.listarProductos({ page: i + 1, size: TAMANO_PAGINA_CATALOGO, sortBy: "nombreProducto", sortDir: "ASC" }),
+        ),
+      )
+      return [primera, ...restantes].flatMap((p) => p.content ?? [])
+    },
+    staleTime: 5 * 60_000,
+  })
+}
+
 export function useProducto(id: number) {
   return useQuery({
     queryKey: productosKeys.detalle(id),
