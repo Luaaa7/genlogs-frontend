@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react"
+import { useEffect, useId, useRef, type ReactNode } from "react"
 import { cn } from "@/lib/utils/utils"
 
 interface CampoProps {
@@ -58,5 +58,60 @@ export function SeccionForm({ titulo, descripcion, children }: { titulo: string;
       </div>
       {children}
     </fieldset>
+  )
+}
+
+/** Leyenda "* Campo obligatorio" para el inicio de un formulario. */
+export function LeyendaObligatorio() {
+  return (
+    <p className="text-xs text-muted-foreground">
+      <span className="text-destructive" aria-hidden="true">*</span> Campo obligatorio
+    </p>
+  )
+}
+
+/** Recorre el objeto de errores de react-hook-form y devuelve las rutas de los campos con error
+ *  (sin los índices de listas: "detalles.0.producto" → "detalles.producto"). */
+function rutasConError(errores: unknown, prefijo = ""): string[] {
+  if (!errores || typeof errores !== "object") return []
+  const objeto = errores as Record<string, unknown>
+  if (typeof objeto.message === "string" || typeof objeto.type === "string") return prefijo ? [prefijo] : []
+  return Object.entries(objeto).flatMap(([clave, valor]) => {
+    if (clave === "ref") return []
+    const siguiente = /^\d+$/.test(clave) ? prefijo : prefijo ? `${prefijo}.${clave}` : clave
+    return rutasConError(valor, siguiente)
+  })
+}
+
+/** Aviso sobre el formulario: "Falta completar: A, B". Solo aparece cuando hay errores
+ *  (react-hook-form los llena al intentar guardar) y se lleva a la vista. */
+export function ResumenFaltantes({ errors, etiquetas }: { errors: unknown; etiquetas: Record<string, string> }) {
+  const referencia = useRef<HTMLDivElement>(null)
+  const nombres = Array.from(
+    new Set(
+      rutasConError(errors).map((ruta) => {
+        const partes = ruta.split(".")
+        while (partes.length > 0) {
+          const nombre = etiquetas[partes.join(".")]
+          if (nombre) return nombre
+          partes.pop()
+        }
+        return ""
+      }).filter(Boolean),
+    ),
+  )
+  const texto = nombres.join(", ")
+  useEffect(() => {
+    if (texto) referencia.current?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+  }, [texto])
+  if (nombres.length === 0) return null
+  return (
+    <div
+      ref={referencia}
+      role="alert"
+      className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+    >
+      <strong className="font-semibold">Falta completar:</strong> {texto}
+    </div>
   )
 }

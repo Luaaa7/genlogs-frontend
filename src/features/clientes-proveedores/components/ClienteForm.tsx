@@ -7,7 +7,7 @@ import type { ClienteRequest } from '../../../types/cliente.types'
 import { listarSectoresEconomicos } from '@/api/sectoresEconomicosApi'
 import { CamposTercero } from './CamposTercero'
 import { unirLugarExtranjero } from '@/lib/terceroExtranjero'
-import { Campo, SeccionForm } from '@/components/ui/campo'
+import { Campo, LeyendaObligatorio, ResumenFaltantes, SeccionForm } from '@/components/ui/campo'
 import { describedBy, inputFormClass } from '@/components/ui/campoEstilos'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
 import { Button } from '@/components/ui/button'
@@ -56,6 +56,11 @@ export function ClienteForm({ onSubmit, isSubmitting, serverError, valoresInicia
   return (
     <FormProvider {...form}>
       <form onSubmit={handleSubmit((d) => onSubmit(unirLugarExtranjero(d) as ClienteRequest))} className="flex flex-col gap-5" noValidate>
+        <LeyendaObligatorio />
+        <ResumenFaltantes
+          errors={errors}
+          etiquetas={{ 'tercero.idTipoDocumento': 'Tipo de documento', 'tercero.numeroDocumento': 'Número de documento', 'tercero.razonSocial': 'Razón social / Nombres', 'tercero.direccion': 'Dirección', 'tercero.idDistrito': 'Distrito', 'tercero.lugarExtranjero': 'Ciudad y país', 'tercero.correo': 'Correo', 'tercero.telefono': 'Teléfono', idSectorEconomico: 'Sector económico' }}
+        />
         <CamposTercero />
 
         <SeccionForm titulo="Clasificación">

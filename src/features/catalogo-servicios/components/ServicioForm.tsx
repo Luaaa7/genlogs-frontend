@@ -1,3 +1,4 @@
+import { LeyendaObligatorio, MarcaObligatorio, ResumenFaltantes } from "@/components/ui/campo"
 import { useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -70,8 +71,16 @@ export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando }:
 
   return (
     <form onSubmit={handleSubmit((valores) => onSubmit({ ...valores, imagenUrl }))} className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
+      <div className="sm:col-span-2 flex flex-col gap-2">
+        <LeyendaObligatorio />
+        <ResumenFaltantes
+          errors={errors}
+          etiquetas={{ codigoServicio: "Código de servicio", nombreServicio: "Nombre del servicio", idCategoriaServicio: "Categoría de servicio", idUnidadMedida: "Unidad de medida", duracionEstimadaHoras: "Duración estimada", descripcion: "Descripción" }}
+        />
+      </div>
+
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-foreground">Código de servicio</label>
+        <label className="mb-1.5 block text-sm font-medium text-foreground">Código de servicio<MarcaObligatorio /></label>
         <input
           {...register("codigoServicio")}
           className="w-full rounded-md border border-border px-3 py-2 text-sm"
@@ -80,7 +89,7 @@ export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando }:
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-foreground">Nombre del servicio</label>
+        <label className="mb-1.5 block text-sm font-medium text-foreground">Nombre del servicio<MarcaObligatorio /></label>
         <input
           {...register("nombreServicio")}
           className="w-full rounded-md border border-border px-3 py-2 text-sm"
@@ -89,7 +98,7 @@ export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando }:
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-foreground">Categoría de servicio</label>
+        <label className="mb-1.5 block text-sm font-medium text-foreground">Categoría de servicio<MarcaObligatorio /></label>
         <CategoriaServicioSelector
           categorias={categorias}
           isLoading={cargandoCategorias}
@@ -103,7 +112,7 @@ export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando }:
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-foreground">Unidad de medida</label>
+        <label className="mb-1.5 block text-sm font-medium text-foreground">Unidad de medida<MarcaObligatorio /></label>
         <select
           value={Number.isFinite(idUnidadSeleccionada) ? idUnidadSeleccionada : ""}
           onChange={(e) =>

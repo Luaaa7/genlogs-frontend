@@ -104,7 +104,7 @@ function Contenido({ comprobante, saldo, moneda, isLoading = false, error, onCon
 
         <div className="mt-5 flex flex-col gap-4">
           {/* El monto se valida mientras se escribe; el resto, al intentar guardar. */}
-          <Campo id="pago-monto" label={`Monto pagado (${moneda})`} error={errorMonto}>
+          <Campo id="pago-monto" label={`Monto pagado (${moneda})`} obligatorio error={errorMonto}>
             <input
               ref={inputRef}
               id="pago-monto"
@@ -120,7 +120,7 @@ function Contenido({ comprobante, saldo, moneda, isLoading = false, error, onCon
           </Campo>
 
           <div className="grid grid-cols-2 gap-3">
-            <Campo id="pago-fecha" label="Fecha del pago" error={intentado ? errorFecha : undefined}>
+            <Campo id="pago-fecha" label="Fecha del pago" obligatorio error={intentado ? errorFecha : undefined}>
               <input
                 id="pago-fecha"
                 type="date"
@@ -132,7 +132,7 @@ function Contenido({ comprobante, saldo, moneda, isLoading = false, error, onCon
                 className={inputFormClass}
               />
             </Campo>
-            <Campo id="pago-medio" label="Medio de pago" error={intentado ? errorMedio : undefined}>
+            <Campo id="pago-medio" label="Medio de pago" obligatorio error={intentado ? errorMedio : undefined}>
               <select
                 id="pago-medio"
                 value={medio}

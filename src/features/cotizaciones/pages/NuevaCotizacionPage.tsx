@@ -16,6 +16,7 @@ import { calcularSubtotal, formatearMoneda, mapearCondicionPago } from '@/lib/fo
 import type { CreateCotizacionRequest } from '@/types/cotizacion.types';
 import { Loader2 } from 'lucide-react';
 import { avisar } from '@/lib/avisos';
+import { LeyendaObligatorio, ResumenFaltantes } from '@/components/ui/campo';
 import { useIgvVigente } from '@/features/configuracion/hooks/useIgv';
 
 
@@ -82,6 +83,11 @@ export const NuevaCotizacionPage: React.FC = () => {
       <FormProvider<CrearCotizacionFormData> {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)} noValidate className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="flex min-w-0 flex-col gap-4">
+            <LeyendaObligatorio />
+            <ResumenFaltantes
+              errors={methods.formState.errors}
+              etiquetas={{ clienteId: 'Cliente', condicionPago: 'Condición de pago', moneda: 'Moneda', observaciones: 'Observaciones', detalles: 'Ítems de la cotización (producto, cantidad y precio)' }}
+            />
             <CotizacionForm clientes={clientes} isLoadingClientes={cargandoClientes} />
             <CotizacionDetalleForm moneda={monedaActual} />
           </div>

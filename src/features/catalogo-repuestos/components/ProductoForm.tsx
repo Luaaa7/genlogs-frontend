@@ -1,3 +1,4 @@
+import { LeyendaObligatorio, MarcaObligatorio, ResumenFaltantes } from "@/components/ui/campo"
 import { useId, useState } from "react"
 import type { ReactNode } from "react"
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form"
@@ -54,18 +55,23 @@ function Campo({
   id,
   label,
   error,
+  obligatorio,
   children,
   className,
 }: {
   id: string
   label: string
   error?: string
+  obligatorio?: boolean
   children: ReactNode
   className?: string
 }) {
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id}>
+        {label}
+        {obligatorio && <MarcaObligatorio />}
+      </Label>
       {children}
       {error && (
         <p id={`${id}-error`} role="alert" className="text-sm text-destructive">
@@ -167,6 +173,11 @@ export function ProductoForm({
       noValidate
       className="flex flex-col gap-8"
     >
+      <LeyendaObligatorio />
+      <ResumenFaltantes
+        errors={errors}
+        etiquetas={{ codigoProducto: "Código", nombreProducto: "Nombre", idCategoriaProducto: "Categoría", idUnidadMedida: "Unidad de medida", procedencia: "Procedencia", descripcion: "Descripción", caracteristicas: "Características" }}
+      />
       {/* Datos base */}
       <section aria-labelledby={idDe("datos")} className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 sm:p-6">
         <h2 id={idDe("datos")} className="text-base font-semibold">
@@ -174,7 +185,7 @@ export function ProductoForm({
         </h2>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Campo id={idDe("codigo")} label="Código" error={errors.codigoProducto?.message}>
+          <Campo id={idDe("codigo")} label="Código" obligatorio error={errors.codigoProducto?.message}>
             <Input
               id={idDe("codigo")}
               autoComplete="off"
@@ -185,7 +196,7 @@ export function ProductoForm({
             />
           </Campo>
 
-          <Campo id={idDe("nombre")} label="Nombre" error={errors.nombreProducto?.message}>
+          <Campo id={idDe("nombre")} label="Nombre" obligatorio error={errors.nombreProducto?.message}>
             <Input
               id={idDe("nombre")}
               autoComplete="off"
@@ -196,7 +207,7 @@ export function ProductoForm({
             />
           </Campo>
 
-          <Campo id={idDe("categoria")} label="Categoría" error={errors.idCategoriaProducto?.message}>
+          <Campo id={idDe("categoria")} label="Categoría" obligatorio error={errors.idCategoriaProducto?.message}>
             <Controller
               control={control}
               name="idCategoriaProducto"
@@ -212,7 +223,7 @@ export function ProductoForm({
             />
           </Campo>
 
-          <Campo id={idDe("unidad")} label="Unidad de medida" error={errors.idUnidadMedida?.message}>
+          <Campo id={idDe("unidad")} label="Unidad de medida" obligatorio error={errors.idUnidadMedida?.message}>
             <Controller
               control={control}
               name="idUnidadMedida"
