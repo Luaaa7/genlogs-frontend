@@ -23,7 +23,8 @@ import { EstadoBadge } from '@/components/ui/EstadoBadge';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { TableSkeletonRows } from '@/components/ui/TableSkeletonRows';
 import { cn } from '@/lib/utils/utils';
-import { ChevronLeft, ChevronRight, Copy, Download, FileText, Loader2, Plus } from 'lucide-react';
+import { VistaPreviaPdf } from '@/components/ui/VistaPreviaPdf';
+import { ChevronLeft, ChevronRight, Copy, Download, Eye, FileText, Loader2, Plus } from 'lucide-react';
 
 /** Filtros por estado, en el orden del flujo comercial. */
 const PESTANAS: { estado?: EstadoCotizacion; label: string }[] = [
@@ -105,6 +106,8 @@ export const CotizacionesListPage: React.FC = () => {
       onError: () => setErrorAccion(`No se pudo duplicar ${codigoDe(c)}. Inténtalo de nuevo.`),
     });
   };
+
+  const [viendo, setViendo] = useState<Cotizacion | null>(null);
 
   const handleDescargar = async (c: Cotizacion) => {
     setErrorAccion(null);
@@ -292,6 +295,15 @@ export const CotizacionesListPage: React.FC = () => {
                             </button>}
                             <button
                               type="button"
+                              onClick={() => setViendo(c)}
+                              aria-label={`Ver PDF de ${codigoDe(c)}`}
+                              title="Ver PDF"
+                              className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            >
+                              <Eye className="h-4 w-4" aria-hidden="true" />
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => handleDescargar(c)}
                               disabled={descargando === idDe(c)}
                               aria-label={`Descargar PDF de ${codigoDe(c)}`}
@@ -353,6 +365,15 @@ export const CotizacionesListPage: React.FC = () => {
           </div>
         )}
       </section>
+
+      {viendo && (
+        <VistaPreviaPdf
+          titulo={`Cotización ${codigoDe(viendo)}`}
+          nombreArchivo={codigoDe(viendo)}
+          cargar={() => cotizacionesApi.descargarCotizacionPDF(idDe(viendo))}
+          onClose={() => setViendo(null)}
+        />
+      )}
     </div>
   );
 };
