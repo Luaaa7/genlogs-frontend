@@ -102,16 +102,46 @@ function inicialesDe(nombre: string | null) {
 function NavLateral({ esAdmin, onNavigate }: { esAdmin: boolean; onNavigate?: () => void }) {
   const { pathname } = useLocation();
   const permisos = usePermisos();
+  // Grupos plegados por el usuario (se recuerdan en la sesión). El grupo de la página actual no se pliega.
+  const [plegados, setPlegados] = useState<string[]>(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('menu-plegados') ?? '[]');
+    } catch {
+      return [];
+    }
+  });
+  const alternar = (titulo: string) =>
+    setPlegados((actuales) => {
+      const nuevos = actuales.includes(titulo) ? actuales.filter((t) => t !== titulo) : [...actuales, titulo];
+      try {
+        sessionStorage.setItem('menu-plegados', JSON.stringify(nuevos));
+      } catch {
+        /* sin almacenamiento: el menú funciona igual */
+      }
+      return nuevos;
+    });
 
   return (
     <nav aria-label="Módulos" className="flex flex-col px-3 pb-6">
       {NAV_GROUPS.map((grupo) => {
         const items = grupo.items.filter((item) => (!item.soloAdmin || esAdmin) && (!item.permiso || permisos[item.permiso]));
         if (items.length === 0) return null;
+        const hayActivo = items.some((item) => estaActivo(pathname, item.path));
+        const abierto = hayActivo || !plegados.includes(grupo.titulo);
+        const idLista = `menu-grupo-${grupo.titulo}`;
         return (
           <div key={grupo.titulo}>
-            <p className="mx-2.5 mt-5 mb-1.5 text-xs font-medium text-sidebar-muted">{grupo.titulo}</p>
-            <ul className="flex flex-col gap-0.5">
+            <button
+              type="button"
+              onClick={() => alternar(grupo.titulo)}
+              aria-expanded={abierto}
+              aria-controls={idLista}
+              className="mx-2.5 mt-5 mb-1.5 flex w-[calc(100%-1.25rem)] items-center justify-between rounded text-xs font-medium text-sidebar-muted transition-colors hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+            >
+              {grupo.titulo}
+              <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', !abierto && '-rotate-90')} aria-hidden="true" />
+            </button>
+            <ul id={idLista} className={cn('flex flex-col gap-0.5', !abierto && 'hidden')}>
               {items.map((item) => {
                 const activo = estaActivo(pathname, item.path);
                 return (
