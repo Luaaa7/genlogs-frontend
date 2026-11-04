@@ -130,6 +130,7 @@ export function ProductoForm({
   // Medios nuevos: ya están en Cloudinary y se asocian al producto al guardar.
   const [imagenes, setImagenes] = useState<ImagenNueva[]>([])
   const [documentos, setDocumentos] = useState<DocumentoNuevo[]>([])
+  const [documentosIdsParaEliminar, setDocumentosIdsParaEliminar] = useState<Set<number>>(new Set())
   const [tipoDocumento, setTipoDocumento] = useState<TipoDocumento>("FICHA_TECNICA")
   const [subiendoImagenes, setSubiendoImagenes] = useState(false)
   const [subiendoDocumentos, setSubiendoDocumentos] = useState(false)
@@ -159,6 +160,15 @@ export function ProductoForm({
     setImagenes((prev) => prev.map((i) => ({ ...i, esPrincipal: i.url === url })))
   }
 
+  function toggleDocumentoParaEliminar(idDocumento: number) {
+    setDocumentosIdsParaEliminar((prev) => {
+      const siguiente = new Set(prev)
+      if (siguiente.has(idDocumento)) siguiente.delete(idDocumento)
+      else siguiente.add(idDocumento)
+      return siguiente
+    })
+  }
+
   function agregarSugerida(nombre: string) {
     append({ nombreCaracteristica: nombre, valorCaracteristica: "", unidadCaracteristica: "" })
   }
@@ -169,7 +179,13 @@ export function ProductoForm({
 
   return (
     <form
-      onSubmit={handleSubmit((values) => onSubmit(values, { imagenes, documentos }))}
+      onSubmit={handleSubmit((values) =>
+        onSubmit(values, {
+          imagenes,
+          documentos,
+          documentosIdsParaEliminar: [...documentosIdsParaEliminar],
+        })
+      )}
       noValidate
       className="flex flex-col gap-8"
     >
@@ -497,6 +513,21 @@ export function ProductoForm({
                   <span className="text-xs text-muted-foreground">
                     {ETIQUETA_TIPO_DOCUMENTO[doc.tipoDocumento] ?? doc.tipoDocumento}
                   </span>
+                  {documentosIdsParaEliminar.has(doc.idDocumento) ? (
+                    <span className="text-xs text-destructive" role="status">
+                      Se eliminará al guardar
+                    </span>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => toggleDocumentoParaEliminar(doc.idDocumento)}
+                      aria-label={`Eliminar ${doc.nombreDocumento}`}
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                  )}
                 </li>
               ))}
             </ul>

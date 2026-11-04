@@ -42,6 +42,14 @@ async function adjuntarMedios(idProducto: number, medios: MediosNuevosProducto):
     }
   }
 
+  for (const idDocumento of medios.documentosIdsParaEliminar) {
+    try {
+      await productosApi.eliminarDocumentoProducto(idProducto, idDocumento)
+    } catch {
+      fallidos += 1
+    }
+  }
+
   return fallidos
 }
 

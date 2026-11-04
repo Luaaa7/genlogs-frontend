@@ -101,4 +101,5 @@ export interface DocumentoNuevo {
 export interface MediosNuevosProducto {
   imagenes: ImagenNueva[]
   documentos: DocumentoNuevo[]
+  documentosIdsParaEliminar: number[]
 }

@@ -68,6 +68,10 @@ export async function agregarDocumentoProducto(
   })
 }
 
+export async function eliminarDocumentoProducto(idProducto: number, idDocumento: number): Promise<void> {
+  await axiosClient.delete(`/productos/${idProducto}/documentos/${idDocumento}`)
+}
+
 /** Extrae el mensaje de error que devuelve Spring (`message`) o usa uno por defecto. */
 export function mensajeErrorApi(error: unknown, porDefecto: string): string {
   if (axios.isAxiosError(error)) {
