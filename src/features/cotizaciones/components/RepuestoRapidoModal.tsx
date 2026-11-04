@@ -62,7 +62,7 @@ export function RepuestoRapidoModal({ nombreInicial = '', onCreado, onCerrar }: 
           visibleWeb,
           caracteristicas: [],
         },
-        medios: { imagenes, documentos: [] },
+        medios: { imagenes, documentos: [], documentosIdsParaEliminar: [] },
       },
       {
         onSuccess: ({ producto }) => {
