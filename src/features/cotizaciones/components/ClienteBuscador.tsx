@@ -1,6 +1,6 @@
 import { useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Building2, Plus, Search, X } from 'lucide-react'
+import { Plus, Search, X } from 'lucide-react'
 import type { Cliente, ClienteRequest } from '@/types/cliente.types'
 import { codigoTipoDocumento } from '@/types/tercero.types'
 import type { ClienteFormValues } from '@/lib/validators/rucDni.schema'
@@ -10,6 +10,8 @@ import { PanelLateral } from '@/components/ui/PanelLateral'
 import { Button } from '@/components/ui/button'
 import { inputFormClass } from '@/components/ui/campoEstilos'
 import { cn } from '@/lib/utils/utils'
+import { IconoTipoDocumento, PestanasTipoDocumento } from '@/features/clientes-proveedores/components/PestanasTipoDocumento'
+import { infoTipoDocumento, type TipoDocumentoId } from '@/features/clientes-proveedores/constants/tiposDocumento'
 
 interface Props {
   /** Id del input (lo une con el label del Campo). */
@@ -29,11 +31,11 @@ const normalizar = (s?: string | null) =>
   (s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
 
 /** Pestañas del buscador. Los ids son los de tipo_documento (1 RUC, 2 DNI, 4 Pasaporte). */
-type TipoBusqueda = 1 | 2 | 4
+type TipoBusqueda = TipoDocumentoId
 const PESTANAS: { id: TipoBusqueda; label: string; placeholder: string; ayuda: string }[] = [
   { id: 1, label: 'RUC', placeholder: 'Escribe el RUC o la razón social', ayuda: 'el RUC tiene 11 dígitos' },
-  { id: 2, label: 'DNI', placeholder: 'Escribe el DNI o los nombres', ayuda: 'el DNI tiene 8 dígitos' },
-  { id: 4, label: 'Pasaporte', placeholder: 'Escribe el pasaporte o los nombres', ayuda: 'el pasaporte tiene de 6 a 12 caracteres' },
+  { id: 2, label: 'DNI', placeholder: 'Escribe el DNI, los nombres o los apellidos', ayuda: 'el DNI tiene 8 dígitos' },
+  { id: 4, label: 'Pasaporte', placeholder: 'Escribe el pasaporte, los nombres o los apellidos', ayuda: 'el pasaporte tiene de 6 a 12 caracteres' },
 ]
 
 /** Tipo de documento del cliente (por su código; si no llegó, por la forma del número). */
@@ -144,11 +146,13 @@ export function ClienteBuscador({ id, clientes, isLoading = false, value, onChan
   // Cliente ya elegido: tarjeta con sus datos y opción de cambiarlo.
   if (seleccionado) {
     return (
-      <div className="flex items-center gap-3 rounded-md border border-accent bg-accent/5 px-3 py-2.5">
-        <Building2 className="h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
+      <div className="flex items-center gap-3 rounded-xl border border-accent bg-accent/5 px-4 py-3">
+        <IconoTipoDocumento id={tipoDelCliente(seleccionado)} className="h-10 w-10" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-foreground">{seleccionado.tercero?.razonSocial}</p>
-          <p className="text-xs text-muted-foreground tabular-nums">{seleccionado.tercero?.numeroDocumento}</p>
+          <p className="text-xs text-muted-foreground tabular-nums">
+            {infoTipoDocumento(tipoDelCliente(seleccionado)).label} {seleccionado.tercero?.numeroDocumento}
+          </p>
         </div>
         <Button type="button" variant="ghost" size="sm" onClick={limpiar} aria-label="Cambiar cliente">
           <X className="mr-1 h-4 w-4" aria-hidden="true" />
@@ -159,26 +163,13 @@ export function ClienteBuscador({ id, clientes, isLoading = false, value, onChan
   }
 
   return (
-    <div className="relative">
-      <div role="tablist" aria-label="Tipo de documento del cliente" className="mb-2 inline-grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
-        {PESTANAS.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            role="tab"
-            aria-selected={tipo === p.id}
-            onClick={() => cambiarTipo(p.id)}
-            disabled={isLoading}
-            className={cn(
-              'h-8 rounded-md px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              tipo === p.id ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            {p.label}
-          </button>
-        ))}
+    <PestanasTipoDocumento idBase="cot-cliente-tipo" ariaLabel="Tipo de documento del cliente" value={tipo} onChange={cambiarTipo} disabled={isLoading}>
+    <div className="relative flex flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-semibold text-foreground">{infoTipoDocumento(tipo).titulo}</p>
+        <p className="text-xs text-muted-foreground">Busca entre tus clientes o registra uno nuevo</p>
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
       <div className="relative min-w-0 flex-1">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <input
@@ -208,12 +199,12 @@ export function ClienteBuscador({ id, clientes, isLoading = false, value, onChan
       </div>
       <Button type="button" variant="outline" className="shrink-0" onClick={() => setCreando(true)} disabled={isLoading}>
         <Plus className="mr-1 h-4 w-4" aria-hidden="true" />
-        Nuevo cliente
+        {tipo === 1 ? 'Nueva empresa' : tipo === 2 ? 'Nueva persona' : 'Nuevo extranjero'}
       </Button>
       </div>
 
       {abierto && consulta !== '' && (
-        <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border border-border bg-card shadow-lg">
+        <div className="absolute top-full z-20 mt-1 w-full overflow-hidden rounded-md border border-border bg-card shadow-lg">
           {resultados.length > 0 ? (
             <ul id={listaId} role="listbox" className="max-h-72 overflow-y-auto py-1">
               {resultados.map((c, i) => (
@@ -286,5 +277,6 @@ export function ClienteBuscador({ id, clientes, isLoading = false, value, onChan
         document.body
       )}
     </div>
+    </PestanasTipoDocumento>
   )
 }

@@ -7,6 +7,7 @@ import type { ClienteRequest } from '../../../types/cliente.types'
 import { listarSectoresEconomicos } from '@/api/sectoresEconomicosApi'
 import { CamposTercero } from './CamposTercero'
 import { unirLugarExtranjero } from '@/lib/terceroExtranjero'
+import { prepararNombreTercero } from '@/lib/nombreTercero'
 import { Campo, LeyendaObligatorio, ResumenFaltantes, SeccionForm } from '@/components/ui/campo'
 import { describedBy, inputFormClass } from '@/components/ui/campoEstilos'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
@@ -25,19 +26,23 @@ export function ClienteForm({ onSubmit, isSubmitting, serverError, valoresInicia
     resolver: zodResolver(clienteSchema),
     mode: 'onBlur',
     defaultValues: {
+      idSectorEconomico: 1,
+      situacion: 'ACTIVO',
+      ...valoresIniciales,
+      // Después de valoresIniciales: si solo trae parte del tercero (p. ej. el tipo), el resto queda vacío y no indefinido.
       tercero: {
         idTipoDocumento: 1,
         idDistrito: undefined,
         numeroDocumento: '',
         razonSocial: '',
+        nombres: '',
+        apellidoPaterno: '',
+        apellidoMaterno: '',
         direccion: '',
         telefono: '',
         correo: '',
         ...valoresIniciales?.tercero,
       },
-      idSectorEconomico: 1,
-      situacion: 'ACTIVO',
-      ...valoresIniciales,
     },
   })
   const { register, handleSubmit, formState: { errors } } = form
@@ -47,7 +52,7 @@ export function ClienteForm({ onSubmit, isSubmitting, serverError, valoresInicia
   // se usa su id real (evitando duplicarla); si no, se añade con el siguiente
   // id disponible.
   const opcionesSector = useMemo(() => {
-    const normalizar = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    const normalizar = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
     if (sectores.some((s) => normalizar(s.nombreSector).includes('alimentario'))) return sectores
     const idProvisional = sectores.reduce((max, s) => Math.max(max, s.idSectorEconomico), 0) + 1
     return [...sectores, { idSectorEconomico: idProvisional, nombreSector: 'Alimentario' }]
@@ -55,11 +60,11 @@ export function ClienteForm({ onSubmit, isSubmitting, serverError, valoresInicia
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={handleSubmit((d) => onSubmit(unirLugarExtranjero(d) as ClienteRequest))} className="flex flex-col gap-5" noValidate>
+      <form onSubmit={handleSubmit((d) => onSubmit(prepararNombreTercero(unirLugarExtranjero(d)) as ClienteRequest))} className="flex flex-col gap-5" noValidate>
         <LeyendaObligatorio />
         <ResumenFaltantes
           errors={errors}
-          etiquetas={{ 'tercero.idTipoDocumento': 'Tipo de documento', 'tercero.numeroDocumento': 'Número de documento', 'tercero.razonSocial': 'Razón social / Nombres', 'tercero.direccion': 'Dirección', 'tercero.idDistrito': 'Distrito', 'tercero.lugarExtranjero': 'Ciudad y país', 'tercero.correo': 'Correo', 'tercero.telefono': 'Teléfono', idSectorEconomico: 'Sector económico' }}
+          etiquetas={{ 'tercero.idTipoDocumento': 'Tipo de documento', 'tercero.numeroDocumento': 'Número de documento', 'tercero.razonSocial': 'Razón social', 'tercero.nombres': 'Nombres', 'tercero.apellidoPaterno': 'Apellido paterno', 'tercero.direccion': 'Dirección', 'tercero.idDistrito': 'Distrito / Ciudad', 'tercero.lugarExtranjero': 'Ciudad y país', 'tercero.correo': 'Correo', 'tercero.telefono': 'Teléfono', idSectorEconomico: 'Sector económico' }}
         />
         <CamposTercero />
 

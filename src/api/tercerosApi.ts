@@ -3,8 +3,17 @@ import { axiosClient } from "@/api/axiosClient"
 export interface ConsultaDocumentoResponse {
   numeroDocumento: string
   tipoDocumento: "RUC" | "DNI"
+  /** Razón social (RUC) o nombre completo (DNI). */
   razonSocial: string | null
+  /** Solo DNI: nombres y apellidos por separado. */
+  nombres?: string | null
+  apellidoPaterno?: string | null
+  apellidoMaterno?: string | null
   direccion: string | null
+  /** UBIGEO de 6 dígitos del domicilio, si Factiliza lo devuelve. */
+  ubigeo?: string | null
+  /** Distrito del catálogo que corresponde al UBIGEO (null si no se encontró). */
+  idDistrito?: number | null
   simulado: boolean
 }
 
