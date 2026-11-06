@@ -70,13 +70,33 @@ export function sumarMonto(acumulado: MontosPorMoneda, monto: number, moneda?: s
   acumulado[clave] = (acumulado[clave] ?? 0) + monto
 }
 
-/** "US$ 12,240.00 · S/ 4,000.00" (una parte por moneda, la mayor primero). */
+/** "US$ 12,240.00 · PEN 4,000.00" (una parte por moneda, la mayor primero). */
 export function formatearMontos(montos: MontosPorMoneda): string {
   const partes = Object.entries(montos)
     .filter(([, v]) => v !== 0)
     .sort((a, b) => b[1] - a[1])
     .map(([moneda, v]) => formatCurrency(v, moneda))
   return partes.length ? partes.join(" · ") : formatCurrency(0)
+}
+
+/**
+ * Días promedio entre la creación de la cotización y el primer seguimiento
+ * (envío o respuesta). null si ninguna cotización trae seguimiento.
+ */
+export function tiempoRespuestaDias(cotizaciones: Cotizacion[]): number | null {
+  const muestras: number[] = []
+  for (const c of cotizaciones) {
+    const inicio = parsearFechaLocal(c.fechaCreacion ?? c.fechaCotizacion)
+    const eventos = (c.seguimientos ?? [])
+      .map((s) => parsearFechaLocal(s.fechaEvento || s.fecha))
+      .filter((f): f is Date => f !== null)
+      .sort((a, b) => a.getTime() - b.getTime())
+    const fin = eventos[0]
+    if (!inicio || !fin) continue
+    muestras.push(Math.max(0, Math.round((inicioDelDia(fin).getTime() - inicioDelDia(inicio).getTime()) / MS_DIA)))
+  }
+  if (muestras.length === 0) return null
+  return Math.round(muestras.reduce((a, b) => a + b, 0) / muestras.length)
 }
 
 /** Cotizaciones que siguen abiertas (pendientes de cerrar): cuántas y cuánto, por moneda. */

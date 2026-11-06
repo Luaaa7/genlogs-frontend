@@ -4,7 +4,7 @@ interface TasaAprobacionCardProps {
   /** Aprobadas sobre respondidas, 0–100; null si aún no hay respuestas. */
   tasa: number | null
   totalEmitidas: number
-  /** Ya formateado por moneda, p. ej. "US$ 12,240.00 · S/ 4,000.00". */
+  /** Ya formateado por moneda, p. ej. "US$ 12,240.00 · PEN 4,000.00". */
   montoCotizado: string
   vencenSemana: number
   facturasVencidas: number

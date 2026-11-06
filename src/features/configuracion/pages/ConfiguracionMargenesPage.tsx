@@ -36,8 +36,8 @@ export function ConfiguracionMargenesPage() {
       <section className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">
         <p>
           El margen se calcula <strong className="text-foreground">sobre el precio de venta</strong>:
-          precio = costo ÷ (1 − margen). Por ejemplo, un repuesto que cuesta S/ 100 con 35 % de margen se cotiza a{" "}
-          <strong className="tabular-nums text-foreground">S/ {precioDesdeCosto(100, 35).toFixed(2)}</strong>.
+          precio = costo ÷ (1 − margen). Por ejemplo, un repuesto que cuesta PEN 100 con 35 % de margen se cotiza a{" "}
+          <strong className="tabular-nums text-foreground">PEN {precioDesdeCosto(100, 35).toFixed(2)}</strong>.
           Si al cotizar el margen baja del mínimo, el sistema muestra un aviso.
         </p>
       </section>
@@ -151,7 +151,7 @@ function EditorEscala({ inicial }: { inicial: EscalaMargenes }) {
   return (
     <form onSubmit={enviar} noValidate className="flex flex-col gap-6">
       <TablaCard>
-        <Tabla titulo="Productos por costo unitario (S/)" minWidth={560}>
+        <Tabla titulo="Productos por costo unitario (PEN)" minWidth={560}>
           <thead>
             <tr>
               <Th alinear="derecha">Costo desde</Th>

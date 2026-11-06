@@ -26,6 +26,7 @@ import {
   montoCotizadoPorMoneda,
   resumenPendientes,
   tasaAprobacion,
+  tiempoRespuestaDias,
 } from "../lib/calculos"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -87,6 +88,7 @@ export function DashboardPage() {
       // Los montos van por moneda: no se suman dólares con soles.
       montoCotizado: formatearMontos(montoCotizadoPorMoneda(cotizaciones)),
       pendientes: resumenPendientes(cotizaciones),
+      respuestaDias: tiempoRespuestaDias(cotizaciones),
       clientes: mejoresClientes(facturas, hoy, 3),
     }
   }, [operativo, moneda])
@@ -182,13 +184,20 @@ export function DashboardPage() {
             className="lg:col-span-5 lg:row-span-2"
           />
 
-          <div className="grid gap-4 sm:grid-cols-[4fr_3fr] lg:col-span-7">
+          <div className="grid gap-4 sm:grid-cols-3 lg:col-span-7">
             <KpiColorCard
               tono="navy"
               titulo="Cotizaciones pendientes"
-              valor={String(indicadores.cotizacionesPendientes ?? 0)}
-              detalle={calculado.pendientes.cantidad > 0 ? `${formatearMontos(calculado.pendientes.montos)} por cerrar` : undefined}
+              valor={String(calculado.pendientes.cantidad || indicadores.cotizacionesPendientes || 0)}
+              detalle={calculado.pendientes.cantidad > 0 ? `${formatearMontos(calculado.pendientes.montos)} por cerrar` : "Borrador, enviada o en negociación"}
               serie={calculado.serieCotizaciones}
+              href="/cotizaciones"
+            />
+            <KpiColorCard
+              tono="blue"
+              titulo="Tiempo de respuesta"
+              valor={calculado.respuestaDias === null ? "—" : `${calculado.respuestaDias} d`}
+              detalle={calculado.respuestaDias === null ? "Aparece cuando hay seguimiento" : "Días promedio hasta el primer seguimiento"}
               href="/cotizaciones"
             />
             <KpiColorCard
