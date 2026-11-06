@@ -12,6 +12,8 @@ export const cotizacionDetalleSchema = z
     idProducto: z.number().optional(),
     idServicio: z.number().optional(),
     idUnidadMedida: z.number().optional(),
+    /** Repuesto o servicio: la línea solo busca en su propio catálogo (no se envía al backend). */
+    tipoItem: z.enum(['producto', 'servicio']).optional(),
     cantidad: z.number().min(1, 'La cantidad debe ser mayor a 0'),
     precioUnitario: z.number({ message: 'Ingresa el precio unitario' }).positive('El precio unitario debe ser mayor a 0'),
     /** Costo unitario: con el margen da el precio de venta (no se guarda en el backend). */

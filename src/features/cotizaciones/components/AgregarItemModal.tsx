@@ -16,6 +16,7 @@ export interface ItemNuevo {
   idProducto?: number
   idServicio?: number
   idUnidadMedida?: number
+  tipoItem: 'producto' | 'servicio'
   cantidad: number
   costoUnitario: number
   margenPorcentaje: number
@@ -34,6 +35,7 @@ interface Props {
  *  indican cantidad y costo, el margen sale de la escala (se puede cambiar) y
  *  con eso se calcula el precio de venta. Recién entonces entra a la lista. */
 export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
+  const [tipo, setTipo] = useState<'producto' | 'servicio'>('producto')
   const [texto, setTexto] = useState('')
   const [item, setItem] = useState<ItemCatalogo | null>(null)
   const [cantidad, setCantidad] = useState('1')
@@ -59,7 +61,7 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
   const precioVenta = precioDesdeCosto(cost, marg)
   const bajoMinimo = regla !== null && marg < regla.minimo
   const faltantes = [
-    !item && 'producto o servicio',
+    !item && (tipo === 'producto' ? 'repuesto' : 'servicio'),
     !(cant >= 1) && 'cantidad (mínimo 1)',
     !(cost > 0) && 'costo unitario',
     !(marg >= 0 && marg <= MARGEN_MAXIMO) && `margen entre 0 y ${MARGEN_MAXIMO}`,
@@ -74,6 +76,16 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
     setIntento(false)
   }
 
+  // Al cambiar de pestaña se empieza de cero: un repuesto y un servicio no se mezclan.
+  function cambiarTipo(nuevo: 'producto' | 'servicio') {
+    if (nuevo === tipo) return
+    setTipo(nuevo)
+    setTexto('')
+    setItem(null)
+    setMargenManual(null)
+    setIntento(false)
+  }
+
   function agregar(seguir: boolean) {
     setIntento(true)
     if (faltantes.length > 0 || !item) return
@@ -82,6 +94,7 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
       idProducto: item.tipo === 'producto' ? item.id : undefined,
       idServicio: item.tipo === 'servicio' ? item.id : undefined,
       idUnidadMedida: item.idUnidadMedida,
+      tipoItem: item.tipo,
       cantidad: cant,
       costoUnitario: cost,
       margenPorcentaje: marg,
@@ -102,7 +115,7 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
   return (
     <Ventana
       titulo="Agregar ítem"
-      descripcion="Busca el producto o servicio, indica la cantidad y el costo: el margen se sugiere según la escala."
+      descripcion="Elige si es un repuesto o un servicio, búscalo e indica la cantidad y el costo: el margen se sugiere según la escala."
       onCerrar={onCerrar}
       ancho="max-w-xl"
       cerrable={!creandoRepuesto}
@@ -123,18 +136,36 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
             {agregados === 1 ? 'Se agregó 1 ítem a la cotización.' : `Se agregaron ${agregados} ítems a la cotización.`} Puedes añadir otro.
           </p>
         )}
-        <div>
-          <span className="mb-1 block text-sm font-medium text-foreground">Producto o servicio<MarcaObligatorio /></span>
+        <div role="tablist" aria-label="Tipo de ítem" className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+          {(['producto', 'servicio'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              role="tab"
+              aria-selected={tipo === t}
+              onClick={() => cambiarTipo(t)}
+              className={`h-9 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                tipo === t ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {t === 'producto' ? 'Producto' : 'Servicio'}
+            </button>
+          ))}
+        </div>
+        <div role="tabpanel">
+          <span className="mb-1 block text-sm font-medium text-foreground">{tipo === 'producto' ? 'Repuesto' : 'Servicio'}<MarcaObligatorio /></span>
           <SelectorCatalogoItem
+            key={tipo}
+            tipo={tipo}
             valor={texto}
             seleccionado={item !== null}
             onEscribir={(t) => { setTexto(t); setItem(null) }}
             onSeleccionar={(i) => { setItem(i); setTexto(i.nombre); setMargenManual(null) }}
-            ariaLabel="Producto o servicio del ítem nuevo"
+            ariaLabel={tipo === 'producto' ? 'Repuesto del ítem nuevo' : 'Servicio del ítem nuevo'}
             invalido={err(!item)}
           />
-          {err(!item) && <p className="mt-1 text-xs text-destructive">Busca y elige un producto o servicio de la lista.</p>}
-          {editarCatalogos && !item && (
+          {err(!item) && <p className="mt-1 text-xs text-destructive">Busca y elige {tipo === 'producto' ? 'un repuesto' : 'un servicio'} de la lista.</p>}
+          {editarCatalogos && !item && tipo === 'producto' && (
             <p className="mt-2 text-sm text-muted-foreground">
               ¿No está en el catálogo?{' '}
               <button type="button" onClick={() => setCreandoRepuesto(true)} className="font-medium text-accent underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">

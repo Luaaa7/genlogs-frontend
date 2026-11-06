@@ -53,6 +53,7 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
     setValue(`detalles.${index}.idProducto`, item.tipo === 'producto' ? item.id : undefined, opciones);
     setValue(`detalles.${index}.idServicio`, item.tipo === 'servicio' ? item.id : undefined, opciones);
     setValue(`detalles.${index}.idUnidadMedida`, item.idUnidadMedida, opciones);
+    setValue(`detalles.${index}.tipoItem`, item.tipo, opciones);
   };
 
   const opcionesCalculo = { shouldDirty: true, shouldValidate: true } as const;
@@ -150,6 +151,8 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
                     <SelectorCatalogoItem
                       valor={d?.producto ?? ''}
                       seleccionado={d?.idProducto !== undefined || d?.idServicio !== undefined}
+                      // La línea conserva su tipo: un repuesto solo se cambia por otro repuesto.
+                      tipo={d?.tipoItem ?? (d?.idServicio !== undefined ? 'servicio' : d?.idProducto !== undefined ? 'producto' : undefined)}
                       onEscribir={(texto) => escribirItem(index, texto)}
                       onSeleccionar={(item) => elegirItem(index, item)}
                       ariaLabel={`Producto o servicio del ítem ${n}`}
