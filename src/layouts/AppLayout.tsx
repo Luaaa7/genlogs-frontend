@@ -17,6 +17,7 @@ import {
   BarChart3,
   UserCog,
   Percent,
+  TrendingUp,
   LogOut,
   Sun,
   Moon,
@@ -61,6 +62,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'Reportes', path: '/reportes', icon: BarChart3 },
       { label: 'Usuarios', path: '/usuarios', icon: UserCog, soloAdmin: true },
       { label: 'IGV', path: '/configuracion/igv', icon: Percent, soloAdmin: true },
+      { label: 'Márgenes', path: '/configuracion/margenes', icon: TrendingUp, soloAdmin: true },
     ],
   },
 ];
