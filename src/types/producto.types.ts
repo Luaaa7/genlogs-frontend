@@ -63,7 +63,7 @@ export interface ProductoRequest {
   idCategoriaProducto: number
   idMarca?: number
   idUnidadMedida: number
-  codigoProducto: string
+  codigoProducto?: string
   nombreProducto: string
   procedencia?: string
   visibleWeb: boolean

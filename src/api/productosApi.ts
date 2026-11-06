@@ -36,6 +36,11 @@ export async function obtenerProducto(id: number): Promise<Producto> {
   return data
 }
 
+export async function obtenerSiguienteCodigo(): Promise<string> {
+  const { data } = await http.get<{ codigoProducto: string }>("/productos/siguiente-codigo")
+  return data.codigoProducto
+}
+
 export async function crearProducto(payload: ProductoRequest): Promise<Producto> {
   const { data } = await axiosClient.post<Producto>("/productos", payload)
   return data
