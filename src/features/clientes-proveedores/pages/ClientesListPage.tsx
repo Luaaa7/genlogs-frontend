@@ -63,7 +63,8 @@ export default function ClientesListPage() {
     clienteDetalle?.idSectorEconomico ??
     clienteEditando?.sectorEconomico?.idSectorEconomico ??
     sectores.find((s) => normalizar(s.nombreSector) === normalizar(clienteDetalle?.sectorEconomico))?.idSectorEconomico;
-  const TIPO_DOC: Record<string, number> = { RUC: 1, DNI: 2, CE: 3, PASAPORTE: 4 };
+  // La base guarda el pasaporte como "PAS": antes solo se reconocía "PASAPORTE" y se abría como RUC.
+  const TIPO_DOC: Record<string, number> = { RUC: 1, DNI: 2, PAS: 4, PASAPORTE: 4 };
 
   // El detalle del cliente que se está editando ya llegó (y es el de ESE cliente, no el anterior).
   const detalleListo = !!clienteDetalle && clienteDetalle.idCliente === clienteEditando?.idCliente;

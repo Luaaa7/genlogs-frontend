@@ -17,7 +17,6 @@ type ConTercero = { tercero: ClienteFormValues['tercero'] }
 const TIPOS_DOCUMENTO = [
   { id: 1, label: 'RUC' },
   { id: 2, label: 'DNI' },
-  { id: 3, label: 'Carné de extranjería' },
   { id: 4, label: 'Pasaporte' },
 ] as const
 
@@ -27,15 +26,13 @@ type TipoDocumentoId = (typeof TIPOS_DOCUMENTO)[number]['id']
 const PLACEHOLDERS: Record<TipoDocumentoId, string> = {
   1: '20512345671', // RUC
   2: '12345678',    // DNI
-  3: '00123456',    // CE
-  4: '12345678',    // Pasaporte
+  4: 'AB123456',    // Pasaporte
 }
 
 /** Etiquetas para el campo razonSocial según tipo de documento */
 const RAZON_SOCIAL_LABELS: Record<TipoDocumentoId, string> = {
   1: 'Razón social',
   2: 'Nombres y apellidos',
-  3: 'Nombres y apellidos',
   4: 'Nombres y apellidos',
 }
 
@@ -43,15 +40,13 @@ const RAZON_SOCIAL_LABELS: Record<TipoDocumentoId, string> = {
 const DOCUMENTO_AYUDA: Record<TipoDocumentoId, string> = {
   1: 'Ingresa el RUC de 11 dígitos. Con "Buscar" se completan la razón social y la dirección desde SUNAT.',
   2: 'Ingresa el DNI de 8 dígitos. Con "Buscar" se completan los nombres, apellidos y la dirección desde RENIEC.',
-  3: 'Ingresa el número de carné de extranjería. La consulta automática no está disponible para este tipo de documento.',
-  4: 'Ingresa el número de pasaporte. La consulta automática no está disponible para este tipo de documento.',
+  4: 'Ingresa el número de pasaporte: de 6 a 12 letras y números. La consulta automática no está disponible para este documento.',
 }
 
 /** Mensajes de ayuda para el campo razonSocial según tipo */
 const RAZON_AYUDA: Record<TipoDocumentoId, string> = {
   1: 'Se completa automáticamente al buscar el RUC. Si la consulta falla, ingrésalo manualmente.',
   2: 'Se completa automáticamente al buscar el DNI (nombres + apellidos). Si la consulta falla, ingrésalo manualmente.',
-  3: 'Ingresa los nombres y apellidos del titular del carné de extranjería.',
   4: 'Ingresa los nombres y apellidos del titular del pasaporte.',
 }
 
@@ -123,9 +118,9 @@ export function CamposTercero() {
     setValue('tercero.numeroDocumento', '', { shouldValidate: false, shouldDirty: true })
     clearErrors('tercero.numeroDocumento')
     
-    // Para CE y Pasaporte, limpiar dirección ya que no hay autocompletado
+    // Para Pasaporte, limpiar dirección ya que no hay autocompletado
     // Pero NO limpiar razonSocial para permitir edición manual
-    if (idTipoDocumento === 3 || idTipoDocumento === 4) {
+    if (idTipoDocumento === 4) {
       setValue('tercero.direccion', '')
     }
   }, [idTipoDocumento, setValue, clearErrors])
@@ -192,7 +187,8 @@ export function CamposTercero() {
             <div className="flex gap-2">
               <input
                 id="tercero-numero"
-                inputMode="numeric"
+                // El pasaporte puede llevar letras; RUC y DNI solo números.
+                inputMode={idTipoDocumento === 4 ? 'text' : 'numeric'}
                 autoComplete="off"
                 placeholder={idTipoDocumento ? PLACEHOLDERS[idTipoDocumento] : 'Ej: 20512345671'}
                 {...register('tercero.numeroDocumento')}
