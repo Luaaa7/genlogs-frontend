@@ -27,6 +27,7 @@ import logoGenlogs from '../assets/GENLOGS.png';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { usePermisos } from '@/lib/permisos';
 import { useTheme } from '@/hooks/useTheme';
+import { cerrarSesionInterna } from '@/lib/sesiones';
 import { GlobalSearchDialog } from '@/components/ui/GlobalSearchDialog';
 import { cn } from '@/lib/utils/utils';
 import { nombreRolLegible } from '@/lib/formatters/roles';
@@ -286,8 +287,7 @@ export function AppLayout() {
   function handleLogout() {
     // Limpia las dos fuentes de sesión (localStorage que lee axios/ProtectedRoute,
     // y el store de Zustand persistido en sessionStorage) para no dejar rastro.
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    cerrarSesionInterna();
     logout();
     setIsUserMenuOpen(false);
     closeMenu();

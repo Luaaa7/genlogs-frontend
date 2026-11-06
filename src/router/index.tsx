@@ -1,7 +1,10 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
 import { AuthLayout } from '@/layouts/AuthLayout'
 import { AppLayout } from '@/layouts/AppLayout'
+import { PublicLayout } from '@/layouts/PublicLayout'
+import { ClienteLayout } from '@/layouts/ClienteLayout'
 import { ProtectedRoute } from '@/router/ProtectedRoute'
+import { ClienteRoute } from '@/router/ClienteRoute'
 import { RoleGuard } from '@/router/RoleGuard'
 import { LoginPage } from '@/features/auth/components/LoginPage'
 import { ForgotPasswordPage } from '@/features/auth/components/ForgotPasswordPage'
@@ -27,15 +30,20 @@ import { EmpresasMinerasPage } from '@/features/empresas-mineras/pages/EmpresasM
 import { OrdenesCompraPage } from '@/features/ordenes-compra/pages/OrdenesCompraPage'
 import { FacturacionPage } from '@/features/facturacion/pages/FacturacionPage'
 import { NoEncontradaPage } from '@/router/NoEncontradaPage'
+import { LandingPage } from '@/features/landing/LandingPage'
+import { RegistroClientePage } from '@/features/portal-cliente/pages/RegistroClientePage'
+import { MisPedidosPage } from '@/features/portal-cliente/pages/MisPedidosPage'
+import { PedidoDetallePage } from '@/features/portal-cliente/pages/PedidoDetallePage'
+import { NuevaSolicitudPage } from '@/features/portal-cliente/pages/NuevaSolicitudPage'
 
 export const router = createBrowserRouter([
+  { element: <PublicLayout />, children: [{ path: '/', element: <LandingPage /> }] },
   { element: <AuthLayout />, children: [
     { path: '/login', element: <LoginPage /> },
     { path: '/recuperar-password', element: <ForgotPasswordPage /> },
     { path: '/reset-password', element: <ResetPasswordPage /> },
   ] },
   { element: <ProtectedRoute />, children: [{ element: <AppLayout />, children: [
-    { path: '/', element: <Navigate to="/dashboard" replace /> },
     { path: '/dashboard', element: <DashboardPage /> },
     { path: '/clientes', element: <ClientesListPage /> },
     { path: '/clientes/:id', element: <ClienteDetallePage /> },
@@ -61,5 +69,11 @@ export const router = createBrowserRouter([
     ] },
     // Cualquier otra ruta: página 404 dentro del layout (sin sesión, ProtectedRoute manda al login).
     { path: '*', element: <NoEncontradaPage /> },
+  ] }] },
+  { element: <ClienteLayout />, children: [{ path: '/portal/registro', element: <RegistroClientePage /> }] },
+  { element: <ClienteRoute />, children: [{ element: <ClienteLayout />, children: [
+    { path: '/portal/pedidos', element: <MisPedidosPage /> },
+    { path: '/portal/pedidos/:id', element: <PedidoDetallePage /> },
+    { path: '/portal/solicitud', element: <NuevaSolicitudPage /> },
   ] }] },
 ])
