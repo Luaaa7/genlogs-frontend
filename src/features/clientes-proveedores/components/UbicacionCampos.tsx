@@ -97,7 +97,7 @@ export function UbicacionCampos({ idBase, distritos = [], isLoading, value, onCh
           ))}
         </select>
       </Campo>
-      <Campo id={`${idBase}-distrito`} label="Distrito / Ciudad" ayuda={ayudaDistrito} error={errorDistrito} obligatorio>
+      <Campo id={`${idBase}-distrito`} label="Distrito" ayuda={ayudaDistrito} error={errorDistrito} obligatorio>
         <select
           id={`${idBase}-distrito`}
           value={seleccionado ? String(seleccionado.idDistrito) : ''}
