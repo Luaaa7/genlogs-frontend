@@ -43,7 +43,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
       { label: 'Cotizaciones', path: '/cotizaciones', icon: FileText, permiso: 'verCotizacionesYOrdenes' },
       { label: 'Órdenes de compra', path: '/ordenes-compra', icon: ShoppingCart, permiso: 'verCotizacionesYOrdenes' },
-      { label: 'Facturación', path: '/facturacion', icon: Receipt },
+      { label: 'Comprobantes', path: '/facturacion', icon: Receipt },
     ],
   },
   {

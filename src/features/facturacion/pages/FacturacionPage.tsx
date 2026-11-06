@@ -146,8 +146,8 @@ export function FacturacionPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        titulo="Facturación"
-        descripcion={data ? <><span className="tabular-nums">{data.totalElements}</span> comprobantes emitidos</> : 'Facturas, boletas y notas emitidas a partir de órdenes de compra'}
+        titulo="Comprobantes"
+        descripcion={data ? <><span className="tabular-nums">{data.totalElements}</span> comprobantes emitidos</> : 'Registro interno de comprobantes emitidos a partir de órdenes de compra. Aún no se envían a SUNAT.'}
       />
 
       <FiltroChips etiqueta="Filtrar por estado" opciones={OPCIONES} valor={estado} onChange={(v) => { setEstado(v); setPagina(0) }} />
