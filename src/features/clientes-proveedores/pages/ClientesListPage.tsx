@@ -72,7 +72,7 @@ export default function ClientesListPage() {
 
   // El sector real del cliente: el id si vino en la fila, si no por su nombre en el catálogo.
   // Antes se forzaba a 1 y al guardar se pisaba el sector verdadero (#2).
-  const normalizar = (t?: string | null) => (t ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  const normalizar = (t?: string | null) => (t ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
   const idSectorReal =
     clienteDetalle?.idSectorEconomico ??
     clienteEditando?.sectorEconomico?.idSectorEconomico ??
@@ -208,6 +208,8 @@ export default function ClientesListPage() {
             ? 'No se pudo guardar el cliente. Revisa los datos e intenta de nuevo.'
             : undefined}
           valoresIniciales={valoresIniciales as import('../../../lib/validators/rucDni.schema').ClienteFormValues | undefined}
+          // Solo la página del documento elegido: el de la pestaña al crear, el del cliente al editar.
+          tipoFijo={isEditing ? (idTipoEditando === 1 || idTipoEditando === 2 || idTipoEditando === 4 ? idTipoEditando : undefined) : tipo}
           onSubmit={handleSubmit}
         />
         )}

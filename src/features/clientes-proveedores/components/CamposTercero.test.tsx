@@ -19,6 +19,7 @@ vi.mock('@/api/distritosApi', async (orig) => ({
 vi.mock('@/api/tercerosApi', () => ({ tercerosApi: { consultarDocumento: (n: string) => consultarDocumento(n) } }))
 
 import { ProveedorForm } from './ProveedorForm'
+import { ClienteForm } from './ClienteForm'
 
 const renderForm = (props = {}) => {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
@@ -200,6 +201,55 @@ describe('CamposTercero: pestañas RUC, DNI y Pasaporte', () => {
       fireEvent.change(screen.getByLabelText(/^distrito/i), { target: { value: '20' } })
     })
     expect(valor(/^distrito/i)).toBe('20')
+  })
+
+  it('si se borra o cambia el DNI consultado, se vacían los nombres, apellidos y la ubicación', async () => {
+    consultarDocumento.mockResolvedValue({
+      numeroDocumento: '41234567', tipoDocumento: 'DNI', razonSocial: 'ANA MARIA LOPEZ RUIZ',
+      nombres: 'ANA MARIA', apellidoPaterno: 'LOPEZ', apellidoMaterno: 'RUIZ',
+      direccion: 'AV. LOS ANGELES 123', ubigeo: '110101', idDistrito: 10, origen: 'REGISTRADO', simulado: false,
+    })
+    await act(async () => {
+      renderForm()
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('tab', { name: /^DNI/ }))
+    })
+    fireEvent.change(screen.getByLabelText(/número de dni/i), { target: { value: '41234567' } })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /consultar reniec/i }))
+    })
+    await waitFor(() => expect(valor(/^nombres/i)).toBe('ANA MARIA'))
+    expect(screen.getByText(/ya está registrado en GENLOGS/i)).toBeTruthy()
+
+    // Se borra un dígito: la ficha queda en blanco.
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText(/número de dni/i), { target: { value: '4123456' } })
+    })
+    expect(valor(/^nombres/i)).toBe('')
+    expect(valor(/apellido paterno/i)).toBe('')
+    expect(valor(/apellido materno/i)).toBe('')
+    expect(valor(/^dirección/i)).toBe('')
+    expect(valor(/^distrito/i)).toBe('')
+    expect(valor(/departamento/i)).toBe('')
+    expect(screen.queryByText(/ya está registrado en GENLOGS/i)).toBeNull()
+  })
+
+  it('abierto desde la pestaña DNI solo muestra la página del DNI, sin pestañas ni clasificación', async () => {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    await act(async () => {
+      render(
+        <QueryClientProvider client={qc}>
+          <ClienteForm onSubmit={() => {}} tipoFijo={2} valoresIniciales={{ tercero: { idTipoDocumento: 2 } } as never} />
+        </QueryClientProvider>,
+      )
+    })
+    expect(screen.queryAllByRole('tab')).toHaveLength(0)
+    expect(screen.getByText('Persona natural con DNI')).toBeTruthy()
+    expect(screen.getByLabelText(/número de dni/i)).toBeTruthy()
+    expect(screen.queryByLabelText(/razón social/i)).toBeNull()
+    expect(screen.queryByText(/clasificación/i)).toBeNull()
+    expect(screen.queryByLabelText(/sector económico/i)).toBeNull()
   })
 
   it('al guardar un DNI arma la razón social con los nombres y apellidos', async () => {
