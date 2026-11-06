@@ -25,13 +25,13 @@ export const terceroSchema = z.object({
   if (v.idTipoDocumento === 2 && !/^\d{8}$/.test(v.numeroDocumento)) {
     ctx.addIssue({ code: 'custom', path: ['numeroDocumento'], message: 'El DNI debe tener 8 dígitos' })
   }
-  // CE: al menos 1 caracter, sin formato específico
-  if (v.idTipoDocumento === 3 && v.numeroDocumento.trim().length === 0) {
-    ctx.addIssue({ code: 'custom', path: ['numeroDocumento'], message: 'Ingresa el número de carné de extranjería' })
-  }
-  // PAS: al menos 1 caracter, sin formato específico
-  if (v.idTipoDocumento === 4 && v.numeroDocumento.trim().length === 0) {
-    ctx.addIssue({ code: 'custom', path: ['numeroDocumento'], message: 'Ingresa el número de pasaporte' })
+  // Pasaporte: de 6 a 12 letras y números (igual que en la base de datos)
+  if (v.idTipoDocumento === 4 && !/^[A-Za-z0-9]{6,12}$/.test(v.numeroDocumento.trim())) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['numeroDocumento'],
+      message: v.numeroDocumento.trim() ? 'El pasaporte debe tener de 6 a 12 letras y números' : 'Ingresa el número de pasaporte',
+    })
   }
 })
 export const clienteSchema = z.object({ tercero: terceroSchema, idSectorEconomico: z.number().int().positive('Selecciona el sector'), situacion: z.string().default('ACTIVO') })
