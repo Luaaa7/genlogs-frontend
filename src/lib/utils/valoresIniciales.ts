@@ -1,4 +1,5 @@
 import type { Tercero } from '@/types/tercero.types'
+import { partirNombre } from '@/lib/persona'
 
 const ID_POR_CODIGO: Record<string, number> = { RUC: 1, DNI: 2, CE: 3, PAS: 4 }
 
@@ -13,11 +14,17 @@ export function valoresTerceroParaEditar(t: Tercero) {
     typeof tipo === 'string'
       ? ID_POR_CODIGO[tipo]
       : (tipo?.idTipoDocumento ?? ID_POR_CODIGO[tipo?.codigoTipo ?? ''])
+  const persona = (idTipoDocumento ?? 1) !== 1
+  const partes = persona ? partirNombre(t.razonSocial ?? '') : undefined
   return {
     idTipoDocumento: idTipoDocumento ?? 1,
     idDistrito: t.distrito?.idDistrito,
     numeroDocumento: t.numeroDocumento ?? '',
     razonSocial: t.razonSocial ?? '',
+    nombre: partes?.nombre ?? '',
+    segundoNombre: partes?.segundoNombre ?? '',
+    apellidoPaterno: partes?.apellidoPaterno ?? '',
+    apellidoMaterno: partes?.apellidoMaterno ?? '',
     direccion: t.direccion ?? '',
     telefono: t.telefono ?? '',
     correo: t.correo ?? t.email ?? '',

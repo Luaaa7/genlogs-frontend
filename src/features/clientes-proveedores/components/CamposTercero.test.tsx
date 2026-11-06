@@ -55,6 +55,32 @@ describe('CamposTercero: campo de documento', () => {
       fireEvent.change(select, { target: { value: '2' } })
     })
     await waitFor(() => expect(screen.queryByDisplayValue('20512345671')).toBeNull())
+    expect(screen.queryByDisplayValue('X SAC')).toBeNull()
+    expect(screen.getByLabelText(/^Nombre/)).toBeTruthy()
     expect(screen.queryByText(/obligatorio/i, { ignore: '.sr-only, script, style' })).toBeNull()
+  })
+
+  it('al pasar por RUC, DNI, carné y pasaporte se vacían los datos de la identificación anterior', async () => {
+    await act(async () => { renderForm() })
+    const tipo = () => screen.getAllByRole('combobox')[0] as HTMLSelectElement
+    const escribir = (nombre: RegExp, valor: string) => {
+      fireEvent.change(screen.getByLabelText(nombre), { target: { value: valor } })
+    }
+
+    escribir(/Número de documento/, '20512345671')
+    escribir(/Razón social/, 'Empresa SAC')
+    escribir(/^Dirección/, 'Av. Principal 100')
+    escribir(/^Teléfono/, '999888777')
+    escribir(/^Correo/, 'compras@empresa.pe')
+
+    for (const id of ['2', '3', '4', '1']) {
+      await act(async () => { fireEvent.change(tipo(), { target: { value: id } }) })
+      await waitFor(() => expect((screen.getByLabelText(/Número de documento/) as HTMLInputElement).value).toBe(''))
+      expect((screen.getByLabelText(/^Dirección/) as HTMLInputElement).value).toBe('')
+      expect((screen.getByLabelText(/^Teléfono/) as HTMLInputElement).value).toBe('')
+      expect((screen.getByLabelText(/^Correo/) as HTMLInputElement).value).toBe('')
+      if (id === '1') expect(screen.queryByDisplayValue('Empresa SAC')).toBeNull()
+      else expect((screen.getByLabelText(/^Nombre/) as HTMLInputElement).value).toBe('')
+    }
   })
 })

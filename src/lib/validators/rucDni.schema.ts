@@ -6,6 +6,11 @@ export const terceroSchema = z.object({
   idDistrito: z.number().int().positive('Selecciona el distrito'),
   numeroDocumento: z.string().min(1, 'El número de documento es obligatorio'),
   razonSocial: z.string().min(2, 'Ingresa la razón social o nombres y apellidos'),
+  /** Persona natural: se arman en la razón social al guardar, para no duplicar el nombre. */
+  nombre: z.string().optional(),
+  segundoNombre: z.string().optional(),
+  apellidoPaterno: z.string().optional(),
+  apellidoMaterno: z.string().optional(),
   direccion: z.string().optional(),
   telefono: z.string().optional(),
   correo: z.union([z.string().email('Correo no válido'), z.literal('')]).optional(),

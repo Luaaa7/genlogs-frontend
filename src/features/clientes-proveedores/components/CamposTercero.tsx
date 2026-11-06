@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { listarDistritos } from '@/api/distritosApi'
 import { DistritoSelector } from './DistritoSelector'
 import { esDistritoExtranjero } from '@/lib/terceroExtranjero'
+import { armarNombrePersona, partirNombre } from '@/lib/persona'
 
 /** Lo que comparten cliente y proveedor: los datos del tercero. */
 type ConTercero = { tercero: ClienteFormValues['tercero'] }
@@ -56,8 +57,9 @@ const RAZON_AYUDA: Record<TipoDocumentoId, string> = {
 }
 
 /** Campos del tercero (documento, datos fiscales y contacto) con autocompletado
- *  por RUC/DNI (RF-08). Debe ir dentro de un <FormProvider>. */
-export function CamposTercero() {
+ *  por RUC/DNI (RF-08). Debe ir dentro de un <FormProvider>.
+ *  `separarNombres` (proveedores): DNI, carné y pasaporte van en cuatro columnas. */
+export function CamposTercero({ separarNombres = false }: { separarNombres?: boolean }) {
   const { register, setValue, getValues, setError, clearErrors, setFocus, watch, formState: { errors } } = useFormContext<ConTercero>()
   const e = errors.tercero
   const consultar = useConsultarDocumento()
@@ -74,6 +76,16 @@ export function CamposTercero() {
 
   // Observa el tipo de documento para actualizar placeholders, etiquetas y ayudas
   const idTipoDocumento = watch('tercero.idTipoDocumento') as TipoDocumentoId | undefined
+  const nombre = watch('tercero.nombre')
+  const segundoNombre = watch('tercero.segundoNombre')
+  const apellidoPaterno = watch('tercero.apellidoPaterno')
+  const apellidoMaterno = watch('tercero.apellidoMaterno')
+  const personaEnColumnas = separarNombres && idTipoDocumento !== undefined && idTipoDocumento !== 1
+
+  useEffect(() => {
+    if (!personaEnColumnas) return
+    setValue('tercero.razonSocial', armarNombrePersona({ nombre, segundoNombre, apellidoPaterno, apellidoMaterno }), { shouldValidate: false })
+  }, [personaEnColumnas, nombre, segundoNombre, apellidoPaterno, apellidoMaterno, setValue])
 
   // Completa razón social y dirección desde Factiliza (vía backend)
   async function buscarDocumento() {
@@ -99,7 +111,16 @@ export function CamposTercero() {
     try {
       const datos = await consultar.mutateAsync(numero)
       if (datos.razonSocial) {
-        setValue('tercero.razonSocial', datos.razonSocial, { shouldValidate: true })
+        if (separarNombres && tipo === 2) {
+          const partes = partirNombre(datos.razonSocial)
+          setValue('tercero.nombre', partes.nombre, { shouldValidate: true })
+          setValue('tercero.segundoNombre', partes.segundoNombre)
+          setValue('tercero.apellidoPaterno', partes.apellidoPaterno, { shouldValidate: true })
+          setValue('tercero.apellidoMaterno', partes.apellidoMaterno)
+          setValue('tercero.razonSocial', armarNombrePersona(partes), { shouldValidate: true })
+        } else {
+          setValue('tercero.razonSocial', datos.razonSocial, { shouldValidate: true })
+        }
       }
       if (datos.direccion) {
         setValue('tercero.direccion', datos.direccion)
@@ -119,16 +140,22 @@ export function CamposTercero() {
     if (tipoPrevio.current === idTipoDocumento) return
     tipoPrevio.current = idTipoDocumento
 
-    // Limpiar el número al cambiar el tipo, sin marcarlo como error todavía
+    // Cualquier cambio entre RUC, DNI, carné y pasaporte deja el formulario
+    // en blanco: el documento anterior no debe quedar en los campos nuevos.
     setValue('tercero.numeroDocumento', '', { shouldValidate: false, shouldDirty: true })
-    clearErrors('tercero.numeroDocumento')
-    
-    // Para CE y Pasaporte, limpiar dirección ya que no hay autocompletado
-    // Pero NO limpiar razonSocial para permitir edición manual
-    if (idTipoDocumento === 3 || idTipoDocumento === 4) {
-      setValue('tercero.direccion', '')
-    }
-  }, [idTipoDocumento, setValue, clearErrors])
+    setValue('tercero.razonSocial', '')
+    setValue('tercero.nombre', '')
+    setValue('tercero.segundoNombre', '')
+    setValue('tercero.apellidoPaterno', '')
+    setValue('tercero.apellidoMaterno', '')
+    setValue('tercero.direccion', '')
+    setValue('tercero.telefono', '')
+    setValue('tercero.correo', '')
+    setValue('tercero.lugarExtranjero', '')
+    setValue('tercero.idDistrito', undefined as unknown as number, { shouldValidate: false })
+    clearErrors('tercero')
+    consultar.reset()
+  }, [idTipoDocumento, setValue, clearErrors, consultar])
 
   const errorDoc = e?.numeroDocumento?.message ?? (consultar.isError ? 'No se pudo consultar el documento. Completa los datos a mano.' : undefined)
   
@@ -217,23 +244,40 @@ export function CamposTercero() {
           </Campo>
         </div>
 
-        <Campo
-          id="tercero-razon"
-          label={idTipoDocumento ? RAZON_SOCIAL_LABELS[idTipoDocumento] : 'Razón social / Nombres y apellidos'}
-          error={e?.razonSocial?.message}
-          ayuda={ayudaRazon}
-          obligatorio
-        >
-          <input
+        {personaEnColumnas ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Campo id="tercero-nombre" label="Nombre" obligatorio error={!nombre?.trim() && e?.razonSocial ? 'Escribe el nombre' : undefined}>
+              <input id="tercero-nombre" autoComplete="given-name" {...register('tercero.nombre')} className={inputFormClass} />
+            </Campo>
+            <Campo id="tercero-segundo" label="Segundo nombre" opcional>
+              <input id="tercero-segundo" autoComplete="additional-name" {...register('tercero.segundoNombre')} className={inputFormClass} />
+            </Campo>
+            <Campo id="tercero-paterno" label="Apellido paterno" obligatorio>
+              <input id="tercero-paterno" autoComplete="family-name" {...register('tercero.apellidoPaterno')} className={inputFormClass} />
+            </Campo>
+            <Campo id="tercero-materno" label="Apellido materno" opcional>
+              <input id="tercero-materno" autoComplete="family-name" {...register('tercero.apellidoMaterno')} className={inputFormClass} />
+            </Campo>
+          </div>
+        ) : (
+          <Campo
             id="tercero-razon"
-            autoComplete={idTipoDocumento === 1 ? 'organization' : 'name'}
-            placeholder={idTipoDocumento === 1 ? 'Empresa S.A.C.' : 'Juan Pérez Gómez'}
-            {...register('tercero.razonSocial')}
-            aria-invalid={!!e?.razonSocial}
-            aria-describedby={describedBy('tercero-razon', { error: e?.razonSocial, ayuda: ayudaRazon })}
-            className={inputFormClass}
-          />
-        </Campo>
+            label={idTipoDocumento ? RAZON_SOCIAL_LABELS[idTipoDocumento] : 'Razón social / Nombres y apellidos'}
+            error={e?.razonSocial?.message}
+            ayuda={ayudaRazon}
+            obligatorio
+          >
+            <input
+              id="tercero-razon"
+              autoComplete={idTipoDocumento === 1 ? 'organization' : 'name'}
+              placeholder={idTipoDocumento === 1 ? 'Empresa S.A.C.' : 'Juan Pérez Gómez'}
+              {...register('tercero.razonSocial')}
+              aria-invalid={!!e?.razonSocial}
+              aria-describedby={describedBy('tercero-razon', { error: e?.razonSocial, ayuda: ayudaRazon })}
+              className={inputFormClass}
+            />
+          </Campo>
+        )}
 
         {/* Indicador de modo simulado */}
         {consultar.data?.simulado && (
