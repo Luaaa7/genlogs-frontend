@@ -1,4 +1,5 @@
 import type { Tercero } from '@/types/tercero.types'
+import { nombresParaEditar } from '@/lib/nombreTercero'
 
 const ID_POR_CODIGO: Record<string, number> = { RUC: 1, DNI: 2, CE: 3, PAS: 4 }
 
@@ -18,6 +19,8 @@ export function valoresTerceroParaEditar(t: Tercero) {
     idDistrito: t.distrito?.idDistrito,
     numeroDocumento: t.numeroDocumento ?? '',
     razonSocial: t.razonSocial ?? '',
+    // DNI y pasaporte: los apellidos por separado (o propuestos si el registro es antiguo).
+    ...(idTipoDocumento === 1 ? {} : nombresParaEditar(t)),
     direccion: t.direccion ?? '',
     telefono: t.telefono ?? '',
     correo: t.correo ?? t.email ?? '',

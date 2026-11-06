@@ -25,8 +25,19 @@ function montar() {
 describe('ClienteBuscador: pestañas RUC, DNI y Pasaporte', () => {
   it('no ofrece carné de extranjería y empieza en RUC', () => {
     montar()
-    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['RUC', 'DNI', 'Pasaporte'])
-    expect(screen.getByRole('tab', { name: 'RUC' }).getAttribute('aria-selected')).toBe('true')
+    const pestanas = screen.getAllByRole('tab')
+    expect(pestanas).toHaveLength(3)
+    expect(pestanas.map((t) => t.textContent)).toEqual([
+      expect.stringMatching(/^RUC/),
+      expect.stringMatching(/^DNI/),
+      expect.stringMatching(/^Pasaporte/),
+    ])
+    expect(screen.getByRole('tab', { name: /^RUC/ }).getAttribute('aria-selected')).toBe('true')
+    // Cada pestaña cambia la sección completa: título y botón propios.
+    expect(screen.getByText('Empresa con RUC')).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: /^Pasaporte/ }))
+    expect(screen.getByText('Cliente extranjero con pasaporte')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /nuevo extranjero/i })).toBeTruthy()
   })
 
   it('cada pestaña solo busca clientes de su tipo', () => {
@@ -35,7 +46,7 @@ describe('ClienteBuscador: pestañas RUC, DNI y Pasaporte', () => {
     expect(screen.getByText('MINERA ANDINA S.A.C.')).toBeTruthy()
     expect(screen.queryByText('ANA LOPEZ RUIZ')).toBeNull()
 
-    fireEvent.click(screen.getByRole('tab', { name: 'DNI' }))
+    fireEvent.click(screen.getByRole('tab', { name: /^DNI/ }))
     fireEvent.change(campo, { target: { value: 'a' } })
     expect(screen.getByText('ANA LOPEZ RUIZ')).toBeTruthy()
     expect(screen.queryByText('MINERA ANDINA S.A.C.')).toBeNull()
@@ -43,7 +54,7 @@ describe('ClienteBuscador: pestañas RUC, DNI y Pasaporte', () => {
 
   it('pasaporte acepta letras y ofrece registrarlo si no existe', () => {
     const campo = montar()
-    fireEvent.click(screen.getByRole('tab', { name: 'Pasaporte' }))
+    fireEvent.click(screen.getByRole('tab', { name: /^Pasaporte/ }))
     fireEvent.change(campo, { target: { value: 'ab123456' } })
     expect(screen.getByText('JOHN SMITH')).toBeTruthy()
 
