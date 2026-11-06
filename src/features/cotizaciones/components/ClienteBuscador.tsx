@@ -28,7 +28,7 @@ const MAX_RESULTADOS = 8
 
 const idDe = (c: Cliente) => c.idCliente ?? c.id
 const normalizar = (s?: string | null) =>
-  (s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+  (s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 
 /** Pestañas del buscador. Los ids son los de tipo_documento (1 RUC, 2 DNI, 4 Pasaporte). */
 type TipoBusqueda = TipoDocumentoId
@@ -258,8 +258,10 @@ export function ClienteBuscador({ id, clientes, isLoading = false, value, onChan
         <div onSubmit={(e) => e.stopPropagation()}>
           <PanelLateral
             abierto={creando}
-            titulo="Nuevo cliente"
-            descripcion={tipo === 4 ? 'Completa los datos del titular del pasaporte. Al guardar, queda elegido en la cotización.' : 'Los datos se completan desde SUNAT/RENIEC. Al guardar, queda elegido en la cotización.'}
+            titulo={tipo === 1 ? 'Nueva empresa' : tipo === 2 ? 'Nueva persona' : 'Nuevo extranjero'}
+            descripcion={tipo === 4
+              ? 'Completa los datos del titular del pasaporte. Al guardar, queda elegido en la cotización.'
+              : `Los datos se completan desde ${tipo === 1 ? 'SUNAT' : 'RENIEC'}. Al guardar, queda elegido en la cotización.`}
             onCerrar={() => setCreando(false)}
           >
             {creando && (
@@ -270,6 +272,7 @@ export function ClienteBuscador({ id, clientes, isLoading = false, value, onChan
                   tercero: { idTipoDocumento: tipo, numeroDocumento: puedeCrear ? documento : '' },
                 } as Partial<ClienteFormValues>}
                 onSubmit={guardarNuevo}
+                tipoFijo={tipo}
               />
             )}
           </PanelLateral>
