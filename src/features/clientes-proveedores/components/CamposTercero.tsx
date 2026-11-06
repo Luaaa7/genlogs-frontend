@@ -36,6 +36,13 @@ const ORIGEN: Record<TipoDocumentoId, string> = {
   4: 'Registro manual',
 }
 
+/** Aviso según de dónde salieron los datos de la consulta. */
+function textoOrigen(origen: string | undefined, tipo: TipoDocumentoId): string {
+  if (origen === 'REGISTRADO') return 'Este documento ya está registrado en GENLOGS: se usaron sus datos.'
+  if (origen === 'GUARDADO') return `Datos de una consulta anterior a ${tipo === 1 ? 'SUNAT' : 'RENIEC'}, guardada en GENLOGS.`
+  return `Datos completados desde ${tipo === 1 ? 'SUNAT' : 'RENIEC'}.`
+}
+
 /** Clase extra de las casillas que llenó la consulta (siguen siendo editables). */
 const claseAutocompletado = 'border-teal-400 bg-teal-50/60 dark:border-teal-700 dark:bg-teal-950/40'
 
@@ -44,10 +51,11 @@ const claseAutocompletado = 'border-teal-400 bg-teal-50/60 dark:border-teal-700 
  * Pasaporte. Cada pestaña muestra su propio formulario:
  * - RUC: razón social, desde SUNAT.
  * - DNI: nombres, apellido paterno y apellido materno, desde RENIEC.
+ *   La consulta mira primero en GENLOGS (clientes, proveedores y consultas
+ *   anteriores) y solo si no lo encuentra pregunta a Factiliza.
  * - Pasaporte: los mismos campos que el DNI, escritos a mano.
  * Lo que trae la consulta queda en casillas editables, incluidos el
- * departamento, la provincia y el distrito. Al cambiar de pestaña, la ficha
- * queda en blanco. Debe ir dentro de un <FormProvider>.
+ * departamento, la provincia y el distrito. Debe ir dentro de un <FormProvider>.
  */
 export function CamposTercero() {
   const { register, setValue, getValues, setError, clearErrors, setFocus, watch, formState: { errors } } = useFormContext<ConTercero>()
@@ -91,7 +99,7 @@ export function CamposTercero() {
     consultar.reset()
   }
 
-  // Completa los datos desde Factiliza (vía backend): SUNAT para RUC, RENIEC para DNI.
+  // Completa los datos: primero GENLOGS y, si no está, Factiliza (SUNAT para RUC, RENIEC para DNI).
   async function buscarDocumento() {
     if (!tieneConsulta) return
     const numero = getValues('tercero.numeroDocumento')?.trim() ?? ''
@@ -121,7 +129,7 @@ export function CamposTercero() {
         const propuesta = separarNombreCompleto(datos.razonSocial)
         setValue('tercero.nombres', datos.nombres ?? propuesta.nombres, opciones)
         setValue('tercero.apellidoPaterno', datos.apellidoPaterno ?? propuesta.apellidoPaterno, opciones)
-        setValue('tercero.apellidoMaterno', datos.apellidoMaterno ?? propuesta.apellidoMaterno, { shouldDirty: true })
+        setValue('tercero.apellidoMaterno', datos.apellidoMaterno ?? propuesta.apellidoMaterno, opciones)
       }
       if (datos.direccion) setValue('tercero.direccion', datos.direccion, { shouldDirty: true })
       if (datos.idDistrito) elegirDistrito(datos.idDistrito)
@@ -210,7 +218,7 @@ export function CamposTercero() {
         {autocompletado && (
           <p role="status" className="flex items-center gap-2 rounded-md bg-teal-50 px-3 py-2 text-sm font-medium text-teal-900 dark:bg-teal-950/50 dark:text-teal-200">
             <Check className="h-4 w-4 shrink-0" aria-hidden="true" />
-            Datos completados desde {tipo === 1 ? 'SUNAT' : 'RENIEC'}. Puedes corregir cualquier casilla.
+            {textoOrigen(consultar.data?.origen, tipo)} Puedes corregir cualquier casilla.
           </p>
         )}
 
@@ -238,12 +246,14 @@ export function CamposTercero() {
                 className={cn(inputFormClass, resaltar(apellidoPaterno) && claseAutocompletado)}
               />
             </Campo>
-            <Campo id="tercero-materno" label="Apellido materno" opcional>
+            <Campo id="tercero-materno" label="Apellido materno" error={e?.apellidoMaterno?.message} obligatorio>
               <input
                 id="tercero-materno"
                 autoComplete="off"
                 maxLength={60}
                 {...register('tercero.apellidoMaterno')}
+                aria-invalid={!!e?.apellidoMaterno}
+                aria-describedby={describedBy('tercero-materno', { error: e?.apellidoMaterno })}
                 className={cn(inputFormClass, resaltar(apellidoMaterno) && claseAutocompletado)}
               />
             </Campo>

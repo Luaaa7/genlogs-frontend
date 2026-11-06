@@ -64,7 +64,7 @@ export function ClienteForm({ onSubmit, isSubmitting, serverError, valoresInicia
         <LeyendaObligatorio />
         <ResumenFaltantes
           errors={errors}
-          etiquetas={{ 'tercero.idTipoDocumento': 'Tipo de documento', 'tercero.numeroDocumento': 'Número de documento', 'tercero.razonSocial': 'Razón social', 'tercero.nombres': 'Nombres', 'tercero.apellidoPaterno': 'Apellido paterno', 'tercero.direccion': 'Dirección', 'tercero.idDistrito': 'Distrito / Ciudad', 'tercero.lugarExtranjero': 'Ciudad y país', 'tercero.correo': 'Correo', 'tercero.telefono': 'Teléfono', idSectorEconomico: 'Sector económico' }}
+                  etiquetas={{ 'tercero.idTipoDocumento': 'Tipo de documento', 'tercero.numeroDocumento': 'Número de documento', 'tercero.razonSocial': 'Razón social', 'tercero.nombres': 'Nombres', 'tercero.apellidoPaterno': 'Apellido paterno', 'tercero.apellidoMaterno': 'Apellido materno', 'tercero.direccion': 'Dirección', 'tercero.idDistrito': 'Distrito', 'tercero.lugarExtranjero': 'Ciudad y país', 'tercero.correo': 'Correo', 'tercero.telefono': 'Teléfono', idSectorEconomico: 'Sector económico' }}
         />
         <CamposTercero />
 

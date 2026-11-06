@@ -45,12 +45,15 @@ export const terceroSchema = z.object({
       message: v.numeroDocumento.trim() ? 'El pasaporte debe tener de 6 a 12 letras y números' : 'Ingresa el número de pasaporte',
     })
   }
-  // DNI y pasaporte: nombres y apellido paterno (el materno es opcional)
+  // DNI y pasaporte: nombres y los dos apellidos
   if (!v.nombres?.trim()) {
     ctx.addIssue({ code: 'custom', path: ['nombres'], message: 'Ingresa los nombres' })
   }
   if (!v.apellidoPaterno?.trim()) {
     ctx.addIssue({ code: 'custom', path: ['apellidoPaterno'], message: 'Ingresa el apellido paterno' })
+  }
+  if (!v.apellidoMaterno?.trim()) {
+    ctx.addIssue({ code: 'custom', path: ['apellidoMaterno'], message: 'Ingresa el apellido materno' })
   }
 })
 export const clienteSchema = z.object({ tercero: terceroSchema, idSectorEconomico: z.number().int().positive('Selecciona el sector'), situacion: z.string().default('ACTIVO') })

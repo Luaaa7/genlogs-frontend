@@ -54,12 +54,12 @@ describe('CamposTercero: pestañas RUC, DNI y Pasaporte', () => {
     })
     await waitFor(() => expect(screen.getByDisplayValue('20512345671')).toBeTruthy())
     // El distrito guardado se muestra en sus tres casillas.
-    await waitFor(() => expect(valor(/distrito \/ ciudad/i)).toBe('10'))
+    await waitFor(() => expect(valor(/^distrito/i)).toBe('10'))
     expect(valor(/departamento/i)).toBe('ICA')
     expect(valor(/provincia/i)).toBe('ICA')
   })
 
-  it('DNI y pasaporte piden nombres, apellido paterno y apellido materno por separado', async () => {
+  it('DNI y pasaporte piden nombres, apellido paterno y apellido materno por separado (los tres obligatorios)', async () => {
     await act(async () => {
       renderForm()
     })
@@ -71,6 +71,25 @@ describe('CamposTercero: pestañas RUC, DNI y Pasaporte', () => {
     expect(screen.getByLabelText(/apellido paterno/i)).toBeTruthy()
     expect(screen.getByLabelText(/apellido materno/i)).toBeTruthy()
     expect(screen.getByRole('button', { name: /consultar reniec/i })).toBeTruthy()
+
+    // Sin apellido materno no se puede guardar.
+    fireEvent.change(screen.getByLabelText(/número de dni/i), { target: { value: '45678912' } })
+    fireEvent.change(screen.getByLabelText(/^nombres/i), { target: { value: 'Ana' } })
+    fireEvent.change(screen.getByLabelText(/apellido paterno/i), { target: { value: 'López' } })
+    await waitFor(() => expect(screen.getByRole('option', { name: 'ICA' })).toBeTruthy())
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText(/departamento/i), { target: { value: 'ICA' } })
+    })
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText(/provincia/i), { target: { value: 'ICA' } })
+    })
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText(/^distrito/i), { target: { value: '10' } })
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /guardar proveedor/i }))
+    })
+    expect(await screen.findByText('Ingresa el apellido materno')).toBeTruthy()
 
     await act(async () => {
       fireEvent.click(screen.getByRole('tab', { name: /^Pasaporte/ }))
@@ -109,7 +128,7 @@ describe('CamposTercero: pestañas RUC, DNI y Pasaporte', () => {
     escribir(/^dirección/i, 'Av. Principal 100')
     escribir(/^teléfono/i, '999888777')
     escribir(/^correo/i, 'compras@empresa.pe')
-    await waitFor(() => expect(valor(/distrito \/ ciudad/i)).toBe(''))
+    await waitFor(() => expect(valor(/^distrito/i)).toBe(''))
     await act(async () => {
       fireEvent.change(screen.getByLabelText(/departamento/i), { target: { value: 'ICA' } })
     })
@@ -117,7 +136,7 @@ describe('CamposTercero: pestañas RUC, DNI y Pasaporte', () => {
       fireEvent.change(screen.getByLabelText(/provincia/i), { target: { value: 'ICA' } })
     })
     await act(async () => {
-      fireEvent.change(screen.getByLabelText(/distrito \/ ciudad/i), { target: { value: '10' } })
+      fireEvent.change(screen.getByLabelText(/^distrito/i), { target: { value: '10' } })
     })
 
     for (const pestana of [/^DNI/, /^Pasaporte/, /^RUC/]) {
@@ -128,7 +147,7 @@ describe('CamposTercero: pestañas RUC, DNI y Pasaporte', () => {
       expect(valor(/^dirección/i)).toBe('')
       expect(valor(/^teléfono/i)).toBe('')
       expect(valor(/^correo/i)).toBe('')
-      expect(valor(/distrito \/ ciudad/i)).toBe('')
+      expect(valor(/^distrito/i)).toBe('')
       expect(valor(/departamento/i)).toBe('')
       if (pestana.source === '^RUC') expect(valor(/razón social/i)).toBe('')
       else expect(valor(/^nombres/i)).toBe('')
@@ -157,30 +176,30 @@ describe('CamposTercero: pestañas RUC, DNI y Pasaporte', () => {
     expect(valor(/apellido paterno/i)).toBe('LOPEZ')
     expect(valor(/apellido materno/i)).toBe('RUIZ')
     expect(valor(/^dirección/i)).toBe('AV. LOS ANGELES 123')
-    expect(valor(/distrito \/ ciudad/i)).toBe('10')
+    expect(valor(/^distrito/i)).toBe('10')
     expect(screen.getByText(/datos completados desde reniec/i)).toBeTruthy()
 
     // Se puede corregir el apellido y cambiar el distrito.
     fireEvent.change(screen.getByLabelText(/apellido materno/i), { target: { value: 'RUIZ DE CASTILLA' } })
     expect(valor(/apellido materno/i)).toBe('RUIZ DE CASTILLA')
     await act(async () => {
-      fireEvent.change(screen.getByLabelText(/distrito \/ ciudad/i), { target: { value: '11' } })
+      fireEvent.change(screen.getByLabelText(/^distrito/i), { target: { value: '11' } })
     })
-    expect(valor(/distrito \/ ciudad/i)).toBe('11')
+    expect(valor(/^distrito/i)).toBe('11')
 
     // Al cambiar el departamento se vacían la provincia y el distrito para elegirlos de nuevo.
     await act(async () => {
       fireEvent.change(screen.getByLabelText(/departamento/i), { target: { value: 'LIMA' } })
     })
     expect(valor(/provincia/i)).toBe('')
-    expect(valor(/distrito \/ ciudad/i)).toBe('')
+    expect(valor(/^distrito/i)).toBe('')
     await act(async () => {
       fireEvent.change(screen.getByLabelText(/provincia/i), { target: { value: 'LIMA' } })
     })
     await act(async () => {
-      fireEvent.change(screen.getByLabelText(/distrito \/ ciudad/i), { target: { value: '20' } })
+      fireEvent.change(screen.getByLabelText(/^distrito/i), { target: { value: '20' } })
     })
-    expect(valor(/distrito \/ ciudad/i)).toBe('20')
+    expect(valor(/^distrito/i)).toBe('20')
   })
 
   it('al guardar un DNI arma la razón social con los nombres y apellidos', async () => {
@@ -191,19 +210,19 @@ describe('CamposTercero: pestañas RUC, DNI y Pasaporte', () => {
         defaultValues: {
           tercero: {
             idTipoDocumento: 2, idDistrito: 10, numeroDocumento: '45678912', razonSocial: '',
-            nombres: ' Ana  María ', apellidoPaterno: 'López', apellidoMaterno: '', direccion: '', telefono: '', correo: '',
+            nombres: ' Ana  María ', apellidoPaterno: 'López', apellidoMaterno: 'Ruiz', direccion: '', telefono: '', correo: '',
           },
           situacion: 'ACTIVO',
         },
       })
     })
-    await waitFor(() => expect(valor(/distrito \/ ciudad/i)).toBe('10'))
+    await waitFor(() => expect(valor(/^distrito/i)).toBe('10'))
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /guardar proveedor/i }))
     })
     await waitFor(() => expect(onSubmit).toHaveBeenCalled())
     const enviado = onSubmit.mock.calls[0][0].tercero
-    expect(enviado.razonSocial).toBe('Ana María López')
+    expect(enviado.razonSocial).toBe('Ana María López Ruiz')
     expect(enviado.nombres).toBe('Ana María')
     expect(enviado.apellidoPaterno).toBe('López')
   })
