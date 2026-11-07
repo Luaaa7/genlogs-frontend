@@ -66,7 +66,10 @@ axiosClient.interceptors.response.use(
     // NO debe desloguear: cada pantalla ya maneja su propio estado de error.
     // Un 401 en /auth/* (login con contraseña incorrecta, refresh vencido) no
     // es una sesión vencida: lo maneja la propia pantalla con su mensaje.
-    const esRutaAuth = String(originalRequest?.url ?? "").includes("/auth/")
+    // Tampoco las rutas públicas (/public/*, que usa la landing): si fallan,
+    // la landing muestra su aviso, pero nunca manda al visitante al login.
+    const urlPedida = String(originalRequest?.url ?? "")
+    const esRutaAuth = urlPedida.includes("/auth/") || urlPedida.includes("/public/")
 
     if (status === 401 && !originalRequest._retry && !esRutaAuth) {
       console.warn(`[AUTH] 401 recibido en ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`)
