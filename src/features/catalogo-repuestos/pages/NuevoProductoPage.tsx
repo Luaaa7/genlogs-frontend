@@ -17,7 +17,7 @@ export function NuevoProductoPage() {
       { values: productoFormToRequest(values), medios },
       {
         onSuccess: ({ producto, mediosFallidos }) => {
-          avisar(`Producto ${producto.nombreProducto} registrado correctamente`)
+          avisar(`Producto ${producto.codigoProducto} - ${producto.nombreProducto} registrado correctamente`)
           if (mediosFallidos > 0) {
             // El producto ya existe: se lleva al usuario a editarlo para reintentar los archivos.
             navigate(`/catalogo-repuestos/${producto.idProducto}/editar`, {
@@ -41,6 +41,7 @@ export function NuevoProductoPage() {
       <PageHeader titulo="Nuevo producto" descripcion="Datos, ficha técnica, imágenes y documentos del repuesto." />
 
       <ProductoForm
+        codigoAutomatico
         onSubmit={handleSubmit}
         onCancel={() => navigate("/catalogo-repuestos")}
         submitting={isPending}
