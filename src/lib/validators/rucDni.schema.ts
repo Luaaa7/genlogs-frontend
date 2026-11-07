@@ -5,7 +5,11 @@ export const terceroSchema = z.object({
   idTipoDocumento: z.number().int().positive('Selecciona el tipo de documento'),
   idDistrito: z.number().int().positive('Selecciona el distrito'),
   numeroDocumento: z.string().min(1, 'El número de documento es obligatorio'),
-  razonSocial: z.string().min(2, 'Ingresa la razón social o nombres y apellidos'),
+  /** RUC: razón social. DNI y pasaporte: se arma con nombres y apellidos al guardar. */
+  razonSocial: z.string().optional(),
+  nombres: z.string().optional(),
+  apellidoPaterno: z.string().optional(),
+  apellidoMaterno: z.string().optional(),
   direccion: z.string().optional(),
   telefono: z.string().optional(),
   correo: z.union([z.string().email('Correo no válido'), z.literal('')]).optional(),
@@ -17,21 +21,39 @@ export const terceroSchema = z.object({
   if ((v.ubigeo ?? '').startsWith('90') && !v.lugarExtranjero?.trim() && !v.direccion?.trim()) {
     ctx.addIssue({ code: 'custom', path: ['lugarExtranjero'], message: 'Escribe la ciudad y el país' })
   }
-  // RUC: 11 dígitos
-  if (v.idTipoDocumento === 1 && !/^\d{11}$/.test(v.numeroDocumento)) {
-    ctx.addIssue({ code: 'custom', path: ['numeroDocumento'], message: 'El RUC debe tener 11 dígitos' })
+  // RUC: 11 dígitos, empieza con 10 o 20, y razón social
+  if (v.idTipoDocumento === 1) {
+    if (!/^\d{11}$/.test(v.numeroDocumento)) {
+      ctx.addIssue({ code: 'custom', path: ['numeroDocumento'], message: 'El RUC debe tener 11 dígitos' })
+    } else if (!/^(10|20)/.test(v.numeroDocumento)) {
+      ctx.addIssue({ code: 'custom', path: ['numeroDocumento'], message: 'El RUC debe empezar con 10 o 20' })
+    }
+    if ((v.razonSocial ?? '').trim().length < 2) {
+      ctx.addIssue({ code: 'custom', path: ['razonSocial'], message: 'Ingresa la razón social' })
+    }
+    return
   }
   // DNI: 8 dígitos
   if (v.idTipoDocumento === 2 && !/^\d{8}$/.test(v.numeroDocumento)) {
     ctx.addIssue({ code: 'custom', path: ['numeroDocumento'], message: 'El DNI debe tener 8 dígitos' })
   }
-  // CE: al menos 1 caracter, sin formato específico
-  if (v.idTipoDocumento === 3 && v.numeroDocumento.trim().length === 0) {
-    ctx.addIssue({ code: 'custom', path: ['numeroDocumento'], message: 'Ingresa el número de carné de extranjería' })
+  // Pasaporte: de 6 a 12 letras y números (igual que en la base de datos)
+  if (v.idTipoDocumento === 4 && !/^[A-Za-z0-9]{6,12}$/.test(v.numeroDocumento.trim())) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['numeroDocumento'],
+      message: v.numeroDocumento.trim() ? 'El pasaporte debe tener de 6 a 12 letras y números' : 'Ingresa el número de pasaporte',
+    })
   }
-  // PAS: al menos 1 caracter, sin formato específico
-  if (v.idTipoDocumento === 4 && v.numeroDocumento.trim().length === 0) {
-    ctx.addIssue({ code: 'custom', path: ['numeroDocumento'], message: 'Ingresa el número de pasaporte' })
+  // DNI y pasaporte: nombres y los dos apellidos
+  if (!v.nombres?.trim()) {
+    ctx.addIssue({ code: 'custom', path: ['nombres'], message: 'Ingresa los nombres' })
+  }
+  if (!v.apellidoPaterno?.trim()) {
+    ctx.addIssue({ code: 'custom', path: ['apellidoPaterno'], message: 'Ingresa el apellido paterno' })
+  }
+  if (!v.apellidoMaterno?.trim()) {
+    ctx.addIssue({ code: 'custom', path: ['apellidoMaterno'], message: 'Ingresa el apellido materno' })
   }
 })
 export const clienteSchema = z.object({ tercero: terceroSchema, idSectorEconomico: z.number().int().positive('Selecciona el sector'), situacion: z.string().default('ACTIVO') })

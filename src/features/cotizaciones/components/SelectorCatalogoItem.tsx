@@ -10,6 +10,9 @@ export interface ItemCatalogo {
   nombre: string
   codigo: string
   idUnidadMedida?: number
+  /** Solo servicios: categoría y su categoría padre (para sugerir el margen). */
+  idCategoriaServicio?: number
+  idCategoriaPadre?: number
 }
 
 interface SelectorCatalogoItemProps {
@@ -22,6 +25,8 @@ interface SelectorCatalogoItemProps {
   ariaLabel: string
   invalido?: boolean
   className?: string
+  /** Si se indica, solo busca productos o solo servicios. */
+  tipo?: 'producto' | 'servicio'
 }
 
 const MAX_RESULTADOS = 8
@@ -37,6 +42,7 @@ export const SelectorCatalogoItem: React.FC<SelectorCatalogoItemProps> = ({
   ariaLabel,
   invalido,
   className,
+  tipo,
 }) => {
   const listaId = useId()
   const [abierto, setAbierto] = useState(false)
@@ -62,19 +68,22 @@ export const SelectorCatalogoItem: React.FC<SelectorCatalogoItemProps> = ({
     return palabras.every((w) => pajar.includes(w))
   }
   const productos = useMemo(
-    () => catalogo.filter((p) => coincide(p.nombreProducto, p.codigoProducto, p.marcaNombre)).slice(0, MAX_RESULTADOS),
+    () => tipo === 'servicio' ? [] : catalogo.filter((p) => coincide(p.nombreProducto, p.codigoProducto, p.marcaNombre)).slice(0, MAX_RESULTADOS),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [catalogo, palabras],
+    [catalogo, palabras, tipo],
   )
   const serviciosFiltrados = useMemo(
-    () => servicios.filter((s) => coincide(s.nombreServicio, s.codigoServicio)).slice(0, MAX_RESULTADOS),
+    () => tipo === 'producto' ? [] : servicios.filter((s) => coincide(s.nombreServicio, s.codigoServicio)).slice(0, MAX_RESULTADOS),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [servicios, palabras],
+    [servicios, palabras, tipo],
   )
+  const queBusca = tipo === 'producto' ? 'productos' : tipo === 'servicio' ? 'servicios' : 'productos ni servicios'
 
   const sinResultados = productos.length === 0 && serviciosFiltrados.length === 0
   // Si el servidor falla, decirlo: antes salía "No hay productos" y parecía que el catálogo estaba vacío.
-  const errorCatalogo = errorProductos && errorServicios ? 'productos y servicios' : errorProductos ? 'productos' : errorServicios ? 'servicios' : null
+  const fallaProductos = errorProductos && tipo !== 'servicio'
+  const fallaServicios = errorServicios && tipo !== 'producto'
+  const errorCatalogo = fallaProductos && fallaServicios ? 'productos y servicios' : fallaProductos ? 'productos' : fallaServicios ? 'servicios' : null
 
   const elegir = (item: ItemCatalogo) => {
     onSeleccionar(item)
@@ -104,7 +113,7 @@ export const SelectorCatalogoItem: React.FC<SelectorCatalogoItemProps> = ({
         aria-label={ariaLabel}
         aria-invalid={invalido}
         autoComplete="off"
-        placeholder="Buscar producto o servicio"
+        placeholder={tipo === 'producto' ? 'Buscar repuesto por nombre, código o marca' : tipo === 'servicio' ? 'Buscar servicio por nombre o código' : 'Buscar producto o servicio'}
         value={valor}
         onFocus={() => setAbierto(true)}
         onChange={(e) => {
@@ -157,7 +166,7 @@ export const SelectorCatalogoItem: React.FC<SelectorCatalogoItemProps> = ({
                   aria-selected={false}
                   className={opcionClass}
                   onClick={() =>
-                    elegir({ tipo: 'servicio', id: s.idServicio, nombre: s.nombreServicio, codigo: s.codigoServicio, idUnidadMedida: s.unidadMedida?.idUnidadMedida })
+                    elegir({ tipo: 'servicio', id: s.idServicio, nombre: s.nombreServicio, codigo: s.codigoServicio, idUnidadMedida: s.unidadMedida?.idUnidadMedida, idCategoriaServicio: s.categoriaServicio?.idCategoriaServicio, idCategoriaPadre: s.categoriaServicio?.categoriaPadre?.idCategoriaServicio })
                   }
                 >
                   <span className="font-medium text-foreground">{s.nombreServicio}</span>
@@ -179,7 +188,7 @@ export const SelectorCatalogoItem: React.FC<SelectorCatalogoItemProps> = ({
 
           {sinResultados && !buscando && !errorCatalogo && (
             <p className="px-2.5 py-3 text-sm text-muted-foreground">
-              No hay productos ni servicios con ese nombre o código. Si falta, créalo primero en el catálogo.
+              No hay {queBusca === 'productos ni servicios' ? 'productos ni servicios' : queBusca} con ese nombre o código. Si falta, créalo primero en el catálogo.
             </p>
           )}
         </div>

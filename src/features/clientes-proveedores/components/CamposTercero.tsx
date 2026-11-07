@@ -1,66 +1,72 @@
 import { useFormContext } from 'react-hook-form'
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useRef } from 'react'
-import { Loader2, Search, AlertCircle } from 'lucide-react'
+import { useState } from 'react'
+import { AlertCircle, Check, Info, Loader2, Search } from 'lucide-react'
 import type { ClienteFormValues } from '../../../lib/validators/rucDni.schema'
 import { useConsultarDocumento } from '../hooks/useConsultarDocumento'
-import { Campo, SeccionForm } from '@/components/ui/campo'
+import { Campo } from '@/components/ui/campo'
 import { describedBy, inputFormClass } from '@/components/ui/campoEstilos'
 import { Button } from '@/components/ui/button'
 import { listarDistritos } from '@/api/distritosApi'
-import { DistritoSelector } from './DistritoSelector'
 import { esDistritoExtranjero } from '@/lib/terceroExtranjero'
+import { separarNombreCompleto } from '@/lib/nombreTercero'
+import { cn } from '@/lib/utils/utils'
+import { IconoTipoDocumento, PestanasTipoDocumento } from './PestanasTipoDocumento'
+import { UbicacionCampos } from './UbicacionCampos'
+import { infoTipoDocumento, type TipoDocumentoId } from '../constants/tiposDocumento'
 
 /** Lo que comparten cliente y proveedor: los datos del tercero. */
 type ConTercero = { tercero: ClienteFormValues['tercero'] }
 
-const TIPOS_DOCUMENTO = [
-  { id: 1, label: 'RUC' },
-  { id: 2, label: 'DNI' },
-  { id: 3, label: 'Carné de extranjería' },
-  { id: 4, label: 'Pasaporte' },
-] as const
-
-type TipoDocumentoId = (typeof TIPOS_DOCUMENTO)[number]['id']
-
-/** Mapa de placeholders por tipo de documento */
-const PLACEHOLDERS: Record<TipoDocumentoId, string> = {
-  1: '20512345671', // RUC
-  2: '12345678',    // DNI
-  3: '00123456',    // CE
-  4: '12345678',    // Pasaporte
+const PLACEHOLDER_DOCUMENTO: Record<TipoDocumentoId, string> = {
+  1: '20512345671',
+  2: '12345678',
+  4: 'AB123456',
 }
 
-/** Etiquetas para el campo razonSocial según tipo de documento */
-const RAZON_SOCIAL_LABELS: Record<TipoDocumentoId, string> = {
-  1: 'Razón social',
-  2: 'Nombres y apellidos',
-  3: 'Nombres y apellidos',
-  4: 'Nombres y apellidos',
+const AYUDA_DOCUMENTO: Record<TipoDocumentoId, string> = {
+  1: 'RUC de 11 dígitos, empieza con 10 o 20. Con "Consultar SUNAT" se completan los datos.',
+  2: 'DNI de 8 dígitos. Con "Consultar RENIEC" se completan los nombres, apellidos y la dirección.',
+  4: 'De 6 a 12 letras o números, tal como figura en el pasaporte.',
 }
 
-/** Mensajes de ayuda para el campo de documento según tipo */
-const DOCUMENTO_AYUDA: Record<TipoDocumentoId, string> = {
-  1: 'Ingresa el RUC de 11 dígitos. Con "Buscar" se completan la razón social y la dirección desde SUNAT.',
-  2: 'Ingresa el DNI de 8 dígitos. Con "Buscar" se completan los nombres, apellidos y la dirección desde RENIEC.',
-  3: 'Ingresa el número de carné de extranjería. La consulta automática no está disponible para este tipo de documento.',
-  4: 'Ingresa el número de pasaporte. La consulta automática no está disponible para este tipo de documento.',
+const ORIGEN: Record<TipoDocumentoId, string> = {
+  1: 'Datos desde SUNAT',
+  2: 'Datos desde RENIEC',
+  4: 'Registro manual',
 }
 
-/** Mensajes de ayuda para el campo razonSocial según tipo */
-const RAZON_AYUDA: Record<TipoDocumentoId, string> = {
-  1: 'Se completa automáticamente al buscar el RUC. Si la consulta falla, ingrésalo manualmente.',
-  2: 'Se completa automáticamente al buscar el DNI (nombres + apellidos). Si la consulta falla, ingrésalo manualmente.',
-  3: 'Ingresa los nombres y apellidos del titular del carné de extranjería.',
-  4: 'Ingresa los nombres y apellidos del titular del pasaporte.',
+/** Aviso según de dónde salieron los datos de la consulta. */
+function textoOrigen(origen: string | undefined, tipo: TipoDocumentoId): string {
+  if (origen === 'REGISTRADO') return 'Este documento ya está registrado en GENLOGS: se usaron sus datos.'
+  if (origen === 'GUARDADO') return `Datos de una consulta anterior a ${tipo === 1 ? 'SUNAT' : 'RENIEC'}, guardada en GENLOGS.`
+  return `Datos completados desde ${tipo === 1 ? 'SUNAT' : 'RENIEC'}.`
 }
 
-/** Campos del tercero (documento, datos fiscales y contacto) con autocompletado
- *  por RUC/DNI (RF-08). Debe ir dentro de un <FormProvider>. */
-export function CamposTercero() {
+/** Clase extra de las casillas que llenó la consulta (siguen siendo editables). */
+const claseAutocompletado = 'border-teal-400 bg-teal-50/60 dark:border-teal-700 dark:bg-teal-950/40'
+
+/**
+ * Datos del tercero (cliente o proveedor) en tres pestañas: RUC, DNI y
+ * Pasaporte. Cada pestaña muestra su propio formulario:
+ * - RUC: razón social, desde SUNAT.
+ * - DNI: nombres, apellido paterno y apellido materno, desde RENIEC.
+ *   La consulta mira primero en GENLOGS (clientes, proveedores y consultas
+ *   anteriores) y solo si no lo encuentra pregunta a Factiliza.
+ * - Pasaporte: los mismos campos que el DNI, escritos a mano.
+ * Lo que trae la consulta queda en casillas editables, incluidos el
+ * departamento, la provincia y el distrito. Debe ir dentro de un <FormProvider>.
+ *
+ * Con `tipoFijo` (p. ej. al pulsar "Nueva persona" en la pestaña DNI) no se
+ * muestran las pestañas: solo la página de ese documento.
+ */
+export function CamposTercero({ tipoFijo }: { tipoFijo?: TipoDocumentoId } = {}) {
   const { register, setValue, getValues, setError, clearErrors, setFocus, watch, formState: { errors } } = useFormContext<ConTercero>()
   const e = errors.tercero
   const consultar = useConsultarDocumento()
+  const [autocompletado, setAutocompletado] = useState(false)
+  // Número con el que se llenó la ficha; si se cambia o se borra, la ficha se vacía.
+  const [numeroConsultado, setNumeroConsultado] = useState<string | null>(null)
 
   const { data: distritos, isLoading: cargandoDistritos, isError: errorDistritos, refetch: reintentarDistritos, isFetching: recargandoDistritos } = useQuery({
     queryKey: ['distritos'],
@@ -68,98 +74,89 @@ export function CamposTercero() {
     staleTime: 10 * 60_000,
   })
 
-  const idDistritoSeleccionado = watch('tercero.idDistrito') as number | undefined
-  const selectedDistrito = distritos?.find((d) => d.idDistrito === idDistritoSeleccionado)
-  const esExtranjero = esDistritoExtranjero(selectedDistrito)
+  const tipo = (tipoFijo ?? (watch('tercero.idTipoDocumento') as number | undefined) ?? 1) as TipoDocumentoId
+  const info = infoTipoDocumento(tipo)
+  const esPersona = tipo !== 1
+  const tieneConsulta = tipo === 1 || tipo === 2
 
-  // Observa el tipo de documento para actualizar placeholders, etiquetas y ayudas
-  const idTipoDocumento = watch('tercero.idTipoDocumento') as TipoDocumentoId | undefined
+  const idDistrito = watch('tercero.idDistrito') as number | undefined
+  const distritoElegido = distritos?.find((d) => d.idDistrito === idDistrito)
+  const esExtranjero = esDistritoExtranjero(distritoElegido)
 
-  // Completa razón social y dirección desde Factiliza (vía backend)
+  /** Deja en blanco todo lo que no es el número: nombre, dirección, ubicación y contacto. */
+  function vaciarDatos() {
+    setValue('tercero.razonSocial', '')
+    setValue('tercero.nombres', '')
+    setValue('tercero.apellidoPaterno', '')
+    setValue('tercero.apellidoMaterno', '')
+    setValue('tercero.direccion', '')
+    setValue('tercero.telefono', '')
+    setValue('tercero.correo', '')
+    setValue('tercero.lugarExtranjero', '')
+    setValue('tercero.ubigeo', '')
+    setValue('tercero.idDistrito', undefined as unknown as number, { shouldValidate: false })
+    setAutocompletado(false)
+    setNumeroConsultado(null)
+    consultar.reset()
+  }
+
+  function cambiarTipo(nuevo: TipoDocumentoId) {
+    if (nuevo === tipo) return
+    setValue('tercero.idTipoDocumento', nuevo, { shouldDirty: true })
+    // Cualquier cambio entre RUC, DNI y pasaporte deja la ficha en blanco: los
+    // datos del documento anterior no deben quedar en la pestaña nueva.
+    setValue('tercero.numeroDocumento', '', { shouldDirty: true })
+    vaciarDatos()
+    clearErrors('tercero')
+  }
+
+  // Completa los datos: primero GENLOGS y, si no está, Factiliza (SUNAT para RUC, RENIEC para DNI).
   async function buscarDocumento() {
+    if (!tieneConsulta) return
     const numero = getValues('tercero.numeroDocumento')?.trim() ?? ''
-    const tipo = idTipoDocumento
-    // Solo RUC (1) y DNI (2) tienen consulta automática
-    if (tipo !== 1 && tipo !== 2) return
-
-    // Antes "Buscar" no hacía nada si el número estaba incompleto; ahora dice por qué (#41).
     const largo = tipo === 1 ? 11 : 8
-    const nombre = tipo === 1 ? 'RUC' : 'DNI'
     if (!new RegExp(`^\\d{${largo}}$`).test(numero)) {
       setError('tercero.numeroDocumento', {
         type: 'manual',
         message: numero
-          ? `El ${nombre} debe tener ${largo} dígitos (tiene ${numero.replace(/\D/g, '').length}).`
-          : `Escribe el ${nombre} antes de buscar.`,
+          ? `El ${info.label} debe tener ${largo} dígitos (tiene ${numero.replace(/\D/g, '').length}).`
+          : `Escribe el ${info.label} antes de consultar.`,
       })
       return
     }
+    if (tipo === 1 && !/^(10|20)/.test(numero)) {
+      setError('tercero.numeroDocumento', { type: 'manual', message: 'El RUC debe empezar con 10 o 20.' })
+      return
+    }
     clearErrors('tercero.numeroDocumento')
-    
+
     try {
       const datos = await consultar.mutateAsync(numero)
-      if (datos.razonSocial) {
-        setValue('tercero.razonSocial', datos.razonSocial, { shouldValidate: true })
+      const opciones = { shouldValidate: true, shouldDirty: true }
+      if (tipo === 1) {
+        if (datos.razonSocial) setValue('tercero.razonSocial', datos.razonSocial, opciones)
+      } else {
+        // Si el backend aún no separa los apellidos, se proponen a partir del nombre completo.
+        const propuesta = separarNombreCompleto(datos.razonSocial)
+        setValue('tercero.nombres', datos.nombres ?? propuesta.nombres, opciones)
+        setValue('tercero.apellidoPaterno', datos.apellidoPaterno ?? propuesta.apellidoPaterno, opciones)
+        setValue('tercero.apellidoMaterno', datos.apellidoMaterno ?? propuesta.apellidoMaterno, opciones)
       }
-      if (datos.direccion) {
-        setValue('tercero.direccion', datos.direccion)
-      }
+      if (datos.direccion) setValue('tercero.direccion', datos.direccion, { shouldDirty: true })
+      if (datos.idDistrito) elegirDistrito(datos.idDistrito)
+      setAutocompletado(true)
+      setNumeroConsultado(numero)
     } catch {
-      // El error se muestra bajo el campo con consultar.isError
+      // El error se muestra bajo el número con consultar.isError
     }
   }
 
-  // Maneja cambios en el tipo de documento.
-  // Solo actúa cuando el usuario CAMBIA el tipo: en el primer render (formulario
-  // nuevo o en edición con datos cargados) no debe borrar ni validar el número,
-  // si no el campo aparecía en rojo ("obligatorio") sin haberlo tocado.
-  const tipoPrevio = useRef<TipoDocumentoId | undefined>(idTipoDocumento)
-  useEffect(() => {
-    if (idTipoDocumento === undefined) return
-    if (tipoPrevio.current === idTipoDocumento) return
-    tipoPrevio.current = idTipoDocumento
-
-    // Limpiar el número al cambiar el tipo, sin marcarlo como error todavía
-    setValue('tercero.numeroDocumento', '', { shouldValidate: false, shouldDirty: true })
-    clearErrors('tercero.numeroDocumento')
-    
-    // Para CE y Pasaporte, limpiar dirección ya que no hay autocompletado
-    // Pero NO limpiar razonSocial para permitir edición manual
-    if (idTipoDocumento === 3 || idTipoDocumento === 4) {
-      setValue('tercero.direccion', '')
-    }
-  }, [idTipoDocumento, setValue, clearErrors])
-
-  const errorDoc = e?.numeroDocumento?.message ?? (consultar.isError ? 'No se pudo consultar el documento. Completa los datos a mano.' : undefined)
-  
-  // Mensaje de ayuda dinámico para el campo de documento
-  const ayudaDoc = idTipoDocumento
-    ? DOCUMENTO_AYUDA[idTipoDocumento]
-    : 'Selecciona un tipo de documento para ver las instrucciones.'
-
-  // Mensaje de ayuda para distrito
-  const ayudaDistrito = errorDistritos
-    ? 'No se pudo cargar el catálogo de distritos. Pulsa "Reintentar".'
-    : cargandoDistritos
-    ? 'Cargando catálogo de distritos...'
-    : selectedDistrito
-    ? 'Distrito elegido. Usa "Cambiar" para elegir otro.'
-    : 'Escribe y elige el distrito: se muestran la provincia, el departamento y el UBIGEO.'
-
-  // Mensaje de ayuda para razonSocial
-  const ayudaRazon = idTipoDocumento
-    ? RAZON_AYUDA[idTipoDocumento]
-    : 'Selecciona un tipo de documento.'
-
-  function handleDistritoChange(idDistrito: number) {
-    setValue('tercero.idDistrito', idDistrito, { shouldValidate: true })
-    // Actualizar UBIGEO inmediatamente al seleccionar distrito
-    const distrito = distritos?.find((d) => d.idDistrito === idDistrito)
-    if (distrito?.ubigeo) {
-      setValue('tercero.ubigeo', distrito.ubigeo)
-    }
+  function elegirDistrito(id: number | undefined) {
+    setValue('tercero.idDistrito', id as number, { shouldValidate: id !== undefined, shouldDirty: true })
+    const distrito = distritos?.find((d) => d.idDistrito === id)
+    setValue('tercero.ubigeo', distrito?.ubigeo ?? '')
     if (esDistritoExtranjero(distrito)) {
-      // "Extranjero": se abre el campo para escribir la ciudad y el país, y se lleva el foco ahí.
+      // "Extranjero": se pide la ciudad y el país, y se lleva el foco ahí.
       setTimeout(() => setFocus('tercero.lugarExtranjero'), 0)
     } else {
       setValue('tercero.lugarExtranjero', '')
@@ -167,179 +164,235 @@ export function CamposTercero() {
     }
   }
 
-  return (
-    <>
-      <SeccionForm titulo="Identificación">
-        <div className="grid gap-4 sm:grid-cols-[180px_1fr]">
-          <Campo id="tercero-tipo" label="Tipo de documento" obligatorio>
-            <select
-              id="tercero-tipo"
-              {...register('tercero.idTipoDocumento', { valueAsNumber: true })}
-              className={inputFormClass}
-            >
-              {TIPOS_DOCUMENTO.map((t) => (
-                <option key={t.id} value={t.id}>{t.label}</option>
-              ))}
-            </select>
-          </Campo>
-          <Campo
+  const errorDoc = e?.numeroDocumento?.message ?? (consultar.isError ? 'No se pudo consultar el documento. Completa los datos a mano.' : undefined)
+  const ayudaDoc = AYUDA_DOCUMENTO[tipo]
+  const resaltar = (valor: unknown) => autocompletado && typeof valor === 'string' && valor.trim() !== ''
+
+  const nombres = watch('tercero.nombres')
+  const apellidoPaterno = watch('tercero.apellidoPaterno')
+  const apellidoMaterno = watch('tercero.apellidoMaterno')
+  const razonSocial = watch('tercero.razonSocial')
+  const direccion = watch('tercero.direccion')
+
+  const contenido = (
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-3">
+          {tipoFijo && <IconoTipoDocumento id={tipo} className="h-10 w-10" />}
+          <h3 className="text-base font-semibold text-foreground">{info.titulo}</h3>
+        </div>
+        <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-medium', info.iconoClass)}>{ORIGEN[tipo]}</span>
+      </div>
+
+      {tipo === 4 && (
+        <p className="flex gap-2 rounded-md border border-orange-200 bg-orange-50 px-3 py-2.5 text-sm text-orange-900 dark:border-orange-900 dark:bg-orange-950/40 dark:text-orange-200">
+          <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          El pasaporte no se consulta en SUNAT ni en RENIEC. Escribe los datos tal como figuran en el documento.
+        </p>
+      )}
+
+      <Campo id="tercero-numero" label={tipo === 4 ? 'Número de pasaporte' : `Número de ${info.label}`} error={errorDoc} ayuda={ayudaDoc} obligatorio>
+        <div className="flex flex-wrap gap-2">
+          <input
             id="tercero-numero"
-            label="Número de documento"
-            error={errorDoc}
-            ayuda={ayudaDoc}
-            obligatorio
-          >
-            <div className="flex gap-2">
-              <input
-                id="tercero-numero"
-                inputMode="numeric"
-                autoComplete="off"
-                placeholder={idTipoDocumento ? PLACEHOLDERS[idTipoDocumento] : 'Ej: 20512345671'}
-                {...register('tercero.numeroDocumento')}
-                aria-invalid={!!errorDoc}
-                aria-describedby={describedBy('tercero-numero', { error: errorDoc, ayuda: ayudaDoc })}
-                className={inputFormClass}
-                disabled={!idTipoDocumento}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => void buscarDocumento()}
-                disabled={consultar.isPending || !idTipoDocumento || (idTipoDocumento !== 1 && idTipoDocumento !== 2)}
-                aria-label="Buscar datos del documento"
-              >
-                {consultar.isPending
-                  ? <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-                  : <Search className="mr-2 h-4 w-4" aria-hidden="true" />}
-                Buscar
-              </Button>
-            </div>
+            // El pasaporte lleva letras; RUC y DNI solo números.
+            inputMode={tipo === 4 ? 'text' : 'numeric'}
+            maxLength={tipo === 1 ? 11 : tipo === 2 ? 8 : 12}
+            autoComplete="off"
+            placeholder={PLACEHOLDER_DOCUMENTO[tipo]}
+            {...register('tercero.numeroDocumento', {
+              onChange: (ev) => {
+                const valor: string = ev.target.value
+                const limpio = tipo === 4 ? valor.toUpperCase().replace(/[^A-Z0-9]/g, '') : valor.replace(/\D/g, '')
+                if (limpio !== valor) setValue('tercero.numeroDocumento', limpio)
+                // Si se borra o cambia el número ya consultado, los datos de esa persona o empresa ya no valen.
+                if (numeroConsultado !== null && limpio !== numeroConsultado) {
+                  vaciarDatos()
+                  clearErrors('tercero')
+                }
+              },
+            })}
+            aria-invalid={!!errorDoc}
+            aria-describedby={describedBy('tercero-numero', { error: errorDoc, ayuda: ayudaDoc })}
+            className={cn(inputFormClass, 'min-w-0 flex-1 tabular-nums tracking-wide')}
+          />
+          {tieneConsulta && (
+            <Button type="button" onClick={() => void buscarDocumento()} disabled={consultar.isPending}>
+              {consultar.isPending
+                ? <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                : <Search className="mr-2 h-4 w-4" aria-hidden="true" />}
+              {tipo === 1 ? 'Consultar SUNAT' : 'Consultar RENIEC'}
+            </Button>
+          )}
+        </div>
+      </Campo>
+
+      {consultar.data?.simulado && (
+        <p role="status" className="flex items-center gap-2 text-sm text-warning-text">
+          <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+          Modo simulado: la consulta a SUNAT/RENIEC no está conectada. Los datos son de prueba.
+        </p>
+      )}
+
+      {autocompletado && (
+        <p role="status" className="flex items-center gap-2 rounded-md bg-teal-50 px-3 py-2 text-sm font-medium text-teal-900 dark:bg-teal-950/50 dark:text-teal-200">
+          <Check className="h-4 w-4 shrink-0" aria-hidden="true" />
+          {textoOrigen(consultar.data?.origen, tipo)} Puedes corregir cualquier casilla.
+        </p>
+      )}
+
+      {esPersona ? (
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Campo id="tercero-nombres" label="Nombres" error={e?.nombres?.message} obligatorio>
+            <input
+              id="tercero-nombres"
+              autoComplete="given-name"
+              maxLength={120}
+              {...register('tercero.nombres')}
+              aria-invalid={!!e?.nombres}
+              aria-describedby={describedBy('tercero-nombres', { error: e?.nombres })}
+              className={cn(inputFormClass, resaltar(nombres) && claseAutocompletado)}
+            />
+          </Campo>
+          <Campo id="tercero-paterno" label="Apellido paterno" error={e?.apellidoPaterno?.message} obligatorio>
+            <input
+              id="tercero-paterno"
+              autoComplete="family-name"
+              maxLength={60}
+              {...register('tercero.apellidoPaterno')}
+              aria-invalid={!!e?.apellidoPaterno}
+              aria-describedby={describedBy('tercero-paterno', { error: e?.apellidoPaterno })}
+              className={cn(inputFormClass, resaltar(apellidoPaterno) && claseAutocompletado)}
+            />
+          </Campo>
+          <Campo id="tercero-materno" label="Apellido materno" error={e?.apellidoMaterno?.message} obligatorio>
+            <input
+              id="tercero-materno"
+              autoComplete="off"
+              maxLength={60}
+              {...register('tercero.apellidoMaterno')}
+              aria-invalid={!!e?.apellidoMaterno}
+              aria-describedby={describedBy('tercero-materno', { error: e?.apellidoMaterno })}
+              className={cn(inputFormClass, resaltar(apellidoMaterno) && claseAutocompletado)}
+            />
           </Campo>
         </div>
-
-        <Campo
-          id="tercero-razon"
-          label={idTipoDocumento ? RAZON_SOCIAL_LABELS[idTipoDocumento] : 'Razón social / Nombres y apellidos'}
-          error={e?.razonSocial?.message}
-          ayuda={ayudaRazon}
-          obligatorio
-        >
+      ) : (
+        <Campo id="tercero-razon" label="Razón social" error={e?.razonSocial?.message} obligatorio>
           <input
             id="tercero-razon"
-            autoComplete={idTipoDocumento === 1 ? 'organization' : 'name'}
-            placeholder={idTipoDocumento === 1 ? 'Empresa S.A.C.' : 'Juan Pérez Gómez'}
+            autoComplete="organization"
+            maxLength={200}
+            placeholder="Empresa S.A.C."
             {...register('tercero.razonSocial')}
             aria-invalid={!!e?.razonSocial}
-            aria-describedby={describedBy('tercero-razon', { error: e?.razonSocial, ayuda: ayudaRazon })}
-            className={inputFormClass}
+            aria-describedby={describedBy('tercero-razon', { error: e?.razonSocial })}
+            className={cn(inputFormClass, resaltar(razonSocial) && claseAutocompletado)}
           />
         </Campo>
+      )}
 
-        {/* Indicador de modo simulado */}
-        {consultar.data?.simulado && (
-          <div role="status" className="flex items-center gap-2 text-sm text-warning-text">
-            <AlertCircle className="h-4 w-4" aria-hidden="true" />
-            <span>Modo simulado: la consulta a SUNAT/RENIEC no está conectada. Los datos son de prueba.</span>
+      <Campo id="tercero-direccion" label={tipo === 1 ? 'Dirección fiscal' : 'Dirección'} opcional>
+        <input
+          id="tercero-direccion"
+          autoComplete="street-address"
+          maxLength={255}
+          placeholder="Calle, número, referencia"
+          {...register('tercero.direccion')}
+          className={cn(inputFormClass, resaltar(direccion) && claseAutocompletado)}
+        />
+      </Campo>
+
+      <div className="flex flex-col gap-2">
+        <UbicacionCampos
+          // Se reinicia con cada pestaña para que no queden el departamento y la provincia anteriores.
+          key={tipo}
+          idBase="tercero-ubicacion"
+          distritos={distritos}
+          isLoading={cargandoDistritos}
+          value={idDistrito}
+          onChange={elegirDistrito}
+          error={e?.idDistrito?.message}
+          autocompletado={autocompletado}
+          disabled={errorDistritos}
+        />
+        {errorDistritos && (
+          <div className="flex items-center gap-2 text-sm text-destructive">
+            No se pudo cargar el catálogo de distritos.
+            <Button type="button" variant="outline" size="sm" onClick={() => void reintentarDistritos()} disabled={recargandoDistritos}>
+              {recargandoDistritos ? 'Cargando…' : 'Reintentar'}
+            </Button>
           </div>
         )}
-      </SeccionForm>
+      </div>
 
-      <SeccionForm titulo="Ubicación y contacto">
+      {esExtranjero && (
         <Campo
-          id="tercero-direccion"
-          label="Dirección"
-          opcional
-        >
-          <input
-            id="tercero-direccion"
-            autoComplete="street-address"
-            maxLength={255}
-            {...register('tercero.direccion')}
-            className={inputFormClass}
-          />
-        </Campo>
-        <Campo
-          id="tercero-distrito"
-          label="Distrito"
-          ayuda={ayudaDistrito}
-          error={e?.idDistrito?.message}
+          id="tercero-lugar-extranjero"
+          label="Ciudad y país"
+          ayuda="Por ejemplo: Santiago, Chile. Se guarda junto a la dirección."
+          error={e?.lugarExtranjero?.message}
           obligatorio
         >
-          <div className="flex gap-2">
-            <DistritoSelector
-              id="tercero-distrito"
-              describedBy={describedBy('tercero-distrito', { error: e?.idDistrito, ayuda: ayudaDistrito })}
-              invalid={!!e?.idDistrito}
-              distritos={distritos}
-              isLoading={cargandoDistritos || errorDistritos}
-              value={idDistritoSeleccionado}
-              onChange={handleDistritoChange}
-              className={inputFormClass}
-              disabled={errorDistritos}
-            />
-            {errorDistritos && (
-              <Button type="button" variant="outline" onClick={() => void reintentarDistritos()} disabled={recargandoDistritos}>
-                {recargandoDistritos ? 'Cargando…' : 'Reintentar'}
-              </Button>
-            )}
-          </div>
-        </Campo>
-        {esExtranjero && (
-          <Campo
+          <input
             id="tercero-lugar-extranjero"
-            label="Ciudad y país"
-            ayuda="Por ejemplo: Santiago, Chile. Se guarda junto a la dirección."
-            error={e?.lugarExtranjero?.message}
-            obligatorio
-          >
-            <input
-              id="tercero-lugar-extranjero"
-              autoComplete="address-level2"
-              placeholder="Santiago, Chile"
-              maxLength={120}
-              {...register('tercero.lugarExtranjero')}
-              aria-invalid={!!e?.lugarExtranjero}
-              aria-describedby={describedBy('tercero-lugar-extranjero', {
-                error: e?.lugarExtranjero,
-                ayuda: 'Por ejemplo: Santiago, Chile. Se guarda junto a la dirección.',
-              })}
-              className={inputFormClass}
-            />
-          </Campo>
-        )}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Campo id="tercero-telefono" label="Teléfono" opcional>
-            <input
-              id="tercero-telefono"
-              type="tel"
-              maxLength={15}
-              autoComplete="tel"
-              placeholder="+51 984 215 330"
-              {...register('tercero.telefono', {
-                // Solo números y "+". Va dentro de register para que el valor sí llegue al formulario.
-                onChange: (ev) => {
-                  const limpio = ev.target.value.replace(/[^0-9+]/g, '')
-                  if (limpio !== ev.target.value) setValue('tercero.telefono', limpio)
-                },
-              })}
-              className={inputFormClass}
-            />
-          </Campo>
-          <Campo id="tercero-correo" label="Correo" opcional error={e?.correo?.message}>
-            <input
-              id="tercero-correo"
-              type="email"
-              maxLength={100}
-              autoComplete="email"
-              placeholder="compras@empresa.pe"
-              {...register('tercero.correo')}
-              aria-invalid={!!e?.correo}
-              aria-describedby={describedBy('tercero-correo', { error: e?.correo })}
-              className={inputFormClass}
-            />
-          </Campo>
-        </div>
-      </SeccionForm>
-    </>
+            autoComplete="address-level2"
+            placeholder="Santiago, Chile"
+            maxLength={120}
+            {...register('tercero.lugarExtranjero')}
+            aria-invalid={!!e?.lugarExtranjero}
+            aria-describedby={describedBy('tercero-lugar-extranjero', {
+              error: e?.lugarExtranjero,
+              ayuda: 'Por ejemplo: Santiago, Chile. Se guarda junto a la dirección.',
+            })}
+            className={inputFormClass}
+          />
+        </Campo>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Campo id="tercero-telefono" label={tipo === 4 ? 'Teléfono con código de país' : 'Teléfono'} opcional>
+          <input
+            id="tercero-telefono"
+            type="tel"
+            maxLength={15}
+            autoComplete="tel"
+            placeholder={tipo === 4 ? '+1 000 000 0000' : '+51 984 215 330'}
+            {...register('tercero.telefono', {
+              // Solo números y "+". Va dentro de register para que el valor sí llegue al formulario.
+              onChange: (ev) => {
+                const limpio = ev.target.value.replace(/[^0-9+]/g, '')
+                if (limpio !== ev.target.value) setValue('tercero.telefono', limpio)
+              },
+            })}
+            className={inputFormClass}
+          />
+        </Campo>
+        <Campo id="tercero-correo" label="Correo" opcional error={e?.correo?.message}>
+          <input
+            id="tercero-correo"
+            type="email"
+            maxLength={100}
+            autoComplete="email"
+            placeholder={tipo === 1 ? 'compras@empresa.pe' : 'nombre@correo.com'}
+            {...register('tercero.correo')}
+            aria-invalid={!!e?.correo}
+            aria-describedby={describedBy('tercero-correo', { error: e?.correo })}
+            className={inputFormClass}
+          />
+        </Campo>
+      </div>
+    </div>
+  )
+
+  // Abierto desde una pestaña: solo la página de ese documento, sin las otras pestañas.
+  if (tipoFijo) {
+    return <section aria-label={info.titulo} className="rounded-xl border border-border bg-card p-4">{contenido}</section>
+  }
+
+  return (
+    <PestanasTipoDocumento idBase="tercero-tipo" value={tipo} onChange={cambiarTipo} compacto>
+      {contenido}
+    </PestanasTipoDocumento>
   )
 }
