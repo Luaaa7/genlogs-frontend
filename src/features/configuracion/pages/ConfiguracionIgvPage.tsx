@@ -11,6 +11,7 @@ import { TableSkeletonRows } from "@/components/ui/TableSkeletonRows"
 import { formatearFechaCorta } from "@/lib/formatters/fechaLocal"
 import { aFechaISO } from "@/lib/formatters/rangoFechas"
 import { avisar } from "@/lib/avisos"
+import { mensajeError } from '@/lib/errores'
 
 const formatoPorcentaje = (p: number) => `${Number(p).toLocaleString("es-PE", { maximumFractionDigits: 2 })}%`
 
@@ -50,8 +51,7 @@ export function ConfiguracionIgvPage() {
           setPorcentaje("")
         },
         onError: (err: unknown) => {
-          const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-          setError(msg ?? "No se pudo registrar la tasa. Revisa que no exista otra con la misma fecha.")
+          setError(mensajeError(err, "No se pudo registrar la tasa. Revisa que no exista otra con la misma fecha."))
         },
       }
     )

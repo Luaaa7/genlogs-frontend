@@ -29,7 +29,7 @@ export default function ClientesListPage() {
   const [pagina, setPagina] = useState(0);
   const [tamano, setTamano] = useState(20);
   // Paginación en el servidor: antes se cargaban los ~200 clientes de una vez.
-  const { data: resultado, isFetching, isLoading, isError, refetch } = useClientesPagina({ ...debounced, page: pagina, size: tamano });
+  const { data: resultado, isFetching, isLoading, isError, error: errorCarga, refetch } = useClientesPagina({ ...debounced, page: pagina, size: tamano });
   const data = resultado?.content ?? [];
   const total = resultado?.total ?? 0;
   const totalPaginas = Math.max(1, Math.ceil(total / tamano));
@@ -121,6 +121,7 @@ export default function ClientesListPage() {
       {isError && (
         <ErrorBanner
           message="No se pudo cargar la lista de clientes."
+          error={errorCarga}
           onRetry={() => refetch()}
         />
       )}

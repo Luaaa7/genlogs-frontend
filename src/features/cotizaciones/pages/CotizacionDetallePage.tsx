@@ -30,6 +30,7 @@ import {
 import { formatearFechaCorta, parsearFechaLocal } from '@/lib/formatters/fechaLocal';
 import { cn } from '@/lib/utils/utils';
 import { AlertCircle, Check, ChevronDown, Clock, Download, Loader2, Receipt, Send, ShoppingCart } from 'lucide-react';
+import { mensajeError } from '@/lib/errores'
 
 const ESTADOS_ABIERTOS = new Set<string>(['BORRADOR', 'ENVIADA', 'EN_NEGOCIACION']);
 
@@ -170,7 +171,7 @@ export const CotizacionDetallePage: React.FC = () => {
             avisar('Cotización aprobada: su orden de compra se registró automáticamente');
           }
         },
-        onError: (e) => setErrorAccion(`No se pudo cambiar el estado a "${mapearEstadoCotizacion(nuevo)}". ${e.response?.data?.message ?? ''}`.trim()),
+        onError: (e) => setErrorAccion(`No se pudo cambiar el estado a "${mapearEstadoCotizacion(nuevo)}". ${mensajeError(e, '')}`.trim()),
       }
     );
   };

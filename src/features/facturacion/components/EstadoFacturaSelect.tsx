@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { AxiosError } from 'axios'
 import { Check, ChevronDown, Loader2 } from 'lucide-react'
 import { useCambiarEstadoFactura } from '../hooks/useFacturacion'
 import { EstadoBadge, type EstadoBadgeTono } from '@/components/ui/EstadoBadge'
 import { ESTADOS_FACTURA, estadoDe } from '@/lib/formatters/estados'
 import { cn } from '@/lib/utils'
 import type { EstadoFacturacion } from '@/types/facturacion.types'
+import { mensajeError } from '@/lib/errores'
 
 /** Pagada y Anulada ya no cambian (el backend también lo bloquea). */
 const ESTADOS_FINALES = new Set<string>(['PAGADA', 'ANULADA'])
@@ -106,7 +106,7 @@ export function EstadoFacturaSelect({ idFactura, estadoActual, numero, puedeAnul
     if (nuevo === 'ANULADA') return onAnular()
     mutate(nuevo, {
       onError: (err) =>
-        onError(`No se pudo cambiar el estado de ${numero}. ${(err as AxiosError<{ message?: string }>).response?.data?.message ?? ''}`.trim()),
+        onError(`No se pudo cambiar el estado de ${numero}. ${mensajeError(err, '')}`.trim()),
     })
   }
 

@@ -18,6 +18,7 @@ import type { CreateCotizacionRequest } from '@/types/cotizacion.types';
 import { Loader2 } from 'lucide-react';
 import { avisar } from '@/lib/avisos';
 import { useIgvVigente } from '@/features/configuracion/hooks/useIgv';
+import { mensajeError } from '@/lib/errores'
 
 
 /** Nueva cotización en una sola pantalla: datos generales e ítems a la
@@ -151,7 +152,7 @@ export const NuevaCotizacionPage: React.FC = () => {
           igv={igv}
           porcentajeIgv={porcentajeIgv}
           isPending={isPending}
-          error={isError ? (error?.response?.data?.message ?? 'No se pudo crear la cotización. Revisa los datos e inténtalo de nuevo.') : undefined}
+          error={isError ? mensajeError(error, 'No se pudo crear la cotización. Revisa los datos e inténtalo de nuevo.') : undefined}
           onConfirmar={confirmar}
           onVolver={() => setPorConfirmar(null)}
         />

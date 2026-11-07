@@ -188,7 +188,8 @@ export const CotizacionesListPage: React.FC = () => {
 
       {(isError || errorAccion) && (
         <ErrorBanner
-          message={errorAccion ?? (error instanceof Error ? `No se pudieron cargar las cotizaciones: ${error.message}` : 'No se pudieron cargar las cotizaciones.')}
+          message={errorAccion ?? 'No se pudieron cargar las cotizaciones.'}
+          error={errorAccion ? undefined : error}
           onRetry={errorAccion ? undefined : () => refetch()}
         />
       )}

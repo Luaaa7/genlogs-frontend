@@ -1,4 +1,4 @@
-import axios from "axios";
+import { mensajeError } from "@/lib/errores";
 import { axiosClient } from "@/api/axiosClient";
 import { http } from "./http"
 import type {
@@ -79,12 +79,5 @@ export async function eliminarDocumentoProducto(idProducto: number, idDocumento:
 
 /** Extrae el mensaje de error que devuelve Spring (`message`) o usa uno por defecto. */
 export function mensajeErrorApi(error: unknown, porDefecto: string): string {
-  if (axios.isAxiosError(error)) {
-    const data = error.response?.data as { message?: string } | undefined
-    if (data?.message) return data.message
-    if (error.response?.status === 409) return "La operación entra en conflicto con datos existentes."
-    if (error.response?.status === 403) return "No tienes permisos para realizar esta acción."
-    if (!error.response) return "Sin conexión con el servidor. Revisa tu red."
-  }
-  return porDefecto
+  return mensajeError(error, porDefecto)
 }

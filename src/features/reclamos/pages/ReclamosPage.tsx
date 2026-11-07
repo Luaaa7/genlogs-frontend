@@ -35,7 +35,7 @@ export function ReclamosPage() {
   const [tamano, setTamano] = useState(10)
   const [registrando, setRegistrando] = useState(false)
 
-  const { data, isLoading, isError, refetch } = useReclamos({ tipo, estado, page: pagina, size: tamano })
+  const { data, isLoading, isError, error: errorCarga, refetch } = useReclamos({ tipo, estado, page: pagina, size: tamano })
   const reclamos = data?.content ?? []
   const hayFiltro = !!tipo || !!estado
 
@@ -59,7 +59,7 @@ export function ReclamosPage() {
         <FiltroChips etiqueta="Filtrar por estado" opciones={OPCIONES_ESTADO} valor={estado} onChange={(v) => { setEstado(v); setPagina(0) }} />
       </div>
 
-      {isError && <ErrorBanner message="No se pudieron cargar los reclamos." onRetry={() => refetch()} />}
+      {isError && <ErrorBanner message="No se pudieron cargar los reclamos." error={errorCarga} onRetry={() => refetch()} />}
 
       <TablaCard
         pie={data && (

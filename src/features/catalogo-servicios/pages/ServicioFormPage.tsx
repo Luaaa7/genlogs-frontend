@@ -8,12 +8,10 @@ import { avisar } from "@/lib/avisos"
 import { useActualizarServicio, useCrearServicio, useServicio } from "../hooks/useServicios"
 import { ServicioForm } from "../components/ServicioForm"
 import type { ServicioConImagen } from "@/api/serviciosApi"
+import { mensajeError } from '@/lib/errores'
 
 function mensajeDe(err: unknown): string {
-  return (
-    (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-    "No se pudo guardar el servicio. Revisa los datos e intenta de nuevo."
-  )
+  return mensajeError(err, "No se pudo guardar el servicio. Revisa los datos e intenta de nuevo.")
 }
 
 /**
