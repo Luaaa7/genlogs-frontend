@@ -18,6 +18,7 @@ import {
   tonoEstadoCotizacion,
 } from '@/lib/formatters/codigoCotizacion';
 import { formatearFechaCorta, parsearFechaLocal } from '@/lib/formatters/fechaLocal';
+import { simboloMoneda } from '@/lib/formatters/currency';
 import { Button } from '@/components/ui/button';
 import { EstadoBadge } from '@/components/ui/EstadoBadge';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
@@ -205,7 +206,7 @@ export const CotizacionesListPage: React.FC = () => {
             className={selectClass}
           >
             <option value="">Todas las monedas</option>
-            {Object.values(Moneda).map((m) => <option key={m} value={m}>{m}</option>)}
+            {Object.values(Moneda).map((m) => <option key={m} value={m}>{simboloMoneda(m)}</option>)}
           </select>
           <label className="sr-only" htmlFor="cot-orden">Ordenar por</label>
           <select

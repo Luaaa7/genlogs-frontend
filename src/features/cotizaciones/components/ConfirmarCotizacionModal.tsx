@@ -3,6 +3,7 @@ import { Ventana } from '@/components/ui/Ventana'
 import { Button } from '@/components/ui/button'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
 import { formatearMoneda } from '@/lib/formatters/codigoCotizacion'
+import { simboloMoneda } from '@/lib/formatters/currency'
 
 interface Props {
   cliente: string
@@ -44,7 +45,7 @@ export function ConfirmarCotizacionModal({ cliente, condicion, moneda, observaci
         <dt className="text-muted-foreground">Condición de pago</dt>
         <dd>{condicion}</dd>
         <dt className="text-muted-foreground">Moneda</dt>
-        <dd>{moneda}</dd>
+        <dd>{simboloMoneda(moneda)}</dd>
         {observaciones?.trim() && (
           <>
             <dt className="text-muted-foreground">Observaciones</dt>

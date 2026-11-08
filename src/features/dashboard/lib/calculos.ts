@@ -70,7 +70,7 @@ export function sumarMonto(acumulado: MontosPorMoneda, monto: number, moneda?: s
   acumulado[clave] = (acumulado[clave] ?? 0) + monto
 }
 
-/** "US$ 12,240.00 · S/ 4,000.00" (una parte por moneda, la mayor primero). */
+/** "$ 12,240.00 · S/ 4,000.00" (una parte por moneda, la mayor primero). */
 export function formatearMontos(montos: MontosPorMoneda): string {
   const partes = Object.entries(montos)
     .filter(([, v]) => v !== 0)
