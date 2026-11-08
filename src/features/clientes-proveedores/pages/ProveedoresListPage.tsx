@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils/utils'
 
 export default function ProveedoresListPage() {
   const { editarClientesYProveedores } = usePermisos()
-  const { data = [], isLoading, isError, refetch } = useProveedores()
+  const { data = [], isLoading, isError, error: errorCarga, refetch } = useProveedores()
   const crear = useCrearProveedor()
   const actualizar = useActualizarProveedor()
   const [mostrarForm, setMostrarForm] = useState(false)
@@ -74,7 +74,7 @@ export default function ProveedoresListPage() {
         acciones={nuevo}
       />
 
-      {isError && <ErrorBanner message="No se pudo cargar la lista de proveedores." onRetry={() => refetch()} />}
+      {isError && <ErrorBanner message="No se pudo cargar la lista de proveedores." error={errorCarga} onRetry={() => refetch()} />}
 
       <TablaCard
         pie={!isLoading && (

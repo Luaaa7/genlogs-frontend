@@ -48,7 +48,7 @@ const idEtapaDe = (e: EmpresaMinera) => e.etapaComercial?.idEtapaComercial
 // aquí fila por fila para no disparar N requests al cargar la página.
 
 export function EmpresasMinerasPage() {
-  const { data = [], isLoading, isError, refetch } = useEmpresasMineras()
+  const { data = [], isLoading, isError, error: errorCarga, refetch } = useEmpresasMineras()
 
   const [vista, setVista] = useState<'mapa' | 'tabla'>('mapa')
   const [filtroEtapa, setFiltroEtapa] = useState('')
@@ -164,7 +164,7 @@ export function EmpresasMinerasPage() {
         </div>
       </div>
 
-      {isError && <ErrorBanner message="No se pudieron cargar las empresas mineras." onRetry={() => refetch()} />}
+      {isError && <ErrorBanner message="No se pudieron cargar las empresas mineras." error={errorCarga} onRetry={() => refetch()} />}
 
       {!isLoading && !isError && filtradas.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card px-4 py-14 text-center">

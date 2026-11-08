@@ -26,7 +26,7 @@ export function CatalogoServiciosPage() {
     queryKey: ["categorias-servicio"],
     queryFn: listarCategoriasServicio,
   })
-  const { data: servicios, isLoading, isError } = useServicios(idCategoria, !mostrarInactivos)
+  const { data: servicios, isLoading, isError, error: errorCarga } = useServicios(idCategoria, !mostrarInactivos)
   const desactivar = useDesactivarServicio()
 
   // La búsqueda por texto se resuelve en el cliente: el endpoint solo filtra por categoría y estado.
@@ -113,7 +113,7 @@ export function CatalogoServiciosPage() {
         )}
       </div>
 
-      {isError && <ErrorBanner message="No se pudo cargar el catálogo." />}
+      {isError && <ErrorBanner message="No se pudo cargar el catálogo." error={errorCarga} />}
 
       {!isLoading && !isError && serviciosFiltrados.length === 0 && (
         <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-10 text-center shadow-sm">
