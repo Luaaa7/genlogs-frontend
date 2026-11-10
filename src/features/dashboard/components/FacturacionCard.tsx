@@ -43,8 +43,8 @@ export function FacturacionCard({ historico, totalFacturado, variacion, moneda, 
   return (
     <DashboardCard
       id="dash-facturacion"
-      titulo="Facturación mensual"
-      extra={<span className="text-xs text-muted-foreground">{simboloMoneda(moneda)}, con IGV</span>}
+      titulo="Comprobantes del mes"
+      extra={<span className="text-xs text-muted-foreground">{moneda}, con IGV</span>}
       className={cn("flex flex-col", className)}
     >
       {datos.length === 0 ? (

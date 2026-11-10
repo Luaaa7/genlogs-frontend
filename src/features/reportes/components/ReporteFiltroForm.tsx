@@ -19,7 +19,7 @@ interface ReporteFiltroFormProps {
 const OPCIONES_TIPO: { value: TipoReporte; label: string }[] = [
   { value: "COTIZACIONES", label: "Cotizaciones" },
   { value: "ORDENES_COMPRA", label: "Órdenes de compra" },
-  { value: "FACTURACION", label: "Facturación" },
+  { value: "FACTURACION", label: "Comprobantes" },
   { value: "SERVICIOS", label: "Servicios" },
   { value: "PRODUCTOS", label: "Productos" },
 ]
