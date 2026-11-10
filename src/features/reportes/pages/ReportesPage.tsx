@@ -13,7 +13,7 @@ import type { ReporteRequest, TipoReporte } from "@/types/reporte.types"
 const LABELS_TIPO: Record<TipoReporte, string> = {
   COTIZACIONES: "Cotizaciones",
   ORDENES_COMPRA: "Órdenes de compra",
-  FACTURACION: "Facturación",
+  FACTURACION: "Comprobantes",
   SERVICIOS: "Servicios",
   PRODUCTOS: "Productos",
 }

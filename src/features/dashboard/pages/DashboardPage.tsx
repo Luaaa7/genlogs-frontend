@@ -30,6 +30,14 @@ import {
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useAuthStore } from "@/features/auth/store/authStore"
+import { simboloMoneda } from "@/lib/formatters/currency"
+
+/** "1.5 días", "1 día"; null si aún no hay cotizaciones respondidas. */
+function textoDias(dias: number | null | undefined) {
+  if (dias === null || dias === undefined) return null
+  const redondeado = Math.round(dias * 10) / 10
+  return `${redondeado.toLocaleString("es-PE")} ${redondeado === 1 ? "día" : "días"}`
+}
 
 /** Saludo según la hora del día. */
 function saludo() {
@@ -118,7 +126,7 @@ export function DashboardPage() {
                   (m === moneda ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-muted")
                 }
               >
-                {m}
+                {simboloMoneda(m)}
               </button>
             ))}
           </div>
@@ -163,6 +171,13 @@ export function DashboardPage() {
   }
 
   const totalEmitidas = cotizacionesPorEstado.reduce((s, e) => s + e.cantidad, 0)
+  // El monto pendiente viene del backend (todas las cotizaciones abiertas); si
+  // aún no lo envía, se usa el cálculo sobre las cotizaciones recientes.
+  const montoPendienteBackend = indicadores.montoCotizacionesPendientes
+  const textoPendiente = montoPendienteBackend && Object.keys(montoPendienteBackend).length > 0
+    ? formatearMontos(montoPendienteBackend)
+    : calculado.pendientes.cantidad > 0 ? formatearMontos(calculado.pendientes.montos) : null
+  const tiempoRespuesta = textoDias(indicadores.tiempoRespuestaPromedioDias)
 
   return (
     <div className="flex flex-col gap-6">
@@ -182,13 +197,20 @@ export function DashboardPage() {
             className="lg:col-span-5 lg:row-span-2"
           />
 
-          <div className="grid gap-4 sm:grid-cols-[4fr_3fr] lg:col-span-7">
+          <div className="grid gap-4 sm:grid-cols-[4fr_3fr_3fr] lg:col-span-7">
             <KpiColorCard
               tono="navy"
               titulo="Cotizaciones pendientes"
               valor={String(indicadores.cotizacionesPendientes ?? 0)}
-              detalle={calculado.pendientes.cantidad > 0 ? `${formatearMontos(calculado.pendientes.montos)} por cerrar` : undefined}
+              detalle={textoPendiente ? `${textoPendiente} por cerrar` : undefined}
               serie={calculado.serieCotizaciones}
+              href="/cotizaciones"
+            />
+            <KpiColorCard
+              tono="navy"
+              titulo="Tiempo de respuesta"
+              valor={tiempoRespuesta ?? "—"}
+              detalle={tiempoRespuesta ? "promedio del envío a la respuesta del cliente" : "Aún no hay cotizaciones respondidas"}
               href="/cotizaciones"
             />
             <KpiColorCard

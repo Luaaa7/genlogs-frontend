@@ -34,7 +34,7 @@ export function ReclamoDetallePage() {
   const idReclamo = Number(id)
   const navigate = useNavigate()
   const { gestionarReclamos, eliminarReclamos } = usePermisos()
-  const { data: reclamo, isLoading, isError, refetch } = useReclamo(idReclamo)
+  const { data: reclamo, isLoading, isError, error: errorCarga, refetch } = useReclamo(idReclamo)
   const comentar = useComentarReclamo(idReclamo)
   const eliminar = useEliminarReclamo()
 
@@ -48,7 +48,7 @@ export function ReclamoDetallePage() {
   if (isError || !reclamo) {
     return (
       <div className="flex flex-col gap-4">
-        <ErrorBanner message="No se pudo cargar el reclamo." onRetry={() => refetch()} />
+        <ErrorBanner message="No se pudo cargar el reclamo." error={errorCarga} onRetry={() => refetch()} />
         <Link to="/reclamos" className="text-sm text-accent hover:underline">Volver a reclamos</Link>
       </div>
     )

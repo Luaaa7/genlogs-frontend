@@ -138,6 +138,7 @@ export default function ClientesListPage() {
       {isError && (
         <ErrorBanner
           message="No se pudo cargar la lista de clientes."
+          error={errorCarga}
           onRetry={() => refetch()}
         />
       )}

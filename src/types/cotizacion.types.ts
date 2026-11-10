@@ -2,7 +2,7 @@ export const EstadoCotizacion = { BORRADOR: 'BORRADOR', ENVIADA: 'ENVIADA', EN_N
 export type EstadoCotizacion = (typeof EstadoCotizacion)[keyof typeof EstadoCotizacion]
 export const CondicionPago = { CONTADO: 'CONTADO', CREDITO_15: 'CREDITO_15', CREDITO_30: 'CREDITO_30', CREDITO_45: 'CREDITO_45', CREDITO_60: 'CREDITO_60' } as const
 export type CondicionPago = (typeof CondicionPago)[keyof typeof CondicionPago]
-export const Moneda = { PEN: 'PEN', USD: 'USD', EUR: 'EUR' } as const
+export const Moneda = { PEN: 'PEN', USD: 'USD' } as const
 export type Moneda = (typeof Moneda)[keyof typeof Moneda]
 
 export interface CotizacionDetalle {

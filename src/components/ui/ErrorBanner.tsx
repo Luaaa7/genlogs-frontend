@@ -1,7 +1,10 @@
 import { AlertCircle } from "lucide-react"
+import { mensajeConCausa } from "@/lib/errores"
 
 interface ErrorBannerProps {
   message: string
+  /** Error original (de React Query / axios): se añade la causa concreta al mensaje. */
+  error?: unknown
   onRetry?: () => void
 }
 
@@ -10,7 +13,8 @@ interface ErrorBannerProps {
  * datos (Usuarios, Facturación, Órdenes de compra, Cotizaciones, etc.).
  * Antes cada página pintaba su propio error con estilos distintos.
  */
-export function ErrorBanner({ message, onRetry }: ErrorBannerProps) {
+export function ErrorBanner({ message, error, onRetry }: ErrorBannerProps) {
+  const texto = error ? mensajeConCausa(error, message) : message
   return (
     <div
       role="alert"
@@ -18,7 +22,7 @@ export function ErrorBanner({ message, onRetry }: ErrorBannerProps) {
     >
       <div className="flex items-center gap-2">
         <AlertCircle className="h-4 w-4 shrink-0" />
-        <span>{message}</span>
+        <span>{texto}</span>
       </div>
       {onRetry && (
         <button

@@ -23,6 +23,7 @@ import { usePermisos } from '@/lib/permisos'
 import { formatearMoneda } from '@/lib/formatters/codigoCotizacion'
 import { formatearFechaCorta, parsearFechaLocal } from '@/lib/formatters/fechaLocal'
 import type { EstadoFacturacion, Factura } from '@/types/facturacion.types'
+import { mensajeError as mensajeDeError } from '@/lib/errores'
 
 const OPCIONES = [
   { label: 'Todos' },
@@ -80,7 +81,7 @@ export function FacturacionPage() {
   // ?idOrdenCompra=7 llega desde una cotización o el dashboard: muestra solo la factura de esa orden.
   const [params, setParams] = useSearchParams()
   const idOrdenCompra = Number(params.get('idOrdenCompra')) || undefined
-  const { data: datos, isLoading, isError, refetch } = useFacturas(
+  const { data: datos, isLoading, isError, error: errorCarga, refetch } = useFacturas(
     estado ? { idOrdenCompra, page: 0, size: 1000 } : { idOrdenCompra, page: pagina, size: tamano },
   )
   const filtradas = estado ? (datos?.content ?? []).filter((f) => estadoReal(f) === estado) : null
@@ -106,8 +107,7 @@ export function FacturacionPage() {
   const anular = useAnularFactura()
   const subirArchivo = useSubirArchivoFactura()
   const [subiendoId, setSubiendoId] = useState<number | null>(null)
-  const mensajeError = (err: unknown) =>
-    (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? ''
+  const mensajeError = (err: unknown) => mensajeDeError(err, '')
   const { reset: resetPago } = registrarPago
   const cerrarPago = useCallback(() => { setPagando(null); resetPago() }, [resetPago])
   const cerrarAnular = useCallback(() => setAnulando(null), [])
@@ -146,8 +146,8 @@ export function FacturacionPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        titulo="Facturación"
-        descripcion={data ? <><span className="tabular-nums">{data.totalElements}</span> comprobantes emitidos</> : 'Facturas, boletas y notas emitidas a partir de órdenes de compra'}
+        titulo="Comprobantes"
+        descripcion={data ? <><span className="tabular-nums">{data.totalElements}</span> comprobantes emitidos</> : 'Registro interno de comprobantes emitidos a partir de órdenes de compra. Aún no se envían a SUNAT.'}
       />
 
       <FiltroChips etiqueta="Filtrar por estado" opciones={OPCIONES} valor={estado} onChange={(v) => { setEstado(v); setPagina(0) }} />
@@ -159,7 +159,7 @@ export function FacturacionPage() {
       )}
 
       {(isError || errorAccion) && (
-        <ErrorBanner message={errorAccion ?? 'No se pudieron cargar los comprobantes.'} onRetry={errorAccion ? undefined : () => refetch()} />
+        <ErrorBanner message={errorAccion ?? 'No se pudieron cargar los comprobantes.'} error={errorAccion ? undefined : errorCarga} onRetry={errorAccion ? undefined : () => refetch()} />
       )}
 
       <TablaCard

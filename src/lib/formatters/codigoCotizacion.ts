@@ -18,14 +18,14 @@ export function generarCodigoCotizacion(numeroSecuencial: number): string {
 /**
  * Formatea una cantidad de dinero con separadores de miles y decimales
  * @param monto - Monto a formatear
- * @param moneda - Moneda (PEN, USD, EUR) o símbolo ($, S/, €)
+ * @param moneda - Moneda (PEN, USD) o símbolo (S/, $)
  * @returns Monto formateado
  */
 export function formatearMoneda(
   monto: number,
   moneda: string = 'PEN'
 ): string {
-  // Mismo formato en todo el sistema: "PEN 1,234.50", "USD 1,234.50".
+  // Mismo formato en todo el sistema: "S/ 1,234.50", "$ 1,234.50".
   return formatCurrency(monto, moneda);
 }
 
