@@ -46,6 +46,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'Cotizaciones', path: '/cotizaciones', icon: FileText, permiso: 'verCotizacionesYOrdenes' },
       { label: 'Órdenes de compra', path: '/ordenes-compra', icon: ShoppingCart, permiso: 'verCotizacionesYOrdenes' },
       { label: 'Comprobantes', path: '/facturacion', icon: Receipt },
+      { label: 'Reclamos', path: '/reclamos', icon: MessageSquareWarning, permiso: 'verReclamos' },
     ],
   },
   {

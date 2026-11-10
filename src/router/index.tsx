@@ -64,6 +64,10 @@ export const router = createBrowserRouter([
     { path: '/cotizaciones/:id', element: <CotizacionDetallePage /> },
     { path: '/ordenes-compra', element: <OrdenesCompraPage /> },
     { path: '/facturacion', element: <FacturacionPage /> },
+    { element: <RoleGuard allowedRoles={['ADMINISTRADOR', 'VENDEDOR', 'JEFE_ADMINISTRATIVO', 'GERENTE_GENERAL']} />, children: [
+      { path: '/reclamos', element: <ReclamosPage /> },
+      { path: '/reclamos/:id', element: <ReclamoDetallePage /> },
+    ] },
     { element: <RoleGuard allowedRoles={['ADMINISTRADOR']} />, children: [
       { path: '/usuarios', element: <UsuariosPage /> },
       { path: '/configuracion/igv', element: <ConfiguracionIgvPage /> },
