@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Loader2, X } from 'lucide-react'
 import { useCrearOrdenCompra } from '../hooks/useOrdenesCompra'
+import { mensajeError } from '@/lib/errores'
 
 interface RegistrarOrdenCompraModalProps {
   isOpen: boolean
@@ -66,8 +67,7 @@ export const RegistrarOrdenCompraModal: React.FC<RegistrarOrdenCompraModalProps>
           onClose()
         },
         onError: (err) => {
-          const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-          setError(msg ?? 'No se pudo registrar la orden de compra. Inténtalo de nuevo.')
+          setError(mensajeError(err, 'No se pudo registrar la orden de compra. Inténtalo de nuevo.'))
         },
       },
     )

@@ -34,8 +34,8 @@ export const productoSchema = z.object({
   codigoProducto: z
     .string()
     .trim()
-    .min(1, "El código es obligatorio")
-    .max(30, "Máximo 30 caracteres"),
+    .max(30, "Máximo 30 caracteres")
+    .optional(),
   nombreProducto: z
     .string()
     .trim()
@@ -79,7 +79,7 @@ export function productoFormToRequest(values: ProductoFormValues): ProductoReque
     idCategoriaProducto: values.idCategoriaProducto,
     idMarca: values.idMarca ? Number(values.idMarca) : undefined,
     idUnidadMedida: values.idUnidadMedida,
-    codigoProducto: values.codigoProducto.trim(),
+    codigoProducto: vacioAUndefined(values.codigoProducto),
     nombreProducto: values.nombreProducto.trim(),
     procedencia: vacioAUndefined(values.procedencia),
     visibleWeb: values.visibleWeb,
@@ -98,7 +98,7 @@ export function productoToFormValues(producto: Producto): ProductoFormValues {
     idCategoriaProducto: producto.idCategoriaProducto,
     idMarca: producto.idMarca ?? undefined,
     idUnidadMedida: producto.idUnidadMedida,
-    codigoProducto: producto.codigoProducto,
+    codigoProducto: producto.codigoProducto ?? "",
     nombreProducto: producto.nombreProducto,
     procedencia: producto.procedencia ?? "",
     visibleWeb: producto.visibleWeb,

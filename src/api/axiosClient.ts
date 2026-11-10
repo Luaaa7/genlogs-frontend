@@ -25,7 +25,9 @@ export const axiosClient = axios.create({
 })
 
 axiosClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem("access_token")
+  const token = window.location.pathname.startsWith("/portal")
+    ? localStorage.getItem("cliente_access_token")
+    : localStorage.getItem("access_token")
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -34,6 +36,13 @@ axiosClient.interceptors.request.use((config) => {
 
 function cerrarSesionInvalida(motivo: string) {
   console.warn(`[AUTH] Cerrando sesión: ${motivo}`)
+  const esPortal = window.location.pathname.startsWith("/portal")
+  if (esPortal) {
+    localStorage.removeItem("cliente_access_token")
+    sessionStorage.removeItem("genlogs-cliente-auth")
+    window.location.href = "/portal/registro"
+    return
+  }
   // Limpia tanto la clave que lee axios/ProtectedRoute (localStorage) como la
   // que persiste el estado de Zustand (sessionStorage "genlogs-auth"), para
   // no dejar una sesión a medias que vuelva a mandarnos al Dashboard roto.
@@ -57,13 +66,20 @@ axiosClient.interceptors.response.use(
     // NO debe desloguear: cada pantalla ya maneja su propio estado de error.
     // Un 401 en /auth/* (login con contraseña incorrecta, refresh vencido) no
     // es una sesión vencida: lo maneja la propia pantalla con su mensaje.
-    const esRutaAuth = String(originalRequest?.url ?? "").includes("/auth/")
+    // Tampoco las rutas públicas (/public/*, que usa la landing): si fallan,
+    // la landing muestra su aviso, pero nunca manda al visitante al login.
+    const urlPedida = String(originalRequest?.url ?? "")
+    const esRutaAuth = urlPedida.includes("/auth/") || urlPedida.includes("/public/")
 
     if (status === 401 && !originalRequest._retry && !esRutaAuth) {
       console.warn(`[AUTH] 401 recibido en ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`)
       originalRequest._retry = true
 
       try {
+        if (window.location.pathname.startsWith("/portal")) {
+          cerrarSesionInvalida("401 en sesión de cliente")
+          return Promise.reject(error)
+        }
         const refreshToken = localStorage.getItem("refresh_token")
         if (refreshToken) {
           const { data } = await axios.post(

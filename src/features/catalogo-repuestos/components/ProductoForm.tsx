@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useQuery } from "@tanstack/react-query"
 import { FileText, Loader2, Plus, Trash2 } from "lucide-react"
 import { listarMarcas } from "@/api/marcasApi"
+import { obtenerSiguienteCodigo } from "@/api/productosApi"
 import { listarUnidadesMedida } from "@/api/unidadesMedidaApi"
 import { Button } from "@/components/ui/button"
 import { FileUploader } from "@/components/ui/FileUploader"
@@ -36,6 +37,8 @@ interface ProductoFormProps {
   submitLabel?: string
   /** Mensaje de error del intento de guardado anterior. */
   errorMessage?: string | null
+  /** Alta: el código lo genera el backend; solo se muestra como vista previa. */
+  codigoAutomatico?: boolean
 }
 
 /** Nombres frecuentes en la ficha técnica; alimentan las sugerencias del formulario. */
@@ -91,6 +94,7 @@ export function ProductoForm({
   submitting = false,
   submitLabel = "Guardar producto",
   errorMessage,
+  codigoAutomatico = false,
 }: ProductoFormProps) {
   const uid = useId()
   const idDe = (campo: string) => `${uid}-${campo}`
@@ -104,6 +108,11 @@ export function ProductoForm({
     queryKey: ["unidades-medida"],
     queryFn: listarUnidadesMedida,
     staleTime: 5 * 60_000,
+  })
+  const { data: siguienteCodigo } = useQuery({
+    queryKey: ["productos", "siguiente-codigo"],
+    queryFn: obtenerSiguienteCodigo,
+    enabled: codigoAutomatico,
   })
 
   const {
@@ -201,16 +210,23 @@ export function ProductoForm({
         </h2>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Campo id={idDe("codigo")} label="Código" obligatorio error={errors.codigoProducto?.message}>
-            <Input
-              id={idDe("codigo")}
-              autoComplete="off"
-              aria-invalid={!!errors.codigoProducto}
-              aria-describedby={errors.codigoProducto ? `${idDe("codigo")}-error` : undefined}
-              className={cn(errors.codigoProducto && "border-destructive")}
-              {...register("codigoProducto")}
-            />
-          </Campo>
+          {codigoAutomatico ? (
+            <Campo id={idDe("codigo")} label="Código">
+              <Input id={idDe("codigo")} value={siguienteCodigo ?? "Generando…"} readOnly disabled />
+              <p className="text-xs text-muted-foreground">Se asigna automáticamente al guardar.</p>
+            </Campo>
+          ) : (
+            <Campo id={idDe("codigo")} label="Código" error={errors.codigoProducto?.message}>
+              <Input
+                id={idDe("codigo")}
+                autoComplete="off"
+                aria-invalid={!!errors.codigoProducto}
+                aria-describedby={errors.codigoProducto ? `${idDe("codigo")}-error` : undefined}
+                className={cn(errors.codigoProducto && "border-destructive")}
+                {...register("codigoProducto")}
+              />
+            </Campo>
+          )}
 
           <Campo id={idDe("nombre")} label="Nombre" obligatorio error={errors.nombreProducto?.message}>
             <Input
@@ -406,6 +422,7 @@ export function ProductoForm({
                     placeholder="Unidad"
                     autoComplete="off"
                     aria-invalid={!!errorFila?.unidadCaracteristica}
+                    className={cn(errorFila?.unidadCaracteristica && "border-destructive")}
                     {...register(`caracteristicas.${index}.unidadCaracteristica`)}
                   />
                   {errorFila?.unidadCaracteristica && (

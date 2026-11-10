@@ -34,6 +34,10 @@ export interface ClienteDetalle {
   idSectorEconomico?: number | null
   numeroDocumento: string
   razonSocial: string
+  /** DNI y pasaporte (null en RUC y en registros antiguos). */
+  nombres?: string | null
+  apellidoPaterno?: string | null
+  apellidoMaterno?: string | null
   direccion?: string | null
   telefono?: string | null
   correo?: string | null
@@ -48,4 +52,13 @@ export interface ClienteInput {
   situacion?: string
 }
 export type ClienteRequest = ClienteInput
-export interface FiltrosCliente { documento?: string; razonSocial?: string; idSectorEconomico?: number; situacion?: string; page?: number; size?: number }
+export interface FiltrosCliente {
+  documento?: string
+  razonSocial?: string
+  /** Pestaña de la página Clientes: 1 RUC, 2 DNI, 4 Pasaporte. */
+  idTipoDocumento?: number
+  idSectorEconomico?: number
+  situacion?: string
+  page?: number
+  size?: number
+}

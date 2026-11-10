@@ -10,7 +10,7 @@ import type { ImagenNueva } from '@/types/producto.types'
 import { CategoriaSelector } from '@/features/catalogo-repuestos/components/CategoriaSelector'
 import { listarMarcas } from '@/api/marcasApi'
 import { listarUnidadesMedida } from '@/api/unidadesMedidaApi'
-import { mensajeErrorApi } from '@/api/productosApi'
+import { obtenerSiguienteCodigo, mensajeErrorApi } from '@/api/productosApi'
 import { useCrearProducto } from '@/hooks/useCrearProducto'
 import { avisar } from '@/lib/avisos'
 import type { ItemCatalogo } from './SelectorCatalogoItem'
@@ -25,7 +25,6 @@ interface Props {
 /** Alta rápida de un repuesto desde la cotización: solo lo obligatorio.
  *  Fotos, documentos y ficha técnica se completan luego en el catálogo. */
 export function RepuestoRapidoModal({ nombreInicial = '', onCreado, onCerrar }: Props) {
-  const [codigo, setCodigo] = useState('')
   const [nombre, setNombre] = useState(nombreInicial)
   const [categoria, setCategoria] = useState<number | undefined>()
   const [unidad, setUnidad] = useState<number | undefined>()
@@ -39,9 +38,12 @@ export function RepuestoRapidoModal({ nombreInicial = '', onCreado, onCerrar }: 
 
   const { data: unidades, isLoading: cargandoUnidades } = useQuery({ queryKey: ['unidades-medida'], queryFn: listarUnidadesMedida, staleTime: 5 * 60_000 })
   const { data: marcas, isLoading: cargandoMarcas } = useQuery({ queryKey: ['marcas'], queryFn: listarMarcas, staleTime: 5 * 60_000 })
+  const { data: siguienteCodigo } = useQuery({
+    queryKey: ['productos', 'siguiente-codigo'],
+    queryFn: obtenerSiguienteCodigo,
+  })
 
   const faltantes = [
-    !codigo.trim() && 'código',
     !nombre.trim() && 'nombre',
     !categoria && 'categoría',
     !unidad && 'unidad de medida',
@@ -57,7 +59,6 @@ export function RepuestoRapidoModal({ nombreInicial = '', onCreado, onCerrar }: 
           idCategoriaProducto: categoria,
           idMarca: marca,
           idUnidadMedida: unidad,
-          codigoProducto: codigo.trim(),
           nombreProducto: nombre.trim(),
           visibleWeb,
           caracteristicas: [],
@@ -101,9 +102,11 @@ export function RepuestoRapidoModal({ nombreInicial = '', onCreado, onCerrar }: 
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <label className={etiqueta}>
-          Código<MarcaObligatorio />
-          <input value={codigo} maxLength={30} onChange={(e) => setCodigo(e.target.value)} aria-invalid={err(!codigo.trim())} className={`${inputFormClass} mt-1`} />
-          {err(!codigo.trim()) && <span className="mt-1 block text-xs font-normal text-destructive">El código es obligatorio.</span>}
+          Código
+          <div className={`${inputFormClass} mt-1 flex items-center bg-muted text-muted-foreground select-none`}>
+            {siguienteCodigo ?? 'Generando…'}
+          </div>
+          <span className="mt-1 block text-xs font-normal text-muted-foreground">Se asigna automáticamente al guardar.</span>
         </label>
         <label className={etiqueta}>
           Nombre<MarcaObligatorio />
@@ -158,7 +161,7 @@ export function RepuestoRapidoModal({ nombreInicial = '', onCreado, onCerrar }: 
         />
       </div>
       {intento && faltantes.length > 0 && <p role="alert" className="mt-4 text-sm text-destructive">Falta completar: {faltantes.join(', ')}.</p>}
-      {error != null && <p role="alert" className="mt-4 text-sm text-destructive">{mensajeErrorApi(error, 'No se pudo crear el repuesto. Revisa los datos e intenta de nuevo (¿el código ya existe?).')}</p>}
+      {error != null && <p role="alert" className="mt-4 text-sm text-destructive">{mensajeErrorApi(error, 'No se pudo crear el repuesto. Revisa los datos e intenta de nuevo.')}</p>}
     </Ventana>
   )
 }

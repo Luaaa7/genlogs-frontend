@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { AxiosError } from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { usePermisos } from '@/lib/permisos'
@@ -11,6 +10,7 @@ import { EstadoBadge, type EstadoBadgeTono } from '@/components/ui/EstadoBadge'
 import { ESTADOS_ORDEN, estadoDe } from '@/lib/formatters/estados'
 import { cn } from '@/lib/utils'
 import type { EstadoOrdenCompra } from '@/types/ordenCompra.types'
+import { mensajeError } from '@/lib/errores'
 
 /** Estados finales: solo un ADMINISTRADOR puede corregirlos (el backend también lo controla). */
 const ESTADOS_FINALES = new Set<string>(['ATENDIDA', 'ANULADA'])
@@ -120,7 +120,7 @@ export function EstadoOrdenSelect({ idOrden, idCotizacion, estadoActual, numero,
         }
       },
       onError: (err) =>
-        onError(`No se pudo cambiar el estado de la orden ${numero}. ${(err as AxiosError<{ message?: string }>).response?.data?.message ?? ''}`.trim()),
+        onError(`No se pudo cambiar el estado de la orden ${numero}. ${mensajeError(err, '')}`.trim()),
     })
   }
 

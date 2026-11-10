@@ -28,8 +28,10 @@ import {
   tonoEstadoCotizacion,
 } from '@/lib/formatters/codigoCotizacion';
 import { formatearFechaCorta, parsearFechaLocal } from '@/lib/formatters/fechaLocal';
+import { simboloMoneda } from '@/lib/formatters/currency';
 import { cn } from '@/lib/utils/utils';
 import { AlertCircle, Check, ChevronDown, Clock, Download, Loader2, Receipt, Send, ShoppingCart } from 'lucide-react';
+import { mensajeError } from '@/lib/errores'
 
 const ESTADOS_ABIERTOS = new Set<string>(['BORRADOR', 'ENVIADA', 'EN_NEGOCIACION']);
 
@@ -170,7 +172,7 @@ export const CotizacionDetallePage: React.FC = () => {
             avisar('Cotización aprobada: su orden de compra se registró automáticamente');
           }
         },
-        onError: (e) => setErrorAccion(`No se pudo cambiar el estado a "${mapearEstadoCotizacion(nuevo)}". ${e.response?.data?.message ?? ''}`.trim()),
+        onError: (e) => setErrorAccion(`No se pudo cambiar el estado a "${mapearEstadoCotizacion(nuevo)}". ${mensajeError(e, '')}`.trim()),
       }
     );
   };
@@ -420,7 +422,7 @@ export const CotizacionDetallePage: React.FC = () => {
             <h2 id="condiciones-t" className="mb-4 text-base font-semibold">Condiciones comerciales</h2>
             <dl className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-4 text-sm">
               <div><dt className="text-[13px] text-muted-foreground">Forma de pago</dt><dd className="mt-1">{mapearCondicionPago(String(cotizacion.condicionPago))}</dd></div>
-              <div><dt className="text-[13px] text-muted-foreground">Moneda</dt><dd className="mt-1">{moneda}</dd></div>
+              <div><dt className="text-[13px] text-muted-foreground">Moneda</dt><dd className="mt-1">{simboloMoneda(moneda)}</dd></div>
               <div><dt className="text-[13px] text-muted-foreground">Emitida</dt><dd className="mt-1 tabular-nums">{formatearFechaCorta(cotizacion.fechaCotizacion ?? cotizacion.fechaCreacion)}</dd></div>
               <div><dt className="text-[13px] text-muted-foreground">Válida hasta</dt><dd className="mt-1 tabular-nums">{formatearFechaCorta(cotizacion.fechaValidez)}</dd></div>
             </dl>

@@ -53,6 +53,27 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
     setValue(`detalles.${index}.idProducto`, item.tipo === 'producto' ? item.id : undefined, opciones);
     setValue(`detalles.${index}.idServicio`, item.tipo === 'servicio' ? item.id : undefined, opciones);
     setValue(`detalles.${index}.idUnidadMedida`, item.idUnidadMedida, opciones);
+    setValue(`detalles.${index}.tipoItem`, item.tipo, opciones);
+  };
+
+  const opcionesCalculo = { shouldDirty: true, shouldValidate: true } as const;
+
+  // Costo o margen cambiados: el precio de venta se recalcula.
+  const recalcularPrecio = (index: number) => {
+    const costo = Number(getValues(`detalles.${index}.costoUnitario`));
+    const margen = Number(getValues(`detalles.${index}.margenPorcentaje`));
+    if (costo > 0 && margen >= 0 && margen <= MARGEN_MAXIMO) {
+      setValue(`detalles.${index}.precioUnitario`, precioDesdeCosto(costo, margen), opcionesCalculo);
+    }
+  };
+
+  // Precio cambiado a mano: el margen se recalcula (si se conoce el costo).
+  const recalcularMargen = (index: number) => {
+    const costo = Number(getValues(`detalles.${index}.costoUnitario`));
+    const precio = Number(getValues(`detalles.${index}.precioUnitario`));
+    if (costo > 0 && precio > 0) {
+      setValue(`detalles.${index}.margenPorcentaje`, margenDesdePrecio(costo, precio), opcionesCalculo);
+    }
   };
 
   const opcionesCalculo = { shouldDirty: true, shouldValidate: true } as const;
@@ -150,6 +171,8 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
                     <SelectorCatalogoItem
                       valor={d?.producto ?? ''}
                       seleccionado={d?.idProducto !== undefined || d?.idServicio !== undefined}
+                      // La línea conserva su tipo: un repuesto solo se cambia por otro repuesto.
+                      tipo={d?.tipoItem ?? (d?.idServicio !== undefined ? 'servicio' : d?.idProducto !== undefined ? 'producto' : undefined)}
                       onEscribir={(texto) => escribirItem(index, texto)}
                       onSeleccionar={(item) => elegirItem(index, item)}
                       ariaLabel={`Producto o servicio del ítem ${n}`}
