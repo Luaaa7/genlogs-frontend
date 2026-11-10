@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Campo } from '@/components/ui/campo'
 import { describedBy, inputFormClass } from '@/components/ui/campoEstilos'
 import { formatearMoneda } from '@/lib/formatters/codigoCotizacion'
+import { simboloMoneda } from '@/lib/formatters/currency'
 import { hoyISO } from '@/lib/formatters/fechaLocal'
 import type { RegistrarPagoInput } from '@/types/facturacion.types'
 
@@ -104,7 +105,7 @@ function Contenido({ comprobante, saldo, moneda, isLoading = false, error, onCon
 
         <div className="mt-5 flex flex-col gap-4">
           {/* El monto se valida mientras se escribe; el resto, al intentar guardar. */}
-          <Campo id="pago-monto" label={`Monto pagado (${moneda})`} obligatorio error={errorMonto}>
+          <Campo id="pago-monto" label={`Monto pagado (${simboloMoneda(moneda)})`} obligatorio error={errorMonto}>
             <input
               ref={inputRef}
               id="pago-monto"

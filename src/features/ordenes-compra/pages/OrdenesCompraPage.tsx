@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Eye, ShoppingCart, Upload } from 'lucide-react'
 import { VistaPreviaPdf } from '@/components/ui/VistaPreviaPdf'
 import { usePermisos } from '@/lib/permisos'
+import { mensajeError } from '@/lib/errores'
 import { useOrdenesCompra, useSubirArchivoOrdenCompra } from '../hooks/useOrdenesCompra'
 import { EstadoOrdenSelect } from '../components/EstadoOrdenSelect'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
@@ -25,7 +26,7 @@ export function OrdenesCompraPage() {
   const [estado, setEstado] = useState<EstadoOrdenCompra | undefined>()
   const [pagina, setPagina] = useState(0)
   const [tamano, setTamano] = useState(10)
-  const { data, isLoading, isError, refetch } = useOrdenesCompra({ estadoCodigo: estado, page: pagina, size: tamano })
+  const { data, isLoading, isError, error: errorCarga, refetch } = useOrdenesCompra({ estadoCodigo: estado, page: pagina, size: tamano })
   const ordenes = data?.content ?? []
   const [errorEstado, setErrorEstado] = useState<string | null>(null)
   // Orden del cliente (PDF o imagen) que se está viendo en la ventana
@@ -40,8 +41,7 @@ export function OrdenesCompraPage() {
       { id, archivo },
       {
         onError: (err) => {
-          const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-          setErrorEstado(msg ?? 'No se pudo subir el documento de la orden.')
+          setErrorEstado(mensajeError(err, 'No se pudo subir el documento de la orden.'))
         },
       },
     )
@@ -57,7 +57,7 @@ export function OrdenesCompraPage() {
       <FiltroChips etiqueta="Filtrar por estado" opciones={OPCIONES} valor={estado} onChange={(v) => { setEstado(v); setPagina(0) }} />
 
       {errorEstado && <ErrorBanner message={errorEstado} />}
-      {isError && <ErrorBanner message="No se pudieron cargar las órdenes de compra." onRetry={() => refetch()} />}
+      {isError && <ErrorBanner message="No se pudieron cargar las órdenes de compra." error={errorCarga} onRetry={() => refetch()} />}
 
       <TablaCard
         pie={data && (

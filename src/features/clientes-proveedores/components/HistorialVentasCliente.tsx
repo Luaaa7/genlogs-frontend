@@ -9,7 +9,7 @@ import { Paginacion, Tabla, Td, Th, filaClass } from '@/components/ui/tabla'
 import { usePaginacionLocal } from '@/hooks/usePaginacionLocal'
 import { ESTADOS_FACTURA, estadoDe } from '@/lib/formatters/estados'
 import { formatearMoneda } from '@/lib/formatters/codigoCotizacion'
-import { normalizarMoneda } from '@/lib/formatters/currency'
+import { normalizarMoneda, simboloMoneda } from '@/lib/formatters/currency'
 import { formatearFechaCorta, parsearFechaLocal } from '@/lib/formatters/fechaLocal'
 import type { Factura } from '@/types/facturacion.types'
 
@@ -74,7 +74,7 @@ export function HistorialVentasCliente({ idCliente }: { idCliente: number }) {
           <div className="mb-4 flex flex-col gap-2">
             {resumen.map(([moneda, r]) => (
               <dl key={moneda} className="grid grid-cols-2 gap-3 rounded-lg bg-muted/50 p-3 text-sm sm:grid-cols-4">
-                <div><dt className="text-[13px] text-muted-foreground">Comprobantes ({moneda})</dt><dd className="mt-0.5 font-semibold tabular-nums">{r.cantidad}</dd></div>
+                <div><dt className="text-[13px] text-muted-foreground">Comprobantes ({simboloMoneda(moneda)})</dt><dd className="mt-0.5 font-semibold tabular-nums">{r.cantidad}</dd></div>
                 <div><dt className="text-[13px] text-muted-foreground">Facturado</dt><dd className="mt-0.5 font-semibold tabular-nums">{formatearMoneda(r.facturado, moneda)}</dd></div>
                 <div><dt className="text-[13px] text-muted-foreground">Cobrado</dt><dd className="mt-0.5 font-semibold tabular-nums">{formatearMoneda(r.cobrado, moneda)}</dd></div>
                 <div><dt className="text-[13px] text-muted-foreground">Por cobrar</dt><dd className="mt-0.5 font-semibold tabular-nums">{formatearMoneda(r.pendiente, moneda)}</dd></div>

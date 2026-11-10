@@ -1,5 +1,5 @@
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis } from "recharts"
-import { formatCurrency } from "@/lib/formatters/currency"
+import { formatCurrency, simboloMoneda } from "@/lib/formatters/currency"
 import { DashboardCard, SinDatos } from "./DashboardCard"
 
 export interface PuntoCotizadoFacturado { mes: string; cotizado: number; facturado: number }
@@ -9,7 +9,7 @@ export function CotizadoVsFacturadoCard({ datos, moneda }: { datos: PuntoCotizad
   const hayDatos = datos.some((d) => d.cotizado > 0 || d.facturado > 0)
 
   return (
-    <DashboardCard id="dash-cot-fac" titulo="Cotizado vs. facturado" extra={<span className="text-xs text-muted-foreground">{moneda}</span>}>
+    <DashboardCard id="dash-cot-fac" titulo="Cotizado vs. facturado" extra={<span className="text-xs text-muted-foreground">{simboloMoneda(moneda)}</span>}>
       {!hayDatos ? (
         <SinDatos>Sin montos en los últimos meses.</SinDatos>
       ) : (

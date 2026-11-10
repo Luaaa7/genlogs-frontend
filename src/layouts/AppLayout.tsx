@@ -22,16 +22,18 @@ import {
   Sun,
   Moon,
   Search,
+  MessageSquareWarning,
 } from 'lucide-react';
 import logoGenlogs from '../assets/GENLOGS.png';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { usePermisos } from '@/lib/permisos';
 import { useTheme } from '@/hooks/useTheme';
+import { cerrarSesionInterna } from '@/lib/sesiones';
 import { GlobalSearchDialog } from '@/components/ui/GlobalSearchDialog';
 import { cn } from '@/lib/utils/utils';
 import { nombreRolLegible } from '@/lib/formatters/roles';
 
-type NavItem = { label: string; path: string; icon: React.ElementType; soloAdmin?: boolean; permiso?: 'verCotizacionesYOrdenes' | 'verCatalogosYEmpresas' };
+type NavItem = { label: string; path: string; icon: React.ElementType; soloAdmin?: boolean; permiso?: 'verCotizacionesYOrdenes' | 'verCatalogosYEmpresas' | 'verReclamos' };
 type NavGroup = { titulo: string; items: NavItem[] };
 
 /** Una sola navegación para todo el sistema (antes había un nav superior y
@@ -44,6 +46,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'Cotizaciones', path: '/cotizaciones', icon: FileText, permiso: 'verCotizacionesYOrdenes' },
       { label: 'Órdenes de compra', path: '/ordenes-compra', icon: ShoppingCart, permiso: 'verCotizacionesYOrdenes' },
       { label: 'Facturación', path: '/facturacion', icon: Receipt },
+      { label: 'Reclamos', path: '/reclamos', icon: MessageSquareWarning, permiso: 'verReclamos' },
     ],
   },
   {
@@ -286,8 +289,7 @@ export function AppLayout() {
   function handleLogout() {
     // Limpia las dos fuentes de sesión (localStorage que lee axios/ProtectedRoute,
     // y el store de Zustand persistido en sessionStorage) para no dejar rastro.
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    cerrarSesionInterna();
     logout();
     setIsUserMenuOpen(false);
     closeMenu();

@@ -48,7 +48,7 @@ export function CatalogoProductosPage() {
     sortDir: "ASC",
   }
 
-  const { data, isLoading, isError, isFetching, isPlaceholderData, refetch } = useProductos(filtros)
+  const { data, isLoading, isError, error: errorCarga, isFetching, isPlaceholderData, refetch } = useProductos(filtros)
 
   const hayFiltros = texto.trim() !== "" || idCategoria !== undefined || idMarca !== undefined
   const productos = data?.content ?? []
@@ -146,7 +146,7 @@ export function CatalogoProductosPage() {
         )}
       </div>
 
-      {isError && <ErrorBanner message="No se pudo cargar el catálogo." onRetry={() => refetch()} />}
+      {isError && <ErrorBanner message="No se pudo cargar el catálogo." error={errorCarga} onRetry={() => refetch()} />}
 
       {/* Control de estados: Carga vs Sin Resultados vs Grilla de productos */}
       {isLoading || isFetching ? (

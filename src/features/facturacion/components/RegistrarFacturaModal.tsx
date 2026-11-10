@@ -4,6 +4,7 @@ import { FileText, Loader2, Trash2, X } from 'lucide-react'
 import { useCrearFactura, useEmitirFactura, useSubirArchivoFactura, useSunatConfig, useTiposComprobante } from '../hooks/useFacturacion'
 import { avisar } from '@/lib/avisos'
 import type { CotizacionDetalle } from '@/types/cotizacion.types'
+import { mensajeError } from '@/lib/errores'
 
 interface RegistrarFacturaModalProps {
   isOpen: boolean
@@ -40,7 +41,7 @@ function hoyLocal(): string {
 }
 
 function mensajeDe(err: unknown, porDefecto: string): string {
-  return (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? porDefecto
+  return mensajeError(err, porDefecto)
 }
 
 /**
