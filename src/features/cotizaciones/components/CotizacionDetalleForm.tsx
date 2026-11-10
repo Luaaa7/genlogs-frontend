@@ -76,25 +76,6 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
     }
   };
 
-  const opcionesCalculo = { shouldDirty: true, shouldValidate: true } as const;
-
-  // Costo o margen cambiados: el precio de venta se recalcula.
-  const recalcularPrecio = (index: number) => {
-    const costo = Number(getValues(`detalles.${index}.costoUnitario`));
-    const margen = Number(getValues(`detalles.${index}.margenPorcentaje`));
-    if (costo > 0 && margen >= 0 && margen <= MARGEN_MAXIMO) {
-      setValue(`detalles.${index}.precioUnitario`, precioDesdeCosto(costo, margen), opcionesCalculo);
-    }
-  };
-
-  // Precio cambiado a mano: el margen se recalcula (si se conoce el costo).
-  const recalcularMargen = (index: number) => {
-    const costo = Number(getValues(`detalles.${index}.costoUnitario`));
-    const precio = Number(getValues(`detalles.${index}.precioUnitario`));
-    if (costo > 0 && precio > 0) {
-      setValue(`detalles.${index}.margenPorcentaje`, margenDesdePrecio(costo, precio), opcionesCalculo);
-    }
-  };
 
   const errorGeneral = typeof errors.detalles?.message === 'string' ? errors.detalles.message : errors.detalles?.root?.message;
 
