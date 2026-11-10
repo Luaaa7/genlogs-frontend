@@ -17,6 +17,7 @@ import {
   BarChart3,
   UserCog,
   Percent,
+  TrendingUp,
   LogOut,
   Sun,
   Moon,
@@ -27,6 +28,7 @@ import logoGenlogs from '../assets/GENLOGS.png';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { usePermisos } from '@/lib/permisos';
 import { useTheme } from '@/hooks/useTheme';
+import { cerrarSesionInterna } from '@/lib/sesiones';
 import { GlobalSearchDialog } from '@/components/ui/GlobalSearchDialog';
 import { cn } from '@/lib/utils/utils';
 import { nombreRolLegible } from '@/lib/formatters/roles';
@@ -63,6 +65,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'Reportes', path: '/reportes', icon: BarChart3 },
       { label: 'Usuarios', path: '/usuarios', icon: UserCog, soloAdmin: true },
       { label: 'IGV', path: '/configuracion/igv', icon: Percent, soloAdmin: true },
+      { label: 'Márgenes', path: '/configuracion/margenes', icon: TrendingUp, soloAdmin: true },
     ],
   },
 ];
@@ -286,8 +289,7 @@ export function AppLayout() {
   function handleLogout() {
     // Limpia las dos fuentes de sesión (localStorage que lee axios/ProtectedRoute,
     // y el store de Zustand persistido en sessionStorage) para no dejar rastro.
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    cerrarSesionInterna();
     logout();
     setIsUserMenuOpen(false);
     closeMenu();

@@ -10,6 +10,9 @@ export interface ItemCatalogo {
   nombre: string
   codigo: string
   idUnidadMedida?: number
+  /** Solo servicios: categoría y su categoría padre (para sugerir el margen). */
+  idCategoriaServicio?: number
+  idCategoriaPadre?: number
 }
 
 interface SelectorCatalogoItemProps {
@@ -157,7 +160,15 @@ export const SelectorCatalogoItem: React.FC<SelectorCatalogoItemProps> = ({
                   aria-selected={false}
                   className={opcionClass}
                   onClick={() =>
-                    elegir({ tipo: 'servicio', id: s.idServicio, nombre: s.nombreServicio, codigo: s.codigoServicio, idUnidadMedida: s.unidadMedida?.idUnidadMedida })
+                    elegir({
+                      tipo: 'servicio',
+                      id: s.idServicio,
+                      nombre: s.nombreServicio,
+                      codigo: s.codigoServicio,
+                      idUnidadMedida: s.unidadMedida?.idUnidadMedida,
+                      idCategoriaServicio: s.categoriaServicio?.idCategoriaServicio,
+                      idCategoriaPadre: s.categoriaServicio?.categoriaPadre?.idCategoriaServicio,
+                    })
                   }
                 >
                   <span className="font-medium text-foreground">{s.nombreServicio}</span>

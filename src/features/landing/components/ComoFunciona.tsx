@@ -1,0 +1,5 @@
+const pasos = ["Cuéntanos qué necesitas", "Recibe una propuesta clara", "Coordina y sigue el pedido"]
+
+export function ComoFunciona() {
+  return <section aria-labelledby="como-titulo" className="bg-muted/40"><div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8"><h2 id="como-titulo" className="text-3xl font-bold">Cómo funciona</h2><div className="mt-10 grid gap-6 md:grid-cols-3">{pasos.map((paso, index) => <div key={paso} className="relative rounded-xl border border-border bg-card p-6"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground">{index + 1}</span><h3 className="mt-5 font-semibold">{paso}</h3><p className="mt-2 text-sm text-muted-foreground">{["Describe materiales, cantidades y fechas; nosotros ordenamos la información.", "Evaluamos alternativas y te presentamos opciones con tiempos y condiciones.", "Mantén el control con comunicación directa y seguimiento de cada avance."][index]}</p></div>)}</div></div></section>
+}
