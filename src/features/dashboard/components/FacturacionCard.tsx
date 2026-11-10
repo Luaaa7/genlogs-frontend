@@ -2,7 +2,7 @@ import { Link } from "react-router-dom"
 import { ArrowRight } from "lucide-react"
 import { Area, AreaChart, CartesianGrid, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import type { FacturacionHistoricoItem } from "@/types/dashboard.types"
-import { formatCurrency } from "@/lib/formatters/currency"
+import { formatCurrency, simboloMoneda } from "@/lib/formatters/currency"
 import { cn } from "@/lib/utils/utils"
 import { etiquetaMes } from "../lib/calculos"
 import { DashboardCard, SinDatos } from "./DashboardCard"
@@ -44,7 +44,7 @@ export function FacturacionCard({ historico, totalFacturado, variacion, moneda, 
     <DashboardCard
       id="dash-facturacion"
       titulo="Facturación mensual"
-      extra={<span className="text-xs text-muted-foreground">{moneda}, con IGV</span>}
+      extra={<span className="text-xs text-muted-foreground">{simboloMoneda(moneda)}, con IGV</span>}
       className={cn("flex flex-col", className)}
     >
       {datos.length === 0 ? (
