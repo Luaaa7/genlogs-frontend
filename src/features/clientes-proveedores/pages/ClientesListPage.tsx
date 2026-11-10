@@ -18,10 +18,15 @@ import { listarSectoresEconomicos } from '@/api/sectoresEconomicosApi';
 import type { FiltrosCliente } from '../../../types/cliente.types';
 import type { Cliente } from '../../../types/cliente.types';
 import type { ClienteRequest } from '../../../types/cliente.types';
+import { PestanasTipoDocumento } from '../components/PestanasTipoDocumento';
+import { infoTipoDocumento, type TipoDocumentoId } from '../constants/tiposDocumento';
+import { nombresParaEditar } from '@/lib/nombreTercero';
 
 export default function ClientesListPage() {
   const { editarClientesYProveedores } = usePermisos();
   const [filtros, setFiltros] = useState<FiltrosCliente>({});
+  // Pestaña abierta: cada tipo de documento tiene su propia lista y sus columnas.
+  const [tipo, setTipo] = useState<TipoDocumentoId>(1);
   const [debounced] = useDebounce(filtros, 300);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null);
@@ -29,7 +34,7 @@ export default function ClientesListPage() {
   const [pagina, setPagina] = useState(0);
   const [tamano, setTamano] = useState(20);
   // Paginación en el servidor: antes se cargaban los ~200 clientes de una vez.
-  const { data: resultado, isFetching, isLoading, isError, error: errorCarga, refetch } = useClientesPagina({ ...debounced, page: pagina, size: tamano });
+  const { data: resultado, isFetching, isLoading, isError, refetch } = useClientesPagina({ ...debounced, idTipoDocumento: tipo, page: pagina, size: tamano });
   const data = resultado?.content ?? [];
   const total = resultado?.total ?? 0;
   const totalPaginas = Math.max(1, Math.ceil(total / tamano));
@@ -50,11 +55,20 @@ export default function ClientesListPage() {
     setMostrarForm(true);
   };
 
+  const cambiarTipo = (nuevo: TipoDocumentoId) => {
+    setTipo(nuevo);
+    setFiltros({});
+    setPagina(0);
+  };
+
+  const etiquetaNuevo = tipo === 1 ? 'Nueva empresa' : tipo === 2 ? 'Nueva persona' : 'Nuevo extranjero';
   const isEditing = !!clienteEditando;
-  const panelTitle = isEditing ? 'Editar cliente' : 'Nuevo cliente';
+  const panelTitle = isEditing ? 'Editar cliente' : etiquetaNuevo;
   const panelDescription = isEditing
     ? 'Modifica los datos del cliente seleccionado.'
-    : 'Ingresa el RUC o DNI y los datos se completan desde SUNAT/RENIEC.';
+    : tipo === 4
+      ? 'Completa los datos tal como figuran en el pasaporte.'
+      : `Ingresa el ${infoTipoDocumento(tipo).label} y los datos se completan desde ${tipo === 1 ? 'SUNAT' : 'RENIEC'}.`;
 
   // El sector real del cliente: el id si vino en la fila, si no por su nombre en el catálogo.
   // Antes se forzaba a 1 y al guardar se pisaba el sector verdadero (#2).
@@ -63,15 +77,18 @@ export default function ClientesListPage() {
     clienteDetalle?.idSectorEconomico ??
     clienteEditando?.sectorEconomico?.idSectorEconomico ??
     sectores.find((s) => normalizar(s.nombreSector) === normalizar(clienteDetalle?.sectorEconomico))?.idSectorEconomico;
-  const TIPO_DOC: Record<string, number> = { RUC: 1, DNI: 2, CE: 3, PASAPORTE: 4 };
+  const TIPO_DOC: Record<string, number> = { RUC: 1, DNI: 2, PAS: 4, PASAPORTE: 4 };
 
   // El detalle del cliente que se está editando ya llegó (y es el de ESE cliente, no el anterior).
   const detalleListo = !!clienteDetalle && clienteDetalle.idCliente === clienteEditando?.idCliente;
 
+  const idTipoEditando = clienteDetalle?.idTipoDocumento ?? TIPO_DOC[(clienteDetalle?.tipoDocumento ?? '').toUpperCase()] ?? 1;
   const valoresIniciales = detalleListo && clienteDetalle
     ? {
         tercero: {
-          idTipoDocumento: clienteDetalle.idTipoDocumento ?? TIPO_DOC[(clienteDetalle.tipoDocumento ?? '').toUpperCase()] ?? 1,
+          idTipoDocumento: idTipoEditando,
+          // DNI y pasaporte: apellidos por separado (o propuestos si el registro es antiguo).
+          ...(idTipoEditando === 1 ? {} : nombresParaEditar(clienteDetalle)),
           // Sin esto el formulario abría sin distrito y no dejaba guardar.
           idDistrito: clienteDetalle.idDistrito ?? clienteEditando?.tercero?.distrito?.idDistrito ?? undefined,
           numeroDocumento: clienteDetalle.numeroDocumento,
@@ -83,7 +100,7 @@ export default function ClientesListPage() {
         ...(idSectorReal != null ? { idSectorEconomico: idSectorReal } : {}),
         situacion: clienteDetalle.situacion,
       }
-    : undefined;
+    : { tercero: { idTipoDocumento: tipo } };
 
   const handleSubmit = (data: ClienteRequest) => {
     if (isEditing && clienteEditando) {
@@ -106,7 +123,7 @@ export default function ClientesListPage() {
   const nuevo = editarClientesYProveedores ? (
     <Button onClick={handleNuevo}>
       <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-      Nuevo cliente
+      {etiquetaNuevo}
     </Button>
   ) : undefined;
 
@@ -114,7 +131,7 @@ export default function ClientesListPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         titulo="Clientes"
-        descripcion={<><span className="tabular-nums">{total}</span> clientes con sus contactos y unidades mineras</>}
+        descripcion={<><span className="tabular-nums">{total}</span> {tipo === 1 ? 'empresas con RUC' : tipo === 2 ? 'personas con DNI' : 'clientes con pasaporte'}</>}
         acciones={nuevo}
       />
 
@@ -126,33 +143,43 @@ export default function ClientesListPage() {
         />
       )}
 
-      {isLoading ? (
-        <CargandoSpinner texto="Cargando clientes..." />
-      ) : (
-        <div className="flex flex-col gap-3">
-          <ClienteTable
-            clientes={clientes}
-            filtros={filtros}
-            onFiltrosChange={(f) => { setFiltros(f); setPagina(0); }}
-            isLoading={isFetching}
-            accionVacio={nuevo}
-            onEditar={editarClientesYProveedores ? handleEditar : undefined}
-          />
-          {total > 0 && (
-            <div className="overflow-hidden rounded-xl border border-border bg-card [&>div]:border-t-0">
-              <Paginacion
-                pagina={pagina}
-                totalPaginas={totalPaginas}
-                total={total}
-                enPagina={clientes.length}
-                tamano={tamano}
-                onPagina={setPagina}
-                onTamano={(t) => { setTamano(t); setPagina(0); }}
-              />
-            </div>
-          )}
-        </div>
-      )}
+      <PestanasTipoDocumento
+        idBase="clientes-tipo"
+        ariaLabel="Clientes por tipo de documento"
+        value={tipo}
+        onChange={cambiarTipo}
+        // La tabla ya trae su propio borde: dentro de la pestaña va sin borde ni relleno.
+        panelClassName="p-0 [&_section]:rounded-none [&_section]:border-0"
+      >
+        {isLoading ? (
+          <CargandoSpinner texto="Cargando clientes..." />
+        ) : (
+          <div className="flex flex-col">
+            <ClienteTable
+              tipo={tipo}
+              clientes={clientes}
+              filtros={filtros}
+              onFiltrosChange={(f) => { setFiltros(f); setPagina(0); }}
+              isLoading={isFetching}
+              accionVacio={nuevo}
+              onEditar={editarClientesYProveedores ? handleEditar : undefined}
+            />
+            {total > 0 && (
+              <div className="border-t border-border [&>div]:border-t-0">
+                <Paginacion
+                  pagina={pagina}
+                  totalPaginas={totalPaginas}
+                  total={total}
+                  enPagina={clientes.length}
+                  tamano={tamano}
+                  onPagina={setPagina}
+                  onTamano={(t) => { setTamano(t); setPagina(0); }}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </PestanasTipoDocumento>
 
       <PanelLateral
         abierto={mostrarForm}
@@ -171,8 +198,8 @@ export default function ClientesListPage() {
           )
         ) : (
         <ClienteForm
-          // Se vuelve a montar al cambiar de cliente: useForm solo lee los valores iniciales al montarse.
-          key={isEditing ? `editar-${clienteEditando?.idCliente}` : 'nuevo'}
+          // Se vuelve a montar al cambiar de cliente o de pestaña: useForm solo lee los valores iniciales al montarse.
+          key={isEditing ? `editar-${clienteEditando?.idCliente}` : `nuevo-${tipo}`}
           isSubmitting={isEditing ? actualizar.isPending : crear.isPending}
           serverError={isEditing
             ? actualizar.isError
@@ -182,6 +209,8 @@ export default function ClientesListPage() {
             ? 'No se pudo guardar el cliente. Revisa los datos e intenta de nuevo.'
             : undefined}
           valoresIniciales={valoresIniciales as import('../../../lib/validators/rucDni.schema').ClienteFormValues | undefined}
+          // Solo la página del documento elegido: el de la pestaña al crear, el del cliente al editar.
+          tipoFijo={isEditing ? (idTipoEditando === 1 || idTipoEditando === 2 || idTipoEditando === 4 ? idTipoEditando : undefined) : tipo}
           onSubmit={handleSubmit}
         />
         )}

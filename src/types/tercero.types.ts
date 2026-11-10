@@ -27,6 +27,10 @@ export interface Tercero {
   idTercero: number
   numeroDocumento: string
   razonSocial: string
+  /** DNI y pasaporte: nombres y apellidos por separado (null en RUC y en registros antiguos). */
+  nombres?: string | null
+  apellidoPaterno?: string | null
+  apellidoMaterno?: string | null
   direccion?: string | null
   telefono?: string | null
   correo?: string | null
@@ -42,7 +46,11 @@ export interface TerceroInput {
   idTipoDocumento: number
   idDistrito: number
   numeroDocumento: string
+  /** Razón social (RUC) o nombre completo (DNI y pasaporte). */
   razonSocial: string
+  nombres?: string
+  apellidoPaterno?: string
+  apellidoMaterno?: string
   direccion?: string
   telefono?: string
   correo?: string
