@@ -20,6 +20,9 @@ const FUENTES: Record<string, string> = {
   PROVEEDOR: "Proveedor",
 }
 
+/** Defensa extra: solo se enlaza lo que es http(s); el backend ya lo valida (UrlSegura). */
+const esEnlaceSeguro = (url: string | null): url is string => !!url && /^https?:\/\/\S+$/i.test(url)
+
 interface Props {
   referencias: Referencia[]
   /** Solo el Asistente Logístico marca; los demás roles ven la tabla sin acciones. */
@@ -56,7 +59,7 @@ export function TablaReferencias({ referencias, puedeMarcar, marcando, onMarcar 
               <Td className="max-w-80">
                 <div className="flex flex-col gap-0.5">
                   <span className="line-clamp-2">{r.titulo ?? "Sin título"}</span>
-                  {r.urlReferencia && (
+                  {esEnlaceSeguro(r.urlReferencia) ? (
                     <a
                       href={r.urlReferencia}
                       target="_blank"
@@ -67,6 +70,8 @@ export function TablaReferencias({ referencias, puedeMarcar, marcando, onMarcar 
                       <ExternalLink className="h-3 w-3" aria-hidden="true" />
                       <span className="sr-only">(se abre en otra pestaña)</span>
                     </a>
+                  ) : (
+                    r.urlReferencia && <span className="break-all text-xs text-muted-foreground">{r.urlReferencia}</span>
                   )}
                   {r.editadoAMano && <span className="text-xs text-muted-foreground">Editada a mano</span>}
                 </div>
