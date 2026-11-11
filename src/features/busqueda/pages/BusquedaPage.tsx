@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Info, Loader2, RefreshCw, Search, SearchX } from "lucide-react"
+import { Info, Link2, Loader2, RefreshCw, Search, SearchX } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Campo } from "@/components/ui/campo"
 import { describedBy, inputFormClass } from "@/components/ui/campoEstilos"
@@ -22,6 +22,7 @@ import {
   usePuedeBuscar,
 } from "../hooks/useBusqueda"
 import { TablaReferencias } from "../components/TablaReferencias"
+import { PegarUrlModal } from "../components/PegarUrlModal"
 
 const esquema = z.object({
   numeroParte: z.string().trim().min(1, "Escribe el N.º de parte").max(60, "Máximo 60 caracteres"),
@@ -46,6 +47,7 @@ export function BusquedaPage() {
   const [numeroParte, setNumeroParte] = useState(params.get("numeroParte") ?? "")
   const [ultimo, setUltimo] = useState<ResultadoBusqueda | null>(null)
   const [marcando, setMarcando] = useState<number>()
+  const [pegandoUrl, setPegandoUrl] = useState(false)
 
   const { register, handleSubmit, getValues, formState: { errors } } = useForm<Valores>({
     resolver: zodResolver(esquema),
@@ -95,6 +97,12 @@ export function BusquedaPage() {
       <PageHeader
         titulo="Búsqueda de repuestos"
         descripcion="Busca por marca y N.º de parte en las fuentes aprobadas. Nada de esto se muestra al cliente."
+        acciones={puedeBuscar && (
+          <Button variant="outline" onClick={() => setPegandoUrl(true)}>
+            <Link2 className="mr-1.5 h-4 w-4" aria-hidden="true" />
+            Pegar URL
+          </Button>
+        )}
       />
 
       <form onSubmit={enviar} noValidate className="grid gap-4 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -158,11 +166,26 @@ export function BusquedaPage() {
               icono={<SearchX className="h-5.5 w-5.5" />}
               titulo="Sin referencias para este N.º de parte"
               descripcion="Las fuentes no devolvieron resultados. Busca el repuesto en una tienda y pega su URL."
+              accion={puedeBuscar && (
+                <Button onClick={() => setPegandoUrl(true)}>
+                  <Link2 className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                  Pegar URL
+                </Button>
+              )}
             />
           ) : (
             <TablaReferencias referencias={referencias} puedeMarcar={puedeBuscar} marcando={marcando} onMarcar={marcar} />
           )}
         </TablaCard>
+      )}
+
+      {pegandoUrl && (
+        <PegarUrlModal
+          numeroParte={numeroParte || getValues("numeroParte").trim()}
+          marca={getValues("marca").trim() || undefined}
+          idSolicitudItem={idSolicitudItem}
+          onCerrar={() => setPegandoUrl(false)}
+        />
       )}
     </div>
   )

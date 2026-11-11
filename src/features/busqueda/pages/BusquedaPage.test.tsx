@@ -85,6 +85,8 @@ describe("BusquedaPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /^buscar$/i }))
     expect(await screen.findByText(/sin referencias para este n\.º de parte/i)).toBeTruthy()
+    fireEvent.click(screen.getAllByRole("button", { name: /pegar url/i })[1])
+    expect(screen.getByRole("dialog", { name: /pegar url de una tienda/i })).toBeTruthy()
   })
 
   it("el Gerente solo ve el historial: no busca en las fuentes ni marca", async () => {
@@ -96,5 +98,6 @@ describe("BusquedaPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /ver historial/i }))
     expect(api.buscar).not.toHaveBeenCalled()
     expect(screen.queryByRole("button", { name: /marcar como útil/i })).toBeNull()
+    expect(screen.queryByRole("button", { name: /pegar url/i })).toBeNull()
   })
 })
