@@ -1,4 +1,5 @@
-export type EstadoPedido = "PENDIENTE" | "EN_PROCESO" | "ATENDIDO" | "CANCELADO"
+/** Valores de solicitud_cotizacion.estado_solicitud (v3.2 agrega EN_ESPERA_TERCERO). */
+export type EstadoPedido = "PENDIENTE" | "EN_REVISION" | "EN_ESPERA_TERCERO" | "COTIZADA" | "RECHAZADA" | "CANCELADA"
 
 export interface ProductoPublico {
   id: number | string
