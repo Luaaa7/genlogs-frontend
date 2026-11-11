@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { sourcingApi, type BuscarReferenciasRequest, type GuardarUrlRequest } from "@/api/sourcingApi"
-import { useAuthStore } from "@/features/auth/store/authStore"
+import { usePermisos } from "@/lib/permisos"
 
 const clave = (numeroParte: string) => ["sourcing", "historial", numeroParte.trim().toLowerCase()] as const
 
@@ -45,14 +45,7 @@ export function useGuardarUrl(numeroParte: string) {
   })
 }
 
-/**
- * Matriz v3.2 "Búsqueda e historial": el Asistente Logístico busca y marca;
- * Gerente y Jefe Adm. solo ven. Cuando el Paso 0 traiga permisos.ts con los
- * 7 roles, reemplazar por usePermisos().
- */
-export const ROLES_VEN_BUSQUEDA = ["ASISTENTE_LOGISTICO", "JEFE_ADMINISTRATIVO", "GERENTE_GENERAL"]
-
+/** Matriz v3.2 "Búsqueda e historial": el Asistente Logístico busca y marca (C); Gerente y Jefe Adm. solo ven (V). */
 export function usePuedeBuscar() {
-  const rol = (useAuthStore((s) => s.nombreRol) ?? "").toUpperCase()
-  return rol === "ASISTENTE_LOGISTICO"
+  return usePermisos().puedeCrear("busqueda")
 }

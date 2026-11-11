@@ -6,8 +6,6 @@ import { ClienteLayout } from '@/layouts/ClienteLayout'
 import { ProtectedRoute } from '@/router/ProtectedRoute'
 import { ClienteRoute } from '@/router/ClienteRoute'
 import { RoleGuard } from '@/router/RoleGuard'
-import { BusquedaPage } from '@/features/busqueda/pages/BusquedaPage'
-import { ROLES_VEN_BUSQUEDA } from '@/features/busqueda/hooks/useBusqueda'
 import { LoginPage } from '@/features/auth/components/LoginPage'
 import { ForgotPasswordPage } from '@/features/auth/components/ForgotPasswordPage'
 import { ResetPasswordPage } from '@/features/auth/components/ResetPasswordPage'
@@ -42,9 +40,6 @@ import { NuevaSolicitudPage } from '@/features/portal-cliente/pages/NuevaSolicit
 // Paso 0: cada bloque agrega sus rutas en router/rutas/fe-x.tsx, no aqui.
 import { RUTAS_BLOQUES } from '@/router/rutas'
 
-// FE-D · Fases 2 y 3: apagado hasta la prueba de 10 pedidos (VITE_VITRINA_HABILITADA=true para encender).
-const VITRINA_HABILITADA = import.meta.env.VITE_VITRINA_HABILITADA === 'true'
-
 export const router = createBrowserRouter([
   { element: <PublicLayout />, children: [{ path: '/', element: <LandingPage /> }, ...RUTAS_BLOQUES.publicas] },
   { element: <AuthLayout />, children: [
@@ -75,9 +70,6 @@ export const router = createBrowserRouter([
       { path: '/reclamos', element: <ReclamosPage /> },
       { path: '/reclamos/:id', element: <ReclamoDetallePage /> },
     ] },
-    ...(VITRINA_HABILITADA
-      ? [{ element: <RoleGuard allowedRoles={ROLES_VEN_BUSQUEDA} />, children: [{ path: '/busqueda', element: <BusquedaPage /> }] }]
-      : []),
     { element: <RoleGuard allowedRoles={['ADMINISTRADOR']} />, children: [
       { path: '/usuarios', element: <UsuariosPage /> },
       { path: '/configuracion/igv', element: <ConfiguracionIgvPage /> },
