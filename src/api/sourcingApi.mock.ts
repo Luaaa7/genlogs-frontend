@@ -76,6 +76,10 @@ export const sourcingMock = {
     })
   },
 
+  tipoCambioDelDia() {
+    return esperar({ fecha: new Date().toISOString().slice(0, 10), codigoMoneda: "USD", valor: 3.75, fuente: "SUNAT" as const, esDeHoy: true })
+  },
+
   guardarUrl(body: GuardarUrlRequest): Promise<Referencia> {
     const nueva: Referencia = {
       idSourcing: siguienteId++,

@@ -34,6 +34,16 @@ export function useLeerUrl() {
   return useMutation({ mutationFn: (url: string) => sourcingApi.leerUrl(url) })
 }
 
+/** Para prellenar el tipo de cambio; si el endpoint aún no existe o falla, simplemente no hay valor. */
+export function useTipoCambioDelDia() {
+  return useQuery({
+    queryKey: ["tipo-cambio", "dia"],
+    queryFn: () => sourcingApi.tipoCambioDelDia(),
+    retry: false,
+    staleTime: 30 * 60_000,
+  })
+}
+
 export function useGuardarUrl(numeroParte: string) {
   const qc = useQueryClient()
   return useMutation({

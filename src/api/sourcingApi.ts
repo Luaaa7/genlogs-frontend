@@ -1,5 +1,6 @@
 import { axiosClient } from "./axiosClient"
 import { sourcingMock } from "./sourcingApi.mock"
+import { RUTA_TIPO_CAMBIO, type TipoCambioDia } from "./contratos/parametros"
 
 /**
  * Búsqueda de repuestos (BE-E, Fase 2). Contrato de /api/sourcing/**.
@@ -105,6 +106,13 @@ export const sourcingApi = {
   async guardarUrl(body: GuardarUrlRequest): Promise<Referencia> {
     if (usarMock) return sourcingMock.guardarUrl(body)
     const { data } = await axiosClient.post<Referencia>("/sourcing/url", body)
+    return data
+  },
+
+  /** Tipo de cambio del día (contrato del Paso 0, lo expone BE-D). Si aún no existe, la pantalla lo pide a mano. */
+  async tipoCambioDelDia(): Promise<TipoCambioDia> {
+    if (usarMock) return sourcingMock.tipoCambioDelDia()
+    const { data } = await axiosClient.get<TipoCambioDia>(RUTA_TIPO_CAMBIO)
     return data
   },
 }

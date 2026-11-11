@@ -10,6 +10,7 @@ const api = vi.hoisted(() => ({
   cambiarEstado: vi.fn(),
   leerUrl: vi.fn(),
   guardarUrl: vi.fn(),
+  tipoCambioDelDia: vi.fn().mockRejectedValue(new Error("404")),
 }))
 vi.mock("@/api/sourcingApi", () => ({ sourcingApi: api }))
 

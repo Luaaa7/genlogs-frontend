@@ -8,6 +8,7 @@ const api = vi.hoisted(() => ({
   cambiarEstado: vi.fn(),
   leerUrl: vi.fn(),
   guardarUrl: vi.fn(),
+  tipoCambioDelDia: vi.fn(),
 }))
 vi.mock("@/api/sourcingApi", () => ({ sourcingApi: api }))
 
@@ -40,7 +41,11 @@ function leer(url: string) {
 }
 
 describe("PegarUrlModal", () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // Por defecto el endpoint del tipo de cambio aún no existe: se escribe a mano.
+    api.tipoCambioDelDia.mockRejectedValue(new Error("404"))
+  })
 
   it("no lee direcciones que no son http", () => {
     pintar()
@@ -112,5 +117,63 @@ describe("PegarUrlModal", () => {
 
     await waitFor(() => expect(api.guardarUrl).toHaveBeenCalled())
     expect(api.guardarUrl.mock.calls[0][0]).toMatchObject({ titulo: "Filtro CAT", precio: 40, editadoAMano: true })
+  })
+
+  it("si la página está en otra moneda (EUR), avisa, deja el precio vacío y se guarda como editada a mano", async () => {
+    api.leerUrl.mockResolvedValue({ ...leidaOk, precio: 90, codigoMoneda: "EUR" })
+    api.guardarUrl.mockResolvedValue({ idSourcing: 11 })
+    pintar()
+    leer("https://www.tienda.com/p/6205")
+
+    expect(await screen.findByText(/la página está en eur/i)).toBeTruthy()
+    expect((screen.getByLabelText(/precio en la tienda/i) as HTMLInputElement).value).toBe("")
+
+    fireEvent.click(screen.getByRole("button", { name: /guardar referencia/i }))
+    expect(await screen.findByText(/escribe el precio$/i)).toBeTruthy()
+    expect(api.guardarUrl).not.toHaveBeenCalled()
+
+    fireEvent.change(screen.getByLabelText(/precio en la tienda/i), { target: { value: "97,20" } })
+    fireEvent.change(screen.getByLabelText(/tipo de cambio/i), { target: { value: "3,75" } })
+    fireEvent.click(screen.getByRole("button", { name: /guardar referencia/i }))
+    await waitFor(() => expect(api.guardarUrl).toHaveBeenCalled())
+    expect(api.guardarUrl.mock.calls[0][0]).toMatchObject({ precio: 97.2, codigoMoneda: "USD", tipoCambio: 3.75, editadoAMano: true })
+  })
+
+  it("acepta la coma decimal en el precio", async () => {
+    api.leerUrl.mockResolvedValue({ ...leidaOk, precio: null, codigoMoneda: "PEN" })
+    api.guardarUrl.mockResolvedValue({ idSourcing: 12 })
+    pintar()
+    leer("https://www.tienda.com/p/6205")
+    await screen.findByDisplayValue("Rodamiento SKF 6205")
+
+    fireEvent.change(screen.getByLabelText(/precio en la tienda/i), { target: { value: "18,50" } })
+    expect(await screen.findByText(/18\.50/)).toBeTruthy()
+    fireEvent.click(screen.getByRole("button", { name: /guardar referencia/i }))
+    await waitFor(() => expect(api.guardarUrl).toHaveBeenCalled())
+    expect(api.guardarUrl.mock.calls[0][0]).toMatchObject({ precio: 18.5, codigoMoneda: "PEN" })
+  })
+
+  it("no acepta una URL de imagen que no sea http(s)", async () => {
+    api.leerUrl.mockResolvedValue(leidaOk)
+    pintar()
+    leer("https://www.tienda.com/p/6205")
+    await screen.findByDisplayValue("Rodamiento SKF 6205")
+
+    fireEvent.change(screen.getByLabelText(/tipo de cambio/i), { target: { value: "3.75" } })
+    fireEvent.change(screen.getByLabelText(/url de la imagen/i), { target: { value: "javascript:alert(1)" } })
+    fireEvent.click(screen.getByRole("button", { name: /guardar referencia/i }))
+    expect(await screen.findByText(/la url de la imagen debe empezar con http/i)).toBeTruthy()
+    expect(api.guardarUrl).not.toHaveBeenCalled()
+  })
+
+  it("prellena el tipo de cambio del día cuando el endpoint existe", async () => {
+    api.tipoCambioDelDia.mockResolvedValue({ fecha: "2026-11-11", codigoMoneda: "USD", valor: 3.79, fuente: "SUNAT", esDeHoy: true })
+    api.leerUrl.mockResolvedValue(leidaOk)
+    pintar()
+    await waitFor(() => expect(api.tipoCambioDelDia).toHaveBeenCalled())
+    leer("https://www.tienda.com/p/6205")
+
+    expect(((await screen.findByLabelText(/tipo de cambio/i)) as HTMLInputElement).value).toBe("3.79")
+    expect(screen.getByText(/del día: 3\.79 \(sunat\)/i)).toBeTruthy()
   })
 })
