@@ -32,13 +32,15 @@ import { cerrarSesionInterna } from '@/lib/sesiones';
 import { GlobalSearchDialog } from '@/components/ui/GlobalSearchDialog';
 import { cn } from '@/lib/utils/utils';
 import { nombreRolLegible } from '@/lib/formatters/roles';
+import { MENU_BLOQUES } from '@/menu';
+import type { Permisos } from '@/lib/permisos';
 
-type NavItem = { label: string; path: string; icon: React.ElementType; soloAdmin?: boolean; permiso?: 'verCotizacionesYOrdenes' | 'verCatalogosYEmpresas' | 'verReclamos' };
+type NavItem = { label: string; path: string; icon: React.ElementType; soloAdmin?: boolean; permiso?: 'verCotizacionesYOrdenes' | 'verCatalogosYEmpresas' | 'verReclamos'; visible?: (permisos: Permisos) => boolean };
 type NavGroup = { titulo: string; items: NavItem[] };
 
 /** Una sola navegación para todo el sistema (antes había un nav superior y
  *  una barra lateral con módulos distintos). Agrupada por tipo de trabajo. */
-const NAV_GROUPS: NavGroup[] = [
+const NAV_BASE: NavGroup[] = [
   {
     titulo: 'Operación',
     items: [
@@ -69,6 +71,23 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
 ];
+
+/** Paso 0: las opciones de cada bloque (src/menu/fe-x.ts) se suman al final de su grupo. */
+function agregarMenuDeBloques(base: NavGroup[]): NavGroup[] {
+  const grupos = base.map((g) => ({ ...g, items: [...g.items] }));
+  for (const { grupo, label, path, icon, visible } of MENU_BLOQUES) {
+    if (grupo === 'Portal') continue;
+    let destino = grupos.find((g) => g.titulo === grupo);
+    if (!destino) {
+      destino = { titulo: grupo, items: [] };
+      grupos.push(destino);
+    }
+    destino.items.push({ label, path, icon, visible });
+  }
+  return grupos;
+}
+
+const NAV_GROUPS: NavGroup[] = agregarMenuDeBloques(NAV_BASE);
 
 // Los 4 accesos más usados van fijos en la barra inferior móvil; el resto
 // vive detrás del quinto botón, "Menú", que abre el mismo menú lateral.
@@ -129,7 +148,7 @@ function NavLateral({ esAdmin, onNavigate }: { esAdmin: boolean; onNavigate?: ()
   return (
     <nav aria-label="Módulos" className="flex flex-col px-3 pb-6">
       {NAV_GROUPS.map((grupo) => {
-        const items = grupo.items.filter((item) => (!item.soloAdmin || esAdmin) && (!item.permiso || permisos[item.permiso]));
+        const items = grupo.items.filter((item) => (!item.soloAdmin || esAdmin) && (!item.permiso || permisos[item.permiso]) && (!item.visible || item.visible(permisos)));
         if (items.length === 0) return null;
         const hayActivo = items.some((item) => estaActivo(pathname, item.path));
         const abierto = hayActivo || !plegados.includes(grupo.titulo);
