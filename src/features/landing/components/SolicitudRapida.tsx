@@ -28,7 +28,7 @@ const esquema = z
   .refine((v) => !v.numeroParte || v.marca, { path: ["marca"], message: "Indica la marca del N.º de parte" })
 type Valores = z.infer<typeof esquema>
 
-type Pedido = { marca: string; numeroParte: string; descripcion: string; cantidad: number }
+type Pedido = { marca: string; numeroParte: string; descripcion: string; cantidad: number; idProducto?: number }
 
 /** Al volver del registro, la landing llega con esta ruta y envía el pedido guardado (D-30). */
 const VOLVER = "/#solicitud"
