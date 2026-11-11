@@ -5,6 +5,7 @@ import { BusquedaPage } from '@/features/busqueda/pages/BusquedaPage'
 import { RutaVitrina } from '@/features/vitrina/RutaVitrina'
 import { VitrinaProductosPage } from '@/features/vitrina/pages/VitrinaProductosPage'
 import { ProductoVitrinaPage } from '@/features/vitrina/pages/ProductoVitrinaPage'
+import { RepuestosPage } from '@/features/portal-cliente/repuestos/RepuestosPage'
 
 /** Rutas de FE-D - Landing, busqueda y vitrina interna (Nicole). Solo este bloque edita este archivo. */
 export const rutasFeD: RutasBloque = {
@@ -21,6 +22,7 @@ export const rutasFeD: RutasBloque = {
         },
       ]
     : [],
-  portal: [],
+  // "Repuestos" del portal (pieza de Nicole dentro de FE-B): dentro de ClienteLayout, con sesión de cliente.
+  portal: vitrinaHabilitada ? [{ path: '/portal/repuestos', element: <RepuestosPage /> }] : [],
   publicas: [],
 }
