@@ -11,6 +11,8 @@ interface ConfirmDialogProps {
   /** "destructive" (rojo, para eliminar/desactivar) o "default" (acento). */
   variant?: "destructive" | "default"
   isLoading?: boolean
+  /** Contenido extra bajo la descripción (p. ej. un campo de motivo). */
+  children?: React.ReactNode
   onConfirm: () => void
   onCancel: () => void
 }
@@ -28,6 +30,7 @@ export function ConfirmDialog({
   cancelLabel = "Cancelar",
   variant = "destructive",
   isLoading = false,
+  children,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -86,6 +89,8 @@ export function ConfirmDialog({
             </p>
           </div>
         </div>
+
+        {children && <div className="mt-4">{children}</div>}
 
         <div className="mt-6 flex justify-end gap-2">
           <Button ref={cancelRef} type="button" variant="outline" onClick={onCancel} disabled={isLoading}>

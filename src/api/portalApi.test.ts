@@ -15,4 +15,10 @@ describe("portalApi", () => {
     await expect(portalApi.crearSolicitud(payload)).resolves.toEqual({ id: "p-2" })
     expect(post).toHaveBeenCalledWith("/portal/solicitudes", payload)
   })
+
+  it("cancela el pedido con PATCH y manda el motivo (D-28)", async () => {
+    const patch = vi.spyOn(axiosClient, "patch").mockResolvedValueOnce({ data: undefined })
+    await portalApi.cancelarPedido("7", "Ya lo conseguimos")
+    expect(patch).toHaveBeenCalledWith("/portal/pedidos/7/cancelar", { motivo: "Ya lo conseguimos" })
+  })
 })

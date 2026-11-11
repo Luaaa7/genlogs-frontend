@@ -27,6 +27,10 @@ export const portalApi = {
     }),
   obtenerPedido: (id: string) =>
     axiosClient.get<Pedido>(`/portal/pedidos/${encodeURIComponent(id)}`).then((response) => response.data),
+  cancelarPedido: (id: string, motivo?: string) =>
+    axiosClient
+      .patch<void>(`/portal/pedidos/${encodeURIComponent(id)}/cancelar`, { motivo: motivo?.trim() || null })
+      .then(() => undefined),
   crearSolicitud: (payload: CrearSolicitudRequest) =>
     axiosClient.post<CrearSolicitudResponse>("/portal/solicitudes", payload).then((response) => response.data),
 }
