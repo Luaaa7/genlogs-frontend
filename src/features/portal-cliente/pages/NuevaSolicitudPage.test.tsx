@@ -113,4 +113,49 @@ describe("NuevaSolicitudPage (D-01)", () => {
     expect(await screen.findByText(/no se pudo subir la foto/i)).toBeTruthy()
     expect(crear).not.toHaveBeenCalled()
   })
+
+  it("al quitar un repuesto, el que queda no hereda la foto del borrado", () => {
+    renderPagina()
+    fireEvent.change(screen.getByLabelText("Repuesto 1: foto o plano"), {
+      target: { files: [new File(["x"], "del-primero.jpg", { type: "image/jpeg" })] },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Agregar otro repuesto" }))
+    fireEvent.change(screen.getByLabelText("Repuesto 2: descripción"), { target: { value: "Segundo" } })
+
+    fireEvent.click(screen.getByRole("button", { name: "Quitar repuesto 1" }))
+
+    expect((screen.getByLabelText("Repuesto 1: descripción") as HTMLInputElement).value).toBe("Segundo")
+    expect((screen.getByLabelText("Repuesto 1: foto o plano") as HTMLInputElement).files?.length ?? 0).toBe(0)
+  })
+
+  it("si falla crear la solicitud, al reintentar no vuelve a subir la misma foto", async () => {
+    const subir = vi.spyOn(portalApi, "subirFotoSolicitud").mockResolvedValue("https://res.cloudinary.com/x/pieza.jpg")
+    const crear = vi.spyOn(portalApi, "crearSolicitud").mockRejectedValueOnce(new Error("500")).mockResolvedValueOnce({ id: 12 })
+    renderPagina()
+    llenarGeneral()
+    llenarRepuesto(1, { descripcion: "Pieza rota" })
+    fireEvent.change(screen.getByLabelText("Repuesto 1: foto o plano"), {
+      target: { files: [new File(["x"], "pieza.jpg", { type: "image/jpeg" })] },
+    })
+
+    fireEvent.click(screen.getByRole("button", { name: "Enviar solicitud" }))
+    await screen.findByText(/no se pudo enviar la solicitud/i)
+    fireEvent.click(screen.getByRole("button", { name: "Enviar solicitud" }))
+
+    await waitFor(() => expect(crear).toHaveBeenCalledTimes(2))
+    expect(subir).toHaveBeenCalledTimes(1)
+  })
+
+  it("los errores quedan unidos a su campo para lectores de pantalla", () => {
+    renderPagina()
+    llenarGeneral()
+    llenarRepuesto(1, { descripcion: "Filtro", numeroParte: "1R-0750", marca: "" })
+
+    fireEvent.click(screen.getByRole("button", { name: "Enviar solicitud" }))
+
+    const marca = screen.getByLabelText("Repuesto 1: marca")
+    expect(marca.getAttribute("aria-invalid")).toBe("true")
+    const error = document.getElementById(marca.getAttribute("aria-describedby") ?? "")
+    expect(error?.textContent).toMatch(/marca/i)
+  })
 })

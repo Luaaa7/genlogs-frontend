@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import { esGtinValido, validarItem, type ItemPedidoForm } from "./itemPedido"
 
 const base: ItemPedidoForm = {
+  id: "item-prueba",
   descripcion: "Filtro de aceite",
   cantidad: "2",
   unidad: "UND",
@@ -9,6 +10,7 @@ const base: ItemPedidoForm = {
   numeroParte: "1R-0750",
   gtin: "",
   foto: null,
+  urlFoto: null,
 }
 
 const foto = new File(["x"], "placa.jpg", { type: "image/jpeg" })

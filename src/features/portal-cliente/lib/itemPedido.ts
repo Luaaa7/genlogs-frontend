@@ -4,6 +4,8 @@
  * o un plano con la descripción. El GTIN (código de barras) es opcional.
  */
 export interface ItemPedidoForm {
+  /** Identificador estable para la key de React (no se envía al backend). */
+  id: string
   descripcion: string
   cantidad: string
   unidad: string
@@ -11,6 +13,8 @@ export interface ItemPedidoForm {
   numeroParte: string
   gtin: string
   foto: File | null
+  /** URL de la foto ya subida; se reutiliza al reintentar y se borra si cambia la foto. */
+  urlFoto: string | null
 }
 
 export type ErroresItem = Partial<Record<keyof ItemPedidoForm, string>>
@@ -18,7 +22,10 @@ export type ErroresItem = Partial<Record<keyof ItemPedidoForm, string>>
 export const TIPOS_FOTO = ["image/jpeg", "image/png", "image/webp", "application/pdf"]
 export const MAX_FOTO_BYTES = 5 * 1024 * 1024
 
+let siguienteId = 0
+
 export const itemVacio = (): ItemPedidoForm => ({
+  id: `item-${++siguienteId}`,
   descripcion: "",
   cantidad: "1",
   unidad: "UND",
@@ -26,6 +33,7 @@ export const itemVacio = (): ItemPedidoForm => ({
   numeroParte: "",
   gtin: "",
   foto: null,
+  urlFoto: null,
 })
 
 /** GTIN-8, 12, 13 o 14 con dígito verificador correcto. */

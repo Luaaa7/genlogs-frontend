@@ -7,6 +7,8 @@ import { portalApi } from "@/api/portalApi"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Campo } from "@/components/ui/campo"
+import { describedBy } from "@/components/ui/campoEstilos"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import type { SolicitudItemRequest } from "@/types/portal.types"
 
@@ -25,7 +27,9 @@ export function NuevaSolicitudPage() {
   const [subiendo, setSubiendo] = useState(false)
 
   function cambiarItem(indice: number, cambios: Partial<ItemPedidoForm>) {
-    setItems((actuales) => actuales.map((item, i) => (i === indice ? { ...item, ...cambios } : item)))
+    // Si cambia la foto, la URL subida antes ya no sirve.
+    const ajustes = "foto" in cambios ? { ...cambios, urlFoto: null } : cambios
+    setItems((actuales) => actuales.map((item, i) => (i === indice ? { ...item, ...ajustes } : item)))
   }
 
   function quitarItem(indice: number) {
@@ -55,8 +59,14 @@ export function NuevaSolicitudPage() {
     try {
       setSubiendo(true)
       detalle = []
-      for (const item of items) {
-        const urlFoto = item.foto ? await portalApi.subirFotoSolicitud(item.foto) : null
+      for (const [i, item] of items.entries()) {
+        let urlFoto = item.urlFoto
+        if (item.foto && !urlFoto) {
+          urlFoto = await portalApi.subirFotoSolicitud(item.foto)
+          const subida = urlFoto
+          // Se guarda para no volver a subirla si falla la creación y el cliente reintenta.
+          setItems((actuales) => actuales.map((it, j) => (j === i ? { ...it, urlFoto: subida } : it)))
+        }
         detalle.push({
           descripcion: item.descripcion.trim(),
           cantidad: Number(item.cantidad),
@@ -110,7 +120,7 @@ export function NuevaSolicitudPage() {
           <legend className="text-lg font-semibold">Repuestos</legend>
           {items.map((item, i) => (
             <ItemRepuesto
-              key={i}
+              key={item.id}
               numero={i + 1}
               item={item}
               errores={erroresItems[i] ?? {}}
@@ -147,8 +157,13 @@ interface ItemRepuestoProps {
 }
 
 function ItemRepuesto({ numero, item, errores, puedeQuitar, onCambiar, onQuitar }: ItemRepuestoProps) {
-  const id = (campo: string) => `repuesto-${numero}-${campo}`
+  const id = (campo: string) => `${item.id}-${campo}`
   const nombre = (campo: string) => `Repuesto ${numero}: ${campo}`
+  const aria = (campo: keyof ItemPedidoForm, ayuda?: string) => ({
+    "aria-invalid": errores[campo] ? true : undefined,
+    "aria-describedby": describedBy(id(campo), { error: errores[campo], ayuda }),
+  })
+  const AYUDA_FOTO = "Obligatoria si no tienes el N.º de parte. JPG, PNG, WEBP o PDF, hasta 5 MB."
 
   return (
     <div className="rounded-lg border border-border p-4">
@@ -162,19 +177,21 @@ function ItemRepuesto({ numero, item, errores, puedeQuitar, onCambiar, onQuitar 
       </div>
 
       <div className="grid gap-4 sm:grid-cols-6">
-        <Campo className="sm:col-span-4" htmlFor={id("descripcion")} titulo="Descripción" error={errores.descripcion}>
+        <Campo className="sm:col-span-4" id={id("descripcion")} label="Descripción" error={errores.descripcion}>
           <Input
             id={id("descripcion")}
             aria-label={nombre("descripción")}
+            {...aria("descripcion")}
             value={item.descripcion}
             onChange={(e) => onCambiar({ descripcion: e.target.value })}
             placeholder="Ej. Filtro de aceite del motor"
           />
         </Campo>
-        <Campo className="sm:col-span-1" htmlFor={id("cantidad")} titulo="Cantidad" error={errores.cantidad}>
+        <Campo className="sm:col-span-1" id={id("cantidad")} label="Cantidad" error={errores.cantidad}>
           <Input
             id={id("cantidad")}
             aria-label={nombre("cantidad")}
+            {...aria("cantidad")}
             type="number"
             min="0.01"
             step="0.01"
@@ -182,7 +199,7 @@ function ItemRepuesto({ numero, item, errores, puedeQuitar, onCambiar, onQuitar 
             onChange={(e) => onCambiar({ cantidad: e.target.value })}
           />
         </Campo>
-        <Campo className="sm:col-span-1" htmlFor={id("unidad")} titulo="Unidad">
+        <Campo className="sm:col-span-1" id={id("unidad")} label="Unidad">
           <Input
             id={id("unidad")}
             aria-label={nombre("unidad")}
@@ -190,69 +207,48 @@ function ItemRepuesto({ numero, item, errores, puedeQuitar, onCambiar, onQuitar 
             onChange={(e) => onCambiar({ unidad: e.target.value })}
           />
         </Campo>
-        <Campo className="sm:col-span-2" htmlFor={id("marca")} titulo="Marca" error={errores.marca}>
+        <Campo className="sm:col-span-2" id={id("marca")} label="Marca" error={errores.marca}>
           <Input
             id={id("marca")}
             aria-label={nombre("marca")}
+            {...aria("marca")}
             value={item.marca}
             onChange={(e) => onCambiar({ marca: e.target.value })}
             placeholder="Ej. Caterpillar"
           />
         </Campo>
-        <Campo className="sm:col-span-2" htmlFor={id("numeroParte")} titulo="N.º de parte" error={errores.numeroParte}>
+        <Campo className="sm:col-span-2" id={id("numeroParte")} label="N.º de parte" error={errores.numeroParte}>
           <Input
             id={id("numeroParte")}
             aria-label={nombre("N.º de parte")}
+            {...aria("numeroParte")}
             value={item.numeroParte}
             onChange={(e) => onCambiar({ numeroParte: e.target.value })}
             placeholder="Ej. 1R-0750"
           />
         </Campo>
-        <Campo className="sm:col-span-2" htmlFor={id("gtin")} titulo="GTIN (opcional)" error={errores.gtin}>
+        <Campo className="sm:col-span-2" id={id("gtin")} label="GTIN" opcional error={errores.gtin}>
           <Input
             id={id("gtin")}
             aria-label={nombre("GTIN (opcional)")}
+            {...aria("gtin")}
             inputMode="numeric"
             value={item.gtin}
             onChange={(e) => onCambiar({ gtin: e.target.value })}
             placeholder="Código de barras"
           />
         </Campo>
-        <Campo className="sm:col-span-6" htmlFor={id("foto")} titulo="Foto o plano" error={errores.foto}>
+        <Campo className="sm:col-span-6" id={id("foto")} label="Foto o plano" ayuda={AYUDA_FOTO} error={errores.foto}>
           <Input
             id={id("foto")}
             aria-label={nombre("foto o plano")}
+            {...aria("foto", AYUDA_FOTO)}
             type="file"
             accept="image/jpeg,image/png,image/webp,application/pdf"
             onChange={(e) => onCambiar({ foto: e.target.files?.[0] ?? null })}
           />
-          <p className="mt-1 text-xs text-muted-foreground">
-            Obligatoria si no tienes el N.º de parte. JPG, PNG, WEBP o PDF, hasta 5 MB.
-          </p>
         </Campo>
       </div>
-    </div>
-  )
-}
-
-interface CampoProps {
-  htmlFor: string
-  titulo: string
-  error?: string
-  className?: string
-  children: React.ReactNode
-}
-
-function Campo({ htmlFor, titulo, error, className, children }: CampoProps) {
-  return (
-    <div className={className}>
-      <Label htmlFor={htmlFor}>{titulo}</Label>
-      <div className="mt-2">{children}</div>
-      {error && (
-        <p role="alert" className="mt-1 text-sm text-destructive">
-          {error}
-        </p>
-      )}
     </div>
   )
 }

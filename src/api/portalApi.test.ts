@@ -13,7 +13,7 @@ describe("portalApi", () => {
     const post = vi.spyOn(axiosClient, "post").mockResolvedValueOnce({ data: { id: "p-2" } })
     const payload = { asunto: "Rodamientos", descripcion: "Requerimos diez unidades." }
     await expect(portalApi.crearSolicitud(payload)).resolves.toEqual({ id: "p-2" })
-    expect(post).toHaveBeenCalledWith("/portal/solicitudes", payload)
+    expect(post).toHaveBeenCalledWith("/solicitudes", payload)
   })
 
   it("envía cada repuesto con marca, N.º de parte, GTIN y foto (D-01)", async () => {
@@ -27,7 +27,7 @@ describe("portalApi", () => {
       }],
     }
     await portalApi.crearSolicitud(payload)
-    expect(post).toHaveBeenCalledWith("/portal/solicitudes", payload)
+    expect(post).toHaveBeenCalledWith("/solicitudes", payload)
   })
 
   it("sube la foto o plano del cliente como multipart y devuelve la URL", async () => {
@@ -37,7 +37,7 @@ describe("portalApi", () => {
     await expect(portalApi.subirFotoSolicitud(archivo)).resolves.toBe("https://res.cloudinary.com/x/placa.jpg")
 
     const [ruta, cuerpo, config] = post.mock.calls[0]
-    expect(ruta).toBe("/portal/solicitudes/fotos")
+    expect(ruta).toBe("/solicitudes/fotos")
     expect((cuerpo as FormData).get("file")).toBe(archivo)
     expect(config).toEqual({ headers: { "Content-Type": "multipart/form-data" } })
   })
