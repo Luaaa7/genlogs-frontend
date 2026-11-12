@@ -5,12 +5,15 @@ import { useCrearFactura, useEmitirFactura, useSubirArchivoFactura, useSunatConf
 import { avisar } from '@/lib/avisos'
 import type { CotizacionDetalle } from '@/types/cotizacion.types'
 import { mensajeError } from '@/lib/errores'
+import { textoOcMinera } from '../lib/ocMinera'
 
 interface RegistrarFacturaModalProps {
   isOpen: boolean
   onClose: () => void
   idOrdenCompra: number
   numeroOrdenCompra?: string
+  /** N.º de OC de la minera. Si no viene, no se muestra el rótulo. */
+  numeroOcCliente?: string | null
   idCondicionPago: number
   idMoneda: number
   /** Líneas de la cotización: se precargan y el usuario puede editarlas o quitarlas. */
@@ -57,6 +60,7 @@ export const RegistrarFacturaModal: React.FC<RegistrarFacturaModalProps> = ({
   onClose,
   idOrdenCompra,
   numeroOrdenCompra,
+  numeroOcCliente,
   idCondicionPago,
   idMoneda,
   detalles,
@@ -223,6 +227,9 @@ export const RegistrarFacturaModal: React.FC<RegistrarFacturaModalProps> = ({
             ? `Se emitirá como ${serieEmision}-(siguiente número)${numeroOrdenCompra ? ` para la orden ${numeroOrdenCompra}` : ''}.`
             : `Registra el comprobante que ya emitió SUNAT${numeroOrdenCompra ? ` para la orden ${numeroOrdenCompra}` : ''}.`}
         </p>
+        {textoOcMinera(numeroOcCliente) && (
+          <p className="mt-1 text-sm text-muted-foreground tabular-nums">{textoOcMinera(numeroOcCliente)}</p>
+        )}
 
 
         <form onSubmit={enviar} className="mt-4 space-y-4">

@@ -9,9 +9,6 @@ import { RoleGuard } from '@/router/RoleGuard'
 import { LoginPage } from '@/features/auth/components/LoginPage'
 import { ForgotPasswordPage } from '@/features/auth/components/ForgotPasswordPage'
 import { ResetPasswordPage } from '@/features/auth/components/ResetPasswordPage'
-import { UsuariosPage } from '@/features/usuarios/components/UsuariosPage'
-import { ConfiguracionIgvPage } from '@/features/configuracion/pages/ConfiguracionIgvPage'
-import { ConfiguracionMargenesPage } from '@/features/configuracion/pages/ConfiguracionMargenesPage'
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage'
 import { CatalogoProductosPage } from '@/features/catalogo-repuestos/pages/CatalogoProductosPage'
 import { ProductoDetallePage } from '@/features/catalogo-repuestos/pages/ProductoDetallePage'
@@ -37,9 +34,11 @@ import { RegistroClientePage } from '@/features/portal-cliente/pages/RegistroCli
 import { MisPedidosPage } from '@/features/portal-cliente/pages/MisPedidosPage'
 import { PedidoDetallePage } from '@/features/portal-cliente/pages/PedidoDetallePage'
 import { NuevaSolicitudPage } from '@/features/portal-cliente/pages/NuevaSolicitudPage'
+// Paso 0: cada bloque agrega sus rutas en router/rutas/fe-x.tsx, no aqui.
+import { RUTAS_BLOQUES } from '@/router/rutas'
 
 export const router = createBrowserRouter([
-  { element: <PublicLayout />, children: [{ path: '/', element: <LandingPage /> }] },
+  { element: <PublicLayout />, children: [{ path: '/', element: <LandingPage /> }, ...RUTAS_BLOQUES.publicas] },
   { element: <AuthLayout />, children: [
     { path: '/login', element: <LoginPage /> },
     { path: '/recuperar-password', element: <ForgotPasswordPage /> },
@@ -64,15 +63,12 @@ export const router = createBrowserRouter([
     { path: '/cotizaciones/:id', element: <CotizacionDetallePage /> },
     { path: '/ordenes-compra', element: <OrdenesCompraPage /> },
     { path: '/facturacion', element: <FacturacionPage /> },
-    { element: <RoleGuard allowedRoles={['ADMINISTRADOR', 'VENDEDOR', 'JEFE_ADMINISTRATIVO', 'GERENTE_GENERAL']} />, children: [
+    // Reclamos internos según la matriz v3.2 (permisos.ts). /usuarios y /configuracion/* están en rutas/fe-a.tsx.
+    { element: <RoleGuard permitido={(p) => p.verReclamos} />, children: [
       { path: '/reclamos', element: <ReclamosPage /> },
       { path: '/reclamos/:id', element: <ReclamoDetallePage /> },
     ] },
-    { element: <RoleGuard allowedRoles={['ADMINISTRADOR']} />, children: [
-      { path: '/usuarios', element: <UsuariosPage /> },
-      { path: '/configuracion/igv', element: <ConfiguracionIgvPage /> },
-      { path: '/configuracion/margenes', element: <ConfiguracionMargenesPage /> },
-    ] },
+    ...RUTAS_BLOQUES.internas,
     // Cualquier otra ruta: página 404 dentro del layout (sin sesión, ProtectedRoute manda al login).
     { path: '*', element: <NoEncontradaPage /> },
   ] }] },
@@ -81,5 +77,6 @@ export const router = createBrowserRouter([
     { path: '/portal/pedidos', element: <MisPedidosPage /> },
     { path: '/portal/pedidos/:id', element: <PedidoDetallePage /> },
     { path: '/portal/solicitud', element: <NuevaSolicitudPage /> },
+    ...RUTAS_BLOQUES.portal,
   ] }] },
 ])

@@ -1,4 +1,5 @@
-export type EstadoPedido = "PENDIENTE" | "EN_PROCESO" | "ATENDIDO" | "CANCELADO"
+/** Valores de solicitud_cotizacion.estado_solicitud (v3.2 agrega EN_ESPERA_TERCERO). */
+export type EstadoPedido = "PENDIENTE" | "EN_REVISION" | "EN_ESPERA_TERCERO" | "COTIZADA" | "RECHAZADA" | "CANCELADA"
 
 export interface ProductoPublico {
   id: number | string
@@ -50,16 +51,7 @@ export interface RegistroClienteResponse {
   nombreUsuario?: string
 }
 
-export interface CrearSolicitudRequest {
-  asunto: string
-  descripcion: string
-  items?: PedidoItem[]
-}
-
-export interface CrearSolicitudResponse {
-  id: number | string
-  mensaje?: string
-}
+/** El pedido nuevo usa el contrato del Paso 0: SolicitudRequest en @/api/contratos/solicitudes. */
 
 export interface ListaPedidosResponse {
   content?: Pedido[]

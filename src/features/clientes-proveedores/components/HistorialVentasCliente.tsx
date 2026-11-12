@@ -131,7 +131,7 @@ export function HistorialVentasCliente({ idCliente }: { idCliente: number }) {
         </>
       )}
 
-      {viendo && <VistaPreviaComprobante idFactura={idDe(viendo)} codigo={codigoDe(viendo)} onClose={() => setViendo(null)} />}
+      {viendo && <VistaPreviaComprobante idFactura={idDe(viendo)} codigo={codigoDe(viendo)} numeroOcCliente={viendo.numeroOcCliente} onClose={() => setViendo(null)} />}
     </section>
   )
 }

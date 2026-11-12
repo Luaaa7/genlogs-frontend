@@ -4,7 +4,7 @@ import { clienteSchema, type ClienteFormValues } from '../../../lib/validators/r
 import type { ClienteRequest } from '../../../types/cliente.types'
 import { CamposTercero } from './CamposTercero'
 import type { TipoDocumentoId } from '../constants/tiposDocumento'
-import { unirLugarExtranjero } from '@/lib/terceroExtranjero'
+import { prepararUbicacion } from '@/lib/terceroExtranjero'
 import { prepararNombreTercero } from '@/lib/nombreTercero'
 import { LeyendaObligatorio, ResumenFaltantes } from '@/components/ui/campo'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
@@ -58,11 +58,11 @@ export function ClienteForm({ onSubmit, isSubmitting, serverError, valoresInicia
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={handleSubmit((d) => onSubmit(prepararNombreTercero(unirLugarExtranjero(d)) as ClienteRequest))} className="flex flex-col gap-5" noValidate>
+      <form onSubmit={handleSubmit((d) => onSubmit(prepararNombreTercero(prepararUbicacion(d)) as ClienteRequest))} className="flex flex-col gap-5" noValidate>
         <LeyendaObligatorio />
         <ResumenFaltantes
           errors={errors}
-          etiquetas={{ 'tercero.idTipoDocumento': 'Tipo de documento', 'tercero.numeroDocumento': 'Número de documento', 'tercero.razonSocial': 'Razón social', 'tercero.nombres': 'Nombres', 'tercero.apellidoPaterno': 'Apellido paterno', 'tercero.apellidoMaterno': 'Apellido materno', 'tercero.direccion': 'Dirección', 'tercero.idDistrito': 'Distrito', 'tercero.lugarExtranjero': 'Ciudad y país', 'tercero.correo': 'Correo', 'tercero.telefono': 'Teléfono' }}
+          etiquetas={{ 'tercero.idTipoDocumento': 'Tipo de documento', 'tercero.numeroDocumento': 'Número de documento', 'tercero.razonSocial': 'Razón social', 'tercero.nombres': 'Nombres', 'tercero.apellidoPaterno': 'Apellido paterno', 'tercero.apellidoMaterno': 'Apellido materno', 'tercero.direccion': 'Dirección', 'tercero.idDistrito': 'Distrito', 'tercero.ciudadExtranjero': 'Ciudad', 'tercero.correo': 'Correo', 'tercero.telefono': 'Teléfono' }}
         />
         <CamposTercero tipoFijo={tipoFijo} />
 

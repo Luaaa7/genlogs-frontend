@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCotizaciones, useCotizacionesEstadisticas } from '../hooks/useCotizaciones';
+import { esAsistenteLogistico } from '../lib/rolesCotizacion';
 import { usePermisos } from '@/lib/permisos';
 import { useDuplicarCotizacion } from '../hooks/useCotizacionesMutations';
 import { cotizacionesApi } from '@/api/cotizacionesApi';
@@ -95,7 +96,8 @@ export const CotizacionesListPage: React.FC = () => {
   const { data, isLoading, isError, error, refetch } = useCotizaciones(filtros);
   const { data: estadisticas } = useCotizacionesEstadisticas();
   const { mutate: duplicarCotizacion, isPending: isDuplicarPending } = useDuplicarCotizacion();
-  const { editarCotizaciones } = usePermisos();
+  const { rol } = usePermisos();
+  const creaCotizacion = esAsistenteLogistico(rol)
 
   const cambiarFiltros = (nuevos: Partial<CotizacionesFilterParams>) =>
     setFiltros((prev) => ({ ...prev, ...nuevos, page: 0 }));
@@ -150,7 +152,7 @@ export const CotizacionesListPage: React.FC = () => {
               : 'Cotizaciones a clientes y su seguimiento'}
           </p>
         </div>
-        {editarCotizaciones && (
+        {creaCotizacion && (
           <Button asChild>
             <Link to="/cotizaciones/nueva">
               <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
@@ -233,7 +235,7 @@ export const CotizacionesListPage: React.FC = () => {
                 ? 'Prueba con otro estado o moneda, o crea una nueva.'
                 : 'Crea la primera para empezar a hacer seguimiento a tus clientes.'}
             </p>
-            {editarCotizaciones && (
+            {creaCotizacion && (
               <Button asChild className="mt-2">
                 <Link to="/cotizaciones/nueva"><Plus className="mr-2 h-4 w-4" aria-hidden="true" />Nueva cotización</Link>
               </Button>
@@ -285,7 +287,7 @@ export const CotizacionesListPage: React.FC = () => {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex justify-end gap-1">
-                            {editarCotizaciones && <button
+                            {creaCotizacion && <button
                               type="button"
                               onClick={() => handleDuplicar(c)}
                               disabled={isDuplicarPending}
