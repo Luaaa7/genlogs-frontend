@@ -113,6 +113,8 @@ export function mapearEstadoCotizacion(estado: string): string {
     VENCIDA: 'Vencida',
     CADUCADA: 'Vencida',
     ANULADA: 'Anulada',
+    PENDIENTE_APROBACION: 'Pendiente de aprobación',
+    APROBADA_INTERNA: 'Aprobada por el Jefe',
   };
   return estadosMap[estado] || estado;
 }
@@ -130,6 +132,8 @@ export function tonoEstadoCotizacion(estado: string): EstadoBadgeTono {
     VENCIDA: 'warning',
     CADUCADA: 'warning',
     ANULADA: 'neutral',
+    PENDIENTE_APROBACION: 'warning',
+    APROBADA_INTERNA: 'info',
   };
   return tonos[estado] ?? 'neutral';
 }
@@ -147,6 +151,8 @@ export function colorEstadoCotizacion(estado: string): string {
     VENCIDA: 'bg-warning/10 text-warning-text',
     CADUCADA: 'bg-warning/10 text-warning-text',
     ANULADA: 'bg-muted text-muted-foreground',
+    PENDIENTE_APROBACION: 'bg-warning/10 text-warning-text',
+    APROBADA_INTERNA: 'bg-info/10 text-info',
   };
   return coloresMap[estado] || 'bg-muted text-muted-foreground';
 }

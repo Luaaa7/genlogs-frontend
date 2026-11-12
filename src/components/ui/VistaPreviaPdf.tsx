@@ -31,7 +31,8 @@ export function VistaPreviaPdf({ titulo, nombreArchivo, cargar, urlDirecta, esIm
 
   useEffect(() => {
     if (urlDirecta) {
-      setUrl(urlDirecta)
+      // Después del primer pintado, igual que el setUrl que estaba aquí. Así no es un setState síncrono del effect.
+      queueMicrotask(() => setUrl(urlDirecta))
       return
     }
     if (!cargar) return
