@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { User, Lock } from "lucide-react"
 import { login } from "@/api/authApi"
 import { useAuthStore } from "@/features/auth/store/authStore"
+import { cerrarSesionCliente } from "@/lib/sesiones"
 import { PasswordInput } from "@/components/ui/PasswordInput"
 import { IconInput } from "@/components/ui/IconInput"
 
@@ -43,6 +44,8 @@ export function LoginPage() {
         }
       }
 
+      // Sesión separada (FE-A): al entrar el personal se cierra la del cliente, si había.
+      cerrarSesionCliente()
       // Clave unificada para match con ProtectedRoute y axiosClient
       const tokenRecibido = data.token;
       if (tokenRecibido) {

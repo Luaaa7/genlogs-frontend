@@ -40,7 +40,8 @@ function cerrarSesionInvalida(motivo: string) {
   if (esPortal) {
     localStorage.removeItem("cliente_access_token")
     sessionStorage.removeItem("genlogs-cliente-auth")
-    window.location.href = "/portal/registro"
+    // Al ingreso del cliente, con ?volver= para regresar a la misma página.
+    window.location.href = `/portal/ingreso?volver=${encodeURIComponent(window.location.pathname + window.location.search)}`
     return
   }
   // Limpia tanto la clave que lee axios/ProtectedRoute (localStorage) como la

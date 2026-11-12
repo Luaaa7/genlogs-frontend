@@ -14,7 +14,7 @@ export function ClienteLayout() {
           <nav aria-label="Portal del cliente" className="flex items-center gap-1 text-sm">
             <NavLink to="/portal/pedidos" className={({ isActive }) => `rounded-md px-3 py-2 ${isActive ? "bg-muted font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>Mis pedidos</NavLink>
             <NavLink to="/portal/solicitud" className={({ isActive }) => `rounded-md px-3 py-2 ${isActive ? "bg-muted font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>Nueva solicitud</NavLink>
-            <button type="button" onClick={() => { cerrarSesionCliente(); navigate("/portal/registro", { replace: true }) }} className="ml-1 rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Cerrar sesión</button>
+            <button type="button" onClick={() => { cerrarSesionCliente(); navigate("/portal/ingreso", { replace: true }) }} className="ml-1 rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Cerrar sesión</button>
           </nav>
         </div>
       </header>

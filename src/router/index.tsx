@@ -34,6 +34,7 @@ import { ReclamoDetallePage } from '@/features/reclamos/pages/ReclamoDetallePage
 import { NoEncontradaPage } from '@/router/NoEncontradaPage'
 import { LandingPage } from '@/features/landing/LandingPage'
 import { RegistroClientePage } from '@/features/portal-cliente/pages/RegistroClientePage'
+import { IngresoClientePage } from '@/features/acceso-cliente/pages/IngresoClientePage'
 import { MisPedidosPage } from '@/features/portal-cliente/pages/MisPedidosPage'
 import { PedidoDetallePage } from '@/features/portal-cliente/pages/PedidoDetallePage'
 import { NuevaSolicitudPage } from '@/features/portal-cliente/pages/NuevaSolicitudPage'
@@ -79,7 +80,11 @@ export const router = createBrowserRouter([
     // Cualquier otra ruta: página 404 dentro del layout (sin sesión, ProtectedRoute manda al login).
     { path: '*', element: <NoEncontradaPage /> },
   ] }] },
-  { element: <ClienteLayout />, children: [{ path: '/portal/registro', element: <RegistroClientePage /> }] },
+  // Registro e ingreso del cliente (FE-A): sin sesión, con el layout del portal.
+  { element: <ClienteLayout />, children: [
+    { path: '/portal/registro', element: <RegistroClientePage /> },
+    { path: '/portal/ingreso', element: <IngresoClientePage /> },
+  ] },
   { element: <ClienteRoute />, children: [{ element: <ClienteLayout />, children: [
     { path: '/portal/pedidos', element: <MisPedidosPage /> },
     { path: '/portal/pedidos/:id', element: <PedidoDetallePage /> },
