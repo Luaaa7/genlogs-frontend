@@ -1,4 +1,4 @@
-import { Percent, TrendingUp, UserCog } from 'lucide-react'
+import { Percent, SlidersHorizontal, TrendingUp, UserCog } from 'lucide-react'
 import type { ItemMenu } from './tipos'
 
 /** Solo el Jefe Administrativo (permisos.ts: esAdmin). */
@@ -9,4 +9,6 @@ export const menuFeA: ItemMenu[] = [
   { grupo: 'Administración', label: 'Usuarios', path: '/usuarios', icon: UserCog, visible: soloJefeAdministrativo },
   { grupo: 'Administración', label: 'IGV', path: '/configuracion/igv', icon: Percent, visible: soloJefeAdministrativo },
   { grupo: 'Administración', label: 'Márgenes', path: '/configuracion/margenes', icon: TrendingUp, visible: soloJefeAdministrativo },
+  // RF-87: solo el Jefe Administrativo (permisos.ts: editarParametros).
+  { grupo: 'Administración', label: 'Parámetros', path: '/configuracion/parametros', icon: SlidersHorizontal, visible: (p) => p.editarParametros },
 ]

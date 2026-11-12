@@ -1,4 +1,5 @@
 import { RoleGuard } from '@/router/RoleGuard'
+import { ParametrosPage } from '@/features/parametros/pages/ParametrosPage'
 import { UsuariosPage } from '@/features/usuarios/components/UsuariosPage'
 import { ConfiguracionIgvPage } from '@/features/configuracion/pages/ConfiguracionIgvPage'
 import { ConfiguracionMargenesPage } from '@/features/configuracion/pages/ConfiguracionMargenesPage'
@@ -15,6 +16,11 @@ export const rutasFeA: RutasBloque = {
         { path: '/configuracion/igv', element: <ConfiguracionIgvPage /> },
         { path: '/configuracion/margenes', element: <ConfiguracionMargenesPage /> },
       ],
+    },
+    // RF-87: parámetros del sistema, solo JEFE_ADMINISTRATIVO (permisos.ts: editarParametros).
+    {
+      element: <RoleGuard permitido={(p) => p.editarParametros} />,
+      children: [{ path: '/configuracion/parametros', element: <ParametrosPage /> }],
     },
   ],
   portal: [],
