@@ -62,6 +62,8 @@ export interface Cotizacion {
   porcentajeIgv?: number
   /** Tipo de cambio aplicado (CotizacionResponse). Solo lectura; puede no venir. */
   tipoCambioUsado?: number | null
+  /** El backend lo manda solo a Gerente, Jefe y Asistente Logístico; null para los demás. */
+  margen?: number | null
   detalles: CotizacionDetalle[]
   seguimientos?: SeguimientoCotizacion[]
   adjuntos?: AdjuntoCotizacion[]
