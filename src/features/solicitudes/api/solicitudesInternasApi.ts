@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { axiosClient } from '@/api/axiosClient'
 import {
+  RUTA_SOLICITUDES,
   rutaSolicitudHistorial,
   rutaSolicitudIniciar,
   rutaSolicitudPausar,
@@ -11,7 +12,10 @@ import {
   type PausarSolicitudRequest,
   type ReasignarSolicitudRequest,
   type ReclasificarSolicitudRequest,
+  type SolicitudInternaFila,
   type SolicitudInternaResponse,
+  type FiltrosSolicitudes,
+  type ListaSolicitudesResponse,
 } from '@/api/contratos/solicitudes'
 
 let usarMock = false
@@ -26,6 +30,15 @@ const SEMILLAS: SolicitudInternaResponse[] = [
   { idSolicitud: 4, codigoSolicitud: 'SOL-004', asunto: 'Sellos', cliente: 'Minera Norte', estado: 'EN_REVISION', tipoPlazo: 'IMPORTADO', fechaRecepcion: '2026-11-07T09:00:00', fechaLimiteInterna: '2026-11-13T18:00:00', pausadaDesde: null, motivoPausa: null, fechaEstimadaTercero: null, reclasificaciones: 1, asignado: ANA },
   { idSolicitud: 5, codigoSolicitud: 'SOL-005', asunto: 'Mangueras', cliente: 'Minera Este', estado: 'COTIZADA', tipoPlazo: 'ESPECIAL', fechaRecepcion: '2026-11-06T09:00:00', fechaLimiteInterna: null, pausadaDesde: null, motivoPausa: null, fechaEstimadaTercero: null, reclasificaciones: 0, asignado: ANA },
 ]
+
+/** Colores de ejemplo. No salen de la fecha: el que vence antes no es el rojo. */
+const SEMAFORO_EJEMPLO: Record<number, SolicitudInternaFila['semaforo']> = {
+  1: 'AMARILLO',
+  2: 'VERDE',
+  3: 'ROJO',
+  4: 'VERDE',
+  5: null,
+}
 
 const copias = new Map<number, SolicitudInternaResponse>()
 
@@ -68,6 +81,44 @@ export function solicitudDeRuta(id: number, fila?: SolicitudInternaResponse | nu
   if (fila && fila.idSolicitud === id) return clonar(fila)
   if (!mock) return null
   return leer(id)
+}
+
+function porVencimiento(a: SolicitudInternaResponse, b: SolicitudInternaResponse): number {
+  if (a.fechaLimiteInterna == null) return 1
+  if (b.fechaLimiteInterna == null) return -1
+  return a.fechaLimiteInterna < b.fechaLimiteInterna ? -1 : a.fechaLimiteInterna > b.fechaLimiteInterna ? 1 : 0
+}
+
+function filaDe(s: SolicitudInternaResponse): SolicitudInternaFila {
+  return { ...clonar(s), semaforo: SEMAFORO_EJEMPLO[s.idSolicitud] ?? null }
+}
+
+/** Query del GET real. Los vacíos no viajan. */
+export function parametrosDeLista(filtros: FiltrosSolicitudes): Record<string, string | number> {
+  const params: Record<string, string | number> = { page: filtros.page, size: filtros.size }
+  if (filtros.q?.trim()) params.q = filtros.q.trim()
+  if (filtros.estado) params.estado = filtros.estado
+  if (filtros.tipoPlazo) params.tipoPlazo = filtros.tipoPlazo
+  if (filtros.idAsistente != null) params.idAsistente = filtros.idAsistente
+  return params
+}
+
+function listarMock(filtros: FiltrosSolicitudes): ListaSolicitudesResponse {
+  const q = filtros.q?.trim().toLowerCase()
+  const filas = SEMILLAS.map((s) => leer(s.idSolicitud) ?? s)
+    .filter((s) => !q || `${s.codigoSolicitud} ${s.asunto} ${s.cliente}`.toLowerCase().includes(q))
+    .filter((s) => !filtros.estado || s.estado === filtros.estado)
+    .filter((s) => !filtros.tipoPlazo || s.tipoPlazo === filtros.tipoPlazo)
+    .filter((s) => filtros.idAsistente == null || s.asignado?.idUsuario === filtros.idAsistente)
+    .sort(porVencimiento)
+    .map(filaDe)
+  const size = filtros.size
+  const page = filtros.page
+  return {
+    content: filas.slice(page * size, page * size + size),
+    totalElements: filas.length,
+    totalPages: Math.ceil(filas.length / size),
+  }
 }
 
 export const solicitudesInternasApi = {
@@ -122,6 +173,11 @@ export const solicitudesInternasApi = {
       return HISTORIAL.map((e) => ({ ...e }))
     }
     const { data } = await axiosClient.get<EventoSolicitud[]>(rutaSolicitudHistorial(id))
+    return data
+  },
+  async listar(filtros: FiltrosSolicitudes): Promise<ListaSolicitudesResponse> {
+    if (usarMock) return listarMock(filtros)
+    const { data } = await axiosClient.get<ListaSolicitudesResponse>(RUTA_SOLICITUDES, { params: parametrosDeLista(filtros) })
     return data
   },
 }
