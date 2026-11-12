@@ -176,4 +176,30 @@ describe("PegarUrlModal", () => {
     expect(((await screen.findByLabelText(/tipo de cambio/i)) as HTMLInputElement).value).toBe("3.79")
     expect(screen.getByText(/del día: 3\.79 \(sunat\)/i)).toBeTruthy()
   })
+
+  it("el tipo de cambio «3,751» es 3.751, no 3751 (costo correcto)", async () => {
+    api.leerUrl.mockResolvedValue(leidaOk) // 100 USD
+    api.guardarUrl.mockResolvedValue({ idSourcing: 13 })
+    pintar()
+    leer("https://www.tienda.com/p/6205")
+    await screen.findByDisplayValue("Rodamiento SKF 6205")
+
+    fireEvent.change(screen.getByLabelText(/tipo de cambio/i), { target: { value: "3,751" } })
+    expect(await screen.findByText(/375\.10/)).toBeTruthy()
+    fireEvent.click(screen.getByRole("button", { name: /guardar referencia/i }))
+    await waitFor(() => expect(api.guardarUrl).toHaveBeenCalled())
+    expect(api.guardarUrl.mock.calls[0][0]).toMatchObject({ tipoCambio: 3.751 })
+  })
+
+  it("un tipo de cambio fuera de 1 a 10 se rechaza", async () => {
+    api.leerUrl.mockResolvedValue(leidaOk)
+    pintar()
+    leer("https://www.tienda.com/p/6205")
+    await screen.findByDisplayValue("Rodamiento SKF 6205")
+
+    fireEvent.change(screen.getByLabelText(/tipo de cambio/i), { target: { value: "3751" } })
+    fireEvent.click(screen.getByRole("button", { name: /guardar referencia/i }))
+    expect(await screen.findByText(/debe estar entre 1 y 10/i)).toBeTruthy()
+    expect(api.guardarUrl).not.toHaveBeenCalled()
+  })
 })
