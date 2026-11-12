@@ -16,7 +16,7 @@ export const TIPOS_EVENTO_SOLICITUD = ['CREADA', 'ESTADO', 'PAUSA', 'REANUDA', '
 export type TipoEventoSolicitud = (typeof TIPOS_EVENTO_SOLICITUD)[number]
 
 /** Igual que EstadoCotizacion de src/types/cotizacion.types.ts. */
-export const ESTADOS_COTIZACION = ['BORRADOR', 'ENVIADA', 'EN_NEGOCIACION', 'APROBADA', 'RECHAZADA', 'VENCIDA', 'ANULADA'] as const
+export const ESTADOS_COTIZACION = ['BORRADOR', 'ENVIADA', 'EN_NEGOCIACION', 'APROBADA', 'RECHAZADA', 'VENCIDA', 'ANULADA', 'PENDIENTE_APROBACION', 'APROBADA_INTERNA'] as const
 export type CodigoEstadoCotizacion = (typeof ESTADOS_COTIZACION)[number]
 
 export const ESTADOS_PUBLICACION = ['BORRADOR', 'PUBLICADO', 'OCULTO', 'RETIRADO'] as const
