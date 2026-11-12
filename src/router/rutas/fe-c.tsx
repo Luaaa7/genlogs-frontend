@@ -1,8 +1,18 @@
+import { RoleGuard } from '@/router/RoleGuard'
 import type { RutasBloque } from './tipos'
+import { RutaSolicitudInterna } from '@/features/solicitudes/RutaSolicitudInterna'
+import { SolicitudInternaPage } from '@/features/solicitudes/pages/SolicitudInternaPage'
+import { ROLES_PANTALLA } from '@/features/solicitudes/lib/reglasSolicitud'
 
-/** Rutas de FE-C - Panel interno operativo (Alelhy). Solo este bloque edita este archivo. */
+/** Rutas de FE-C. /solicitudes/:id no choca con /portal/solicitud ni con otra ruta interna. */
 export const rutasFeC: RutasBloque = {
-  internas: [],
+  internas: [{
+    element: <RoleGuard allowedRoles={[...ROLES_PANTALLA]} />,
+    children: [{
+      element: <RutaSolicitudInterna />,
+      children: [{ path: '/solicitudes/:id', element: <SolicitudInternaPage /> }],
+    }],
+  }],
   portal: [],
   publicas: [],
 }
