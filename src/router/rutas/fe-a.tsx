@@ -1,5 +1,6 @@
 import { RoleGuard } from '@/router/RoleGuard'
 import { ParametrosPage } from '@/features/parametros/pages/ParametrosPage'
+import { TipoCambioPage } from '@/features/tipo-cambio/pages/TipoCambioPage'
 import { UsuariosPage } from '@/features/usuarios/components/UsuariosPage'
 import { ConfiguracionIgvPage } from '@/features/configuracion/pages/ConfiguracionIgvPage'
 import { ConfiguracionMargenesPage } from '@/features/configuracion/pages/ConfiguracionMargenesPage'
@@ -21,6 +22,11 @@ export const rutasFeA: RutasBloque = {
     {
       element: <RoleGuard permitido={(p) => p.editarParametros} />,
       children: [{ path: '/configuracion/parametros', element: <ParametrosPage /> }],
+    },
+    // RF-86: tipo de cambio del día, solo JEFE_ADMINISTRATIVO (permisos.ts: editarTipoCambio).
+    {
+      element: <RoleGuard permitido={(p) => p.editarTipoCambio} />,
+      children: [{ path: '/configuracion/tipo-cambio', element: <TipoCambioPage /> }],
     },
   ],
   portal: [],
