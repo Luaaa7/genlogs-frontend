@@ -51,16 +51,7 @@ export interface RegistroClienteResponse {
   nombreUsuario?: string
 }
 
-export interface CrearSolicitudRequest {
-  asunto: string
-  descripcion: string
-  items?: PedidoItem[]
-}
-
-export interface CrearSolicitudResponse {
-  id: number | string
-  mensaje?: string
-}
+/** El pedido nuevo usa el contrato del Paso 0: SolicitudRequest en @/api/contratos/solicitudes. */
 
 export interface ListaPedidosResponse {
   content?: Pedido[]
