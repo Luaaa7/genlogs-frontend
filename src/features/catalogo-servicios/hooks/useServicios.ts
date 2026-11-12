@@ -6,6 +6,7 @@ import {
   actualizarServicio,
   desactivarServicio,
   aprobarServicio,
+  rechazarServicio,
   type ServicioConImagen,
 } from "@/api/serviciosApi"
 import { listarParametros } from "@/api/parametrosApi"
@@ -77,6 +78,17 @@ export function useDesactivarServicio() {
   return useMutation({
     mutationFn: (id: number) => desactivarServicio(id),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["servicios"] })
+    },
+  })
+}
+
+export function useRechazarServicio(id: number | undefined) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => rechazarServicio(id as number),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["servicio", id] })
       queryClient.invalidateQueries({ queryKey: ["servicios"] })
     },
   })

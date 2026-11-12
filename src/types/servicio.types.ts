@@ -52,11 +52,11 @@ export interface Servicio extends Auditable {
   precioReferencial?: number | null
   /** True: se guarda el precio escrito. False: costo × (1 + margen/100). */
   precioManual?: boolean | null
-  /** APROBADO, o PENDIENTE_APROBACION si el margen se sale del rango. */
+  /** APROBADO; PENDIENTE_APROBACION si el margen se sale del rango; RECHAZADO si el Jefe lo rechazó. */
   estadoAprobacion?: EstadoAprobacionServicio | null
 }
 
-export const ESTADOS_APROBACION_SERVICIO = ['APROBADO', 'PENDIENTE_APROBACION'] as const
+export const ESTADOS_APROBACION_SERVICIO = ['APROBADO', 'PENDIENTE_APROBACION', 'RECHAZADO'] as const
 export type EstadoAprobacionServicio = (typeof ESTADOS_APROBACION_SERVICIO)[number]
 
 export interface ServicioImagen extends Auditable {

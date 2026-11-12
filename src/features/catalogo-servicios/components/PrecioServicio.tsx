@@ -1,7 +1,7 @@
 import { useFormContext, useWatch } from "react-hook-form"
 import type { ServicioFormValues } from "@/types/servicio.types"
 import { useRangoMargenServicio } from "../hooks/useServicios"
-import { margenFueraDeRango, precioCalculado } from "../lib/precioServicio"
+import { margenDePrecio, margenFueraDeRango, precioCalculado } from "../lib/precioServicio"
 
 const campo = "w-full rounded-md border border-border px-3 py-2 text-sm"
 
@@ -23,7 +23,11 @@ export function PrecioServicio() {
   const precio = numeroDe(useWatch({ control, name: "precioReferencial" }))
   const { rango } = useRangoMargenServicio()
   const calculado = costo != null && margen != null ? precioCalculado(costo, margen) : null
-  const avisa = rango != null && margen != null && margenFueraDeRango(margen, rango.minimo, rango.maximo)
+  // Con precio manual el backend deduce el margen del precio; aquí se muestra y se avisa con ese mismo.
+  const margenReal = manual && costo != null && costo > 0 && precio != null ? margenDePrecio(costo, precio) : null
+  const margenEfectivo = manual ? margenReal : margen
+  const avisa = rango != null && margenEfectivo != null && margenEfectivo >= 0 && margenEfectivo <= 100
+    && margenFueraDeRango(margenEfectivo, rango.minimo, rango.maximo)
   const manualCampo = register("precioManual")
 
   return (
@@ -80,6 +84,18 @@ export function PrecioServicio() {
         />
         <label htmlFor="precio-manual" className="text-sm">Precio manual</label>
       </div>
+      {manual && costo == null && (
+        <p className="sm:col-span-2 text-sm text-muted-foreground">Registra el costo para fijar el precio a mano.</p>
+      )}
+      {margenReal != null && (
+        <p role="status" className={`sm:col-span-2 text-sm ${margenReal < 0 || margenReal > 100 ? "text-destructive" : "text-foreground"}`}>
+          {margenReal < 0
+            ? "El precio no puede ser menor que el costo."
+            : margenReal > 100
+              ? `Este precio deja un margen de ${margenReal.toFixed(2)} %; el máximo es 100 %.`
+              : `Margen real con este precio: ${margenReal.toFixed(2)} %`}
+        </p>
+      )}
       {avisa && (
         <p role="status" className="sm:col-span-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-foreground">
           Este margen quedará pendiente de aprobación del Jefe.
