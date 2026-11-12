@@ -20,7 +20,7 @@ export interface ItemPedidoForm {
 export type ErroresItem = Partial<Record<keyof ItemPedidoForm, string>>
 
 export const TIPOS_FOTO = ["image/jpeg", "image/png", "image/webp", "application/pdf"]
-export const MAX_FOTO_BYTES = 5 * 1024 * 1024
+export const MAX_FOTO_BYTES = 10 * 1024 * 1024
 
 let siguienteId = 0
 
@@ -60,7 +60,7 @@ export function validarItem(item: ItemPedidoForm): ErroresItem {
 
   if (item.foto) {
     if (!TIPOS_FOTO.includes(item.foto.type)) errores.foto = "Adjunta una foto o plano en JPG, PNG, WEBP o PDF"
-    else if (item.foto.size > MAX_FOTO_BYTES) errores.foto = "La foto o plano no puede pesar más de 5 MB"
+    else if (item.foto.size > MAX_FOTO_BYTES) errores.foto = "La foto o plano no puede pesar más de 10 MB"
   } else if (!numeroParte) {
     errores.foto = "Sin N.º de parte, adjunta una foto o plano del repuesto"
   }

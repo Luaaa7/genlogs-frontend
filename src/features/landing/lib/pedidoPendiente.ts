@@ -8,6 +8,8 @@ export interface PedidoPendiente {
   numeroParte: string
   descripcion: string
   cantidad: number
+  /** Si viene de "Cotizar" en la vitrina: producto pedido (canal VITRINA). */
+  idProducto?: number
   guardadoEn: number
 }
 
@@ -42,6 +44,7 @@ export function leerPedidoPendiente(ahora = Date.now()): PedidoPendiente | null 
       numeroParte: typeof p.numeroParte === "string" ? p.numeroParte : "",
       descripcion: p.descripcion as string,
       cantidad: p.cantidad as number,
+      ...(typeof p.idProducto === "number" ? { idProducto: p.idProducto } : {}),
       guardadoEn: p.guardadoEn as number,
     }
   } catch {

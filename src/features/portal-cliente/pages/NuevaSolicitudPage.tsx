@@ -10,9 +10,10 @@ import { Label } from "@/components/ui/label"
 import { Campo } from "@/components/ui/campo"
 import { describedBy } from "@/components/ui/campoEstilos"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
-import type { SolicitudItemRequest } from "@/types/portal.types"
+import type { SolicitudItemRequest } from "@/api/contratos"
 
-const textoOpcional = (valor: string) => valor.trim() || null
+/** Texto opcional: si está vacío no se manda (el contrato no usa null). */
+const textoOpcional = (valor: string) => valor.trim() || undefined
 
 /**
  * Pedido del cliente (D-01): por cada repuesto, marca y N.º de parte si los tiene;
@@ -74,7 +75,7 @@ export function NuevaSolicitudPage() {
           marcaTexto: textoOpcional(item.marca),
           numeroParte: textoOpcional(item.numeroParte),
           gtin: textoOpcional(item.gtin),
-          urlFoto,
+          urlFoto: urlFoto ?? undefined,
         })
       }
     } catch {
@@ -84,7 +85,7 @@ export function NuevaSolicitudPage() {
       setSubiendo(false)
     }
 
-    mutation.mutate({ asunto, descripcion, items: detalle }, { onSuccess: () => navigate("/portal/pedidos") })
+    mutation.mutate({ canal: "PORTAL", asunto, descripcion, items: detalle }, { onSuccess: () => navigate("/portal/pedidos") })
   }
 
   const enviando = subiendo || mutation.isPending
@@ -163,7 +164,7 @@ function ItemRepuesto({ numero, item, errores, puedeQuitar, onCambiar, onQuitar 
     "aria-invalid": errores[campo] ? true : undefined,
     "aria-describedby": describedBy(id(campo), { error: errores[campo], ayuda }),
   })
-  const AYUDA_FOTO = "Obligatoria si no tienes el N.º de parte. JPG, PNG, WEBP o PDF, hasta 5 MB."
+  const AYUDA_FOTO = "Obligatoria si no tienes el N.º de parte. JPG, PNG, WEBP o PDF, hasta 10 MB."
 
   return (
     <div className="rounded-lg border border-border p-4">

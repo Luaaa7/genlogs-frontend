@@ -51,27 +51,7 @@ export interface RegistroClienteResponse {
   nombreUsuario?: string
 }
 
-/** Repuesto del pedido (D-01): marca y N.º de parte si los tiene; si no, foto o plano. */
-export interface SolicitudItemRequest {
-  descripcion: string
-  cantidad: number
-  unidad?: string | null
-  marcaTexto?: string | null
-  numeroParte?: string | null
-  gtin?: string | null
-  urlFoto?: string | null
-}
-
-export interface CrearSolicitudRequest {
-  asunto: string
-  descripcion: string
-  items?: SolicitudItemRequest[]
-}
-
-export interface CrearSolicitudResponse {
-  id: number | string
-  mensaje?: string
-}
+/** El pedido nuevo usa el contrato del Paso 0: SolicitudRequest en @/api/contratos/solicitudes. */
 
 export interface ListaPedidosResponse {
   content?: Pedido[]

@@ -38,13 +38,24 @@ export interface Tercero {
   tipoDocumento: TipoDocumentoRef | string
   /** Viene anidado cuando el backend serializa la entidad (puede faltar). */
   distrito?: { idDistrito?: number } | null
+  /** D-15: país (null en datos viejos = Perú) y ubicación en texto si no es Perú. */
+  pais?: { idPais?: number } | null
+  regionExtranjero?: string | null
+  ciudadExtranjero?: string | null
+  codigoPostalExtranjero?: string | null
   nombreComercial: string | null
   email: string | null
 }
 
 export interface TerceroInput {
   idTipoDocumento: number
-  idDistrito: number
+  /** Obligatorio solo si el país es Perú (D-15). */
+  idDistrito?: number
+  /** Sin valor = Perú. */
+  idPais?: number
+  regionExtranjero?: string
+  ciudadExtranjero?: string
+  codigoPostalExtranjero?: string
   numeroDocumento: string
   /** Razón social (RUC) o nombre completo (DNI y pasaporte). */
   razonSocial: string

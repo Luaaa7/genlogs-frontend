@@ -1,5 +1,5 @@
 import { FormProvider, useForm } from 'react-hook-form'
-import { unirLugarExtranjero } from '@/lib/terceroExtranjero'
+import { prepararUbicacion } from '@/lib/terceroExtranjero'
 import { prepararNombreTercero } from '@/lib/nombreTercero'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { proveedorSchema, type ProveedorFormValues } from '../../../lib/validators/rucDni.schema'
@@ -23,7 +23,7 @@ export function ProveedorForm({ defaultValues, onSubmit, isSubmitting, serverErr
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit((d) => onSubmit(prepararNombreTercero(unirLugarExtranjero(d)) as ProveedorRequest))} className="flex flex-col gap-5" noValidate>
+      <form onSubmit={form.handleSubmit((d) => onSubmit(prepararNombreTercero(prepararUbicacion(d)) as ProveedorRequest))} className="flex flex-col gap-5" noValidate>
         <CamposTercero />
 
         {serverError && <ErrorBanner message={serverError} />}
