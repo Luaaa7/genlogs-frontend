@@ -12,7 +12,7 @@ import { avisar } from "@/lib/avisos"
 import { calcularCostoPuestoLima } from "@/lib/costoPuestoLima"
 import { mensajeError } from "@/lib/errores"
 import { formatCurrency } from "@/lib/formatters/currency"
-import { aNumero } from "@/lib/numeroDecimal"
+import { aDecimal, aNumero } from "@/lib/numeroDecimal"
 import type { DatosUrl } from "@/api/sourcingApi"
 import { useGuardarUrl, useLeerUrl, useTipoCambioDelDia } from "../hooks/useBusqueda"
 
@@ -42,13 +42,20 @@ const esquema = z
       .trim()
       .refine((v) => v === "" || /^https?:\/\/\S+$/i.test(v), "La URL de la imagen debe empezar con http:// o https://"),
   })
-  .refine((v) => v.codigoMoneda === "PEN" || (aNumero(v.tipoCambio) ?? 0) > 0, {
+  .refine((v) => v.codigoMoneda === "PEN" || v.tipoCambio.trim() !== "", {
     path: ["tipoCambio"],
     message: "Escribe el tipo de cambio del día",
+  })
+  .refine((v) => v.codigoMoneda === "PEN" || v.tipoCambio.trim() === "" || esTipoCambioValido(aDecimal(v.tipoCambio)), {
+    path: ["tipoCambio"],
+    message: "El tipo de cambio debe estar entre 1 y 10, por ejemplo 3,751 o 3.751",
   })
 type Valores = z.infer<typeof esquema>
 
 const num = (v: string | undefined) => aNumero(v)
+
+/** Un tipo de cambio fuera de 1–10 es casi seguro un error de tipeo (p. ej. 3751 en vez de 3,751). */
+const esTipoCambioValido = (n: number | undefined) => n != null && n >= 1 && n <= 10
 
 const MONEDAS_ADMITIDAS = ["PEN", "USD"]
 
@@ -121,7 +128,7 @@ export function PegarUrlModal({ numeroParte, marca, idSolicitudItem, onCerrar }:
   const costo = calcularCostoPuestoLima({
     precio: num(valores.precio),
     codigoMoneda: valores.codigoMoneda,
-    tipoCambio: num(valores.tipoCambio),
+    tipoCambio: aDecimal(valores.tipoCambio),
     flete: num(valores.flete),
     seguro: num(valores.seguro),
     aduana: num(valores.aduana),
@@ -144,7 +151,7 @@ export function PegarUrlModal({ numeroParte, marca, idSolicitudItem, onCerrar }:
         codigoMoneda: v.codigoMoneda,
         urlImagen: v.urlImagen.trim() || undefined,
         origen: v.origen,
-        tipoCambio: v.codigoMoneda === "PEN" ? undefined : aNumero(v.tipoCambio),
+        tipoCambio: v.codigoMoneda === "PEN" ? undefined : aDecimal(v.tipoCambio),
         flete: num(v.flete),
         seguro: num(v.seguro),
         aduana: num(v.aduana),

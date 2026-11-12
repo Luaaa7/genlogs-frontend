@@ -19,3 +19,14 @@ export function aNumero(texto: string | null | undefined): number | undefined {
   const n = Number(t)
   return Number.isFinite(n) ? n : undefined
 }
+
+/**
+ * Para tasas como el tipo de cambio: la coma SIEMPRE es decimal ("3,751" → 3.751),
+ * porque una tasa nunca lleva separador de miles.
+ */
+export function aDecimal(texto: string | null | undefined): number | undefined {
+  const t = (texto ?? "").trim().replace(/\s/g, "").replace(",", ".")
+  if (t === "" || !/^\d+(\.\d+)?$/.test(t)) return undefined
+  const n = Number(t)
+  return Number.isFinite(n) ? n : undefined
+}
