@@ -15,9 +15,6 @@ import {
   Receipt,
   Building2,
   BarChart3,
-  UserCog,
-  Percent,
-  TrendingUp,
   LogOut,
   Sun,
   Moon,
@@ -35,7 +32,7 @@ import { nombreRolLegible } from '@/lib/formatters/roles';
 import { MENU_BLOQUES } from '@/menu';
 import type { Permisos } from '@/lib/permisos';
 
-type NavItem = { label: string; path: string; icon: React.ElementType; soloAdmin?: boolean; permiso?: 'verCotizacionesYOrdenes' | 'verCatalogosYEmpresas' | 'verReclamos'; visible?: (permisos: Permisos) => boolean };
+type NavItem = { label: string; path: string; icon: React.ElementType; permiso?: 'verCotizacionesYOrdenes' | 'verCatalogosYEmpresas' | 'verReclamos'; visible?: (permisos: Permisos) => boolean };
 type NavGroup = { titulo: string; items: NavItem[] };
 
 /** Una sola navegación para todo el sistema (antes había un nav superior y
@@ -65,9 +62,7 @@ const NAV_BASE: NavGroup[] = [
     titulo: 'Administración',
     items: [
       { label: 'Reportes', path: '/reportes', icon: BarChart3 },
-      { label: 'Usuarios', path: '/usuarios', icon: UserCog, soloAdmin: true },
-      { label: 'IGV', path: '/configuracion/igv', icon: Percent, soloAdmin: true },
-      { label: 'Márgenes', path: '/configuracion/margenes', icon: TrendingUp, soloAdmin: true },
+      // Usuarios, IGV y Márgenes vienen de src/menu/fe-a.ts (solo Jefe Administrativo).
     ],
   },
 ];
@@ -123,7 +118,7 @@ function inicialesDe(nombre: string | null) {
 
 /** Contenido del menú lateral: se usa igual en la barra fija de escritorio y
  *  en el drawer móvil, para que el estado "seleccionado" sea idéntico. */
-function NavLateral({ esAdmin, onNavigate }: { esAdmin: boolean; onNavigate?: () => void }) {
+function NavLateral({ onNavigate }: { onNavigate?: () => void }) {
   const { pathname } = useLocation();
   const permisos = usePermisos();
   // Grupos plegados por el usuario (se recuerdan en la sesión). El grupo de la página actual no se pliega.
@@ -148,7 +143,8 @@ function NavLateral({ esAdmin, onNavigate }: { esAdmin: boolean; onNavigate?: ()
   return (
     <nav aria-label="Módulos" className="flex flex-col px-3 pb-6">
       {NAV_GROUPS.map((grupo) => {
-        const items = grupo.items.filter((item) => (!item.soloAdmin || esAdmin) && (!item.permiso || permisos[item.permiso]) && (!item.visible || item.visible(permisos)));
+        // Todo sale de permisos.ts: nada de comparar nombres de rol sueltos.
+        const items = grupo.items.filter((item) => (!item.permiso || permisos[item.permiso]) && (!item.visible || item.visible(permisos)));
         if (items.length === 0) return null;
         const hayActivo = items.some((item) => estaActivo(pathname, item.path));
         const abierto = hayActivo || !plegados.includes(grupo.titulo);
@@ -262,7 +258,6 @@ export function AppLayout() {
   const nombreUsuario = useAuthStore((s) => s.nombreUsuario);
   const nombreRol = useAuthStore((s) => s.nombreRol);
   const logout = useAuthStore((s) => s.logout);
-  const esAdmin = nombreRol?.toUpperCase() === 'ADMINISTRADOR';
   const { tema, alternarTema } = useTheme();
 
   const closeMenu = () => setIsMenuOpen(false);
@@ -322,7 +317,7 @@ export function AppLayout() {
         <div className="px-3">
           <LogoLateral />
         </div>
-        <NavLateral esAdmin={esAdmin} />
+        <NavLateral />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -432,7 +427,7 @@ export function AppLayout() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <NavLateral esAdmin={esAdmin} onNavigate={closeMenu} />
+            <NavLateral onNavigate={closeMenu} />
             <div className="mt-auto border-t border-sidebar-border p-3">
               <button
                 type="button"
