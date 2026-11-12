@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { render, screen } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { MemoryRouter } from "react-router-dom"
 import axios from "axios"
 import type { MetaPeriodo } from "@/api/metasApi"
 
@@ -26,7 +27,9 @@ function pintar() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={qc}>
-      <MetaPlazoCard />
+      <MemoryRouter>
+        <MetaPlazoCard />
+      </MemoryRouter>
     </QueryClientProvider>,
   )
 }
@@ -52,6 +55,7 @@ describe("MetaPlazoCard", () => {
     expect(await screen.findByText(/Quedó por debajo de la meta/)).toBeTruthy()
     expect(screen.getByText(/El Jefe registra la acción/)).toBeTruthy()
     expect(screen.getByText("80%")).toBeTruthy()
+    expect(screen.getByRole("link", { name: "Ver las acciones del mes" }).getAttribute("href")).toBe("/acciones?anio=2026&mes=11")
     expect(screen.queryByText(/dentro de la meta/)).toBeNull()
   })
 

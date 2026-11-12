@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom"
 import { mensajeError } from "@/lib/errores"
 import type { MetaPeriodo } from "@/api/metasApi"
 import { DashboardCard } from "./DashboardCard"
@@ -31,7 +32,15 @@ function Cuerpo({ meta }: { meta: MetaPeriodo }) {
         <p className="text-sm text-foreground">El mes va dentro de la meta.</p>
       )}
       {!sinPorcentaje && meta.cumple === false && (
-        <p className="text-sm text-foreground">Quedó por debajo de la meta. El Jefe registra la acción.</p>
+        <>
+          <p className="text-sm text-foreground">Quedó por debajo de la meta. El Jefe registra la acción.</p>
+          <Link
+            to={`/acciones?anio=${meta.anio}&mes=${meta.mes}`}
+            className="w-fit text-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Ver las acciones del mes
+          </Link>
+        </>
       )}
     </div>
   )
