@@ -3,6 +3,7 @@ import type { Distrito } from '@/api/distritosApi'
 import { Campo } from '@/components/ui/campo'
 import { describedBy, inputFormClass } from '@/components/ui/campoEstilos'
 import { cn } from '@/lib/utils/utils'
+import { esDistritoExtranjero } from '@/lib/terceroExtranjero'
 
 interface Props {
   /** Prefijo de los ids de los tres campos. */
@@ -27,7 +28,9 @@ const unicos = (lista: (string | undefined)[]) => [...new Set(lista.filter((v): 
  * puede cambiar cualquiera de las tres. Lo que se guarda es el distrito del
  * catálogo; la provincia y el departamento sirven para encontrarlo.
  */
-export function UbicacionCampos({ idBase, distritos = [], isLoading, value, onChange, error, autocompletado = false, disabled = false }: Props) {
+export function UbicacionCampos({ idBase, distritos: todos = [], isLoading, value, onChange, error, autocompletado = false, disabled = false }: Props) {
+  // D-15: el extranjero se elige con el país, así que el distrito viejo "Extranjero" no se ofrece.
+  const distritos = useMemo(() => todos.filter((d) => !esDistritoExtranjero(d)), [todos])
   // Mientras no hay distrito elegido, la provincia y el departamento que se van escogiendo.
   const [departamentoLibre, setDepartamentoLibre] = useState('')
   const [provinciaLibre, setProvinciaLibre] = useState('')

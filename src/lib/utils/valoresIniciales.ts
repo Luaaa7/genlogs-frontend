@@ -17,6 +17,11 @@ export function valoresTerceroParaEditar(t: Tercero) {
   return {
     idTipoDocumento: idTipoDocumento ?? 1,
     idDistrito: t.distrito?.idDistrito,
+    // D-15: país y ubicación en texto de los extranjeros (sin país = Perú).
+    idPais: t.pais?.idPais,
+    regionExtranjero: t.regionExtranjero ?? '',
+    ciudadExtranjero: t.ciudadExtranjero ?? '',
+    codigoPostalExtranjero: t.codigoPostalExtranjero ?? '',
     numeroDocumento: t.numeroDocumento ?? '',
     razonSocial: t.razonSocial ?? '',
     // DNI y pasaporte: los apellidos por separado (o propuestos si el registro es antiguo).

@@ -1,6 +1,10 @@
-/** El catálogo de distritos tiene una opción "Extranjero" (UBIGEO 90xxxx) para
- *  clientes y proveedores de fuera del Perú. Al elegirla se pide la ciudad y el
- *  país, que se guardan junto a la dirección (el tercero no tiene otra columna). */
+/**
+ * Ubicación del tercero (D-15, RF-81). Si el país es Perú se elige el distrito
+ * del catálogo del INEI; si no, se escriben región, ciudad y código postal.
+ *
+ * El catálogo viejo tenía un distrito "Extranjero" (UBIGEO 90xxxx). Ya no se
+ * ofrece: ahora se elige el país. Esta función sirve para ocultarlo.
+ */
 
 const normalizar = (s?: string | null) =>
   (s ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim()
@@ -10,11 +14,38 @@ export function esDistritoExtranjero(d?: { ubigeo?: string | null; nombreDistrit
   return (d.ubigeo ?? "").startsWith("90") || normalizar(d.nombreDistrito) === "extranjero"
 }
 
-/** Pasa "Ciudad y país" a la dirección ("Av. X 123, Santiago, Chile") y quita el campo auxiliar. */
-export function unirLugarExtranjero<T extends { tercero: { direccion?: string; lugarExtranjero?: string } }>(valores: T): T {
-  const { lugarExtranjero, ...tercero } = valores.tercero
-  const lugar = lugarExtranjero?.trim()
-  if (!lugar) return { ...valores, tercero }
-  const direccion = tercero.direccion?.trim()
-  return { ...valores, tercero: { ...tercero, direccion: direccion ? `${direccion}, ${lugar}` : lugar } }
+interface UbicacionTercero {
+  idDistrito?: number
+  idPais?: number
+  esExtranjero?: boolean
+  regionExtranjero?: string
+  ciudadExtranjero?: string
+  codigoPostalExtranjero?: string
+}
+
+const textoONulo = (v?: string) => (v?.trim() ? v.trim() : undefined)
+
+/**
+ * Deja lista la ubicación para el backend: en Perú se manda el distrito y se
+ * quitan los campos de texto; fuera de Perú se manda el texto y no el distrito.
+ * `esExtranjero` es solo del formulario y no se envía.
+ */
+export function prepararUbicacion<T extends { tercero: UbicacionTercero }>(valores: T): T {
+  const { esExtranjero, ...tercero } = valores.tercero
+  if (esExtranjero) {
+    return {
+      ...valores,
+      tercero: {
+        ...tercero,
+        idDistrito: undefined,
+        regionExtranjero: textoONulo(tercero.regionExtranjero),
+        ciudadExtranjero: textoONulo(tercero.ciudadExtranjero),
+        codigoPostalExtranjero: textoONulo(tercero.codigoPostalExtranjero),
+      },
+    }
+  }
+  return {
+    ...valores,
+    tercero: { ...tercero, regionExtranjero: undefined, ciudadExtranjero: undefined, codigoPostalExtranjero: undefined },
+  }
 }
