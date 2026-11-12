@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { ETAPAS_PEDIDO, etapaDelPedido, etiquetaEstado, esEstadoFinalSinCotizar } from "./estadoPedido"
+import { ETAPAS_PEDIDO, etapaDelPedido, etiquetaEstado, esEstadoFinalSinCotizar, puedeCancelar } from "./estadoPedido"
 
 describe("estados del pedido que ve el cliente", () => {
   it("la barra tiene 4 etapas en orden", () => {
@@ -31,5 +31,13 @@ describe("estados del pedido que ve el cliente", () => {
   it("un estado desconocido se muestra legible y no rompe la barra", () => {
     expect(etiquetaEstado("ESTADO_NUEVO")).toBe("Estado nuevo")
     expect(etapaDelPedido("ESTADO_NUEVO")).toBe(0)
+  })
+
+  it("D-28: el cliente solo puede cancelar antes de que se cotice", () => {
+    expect(puedeCancelar("PENDIENTE")).toBe(true)
+    expect(puedeCancelar("EN_REVISION")).toBe(true)
+    expect(puedeCancelar("EN_ESPERA_TERCERO")).toBe(false)
+    expect(puedeCancelar("COTIZADA")).toBe(false)
+    expect(puedeCancelar("CANCELADA")).toBe(false)
   })
 })

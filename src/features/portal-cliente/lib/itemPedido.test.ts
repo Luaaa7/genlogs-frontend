@@ -58,11 +58,16 @@ describe("validarItem (D-01: marca + N.º de parte, o foto/plano)", () => {
     expect(validarItem({ ...base, gtin: "123" }).gtin).toMatch(/gtin/i)
   })
 
-  it("solo acepta fotos o planos (JPG, PNG, WEBP o PDF) de hasta 5 MB", () => {
+  it("solo acepta fotos o planos (JPG, PNG, WEBP o PDF) de hasta 10 MB", () => {
     const exe = new File(["x"], "virus.exe", { type: "application/x-msdownload" })
     expect(validarItem({ ...base, foto: exe }).foto).toMatch(/JPG, PNG, WEBP o PDF/)
 
-    const grande = new File([new Uint8Array(5 * 1024 * 1024 + 1)], "plano.pdf", { type: "application/pdf" })
-    expect(validarItem({ ...base, foto: grande }).foto).toMatch(/5 MB/)
+    const grande = new File([new Uint8Array(10 * 1024 * 1024 + 1)], "plano.pdf", { type: "application/pdf" })
+    expect(validarItem({ ...base, foto: grande }).foto).toMatch(/10 MB/)
+  })
+
+  it("acepta la foto de un celular de 6 MB", () => {
+    const celular = new File([new Uint8Array(6 * 1024 * 1024)], "pieza.jpg", { type: "image/jpeg" })
+    expect(validarItem({ ...base, foto: celular }).foto).toBeUndefined()
   })
 })

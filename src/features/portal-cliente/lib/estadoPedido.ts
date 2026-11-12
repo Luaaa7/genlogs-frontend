@@ -38,3 +38,8 @@ export function etiquetaEstado(estado: string): string {
   const texto = estado.replaceAll("_", " ").toLowerCase()
   return texto.charAt(0).toUpperCase() + texto.slice(1)
 }
+
+/** D-28: el cliente puede cancelar mientras no se haya empezado a cotizar con un proveedor. */
+export function puedeCancelar(estado: string): boolean {
+  return estado === "PENDIENTE" || estado === "EN_REVISION"
+}
