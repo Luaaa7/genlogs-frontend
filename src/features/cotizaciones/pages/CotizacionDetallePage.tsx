@@ -441,6 +441,9 @@ const CotizacionDetalleContenido: React.FC = () => {
               {permisos.verMargenes && cotizacion.margen != null && (
                 <div><dt className="text-[13px] text-muted-foreground">Margen</dt><dd className="mt-1 tabular-nums">{Number(cotizacion.margen).toLocaleString('es-PE', { maximumFractionDigits: 2 })}%</dd></div>
               )}
+              {permisos.verMargenes && cotizacion.precioProveedor != null && (
+                <div><dt className="text-[13px] text-muted-foreground">Precio de proveedor</dt><dd className="mt-1 tabular-nums">{formatearMoneda(cotizacion.precioProveedor, moneda)}</dd></div>
+              )}
             </dl>
             {cotizacion.observaciones && (
               <p className="mt-4 max-w-prose text-sm text-muted-foreground">{cotizacion.observaciones}</p>

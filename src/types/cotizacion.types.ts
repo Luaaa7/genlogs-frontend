@@ -64,6 +64,8 @@ export interface Cotizacion {
   tipoCambioUsado?: number | null
   /** El backend lo manda solo a Gerente, Jefe y Asistente Logístico; null para los demás. */
   margen?: number | null
+  /** Precio de proveedor. Misma visibilidad que el margen; null si no viene. */
+  precioProveedor?: number | null
   detalles: CotizacionDetalle[]
   seguimientos?: SeguimientoCotizacion[]
   adjuntos?: AdjuntoCotizacion[]

@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { useAuthStore } from '@/features/auth/store/authStore'
+import { formatearMoneda } from '@/lib/formatters/codigoCotizacion'
 import { CotizacionDetallePage } from './CotizacionDetallePage'
 import { CotizacionesListPage } from './CotizacionesListPage'
 
@@ -91,6 +92,26 @@ describe('aprobación de la cotización', () => {
     pintarDetalle('JEFE_ADMINISTRATIVO')
     expect(await screen.findByText('COT-001')).toBeTruthy()
     expect(screen.queryByText('Tipo de cambio usado')).toBeNull()
+  })
+
+  it('muestra el precio de proveedor solo si viene y el rol puede ver márgenes', async () => {
+    cabecera = { ...cabecera, precioProveedor: 1500 }
+    const conPrecio = pintarDetalle('GERENTE_GENERAL')
+    const etiqueta = await screen.findByText('Precio de proveedor')
+    expect(etiqueta.parentElement?.querySelector('dd')?.textContent).toBe(formatearMoneda(1500, 'PEN'))
+    conPrecio.unmount()
+
+    cabecera = { ...cabecera, precioProveedor: null }
+    const sinPrecio = pintarDetalle('GERENTE_GENERAL')
+    expect(await screen.findByText('COT-001')).toBeTruthy()
+    expect(screen.queryByText('Precio de proveedor')).toBeNull()
+    sinPrecio.unmount()
+
+    cabecera = { ...cabecera, precioProveedor: 1500 }
+    const sinMargen = pintarDetalle('ASISTENTE_ADMINISTRATIVO')
+    expect(await screen.findByText('COT-001')).toBeTruthy()
+    expect(screen.queryByText('Precio de proveedor')).toBeNull()
+    sinMargen.unmount()
   })
 
   it('el asistente solicita aprobación solo en borrador y enviar queda deshabilitado', async () => {

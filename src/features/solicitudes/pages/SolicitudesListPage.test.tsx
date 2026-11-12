@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { permisosDe } from '@/lib/permisos'
@@ -10,8 +10,25 @@ import { formatearFechaCorta } from '@/lib/formatters/fechaLocal'
 import { parametrosDeLista, solicitudesInternasApi } from '../api/solicitudesInternasApi'
 import { ROLES_PANTALLA } from '../lib/reglasSolicitud'
 
-function pintar(ruta: string, rol: string) {
-  useAuthStore.setState({ nombreRol: rol })
+/** La rehidratación de genlogs-auth llega después del render y pisa el rol. Hay que esperarla. */
+async function esperarSesion() {
+  if (useAuthStore.persist.hasHydrated()) return
+  await new Promise<void>((resolve) => {
+    const quitar = useAuthStore.persist.onFinishHydration(() => {
+      quitar()
+      resolve()
+    })
+    if (useAuthStore.persist.hasHydrated()) {
+      quitar()
+      resolve()
+    }
+  })
+}
+
+async function pintar(ruta: string, rol: string) {
+  await esperarSesion()
+  sessionStorage.removeItem('genlogs-auth')
+  useAuthStore.setState({ token: null, nombreUsuario: null, nombreRol: rol })
   const router = createMemoryRouter([
     ...rutasFeC.internas,
     { path: '/dashboard', element: <p>dashboard</p> },
@@ -25,7 +42,17 @@ function pintar(ruta: string, rol: string) {
 }
 
 describe('lista de solicitudes', () => {
-  beforeEach(() => useAuthStore.setState({ nombreRol: null }))
+  beforeEach(async () => {
+    await esperarSesion()
+    sessionStorage.removeItem('genlogs-auth')
+    useAuthStore.setState({ token: null, nombreUsuario: null, nombreRol: null })
+  })
+
+  afterEach(() => {
+    cleanup()
+    sessionStorage.removeItem('genlogs-auth')
+    useAuthStore.setState({ token: null, nombreUsuario: null, nombreRol: null })
+  })
 
   it('la ruta y el menú aparecen solo para los tres roles', async () => {
     const item = menuFeC.find((opcion) => opcion.path === '/solicitudes')
@@ -34,16 +61,22 @@ describe('lista de solicitudes', () => {
     expect(item?.label).toBe('Solicitudes')
     for (const rol of ROLES_PANTALLA) {
       expect(item?.visible?.(permisosDe(rol))).toBe(true)
-      const vista = pintar('/solicitudes', rol)
-      expect(await screen.findByRole('link', { name: 'SOL-002' })).toBeTruthy()
-      vista.unmount()
+      const vista = await pintar('/solicitudes', rol)
+      try {
+        expect(await screen.findByRole('link', { name: 'SOL-002' })).toBeTruthy()
+      } finally {
+        vista.unmount()
+      }
     }
     for (const rol of ['ASISTENTE_ADMINISTRATIVO', 'CLIENTE']) {
       expect(item?.visible?.(permisosDe(rol))).toBe(false)
-      const vista = pintar('/solicitudes', rol)
-      expect(screen.getByText('dashboard')).toBeTruthy()
-      expect(screen.queryByRole('link', { name: 'SOL-002' })).toBeNull()
-      vista.unmount()
+      const vista = await pintar('/solicitudes', rol)
+      try {
+        expect(screen.getByText('dashboard')).toBeTruthy()
+        expect(screen.queryByRole('link', { name: 'SOL-002' })).toBeNull()
+      } finally {
+        vista.unmount()
+      }
     }
   })
 
@@ -52,18 +85,22 @@ describe('lista de solicitudes', () => {
       page: 1, size: 20, q: ' aire ', estado: 'PENDIENTE', tipoPlazo: 'IMPORTADO', idAsistente: 7,
     })).toEqual({ page: 1, size: 20, q: 'aire', estado: 'PENDIENTE', tipoPlazo: 'IMPORTADO', idAsistente: 7 })
     const listar = vi.spyOn(solicitudesInternasApi, 'listar')
-    pintar('/solicitudes', 'JEFE_ADMINISTRATIVO')
-    expect(await screen.findByRole('link', { name: 'SOL-002' })).toBeTruthy()
-    fireEvent.change(screen.getByLabelText('Buscar'), { target: { value: 'aire' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Pendiente' }))
-    fireEvent.change(screen.getByLabelText('Plazo'), { target: { value: 'IMPORTADO' } })
-    fireEvent.change(screen.getByLabelText('Asistente'), { target: { value: '7' } })
-    await waitFor(() => {
-      expect(listar).toHaveBeenCalledWith(expect.objectContaining({
-        page: 0, size: 10, q: 'aire', estado: 'PENDIENTE', tipoPlazo: 'IMPORTADO', idAsistente: 7,
-      }))
-    })
-    listar.mockRestore()
+    const vista = await pintar('/solicitudes', 'JEFE_ADMINISTRATIVO')
+    try {
+      expect(await screen.findByRole('link', { name: 'SOL-002' })).toBeTruthy()
+      fireEvent.change(screen.getByLabelText('Buscar'), { target: { value: 'aire' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Pendiente' }))
+      fireEvent.change(screen.getByLabelText('Plazo'), { target: { value: 'IMPORTADO' } })
+      fireEvent.change(screen.getByLabelText('Asistente'), { target: { value: '7' } })
+      await waitFor(() => {
+        expect(listar).toHaveBeenCalledWith(expect.objectContaining({
+          page: 0, size: 10, q: 'aire', estado: 'PENDIENTE', tipoPlazo: 'IMPORTADO', idAsistente: 7,
+        }))
+      })
+    } finally {
+      listar.mockRestore()
+      vista.unmount()
+    }
   })
 
   it('ordena el mock por vencimiento, con null al final, y la fila aguanta sin semáforo ni fecha', async () => {
@@ -74,9 +111,13 @@ describe('lista de solicitudes', () => {
     expect(lista.content[4]?.fechaLimiteInterna).toBeNull()
     expect(lista.content[4]?.semaforo).toBeNull()
 
-    pintar('/solicitudes', 'GERENTE_GENERAL')
-    const fila = (await screen.findByRole('link', { name: 'SOL-005' })).closest('tr') as HTMLElement
-    expect(within(fila).getByText(formatearFechaCorta(null))).toBeTruthy()
-    expect(within(fila).queryByRole('img')).toBeNull()
+    const vista = await pintar('/solicitudes', 'GERENTE_GENERAL')
+    try {
+      const fila = (await screen.findByRole('link', { name: 'SOL-005' })).closest('tr') as HTMLElement
+      expect(within(fila).getByText(formatearFechaCorta(null))).toBeTruthy()
+      expect(within(fila).queryByRole('img')).toBeNull()
+    } finally {
+      vista.unmount()
+    }
   })
 })
