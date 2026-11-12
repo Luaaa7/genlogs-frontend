@@ -8,8 +8,11 @@ interface RoleGuardProps {
    * `permitido={(p) => p.esAdmin}` o `permitido={(p) => p.puedeVer('reclamos')}`.
    */
   permitido?: (permisos: Permisos) => boolean
-  /** Alternativa: lista de roles de la v3.2. Los nombres viejos (ADMINISTRADOR, VENDEDOR) se traducen solos. */
-  allowedRoles?: readonly Rol[]
+  /**
+   * Alternativa: lista de roles. Acepta texto simple (como lo usan rutas/fe-c.tsx y fe-e.tsx);
+   * cada nombre se normaliza con permisos.ts, así los viejos (ADMINISTRADOR, VENDEDOR) también sirven.
+   */
+  allowedRoles?: readonly string[]
   children?: React.ReactNode
 }
 
@@ -26,7 +29,8 @@ export function RoleGuard({ permitido, allowedRoles, children }: RoleGuardProps)
   const rol = normalizarRol(nombreRol)
 
   const pasaPermiso = permitido ? permitido(permisos) : true
-  const pasaRol = allowedRoles ? rol !== null && allowedRoles.includes(rol) : true
+  const rolesPermitidos = allowedRoles?.map(normalizarRol).filter((r): r is Rol => r !== null)
+  const pasaRol = rolesPermitidos ? rol !== null && rolesPermitidos.includes(rol) : true
   // Sin ninguna regla no se deja pasar a nadie: un guard vacío es un error de configuración.
   const tieneRegla = permitido !== undefined || allowedRoles !== undefined
 
