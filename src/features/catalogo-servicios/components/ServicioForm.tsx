@@ -1,6 +1,6 @@
 import { LeyendaObligatorio, MarcaObligatorio, ResumenFaltantes } from "@/components/ui/campo"
 import { useState } from "react"
-import { useForm, useWatch } from "react-hook-form"
+import { FormProvider, useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useQuery } from "@tanstack/react-query"
 import { listarCategoriasServicio } from "@/api/categoriasServicioApi"
@@ -9,8 +9,11 @@ import { listarSectoresEconomicos } from "@/api/sectoresEconomicosApi"
 import { FileUploader } from "@/components/ui/FileUploader"
 import { servicioSchema } from "@/lib/validators/servicio.schema"
 import { CategoriaServicioSelector } from "./CategoriaServicioSelector"
-import type { ServicioFormValues } from "@/types/servicio.types"
+import { AprobacionServicio } from "./AprobacionServicio"
+import { PrecioServicio } from "./PrecioServicio"
+import type { EstadoAprobacionServicio, ServicioFormValues } from "@/types/servicio.types"
 import type { ServicioConImagen } from "@/api/serviciosApi"
+import { precioCalculado } from "../lib/precioServicio"
 
 interface ServicioFormProps {
   valoresIniciales?: Partial<ServicioFormValues>
@@ -19,10 +22,13 @@ interface ServicioFormProps {
   /** Botón "Cancelar" junto a Guardar (vuelve al catálogo). */
   onCancel?: () => void
   enviando?: boolean
+  /** Servicio ya guardado: muestra Pendiente de aprobación y, si es el Jefe, Aprobar. */
+  idServicio?: number
+  estadoAprobacion?: EstadoAprobacionServicio | null
 }
 
-export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando }: ServicioFormProps) {
-  const { register, handleSubmit, setValue, getValues, control, formState: { errors } } = useForm<ServicioFormValues>({
+export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando, idServicio, estadoAprobacion }: ServicioFormProps) {
+  const form = useForm<ServicioFormValues>({
     resolver: zodResolver(servicioSchema),
     defaultValues: {
       idCategoriaServicio: valoresIniciales?.idCategoriaServicio,
@@ -33,8 +39,13 @@ export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando }:
       visibleWeb: valoresIniciales?.visibleWeb ?? true,
       descripcion: valoresIniciales?.descripcion ?? "",
       idsSectores: valoresIniciales?.idsSectores ?? [],
+      costo: valoresIniciales?.costo,
+      margen: valoresIniciales?.margen,
+      precioManual: valoresIniciales?.precioManual ?? false,
+      precioReferencial: valoresIniciales?.precioReferencial,
     },
   })
+  const { register, setValue, getValues, control, formState: { errors } } = form
 
   const { data: categorias, isLoading: cargandoCategorias } = useQuery({
     queryKey: ["categorias-servicio"],
@@ -60,6 +71,15 @@ export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando }:
   const idUnidadSeleccionada = useWatch({ control, name: "idUnidadMedida" })
   const [imagenUrl, setImagenUrl] = useState<string>()
 
+  function enviar(valores: ServicioFormValues) {
+    const precioReferencial = valores.precioManual
+      ? valores.precioReferencial
+      : valores.costo != null && valores.margen != null
+        ? precioCalculado(valores.costo, valores.margen)
+        : undefined
+    onSubmit({ ...valores, precioReferencial, imagenUrl })
+  }
+
   function toggleSector(id: number) {
     const actuales = getValues("idsSectores") ?? []
     if (actuales.includes(id)) {
@@ -70,7 +90,8 @@ export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando }:
   }
 
   return (
-    <form onSubmit={handleSubmit((valores) => onSubmit({ ...valores, imagenUrl }))} className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
+    <FormProvider {...form}>
+    <form onSubmit={form.handleSubmit(enviar)} className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
       <div className="sm:col-span-2 flex flex-col gap-2">
         <LeyendaObligatorio />
         <ResumenFaltantes
@@ -176,6 +197,9 @@ export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando }:
         <label htmlFor="visibleWeb" className="text-sm">Visible en la web pública</label>
       </div>
 
+      <AprobacionServicio idServicio={idServicio} estado={estadoAprobacion} />
+      <PrecioServicio />
+
       <div className="sm:col-span-2">
         <label className="mb-1.5 block text-sm font-medium text-foreground">Descripción</label>
         <textarea
@@ -233,5 +257,6 @@ export function ServicioForm({ valoresIniciales, onSubmit, onCancel, enviando }:
         </button>
       </div>
     </form>
+    </FormProvider>
   )
 }

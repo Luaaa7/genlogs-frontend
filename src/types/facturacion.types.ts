@@ -33,6 +33,8 @@ export interface Factura {
   tipoComprobante?: TipoComprobante
   estadoCodigo?: EstadoFacturacion
   numeroOrdenCompra?: string
+  /** N.º de OC de la minera. Null si la orden no lo tiene. No reemplaza a numeroOrdenCompra. */
+  numeroOcCliente?: string | null
   cliente?: string
   clienteNombre?: string
   clienteId?: number

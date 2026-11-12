@@ -57,3 +57,15 @@ export async function actualizarServicio(id: number, { imagenUrl, ...valores }: 
 export async function desactivarServicio(id: number): Promise<void> {
   await axiosClient.delete(`/servicios/${id}`)
 }
+
+/** El Jefe pasa un servicio pendiente a APROBADO. */
+export async function aprobarServicio(id: number): Promise<Servicio> {
+  const { data } = await axiosClient.post<Servicio>(`/servicios/${id}/aprobar`)
+  return data
+}
+
+/** El Jefe rechaza un servicio pendiente. Al editarlo se vuelve a evaluar. */
+export async function rechazarServicio(id: number): Promise<Servicio> {
+  const { data } = await axiosClient.post<Servicio>(`/servicios/${id}/rechazar`)
+  return data
+}

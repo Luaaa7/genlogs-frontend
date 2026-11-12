@@ -27,6 +27,7 @@ import { usePermisos } from '@/lib/permisos';
 import { useTheme } from '@/hooks/useTheme';
 import { cerrarSesionInterna } from '@/lib/sesiones';
 import { GlobalSearchDialog } from '@/components/ui/GlobalSearchDialog';
+import { CampanaAvisos } from '@/features/notificaciones/components/CampanaAvisos';
 import { cn } from '@/lib/utils/utils';
 import { nombreRolLegible } from '@/lib/formatters/roles';
 import { MENU_BLOQUES } from '@/menu';
@@ -346,6 +347,8 @@ export function AppLayout() {
               <span className="hidden min-w-0 truncate md:inline">Buscar cotizaciones, clientes…</span>
               <kbd className="ml-auto hidden shrink-0 whitespace-nowrap rounded border border-border px-1.5 font-sans text-[11px] leading-4 text-muted-foreground md:inline">Ctrl K</kbd>
             </button>
+
+            <CampanaAvisos />
 
             <button
               type="button"

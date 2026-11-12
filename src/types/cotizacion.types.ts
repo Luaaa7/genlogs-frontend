@@ -1,4 +1,4 @@
-export const EstadoCotizacion = { BORRADOR: 'BORRADOR', ENVIADA: 'ENVIADA', EN_NEGOCIACION: 'EN_NEGOCIACION', APROBADA: 'APROBADA', RECHAZADA: 'RECHAZADA', VENCIDA: 'VENCIDA', ANULADA: 'ANULADA', CADUCADA: 'VENCIDA' } as const
+export const EstadoCotizacion = { BORRADOR: 'BORRADOR', ENVIADA: 'ENVIADA', EN_NEGOCIACION: 'EN_NEGOCIACION', APROBADA: 'APROBADA', RECHAZADA: 'RECHAZADA', VENCIDA: 'VENCIDA', ANULADA: 'ANULADA', CADUCADA: 'VENCIDA', PENDIENTE_APROBACION: 'PENDIENTE_APROBACION', APROBADA_INTERNA: 'APROBADA_INTERNA' } as const
 export type EstadoCotizacion = (typeof EstadoCotizacion)[keyof typeof EstadoCotizacion]
 export const CondicionPago = { CONTADO: 'CONTADO', CREDITO_15: 'CREDITO_15', CREDITO_30: 'CREDITO_30', CREDITO_45: 'CREDITO_45', CREDITO_60: 'CREDITO_60' } as const
 export type CondicionPago = (typeof CondicionPago)[keyof typeof CondicionPago]
@@ -60,6 +60,12 @@ export interface Cotizacion {
   total: number
   /** % de IGV con que se creó (18). Las anteriores al cambio pueden no traerlo. */
   porcentajeIgv?: number
+  /** Tipo de cambio aplicado (CotizacionResponse). Solo lectura; puede no venir. */
+  tipoCambioUsado?: number | null
+  /** El backend lo manda solo a Gerente, Jefe y Asistente Logístico; null para los demás. */
+  margen?: number | null
+  /** Precio de proveedor. Misma visibilidad que el margen; null si no viene. */
+  precioProveedor?: number | null
   detalles: CotizacionDetalle[]
   seguimientos?: SeguimientoCotizacion[]
   adjuntos?: AdjuntoCotizacion[]
