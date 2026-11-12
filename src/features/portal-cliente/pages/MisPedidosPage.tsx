@@ -7,12 +7,19 @@ import { EstadoBadge, type EstadoBadgeTono } from "@/components/ui/EstadoBadge"
 import { EstadoVacio } from "@/components/ui/EstadoVacio"
 import CargandoSpinner from "@/components/ui/CargandoSpinner"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
+import { ESTADOS_PEDIDO, etiquetaEstado } from "../lib/estadoPedido"
 import type { EstadoPedido } from "@/types/portal.types"
 
-const estados: Array<"TODOS" | EstadoPedido> = ["TODOS", "PENDIENTE", "EN_PROCESO", "ATENDIDO", "CANCELADO"]
-const tonoEstado: Record<string, EstadoBadgeTono> = { PENDIENTE: "warning", EN_PROCESO: "info", ATENDIDO: "success", CANCELADO: "destructive" }
-
-function etiquetaEstado(estado: string) { return estado.replaceAll("_", " ").toLowerCase().replace(/^\w/, (letra) => letra.toUpperCase()) }
+const estados: Array<"TODOS" | EstadoPedido> = ["TODOS", ...ESTADOS_PEDIDO]
+// Sin colores de alerta (P9): el avance en azul, lo cotizado en verde y lo cerrado en gris.
+const tonoEstado: Record<string, EstadoBadgeTono> = {
+  PENDIENTE: "info",
+  EN_REVISION: "info",
+  EN_ESPERA_TERCERO: "info",
+  COTIZADA: "success",
+  CANCELADA: "neutral",
+  RECHAZADA: "neutral",
+}
 
 export function MisPedidosPage() {
   const query = usePedidos()

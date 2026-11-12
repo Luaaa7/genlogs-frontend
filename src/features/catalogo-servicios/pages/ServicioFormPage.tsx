@@ -100,12 +100,18 @@ export function ServicioFormPage() {
                     duracionEstimadaHoras: servicio.duracionEstimadaHoras,
                     visibleWeb: servicio.visibleWeb,
                     descripcion: servicio.descripcion,
+                    costo: servicio.costo ?? undefined,
+                    margen: servicio.margen ?? undefined,
+                    precioManual: servicio.precioManual ?? false,
+                    precioReferencial: servicio.precioReferencial ?? undefined,
                   }
                 : undefined
             }
             onSubmit={guardar}
             onCancel={volver}
             enviando={guardando}
+            idServicio={servicio?.idServicio}
+            estadoAprobacion={servicio?.estadoAprobacion}
           />
           {error && (
             <p role="alert" className="mt-3 text-sm text-destructive">

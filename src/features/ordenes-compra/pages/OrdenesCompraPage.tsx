@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Eye, ShoppingCart, Upload } from 'lucide-react'
+import { Eye, ShoppingCart } from 'lucide-react'
 import { VistaPreviaPdf } from '@/components/ui/VistaPreviaPdf'
-import { usePermisos } from '@/lib/permisos'
-import { mensajeError } from '@/lib/errores'
-import { useOrdenesCompra, useSubirArchivoOrdenCompra } from '../hooks/useOrdenesCompra'
+import { useOrdenesCompra } from '../hooks/useOrdenesCompra'
 import { EstadoOrdenSelect } from '../components/EstadoOrdenSelect'
+import { OcMineraPanel } from '../components/OcMineraPanel'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
 import { TableSkeletonRows } from '@/components/ui/TableSkeletonRows'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -29,23 +28,10 @@ export function OrdenesCompraPage() {
   const { data, isLoading, isError, error: errorCarga, refetch } = useOrdenesCompra({ estadoCodigo: estado, page: pagina, size: tamano })
   const ordenes = data?.content ?? []
   const [errorEstado, setErrorEstado] = useState<string | null>(null)
+  const [panelId, setPanelId] = useState<number | null>(null)
   // Orden del cliente (PDF o imagen) que se está viendo en la ventana
   const [viendoOrden, setViendoOrden] = useState<{ url: string; numero: string } | null>(null)
-  const { gestionarOrdenes } = usePermisos()
-  const { mutate: subirArchivo, isPending: subiendo, variables } = useSubirArchivoOrdenCompra()
-
-  const alElegirArchivo = (id: number, archivo?: File) => {
-    if (!archivo) return
-    setErrorEstado(null)
-    subirArchivo(
-      { id, archivo },
-      {
-        onError: (err) => {
-          setErrorEstado(mensajeError(err, 'No se pudo subir el documento de la orden.'))
-        },
-      },
-    )
-  }
+  const panel = ordenes.find((o) => (o.idOrdenCompra ?? o.id) === panelId) ?? null
 
   return (
     <div className="flex flex-col gap-6">
@@ -98,7 +84,10 @@ export function OrdenesCompraPage() {
                 ordenes.map((o) => {
                   return (
                     <tr key={o.idOrdenCompra ?? o.id} className={filaClass}>
-                      <Td className="whitespace-nowrap font-medium tabular-nums">{o.numeroOrdenCompra ?? o.numero}</Td>
+                      <Td className="whitespace-nowrap font-medium tabular-nums">
+                        <p>{o.numeroOrdenCompra ?? o.numero}</p>
+                        {o.numeroOcCliente ? <p className="text-xs font-normal text-muted-foreground">OC minera {o.numeroOcCliente}</p> : null}
+                      </Td>
                       <Td>{o.clienteNombre ?? o.cliente ?? '—'}</Td>
                       <Td className="whitespace-nowrap">
                         <Link to={`/cotizaciones/${o.idCotizacion}`} className="rounded tabular-nums text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -129,21 +118,13 @@ export function OrdenesCompraPage() {
                             Ver
                           </button>
                         )}
-                        {gestionarOrdenes && <label className="inline-flex cursor-pointer items-center gap-1 rounded text-[13px] font-medium text-accent hover:underline focus-within:ring-2 focus-within:ring-ring">
-                          <Upload className="h-3.5 w-3.5" aria-hidden="true" />
-                          {subiendo && variables?.id === (o.idOrdenCompra ?? o.id) ? 'Subiendo…' : o.urlArchivo ? 'Reemplazar' : 'Subir orden'}
-                          <input
-                            type="file"
-                            accept="application/pdf,.pdf,image/png,image/jpeg"
-                            className="sr-only"
-                            disabled={subiendo}
-                            aria-label={`Subir documento de la orden ${o.numeroOrdenCompra ?? o.numero}`}
-                            onChange={(e) => {
-                              alElegirArchivo(o.idOrdenCompra ?? o.id ?? 0, e.target.files?.[0])
-                              e.target.value = ''
-                            }}
-                          />
-                        </label>}
+                        <button
+                          type="button"
+                          onClick={() => setPanelId(o.idOrdenCompra ?? o.id ?? 0)}
+                          className="rounded text-[13px] font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          OC de la minera
+                        </button>
                       </Td>
                     </tr>
                   )
@@ -153,6 +134,8 @@ export function OrdenesCompraPage() {
           </Tabla>
         )}
       </TablaCard>
+
+      {panel && <OcMineraPanel orden={panel} onCerrar={() => setPanelId(null)} />}
 
       {viendoOrden && (
         <VistaPreviaPdf
