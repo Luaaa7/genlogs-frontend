@@ -1,4 +1,4 @@
-import { Percent, TrendingUp, UserCog } from 'lucide-react'
+import { DollarSign, Percent, TrendingUp, UserCog } from 'lucide-react'
 import type { ItemMenu } from './tipos'
 
 /** Solo el Jefe Administrativo (permisos.ts: esAdmin). */
@@ -9,4 +9,6 @@ export const menuFeA: ItemMenu[] = [
   { grupo: 'Administración', label: 'Usuarios', path: '/usuarios', icon: UserCog, visible: soloJefeAdministrativo },
   { grupo: 'Administración', label: 'IGV', path: '/configuracion/igv', icon: Percent, visible: soloJefeAdministrativo },
   { grupo: 'Administración', label: 'Márgenes', path: '/configuracion/margenes', icon: TrendingUp, visible: soloJefeAdministrativo },
+  // RF-86: tipo de cambio del día, lo corrige el Jefe Administrativo (permisos.ts: editarTipoCambio).
+  { grupo: 'Administración', label: 'Tipo de cambio', path: '/configuracion/tipo-cambio', icon: DollarSign, visible: (p) => p.editarTipoCambio },
 ]
