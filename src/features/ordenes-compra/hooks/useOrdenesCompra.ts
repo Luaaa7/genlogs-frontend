@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ordenesCompraApi } from '@/api/ordenesCompraApi'
-import type { EstadoOrdenCompra, OrdenCompraFiltros, OrdenCompraInput } from '@/types/ordenCompra.types'
+import { avisar } from '@/lib/avisos'
+import type { ConfirmarOcCliente, EstadoOrdenCompra, OrdenCompraFiltros, OrdenCompraInput } from '@/types/ordenCompra.types'
 
 export const ordenesCompraKeys = {
   all: ['ordenes-compra'] as const,
@@ -36,7 +37,19 @@ export function useCambiarEstadoOrdenCompra(id: number) {
 export function useSubirArchivoOrdenCompra() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, archivo }: { id: number; archivo: File }) => ordenesCompraApi.subirArchivo(id, archivo),
+    mutationFn: ({ id, archivo, onProgress }: { id: number; archivo: File; onProgress?: (porcentaje: number) => void }) =>
+      ordenesCompraApi.subirArchivo(id, archivo, onProgress),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ordenesCompraKeys.all }),
+  })
+}
+
+export function useConfirmarOcMinera(id: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (body: ConfirmarOcCliente) => ordenesCompraApi.confirmarOc(id, body),
+    onSuccess: () => {
+      avisar('OC de la minera confirmada.')
+      return queryClient.invalidateQueries({ queryKey: ordenesCompraKeys.all })
+    },
   })
 }

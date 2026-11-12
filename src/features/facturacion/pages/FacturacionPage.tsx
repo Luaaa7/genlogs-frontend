@@ -1,5 +1,5 @@
 import { avisar } from '@/lib/avisos'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Download, Eye, Loader2, Receipt, Send } from 'lucide-react'
 import { useAnularFactura, useFacturas, useRegistrarPago, useSubirArchivoFactura } from '../hooks/useFacturacion'
@@ -22,6 +22,7 @@ import { EstadoBadge } from '@/components/ui/EstadoBadge'
 import { usePermisos } from '@/lib/permisos'
 import { formatearMoneda } from '@/lib/formatters/codigoCotizacion'
 import { formatearFechaCorta, parsearFechaLocal } from '@/lib/formatters/fechaLocal'
+import { textoOcMinera } from '../lib/ocMinera'
 import type { EstadoFacturacion, Factura } from '@/types/facturacion.types'
 import { mensajeError as mensajeDeError } from '@/lib/errores'
 
@@ -88,7 +89,7 @@ export function FacturacionPage() {
   const data = datos && (filtradas
     ? { ...datos, content: filtradas.slice(pagina * tamano, (pagina + 1) * tamano), totalElements: filtradas.length, totalPages: Math.max(1, Math.ceil(filtradas.length / tamano)) }
     : datos)
-  const facturas = data?.content ?? []
+  const facturas = useMemo(() => data?.content ?? [], [data?.content])
 
   const [pagando, setPagando] = useState<Factura | null>(null)
   const [anulando, setAnulando] = useState<Factura | null>(null)
@@ -98,7 +99,8 @@ export function FacturacionPage() {
   const pedirVer = params.get('ver') === '1'
   useEffect(() => {
     if (!pedirVer || facturas.length === 0) return
-    setViendo(facturas[0])
+    const abrir = facturas[0]
+    queueMicrotask(() => setViendo(abrir))
     const siguiente = new URLSearchParams(params)
     siguiente.delete('ver')
     setParams(siguiente, { replace: true })
@@ -213,6 +215,9 @@ export function FacturacionPage() {
                       <Td className="min-w-44 max-w-72">
                         <p className="line-clamp-2 font-medium" title={f.clienteNombre ?? f.cliente ?? undefined}>{f.clienteNombre ?? f.cliente ?? '—'}</p>
                         <p className="text-xs text-muted-foreground tabular-nums">Orden {f.numeroOrdenCompra ?? `#${f.idOrdenCompra}`}</p>
+                        {textoOcMinera(f.numeroOcCliente) && (
+                          <p className="text-xs text-muted-foreground tabular-nums">{textoOcMinera(f.numeroOcCliente)}</p>
+                        )}
                       </Td>
                       <Td className="whitespace-nowrap">
                         <p className="tabular-nums">{formatearFechaCorta(f.fechaEmision)}</p>
@@ -313,6 +318,7 @@ export function FacturacionPage() {
         <VistaPreviaComprobante
           idFactura={idDe(viendo)}
           codigo={codigoDe(viendo)}
+          numeroOcCliente={viendo.numeroOcCliente}
           onClose={() => setViendo(null)}
           onEnviar={permisos.enviarFactura ? () => { setEnviando(viendo); setViendo(null) } : undefined}
         />

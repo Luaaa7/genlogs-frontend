@@ -1,4 +1,10 @@
 import { axiosClient } from "@/api/axiosClient"
+import {
+  rutaCotizacionAprobar,
+  rutaCotizacionDevolver,
+  rutaCotizacionSolicitarAprobacion,
+  type DevolverCotizacionRequest,
+} from "@/api/contratos/cotizaciones"
 import type {
   Cotizacion,
   CreateCotizacionRequest,
@@ -148,6 +154,21 @@ export const cotizacionesApi = {
       responseType: "blob",
     })
     return response.data
+  },
+
+  async solicitarAprobacion(id: number): Promise<Cotizacion> {
+    const { data } = await axiosClient.post<Cotizacion>(rutaCotizacionSolicitarAprobacion(id))
+    return data
+  },
+
+  async aprobarCotizacion(id: number): Promise<Cotizacion> {
+    const { data } = await axiosClient.post<Cotizacion>(rutaCotizacionAprobar(id))
+    return data
+  },
+
+  async devolverCotizacion(id: number, body: DevolverCotizacionRequest): Promise<Cotizacion> {
+    const { data } = await axiosClient.post<Cotizacion>(rutaCotizacionDevolver(id), body)
+    return data
   },
 
   async duplicarCotizacion(id: number): Promise<Cotizacion> {
