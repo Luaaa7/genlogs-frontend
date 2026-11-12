@@ -1,28 +1,16 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom"
+import { rutaIngresoCliente } from "@/api/contratos/ingresoCliente"
+import { puedeEntrarAlPortal } from "@/lib/sesiones"
 
+/**
+ * Portal del cliente: solo con sesión de cliente y sin sesión interna abierta.
+ * Sin sesión manda al ingreso del cliente con ?volver= para regresar a esta página.
+ */
 export function ClienteRoute() {
   const location = useLocation()
-  const token = localStorage.getItem("cliente_access_token")
-  const session = sessionStorage.getItem("genlogs-cliente-auth")
-  const internalToken = localStorage.getItem("access_token")
-  const internalSession = sessionStorage.getItem("genlogs-auth")
-  const role = (() => {
-    try {
-      return JSON.parse(session ?? "{}").rol ?? ""
-    } catch {
-      return ""
-    }
-  })()
-  const isClientSession = Boolean(
-    token &&
-    session &&
-    !internalToken &&
-    !internalSession &&
-    (!role || role.toUpperCase() === "CLIENTE")
-  )
 
-  if (!isClientSession) {
-    return <Navigate to="/portal/registro" state={{ from: location }} replace />
+  if (!puedeEntrarAlPortal()) {
+    return <Navigate to={rutaIngresoCliente(`${location.pathname}${location.search}`)} replace />
   }
 
   return <Outlet />

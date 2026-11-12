@@ -6,11 +6,11 @@ import { ClienteLayout } from "@/layouts/ClienteLayout"
 import { cerrarSesionCliente, cerrarSesionInterna } from "@/lib/sesiones"
 
 function renderGuard() {
-  return render(<MemoryRouter initialEntries={["/portal/pedidos"]}><Routes><Route element={<ClienteRoute />}><Route path="/portal/pedidos" element={<div>Pedidos privados</div>} /></Route><Route path="/portal/registro" element={<div>Registro</div>} /></Routes></MemoryRouter>)
+  return render(<MemoryRouter initialEntries={["/portal/pedidos"]}><Routes><Route element={<ClienteRoute />}><Route path="/portal/pedidos" element={<div>Pedidos privados</div>} /></Route><Route path="/portal/ingreso" element={<div>Ingreso</div>} /></Routes></MemoryRouter>)
 }
 
 function renderPortalLayout() {
-  return render(<MemoryRouter initialEntries={["/portal/pedidos"]}><Routes><Route element={<ClienteLayout />}><Route path="/portal/pedidos" element={<div>Pedidos privados</div>} /><Route path="/portal/registro" element={<div>Registro</div>} /></Route></Routes></MemoryRouter>)
+  return render(<MemoryRouter initialEntries={["/portal/pedidos"]}><Routes><Route element={<ClienteLayout />}><Route path="/portal/pedidos" element={<div>Pedidos privados</div>} /><Route path="/portal/ingreso" element={<div>Ingreso</div>} /></Route></Routes></MemoryRouter>)
 }
 
 describe("ClienteRoute", () => {
@@ -19,9 +19,9 @@ describe("ClienteRoute", () => {
     sessionStorage.clear()
   })
 
-  it("redirige al registro sin sesión de cliente", () => {
+  it("redirige al ingreso del cliente sin sesión", () => {
     renderGuard()
-    expect(screen.getByText("Registro")).toBeTruthy()
+    expect(screen.getByText("Ingreso")).toBeTruthy()
   })
 
   it("permite el portal con token y sesión de cliente", () => {
@@ -37,7 +37,7 @@ describe("ClienteRoute", () => {
     localStorage.setItem("access_token", "interno")
     sessionStorage.setItem("genlogs-auth", JSON.stringify({ state: { token: "interno", nombreRol: "ADMINISTRADOR" } }))
     renderGuard()
-    expect(screen.getByText("Registro")).toBeTruthy()
+    expect(screen.getByText("Ingreso")).toBeTruthy()
   })
 
   it("cerrar sesión del portal conserva la sesión interna", () => {
