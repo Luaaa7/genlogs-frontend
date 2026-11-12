@@ -3,7 +3,16 @@ export const dniSchema = z.string().regex(/^\d{8}$/, 'El DNI debe tener 8 dígit
 export const rucSchema = z.string().regex(/^\d{11}$/, 'El RUC debe tener 11 dígitos')
 export const terceroSchema = z.object({
   idTipoDocumento: z.number().int().positive('Selecciona el tipo de documento'),
-  idDistrito: z.number().int().positive('Selecciona el distrito'),
+  /** Obligatorio solo si el país es Perú (D-15); lo revisa el superRefine de abajo. */
+  idDistrito: z.number().int().positive('Selecciona el distrito').optional(),
+  /** País del tercero; sin valor = Perú (el backend asume Perú). */
+  idPais: z.number().int().positive().optional(),
+  /** Lo calcula CamposTercero con el país elegido; no se envía al backend. */
+  esExtranjero: z.boolean().optional(),
+  /** Solo si el país no es Perú: ubicación en texto libre (RF-81). */
+  regionExtranjero: z.string().max(100, 'Máximo 100 caracteres').optional(),
+  ciudadExtranjero: z.string().max(100, 'Máximo 100 caracteres').optional(),
+  codigoPostalExtranjero: z.string().max(20, 'Máximo 20 caracteres').optional(),
   numeroDocumento: z.string().min(1, 'El número de documento es obligatorio'),
   /** RUC: razón social. DNI y pasaporte: se arma con nombres y apellidos al guardar. */
   razonSocial: z.string().optional(),
@@ -14,12 +23,14 @@ export const terceroSchema = z.object({
   telefono: z.string().optional(),
   correo: z.union([z.string().email('Correo no válido'), z.literal('')]).optional(),
   ubigeo: z.string().optional(),
-  /** Solo cuando el distrito es "Extranjero": ciudad y país (se guarda en la dirección). */
-  lugarExtranjero: z.string().optional(),
 }).superRefine((v, ctx) => {
-  // Distrito "Extranjero" (UBIGEO 90xxxx): hay que decir dónde (si no está ya en la dirección)
-  if ((v.ubigeo ?? '').startsWith('90') && !v.lugarExtranjero?.trim() && !v.direccion?.trim()) {
-    ctx.addIssue({ code: 'custom', path: ['lugarExtranjero'], message: 'Escribe la ciudad y el país' })
+  // D-15: en Perú el distrito del catálogo es obligatorio; fuera de Perú, al menos la ciudad.
+  if (v.esExtranjero) {
+    if (!v.ciudadExtranjero?.trim()) {
+      ctx.addIssue({ code: 'custom', path: ['ciudadExtranjero'], message: 'Escribe la ciudad' })
+    }
+  } else if (!v.idDistrito) {
+    ctx.addIssue({ code: 'custom', path: ['idDistrito'], message: 'Selecciona el distrito' })
   }
   // RUC: 11 dígitos, empieza con 10 o 20, y razón social
   if (v.idTipoDocumento === 1) {

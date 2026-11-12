@@ -31,6 +31,11 @@ export interface ClienteDetalle {
   /** Ids para precargar el formulario de edición (backend nuevo; pueden faltar). */
   idTipoDocumento?: number | null
   idDistrito?: number | null
+  /** D-15: país (null = Perú) y ubicación en texto si no es Perú. */
+  idPais?: number | null
+  regionExtranjero?: string | null
+  ciudadExtranjero?: string | null
+  codigoPostalExtranjero?: string | null
   idSectorEconomico?: number | null
   numeroDocumento: string
   razonSocial: string

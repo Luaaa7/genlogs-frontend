@@ -91,6 +91,11 @@ export default function ClientesListPage() {
           ...(idTipoEditando === 1 ? {} : nombresParaEditar(clienteDetalle)),
           // Sin esto el formulario abría sin distrito y no dejaba guardar.
           idDistrito: clienteDetalle.idDistrito ?? clienteEditando?.tercero?.distrito?.idDistrito ?? undefined,
+          // D-15: país y ubicación en texto de los extranjeros (sin país = Perú).
+          idPais: clienteDetalle.idPais ?? undefined,
+          regionExtranjero: clienteDetalle.regionExtranjero ?? '',
+          ciudadExtranjero: clienteDetalle.ciudadExtranjero ?? '',
+          codigoPostalExtranjero: clienteDetalle.codigoPostalExtranjero ?? '',
           numeroDocumento: clienteDetalle.numeroDocumento,
           razonSocial: clienteDetalle.razonSocial,
           direccion: clienteDetalle.direccion ?? '',
