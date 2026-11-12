@@ -33,8 +33,9 @@ export function Ventana({ titulo, descripcion, onCerrar, acciones, ancho = 'max-
 
   useEffect(() => {
     const anterior = document.activeElement as HTMLElement | null
-    const foco = ref.current?.querySelector<HTMLElement>('input, select, textarea') ?? ref.current
-    foco?.focus()
+    // focus() devuelve undefined, así que el ?? de antes ejecutaba las dos llamadas.
+    ref.current?.querySelector<HTMLElement>('input, select, textarea')?.focus()
+    ref.current?.focus()
     const alTeclear = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && cerrableRef.current) cerrarRef.current()
     }

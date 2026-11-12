@@ -30,8 +30,13 @@ import {
 import { formatearFechaCorta, parsearFechaLocal } from '@/lib/formatters/fechaLocal';
 import { simboloMoneda } from '@/lib/formatters/currency';
 import { cn } from '@/lib/utils/utils';
-import { AlertCircle, Check, ChevronDown, Clock, Download, Loader2, Receipt, Send, ShoppingCart } from 'lucide-react';
+import { AlertCircle, Check, ChevronDown, Clock, Download, FileText, Loader2, Receipt, Send, ShoppingCart } from 'lucide-react';
 import { mensajeError } from '@/lib/errores'
+import { EstadoVacio } from '@/components/ui/EstadoVacio'
+import { AprobacionCotizacion } from '../components/AprobacionCotizacion'
+import { AvisoAltoValor } from '../components/AvisoAltoValor'
+import { IndicadorAprobacion } from '../components/IndicadorAprobacion'
+import { esAsistenteLogistico, esJefeAdministrativo, veCotizaciones } from '../lib/rolesCotizacion'
 
 const ESTADOS_ABIERTOS = new Set<string>(['BORRADOR', 'ENVIADA', 'EN_NEGOCIACION']);
 
@@ -48,15 +53,8 @@ const ESTADOS_FINALES = new Set<EstadoCotizacion>([
  * Solo se muestran en el menú los estados a los que puede pasarse la cotización.
  */
 const TRANSICIONES_ESTADOS: Record<EstadoCotizacion, EstadoCotizacion[]> = {
-  // Aprobada también desde Borrador: a veces el cliente acepta sin que se le haya
-  // enviado por el sistema (por teléfono, en persona o por su propio correo).
-  [EstadoCotizacion.BORRADOR]: [
-    EstadoCotizacion.ENVIADA,
-    EstadoCotizacion.EN_NEGOCIACION,
-    EstadoCotizacion.APROBADA,
-    EstadoCotizacion.RECHAZADA,
-    EstadoCotizacion.ANULADA,
-  ],
+  // Desde borrador solo se anula a mano. Enviar y aprobar van por los botones del flujo.
+  [EstadoCotizacion.BORRADOR]: [EstadoCotizacion.ANULADA],
   [EstadoCotizacion.ENVIADA]: [
     EstadoCotizacion.EN_NEGOCIACION,
     EstadoCotizacion.APROBADA,
@@ -75,6 +73,9 @@ const TRANSICIONES_ESTADOS: Record<EstadoCotizacion, EstadoCotizacion[]> = {
   [EstadoCotizacion.RECHAZADA]: [],
   [EstadoCotizacion.VENCIDA]: [],
   [EstadoCotizacion.ANULADA]: [],
+  // Solicitar, aprobar y devolver no pasan por este menú: van por los botones del flujo.
+  [EstadoCotizacion.PENDIENTE_APROBACION]: [],
+  [EstadoCotizacion.APROBADA_INTERNA]: [],
 };
 
 const MENU_ENTRADA = 'origin-top-right animate-in fade-in-0 zoom-in-95 duration-150 ease-out motion-reduce:animate-none';
@@ -109,8 +110,18 @@ function DetalleSkeleton() {
 }
 
 export const CotizacionDetallePage: React.FC = () => {
+  const { rol } = usePermisos()
+  if (!veCotizaciones(rol)) {
+    return <EstadoVacio icono={<FileText className="h-5 w-5" />} titulo="No tienes acceso a las cotizaciones" />
+  }
+  return <CotizacionDetalleContenido />
+}
+
+const CotizacionDetalleContenido: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const permisos = usePermisos();
+  const asistente = esAsistenteLogistico(permisos.rol)
+  const jefe = esJefeAdministrativo(permisos.rol)
   const cotizacionId = id ? Number(id) : null;
 
   const { data: cotizacion, isLoading, isError, refetch } = useCotizacion(cotizacionId);
@@ -240,12 +251,9 @@ export const CotizacionDetallePage: React.FC = () => {
 
   // Una sola acción principal, la que corresponde al momento del flujo (según lo que el rol puede hacer).
   let accionPrincipal: React.ReactNode = null;
-  if (estado === 'BORRADOR') {
+  if (estado === EstadoCotizacion.BORRADOR || estado === EstadoCotizacion.PENDIENTE_APROBACION || estado === EstadoCotizacion.APROBADA_INTERNA) {
     accionPrincipal = (
-      <Button onClick={() => setShowEnvioModal(true)}>
-        <Send className="mr-2 h-4 w-4" aria-hidden="true" />
-        Enviar al cliente
-      </Button>
+      <AprobacionCotizacion id={cotizacionId} estado={estado} asistente={asistente} jefe={jefe} onEnviar={() => setShowEnvioModal(true)} />
     );
   } else if (estado === 'ENVIADA') {
     // Ya se envió: el siguiente paso es la negociación (reenviar queda como acción secundaria).
@@ -278,8 +286,7 @@ export const CotizacionDetallePage: React.FC = () => {
   }
 
   // El backend ya bloquea lo no permitido; aquí solo se esconden los botones.
-  if (estado === 'BORRADOR' && !permisos.editarCotizaciones) accionPrincipal = null;
-  if ((estado === 'ENVIADA' || estado === 'EN_NEGOCIACION') && !permisos.cambiarEstadoCotizacion) accionPrincipal = null;
+  if ((estado === 'ENVIADA' || estado === 'EN_NEGOCIACION') && !jefe) accionPrincipal = null;
   if (estado === 'APROBADA' && ordenGenerada && !facturaGenerada && !permisos.emitirFactura) accionPrincipal = null;
   if (estado === 'APROBADA' && !ordenGenerada && !permisos.gestionarOrdenes) accionPrincipal = null;
 
@@ -311,14 +318,14 @@ export const CotizacionDetallePage: React.FC = () => {
             PDF
           </Button>
           {/* Reenviar solo mientras la cotización sigue viva (no en Rechazada, Anulada ni Vencida). */}
-          {permisos.editarCotizaciones && (estado === 'ENVIADA' || estado === 'EN_NEGOCIACION' || estado === 'APROBADA') && (
+          {asistente && (estado === 'ENVIADA' || estado === 'EN_NEGOCIACION' || estado === 'APROBADA') && (
             <Button variant="outline" onClick={() => setShowEnvioModal(true)}>
               <Send className="mr-2 h-4 w-4" aria-hidden="true" />
               Reenviar
             </Button>
           )}
 
-          {permisos.cambiarEstadoCotizacion && <div className="relative" ref={menuRef}>
+          {jefe && <div className="relative" ref={menuRef}>
             <Button
               variant="outline"
               onClick={() => setMenuEstado((v) => !v)}
@@ -362,6 +369,9 @@ export const CotizacionDetallePage: React.FC = () => {
           {accionPrincipal}
         </div>
       </div>
+
+      <AvisoAltoValor id={cotizacionId} />
+      <IndicadorAprobacion estado={estado} />
 
       <PipelineBreadcrumb steps={pasos} />
 
@@ -425,6 +435,15 @@ export const CotizacionDetallePage: React.FC = () => {
               <div><dt className="text-[13px] text-muted-foreground">Moneda</dt><dd className="mt-1">{simboloMoneda(moneda)}</dd></div>
               <div><dt className="text-[13px] text-muted-foreground">Emitida</dt><dd className="mt-1 tabular-nums">{formatearFechaCorta(cotizacion.fechaCotizacion ?? cotizacion.fechaCreacion)}</dd></div>
               <div><dt className="text-[13px] text-muted-foreground">Válida hasta</dt><dd className="mt-1 tabular-nums">{formatearFechaCorta(cotizacion.fechaValidez)}</dd></div>
+              {cotizacion.tipoCambioUsado != null && (
+                <div><dt className="text-[13px] text-muted-foreground">Tipo de cambio usado</dt><dd className="mt-1 tabular-nums">{cotizacion.tipoCambioUsado.toLocaleString('es-PE', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}</dd></div>
+              )}
+              {permisos.verMargenes && cotizacion.margen != null && (
+                <div><dt className="text-[13px] text-muted-foreground">Margen</dt><dd className="mt-1 tabular-nums">{Number(cotizacion.margen).toLocaleString('es-PE', { maximumFractionDigits: 2 })}%</dd></div>
+              )}
+              {permisos.verMargenes && cotizacion.precioProveedor != null && (
+                <div><dt className="text-[13px] text-muted-foreground">Precio de proveedor</dt><dd className="mt-1 tabular-nums">{formatearMoneda(cotizacion.precioProveedor, moneda)}</dd></div>
+              )}
             </dl>
             {cotizacion.observaciones && (
               <p className="mt-4 max-w-prose text-sm text-muted-foreground">{cotizacion.observaciones}</p>
@@ -434,7 +453,7 @@ export const CotizacionDetallePage: React.FC = () => {
           <AdjuntoCotizacionUploader
             cotizacionId={cotizacionId}
             adjuntos={cotizacion.adjuntos || []}
-            readonly={estado !== EstadoCotizacion.BORRADOR || !permisos.editarCotizaciones}
+            readonly={estado !== EstadoCotizacion.BORRADOR || !asistente}
           />
         </div>
 

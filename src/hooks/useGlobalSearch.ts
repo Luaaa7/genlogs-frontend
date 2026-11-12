@@ -37,7 +37,7 @@ export function useGlobalSearch(termino: string) {
         clientesApi.listar({ razonSocial: query, size: 5 }),
         cotizacionesApi.listarCotizaciones({ size: MAX_COTIZACIONES, sortBy: "fechaCotizacion", sortDir: "DESC" }),
         productosApi.listarProductos({ nombre: query, size: 5 }),
-        productosApi.listarProductos({ codigo: query, size: 5 }).catch(() => ({ content: [] })),
+        productosApi.listarProductos({ codigo: query, size: 5 }).catch(() => ({ content: [] as never[] })),
       ])
       // Productos: primero los que coinciden por nombre, luego los de código, sin repetir.
       const productosUnidos = [...(productosPorNombre.content ?? []), ...(productosPorCodigo.content ?? [])]

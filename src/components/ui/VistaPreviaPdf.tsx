@@ -32,7 +32,12 @@ export function VistaPreviaPdf({ titulo, nombreArchivo, cargar, urlDirecta, esIm
   const marco = useRef<HTMLIFrameElement>(null)
 
   useEffect(() => {
-    if (urlDirecta || !cargar) return
+    if (urlDirecta) {
+      // Después del primer pintado, igual que el setUrl que estaba aquí. Así no es un setState síncrono del effect.
+      queueMicrotask(() => setUrl(urlDirecta))
+      return
+    }
+    if (!cargar) return
     let actual: string | null = null
     let cancelado = false
     cargar()

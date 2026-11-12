@@ -8,10 +8,16 @@ export interface OrdenCompra {
   idEstadoOrdenCompra: number
   idCondicionPago: number
   numeroOrdenCompra: string
-  /** N.º de OC de la minera, si ya se confirmó. La factura lo copia en su respuesta. */
-  numeroOcCliente?: string | null
   numero?: string
   fechaEmisionCliente?: string | null
+  /** N.º de OC de la minera. Vacío si la lectura del PDF falló. */
+  numeroOcCliente?: string | null
+  /** Monto leído del PDF. Vacío si la lectura falló. */
+  montoOcCliente?: number | null
+  /** True si el backend leyó el PDF. */
+  ocLeidaAuto?: boolean | null
+  /** Id de quien confirmó la OC, o null si todavía no. */
+  ocConfirmadaPor?: number | null
   fechaRecepcion: string
   fechaEmision?: string
   urlArchivo?: string | null
@@ -31,4 +37,10 @@ export interface OrdenCompra {
 }
 export interface OrdenCompraInput { idCotizacion: number; idEstadoOrdenCompra?: number; idCondicionPago: number; numeroOrdenCompra: string; fechaEmisionCliente?: string; fechaRecepcion?: string; urlArchivo?: string; observaciones?: string }
 export interface OrdenCompraFiltros { estadoCodigo?: EstadoOrdenCompra; idCotizacion?: number; page?: number; size?: number }
+/** Cuerpo de PATCH /ordenes-compra/{id}/confirmar-oc. */
+export interface ConfirmarOcCliente {
+  numeroOcCliente: string
+  fechaEmisionCliente: string
+  montoOcCliente: number
+}
 export type OrdenesCompraPage = PageResponse<OrdenCompra>

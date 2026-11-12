@@ -7,10 +7,11 @@ export function usePaginacionLocal<T>(elementos: T[], tamanoInicial = 10) {
   const [tamano, setTamano] = useState(tamanoInicial)
   const total = elementos.length
   const totalPaginas = Math.max(1, Math.ceil(total / tamano))
-  const firma = `${total}:${tamano}`
-  const [firmaVista, setFirmaVista] = useState(firma)
-  if (firma !== firmaVista) {
-    setFirmaVista(firma)
+
+  // Al cambiar la cantidad o el tamaño, volver a la primera página antes de pintar.
+  const [criterio, setCriterio] = useState({ total, tamano })
+  if (criterio.total !== total || criterio.tamano !== tamano) {
+    setCriterio({ total, tamano })
     setPagina(0)
   }
 

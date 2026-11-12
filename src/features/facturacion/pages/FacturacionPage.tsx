@@ -85,18 +85,11 @@ export function FacturacionPage() {
   const { data: datos, isLoading, isError, error: errorCarga, refetch } = useFacturas(
     estado ? { idOrdenCompra, page: 0, size: 1000 } : { idOrdenCompra, page: pagina, size: tamano },
   )
-  const data = useMemo(() => {
-    if (!datos) return undefined
-    if (!estado) return datos
-    const coinciden = (datos.content ?? []).filter((f) => estadoReal(f) === estado)
-    return {
-      ...datos,
-      content: coinciden.slice(pagina * tamano, (pagina + 1) * tamano),
-      totalElements: coinciden.length,
-      totalPages: Math.max(1, Math.ceil(coinciden.length / tamano)),
-    }
-  }, [datos, estado, pagina, tamano])
-  const facturas = useMemo(() => data?.content ?? [], [data])
+  const filtradas = estado ? (datos?.content ?? []).filter((f) => estadoReal(f) === estado) : null
+  const data = datos && (filtradas
+    ? { ...datos, content: filtradas.slice(pagina * tamano, (pagina + 1) * tamano), totalElements: filtradas.length, totalPages: Math.max(1, Math.ceil(filtradas.length / tamano)) }
+    : datos)
+  const facturas = useMemo(() => data?.content ?? [], [data?.content])
 
   const [pagando, setPagando] = useState<Factura | null>(null)
   const [anulando, setAnulando] = useState<Factura | null>(null)
@@ -106,8 +99,8 @@ export function FacturacionPage() {
   const pedirVer = params.get('ver') === '1'
   useEffect(() => {
     if (!pedirVer || facturas.length === 0) return
-    const primero = facturas[0]
-    queueMicrotask(() => setViendo(primero))
+    const abrir = facturas[0]
+    queueMicrotask(() => setViendo(abrir))
     const siguiente = new URLSearchParams(params)
     siguiente.delete('ver')
     setParams(siguiente, { replace: true })
