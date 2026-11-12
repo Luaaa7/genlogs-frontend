@@ -33,7 +33,8 @@ export function Ventana({ titulo, descripcion, onCerrar, acciones, ancho = 'max-
 
   useEffect(() => {
     const anterior = document.activeElement as HTMLElement | null
-    ref.current?.querySelector<HTMLElement>('input, select, textarea')?.focus() ?? ref.current?.focus()
+    const foco = ref.current?.querySelector<HTMLElement>('input, select, textarea') ?? ref.current
+    foco?.focus()
     const alTeclear = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && cerrableRef.current) cerrarRef.current()
     }

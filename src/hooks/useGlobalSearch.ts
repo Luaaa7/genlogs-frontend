@@ -16,7 +16,6 @@ export interface ResultadoBusquedaGlobal {
   productos: ResultadoBusqueda[]
 }
 
-const productosVacios: never[] = []
 const resultadoVacio: ResultadoBusquedaGlobal = { clientes: [], cotizaciones: [], productos: [] }
 
 /** Máximo de cotizaciones que se traen para filtrar aquí (el backend admite hasta ese tamaño). */
@@ -38,7 +37,7 @@ export function useGlobalSearch(termino: string) {
         clientesApi.listar({ razonSocial: query, size: 5 }),
         cotizacionesApi.listarCotizaciones({ size: MAX_COTIZACIONES, sortBy: "fechaCotizacion", sortDir: "DESC" }),
         productosApi.listarProductos({ nombre: query, size: 5 }),
-        productosApi.listarProductos({ codigo: query, size: 5 }).catch(() => ({ content: [] as typeof productosVacios })),
+        productosApi.listarProductos({ codigo: query, size: 5 }).catch(() => ({ content: [] })),
       ])
       // Productos: primero los que coinciden por nombre, luego los de código, sin repetir.
       const productosUnidos = [...(productosPorNombre.content ?? []), ...(productosPorCodigo.content ?? [])]

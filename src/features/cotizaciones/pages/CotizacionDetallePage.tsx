@@ -466,6 +466,7 @@ export const CotizacionDetallePage: React.FC = () => {
           onClose={cerrarFactura}
           idOrdenCompra={ordenGenerada.idOrdenCompra}
           numeroOrdenCompra={ordenGenerada.numeroOrdenCompra}
+          numeroOcCliente={ordenGenerada.numeroOcCliente}
           idCondicionPago={ordenGenerada.idCondicionPago ?? cotizacion.idCondicionPago}
           idMoneda={cotizacion.idMoneda}
           detalles={detalles}

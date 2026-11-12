@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 /** Paginación en el navegador para listas que el servidor entrega completas.
  *  Vuelve a la primera página cuando cambia la cantidad de elementos (búsqueda, filtros). */
@@ -7,10 +7,12 @@ export function usePaginacionLocal<T>(elementos: T[], tamanoInicial = 10) {
   const [tamano, setTamano] = useState(tamanoInicial)
   const total = elementos.length
   const totalPaginas = Math.max(1, Math.ceil(total / tamano))
-
-  useEffect(() => {
+  const firma = `${total}:${tamano}`
+  const [firmaVista, setFirmaVista] = useState(firma)
+  if (firma !== firmaVista) {
+    setFirmaVista(firma)
     setPagina(0)
-  }, [total, tamano])
+  }
 
   const paginaSegura = Math.min(pagina, totalPaginas - 1)
   const visibles = elementos.slice(paginaSegura * tamano, paginaSegura * tamano + tamano)

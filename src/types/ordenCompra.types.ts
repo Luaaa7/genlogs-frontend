@@ -8,6 +8,8 @@ export interface OrdenCompra {
   idEstadoOrdenCompra: number
   idCondicionPago: number
   numeroOrdenCompra: string
+  /** N.º de OC de la minera, si ya se confirmó. La factura lo copia en su respuesta. */
+  numeroOcCliente?: string | null
   numero?: string
   fechaEmisionCliente?: string | null
   fechaRecepcion: string
