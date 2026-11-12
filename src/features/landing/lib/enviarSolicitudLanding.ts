@@ -4,20 +4,22 @@ import { RUTA_SOLICITUDES, type SolicitudCreadaResponse, type SolicitudRequest }
 import type { PedidoPendiente } from "./pedidoPendiente"
 
 /**
- * Envía la solicitud rápida al endpoint único (POST /api/solicitudes, canal LANDING).
+ * Envía la solicitud al endpoint único (POST /api/solicitudes): canal LANDING para la
+ * solicitud rápida y VITRINA cuando viene de "Cotizar" un repuesto publicado.
  * Usa axios sin los interceptores de axiosClient: en la landing esos pondrían el token
  * interno y, ante un 401, mandarían al login del personal. Aquí va el token del
  * cliente y la pantalla decide qué hacer con cada error.
  */
 export async function enviarSolicitudLanding(
-  pedido: Pick<PedidoPendiente, "marca" | "numeroParte" | "descripcion" | "cantidad">,
+  pedido: Pick<PedidoPendiente, "marca" | "numeroParte" | "descripcion" | "cantidad" | "idProducto">,
   token: string,
 ): Promise<SolicitudCreadaResponse> {
   const numeroParte = pedido.numeroParte.trim()
   const marca = pedido.marca.trim()
   const descripcion = pedido.descripcion.trim()
   const body: SolicitudRequest = {
-    canal: "LANDING",
+    // "Cotizar" desde la vitrina lleva el producto; la solicitud rápida no.
+    canal: pedido.idProducto ? "VITRINA" : "LANDING",
     asunto: (numeroParte ? `${marca ? `${marca} ` : ""}${numeroParte}` : descripcion).slice(0, 150),
     descripcion,
     items: [
@@ -26,6 +28,7 @@ export async function enviarSolicitudLanding(
         cantidad: pedido.cantidad,
         ...(marca ? { marcaTexto: marca } : {}),
         ...(numeroParte ? { numeroParte } : {}),
+        ...(pedido.idProducto ? { idProducto: pedido.idProducto } : {}),
       },
     ],
   }

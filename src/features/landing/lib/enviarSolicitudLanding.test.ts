@@ -36,4 +36,13 @@ describe("enviarSolicitudLanding", () => {
       items: [{ descripcion: "Plancha de desgaste", cantidad: 1 }],
     })
   })
+
+  it("Cotizar desde la vitrina va con canal VITRINA y el producto", async () => {
+    const post = vi.spyOn(axios, "post").mockResolvedValueOnce({ data: {} })
+    await enviarSolicitudLanding({ marca: "SKF", numeroParte: "6205-2RS", descripcion: "Rodamiento", cantidad: 1, idProducto: 2 }, "t")
+    expect(post.mock.calls[0][1]).toMatchObject({
+      canal: "VITRINA",
+      items: [{ descripcion: "Rodamiento", cantidad: 1, marcaTexto: "SKF", numeroParte: "6205-2RS", idProducto: 2 }],
+    })
+  })
 })
