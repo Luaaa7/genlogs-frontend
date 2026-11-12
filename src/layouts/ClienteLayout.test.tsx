@@ -12,11 +12,12 @@ async function renderLayout(vitrina: boolean) {
 describe("Menú del portal del cliente", () => {
   afterEach(() => vi.doUnmock("@/lib/interruptores"))
 
-  it("siempre muestra Mis pedidos, Mis cotizaciones y Nueva solicitud", async () => {
+  it("siempre muestra Mis pedidos, Mis cotizaciones, Nueva solicitud y Reclamos", async () => {
     await renderLayout(false)
     expect(screen.getByRole("link", { name: "Mis pedidos" })).toBeTruthy()
     expect(screen.getByRole("link", { name: "Mis cotizaciones" })).toBeTruthy()
     expect(screen.getByRole("link", { name: "Nueva solicitud" })).toBeTruthy()
+    expect(screen.getByRole("link", { name: "Reclamos" }).getAttribute("href")).toBe("/portal/reclamos")
   })
 
   it("con la vitrina apagada no muestra Repuestos", async () => {
