@@ -46,8 +46,9 @@ export const repuestosApi = {
         descripcion: i.descripcion.slice(0, 255),
         cantidad: i.cantidad,
         ...(i.unidad ? { unidad: i.unidad } : {}),
-        ...(i.marca ? { marcaTexto: i.marca } : {}),
-        ...(i.numeroParte ? { numeroParte: i.numeroParte } : {}),
+        ...(i.marca?.trim() ? { marcaTexto: i.marca.trim() } : {}),
+        ...(i.numeroParte?.trim() ? { numeroParte: i.numeroParte.trim() } : {}),
+        ...(i.urlFoto ? { urlFoto: i.urlFoto } : {}),
         ...(i.idProducto ? { idProducto: i.idProducto } : {}),
       })),
     }

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest"
-import { agregar, estimado, guardarCarrito, leerCarrito, MAX_ITEMS, type ItemCarrito } from "./carrito"
+import { agregar, estimado, faltaIdentificar, guardarCarrito, leerCarrito, MAX_ITEMS, type ItemCarrito } from "./carrito"
 
 const item = (clave: string, precio?: number, cantidad = 1): ItemCarrito => ({ clave, descripcion: `Repuesto ${clave}`, precio, cantidad })
 
@@ -31,5 +31,14 @@ describe("carrito de cotización", () => {
     expect(leerCarrito()).toEqual([])
     guardarCarrito([])
     expect(localStorage.getItem("genlogs-carrito-repuestos")).toBeNull()
+  })
+
+  it("un repuesto fuera de la vitrina pide N.º de parte con marca, o foto (D-01)", () => {
+    expect(faltaIdentificar({ ...item("v"), idProducto: 7 })).toBeNull()
+    expect(faltaIdentificar(item("a"))).toMatch(/n\.º de parte y la marca, o adjunta/i)
+    expect(faltaIdentificar({ ...item("b"), numeroParte: "PD-200" })).toMatch(/marca/i)
+    expect(faltaIdentificar({ ...item("c"), numeroParte: " ", marca: "Hardox" })).not.toBeNull()
+    expect(faltaIdentificar({ ...item("d"), numeroParte: "PD-200", marca: "Hardox" })).toBeNull()
+    expect(faltaIdentificar({ ...item("e"), urlFoto: "/uploads/x.jpg" })).toBeNull()
   })
 })

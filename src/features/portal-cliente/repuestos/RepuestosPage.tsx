@@ -11,6 +11,7 @@ import { avisar } from "@/lib/avisos"
 import { mensajeError } from "@/lib/errores"
 import { formatCurrency } from "@/lib/formatters/currency"
 import { usePedidos } from "../hooks/usePedidos"
+import { portalApi } from "@/api/portalApi"
 import { repuestosApi, type RepuestoPortal } from "./repuestosApi"
 import { agregar, guardarCarrito, leerCarrito, type ItemCarrito } from "./lib/carrito"
 import { CarritoCotizacion } from "./components/CarritoCotizacion"
@@ -62,6 +63,11 @@ export function RepuestosPage() {
     }
     return [...vistos.values()].slice(0, 6)
   }, [pedidos.data])
+
+  const subirFoto = useMutation({
+    mutationFn: ({ archivo }: { clave: string; archivo: File }) => portalApi.subirFotoSolicitud(archivo),
+    onSuccess: (url, { clave }) => setCarrito((c) => c.map((i) => (i.clave === clave ? { ...i, urlFoto: url } : i))),
+  })
 
   const enviar = useMutation({
     mutationFn: () => repuestosApi.pedirCotizacion(carrito),
@@ -186,9 +192,16 @@ export function RepuestosPage() {
         <CarritoCotizacion
           items={carrito}
           enviando={enviar.isPending}
-          error={enviar.isError ? mensajeError(enviar.error, "No se pudo enviar tu pedido. Intenta otra vez.") : undefined}
+          error={
+            enviar.isError ? mensajeError(enviar.error, "No se pudo enviar tu pedido. Intenta otra vez.")
+              : subirFoto.isError ? mensajeError(subirFoto.error, "No se pudo subir la foto.")
+              : undefined
+          }
           onCantidad={(clave, cantidad) => setCarrito((c) => c.map((i) => (i.clave === clave ? { ...i, cantidad } : i)))}
           onQuitar={(clave) => setCarrito((c) => c.filter((i) => i.clave !== clave))}
+          onEditar={(clave, cambios) => setCarrito((c) => c.map((i) => (i.clave === clave ? { ...i, ...cambios } : i)))}
+          onSubirFoto={(clave, archivo) => subirFoto.mutate({ clave, archivo })}
+          subiendoFoto={subirFoto.isPending ? subirFoto.variables?.clave : undefined}
           onEnviar={() => enviar.mutate()}
         />
       </div>

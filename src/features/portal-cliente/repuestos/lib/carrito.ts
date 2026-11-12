@@ -10,6 +10,8 @@ export interface ItemCarrito {
   marca?: string
   numeroParte?: string
   unidad?: string
+  /** Foto o plano ya subido (POST /solicitudes/fotos). */
+  urlFoto?: string
   /** Precio referencial unitario (solo para mostrar el estimado). */
   precio?: number
   cantidad: number
@@ -51,4 +53,16 @@ export function agregar(items: ItemCarrito[], nuevo: ItemCarrito): ItemCarrito[]
 export function estimado(items: ItemCarrito[]): number | null {
   if (items.length === 0 || items.some((i) => i.precio == null)) return null
   return Math.round(items.reduce((t, i) => t + (i.precio as number) * i.cantidad, 0) * 100) / 100
+}
+
+/**
+ * D-01 en el portal: un repuesto que no es de la vitrina (p. ej. "Volver a pedir")
+ * necesita N.º de parte con su marca, o una foto o plano. Devuelve qué falta, o null.
+ */
+export function faltaIdentificar(i: ItemCarrito): string | null {
+  if (i.idProducto) return null
+  const numeroParte = i.numeroParte?.trim()
+  if (numeroParte && !i.marca?.trim()) return "Indica la marca del N.º de parte"
+  if (!numeroParte && !i.urlFoto) return "Escribe el N.º de parte y la marca, o adjunta una foto o plano"
+  return null
 }

@@ -6,7 +6,7 @@ import type { RepuestoPortal } from "./repuestosApi"
 
 const api = vi.hoisted(() => ({ listar: vi.fn(), pedirCotizacion: vi.fn() }))
 vi.mock("./repuestosApi", () => ({ repuestosApi: api }))
-const portal = vi.hoisted(() => ({ listarPedidos: vi.fn() }))
+const portal = vi.hoisted(() => ({ listarPedidos: vi.fn(), subirFotoSolicitud: vi.fn() }))
 vi.mock("@/api/portalApi", () => ({ portalApi: portal }))
 
 import { RepuestosPage } from "./RepuestosPage"
@@ -79,6 +79,40 @@ describe("RepuestosPage (RF-82)", () => {
     const carrito = screen.getByRole("complementary")
     expect(within(carrito).getByText("Plancha de desgaste")).toBeTruthy()
     expect((within(carrito).getByLabelText(/cantidad de plancha de desgaste/i) as HTMLInputElement).value).toBe("4")
+  })
+
+  it("Volver a pedir: sin N.º de parte con marca, o foto, no deja pedir (D-01)", async () => {
+    api.pedirCotizacion.mockResolvedValue({ idSolicitud: 4, codigoSolicitud: "SOL-4", estado: "PENDIENTE" })
+    pintar()
+    fireEvent.click(await screen.findByRole("button", { name: /volver a pedir plancha de desgaste/i }))
+    const carrito = screen.getByRole("complementary")
+    const pedir = within(carrito).getByRole("button", { name: /pedir cotización/i }) as HTMLButtonElement
+    expect(pedir.disabled).toBe(true)
+    expect(within(carrito).getByText(/a 1 repuesto le falta/i)).toBeTruthy()
+
+    fireEvent.change(within(carrito).getByLabelText(/n\.º de parte de plancha de desgaste/i), { target: { value: "PD-200" } })
+    expect(within(carrito).getByText(/indica la marca/i)).toBeTruthy()
+    expect(pedir.disabled).toBe(true)
+
+    fireEvent.change(within(carrito).getByLabelText(/marca de plancha de desgaste/i), { target: { value: "Hardox" } })
+    expect(pedir.disabled).toBe(false)
+    fireEvent.click(pedir)
+    await waitFor(() => expect(api.pedirCotizacion).toHaveBeenCalled())
+    expect(api.pedirCotizacion.mock.calls[0][0]).toEqual([
+      expect.objectContaining({ descripcion: "Plancha de desgaste", numeroParte: "PD-200", marca: "Hardox", cantidad: 4 }),
+    ])
+  })
+
+  it("Volver a pedir: con una foto adjunta ya se puede pedir", async () => {
+    portal.subirFotoSolicitud.mockResolvedValue("/uploads/solicitudes/plancha.jpg")
+    pintar()
+    fireEvent.click(await screen.findByRole("button", { name: /volver a pedir plancha de desgaste/i }))
+    const carrito = screen.getByRole("complementary")
+    const archivo = new File(["x"], "plancha.jpg", { type: "image/jpeg" })
+    fireEvent.change(within(carrito).getByLabelText(/adjunta foto o plano de plancha de desgaste/i), { target: { files: [archivo] } })
+    expect(await within(carrito).findByText(/foto adjunta/i)).toBeTruthy()
+    expect(portal.subirFotoSolicitud).toHaveBeenCalledWith(archivo)
+    expect((within(carrito).getByRole("button", { name: /pedir cotización/i }) as HTMLButtonElement).disabled).toBe(false)
   })
 
   it("si no está, ofrece pedirlo por solicitud", async () => {
