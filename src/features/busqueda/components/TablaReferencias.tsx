@@ -1,4 +1,4 @@
-import { Check, ExternalLink, X } from "lucide-react"
+import { Check, ExternalLink, PackagePlus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { EstadoBadge, type EstadoBadgeTono } from "@/components/ui/EstadoBadge"
 import { Tabla, Td, Th, filaClass } from "@/components/ui/tabla"
@@ -29,9 +29,11 @@ interface Props {
   puedeMarcar: boolean
   marcando?: number
   onMarcar: (idSourcing: number, estado: "UTIL" | "DESCARTADO") => void
+  /** Vitrina (Fase 3): convertir una referencia ÚTIL en producto. Sin esta función no se muestra. */
+  onConvertir?: (referencia: Referencia) => void
 }
 
-export function TablaReferencias({ referencias, puedeMarcar, marcando, onMarcar }: Props) {
+export function TablaReferencias({ referencias, puedeMarcar, marcando, onMarcar, onConvertir }: Props) {
   return (
     <Tabla titulo="Referencias encontradas" minWidth={860}>
       <thead>
@@ -90,6 +92,12 @@ export function TablaReferencias({ referencias, puedeMarcar, marcando, onMarcar 
                 <Td alinear="derecha" className="whitespace-nowrap">
                   {!bloqueada && (
                     <div className="flex justify-end gap-1.5">
+                      {onConvertir && r.estado === "UTIL" && (
+                        <Button size="sm" onClick={() => onConvertir(r)} aria-label={`Convertir en producto: ${r.titulo ?? r.idSourcing}`}>
+                          <PackagePlus className="mr-1 h-4 w-4" aria-hidden="true" />
+                          Convertir
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant={r.estado === "UTIL" ? "default" : "outline"}

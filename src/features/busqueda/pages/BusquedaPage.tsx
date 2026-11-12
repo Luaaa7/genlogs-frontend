@@ -14,7 +14,7 @@ import { TablaCard } from "@/components/ui/tabla"
 import { TableSkeletonRows } from "@/components/ui/TableSkeletonRows"
 import { avisar } from "@/lib/avisos"
 import { mensajeError } from "@/lib/errores"
-import type { ResultadoBusqueda } from "@/api/sourcingApi"
+import type { Referencia, ResultadoBusqueda } from "@/api/sourcingApi"
 import {
   useBuscarReferencias,
   useCambiarEstadoReferencia,
@@ -23,6 +23,9 @@ import {
 } from "../hooks/useBusqueda"
 import { TablaReferencias } from "../components/TablaReferencias"
 import { PegarUrlModal } from "../components/PegarUrlModal"
+import { ConvertirModal } from "@/features/vitrina/components/ConvertirModal"
+import { vitrinaHabilitada } from "@/lib/interruptores"
+import { usePermisos } from "@/lib/permisos"
 
 const esquema = z.object({
   numeroParte: z.string().trim().min(1, "Escribe el N.º de parte").max(60, "Máximo 60 caracteres"),
@@ -48,6 +51,9 @@ export function BusquedaPage() {
   const [ultimo, setUltimo] = useState<ResultadoBusqueda | null>(null)
   const [marcando, setMarcando] = useState<number>()
   const [pegandoUrl, setPegandoUrl] = useState(false)
+  const [convirtiendo, setConvirtiendo] = useState<Referencia | null>(null)
+  const permisos = usePermisos()
+  const puedeConvertir = vitrinaHabilitada && permisos.puedeCrear("vitrina")
 
   const { register, handleSubmit, getValues, formState: { errors } } = useForm<Valores>({
     resolver: zodResolver(esquema),
@@ -174,10 +180,18 @@ export function BusquedaPage() {
               )}
             />
           ) : (
-            <TablaReferencias referencias={referencias} puedeMarcar={puedeBuscar} marcando={marcando} onMarcar={marcar} />
+            <TablaReferencias
+              referencias={referencias}
+              puedeMarcar={puedeBuscar}
+              marcando={marcando}
+              onMarcar={marcar}
+              onConvertir={puedeConvertir ? setConvirtiendo : undefined}
+            />
           )}
         </TablaCard>
       )}
+
+      {convirtiendo && <ConvertirModal referencia={convirtiendo} onCerrar={() => setConvirtiendo(null)} />}
 
       {pegandoUrl && (
         <PegarUrlModal
