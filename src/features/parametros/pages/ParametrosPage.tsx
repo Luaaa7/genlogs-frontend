@@ -10,6 +10,7 @@ import { avisar } from '@/lib/avisos'
 import { usePermisos } from '@/lib/permisos'
 import { cn } from '@/lib/utils/utils'
 import type { ParametroSistema } from '@/api/contratos/parametros'
+import { FeriadosSeccion } from '@/features/feriados/components/FeriadosSeccion'
 import { useGuardarGrupo, useParametros } from '../hooks/useParametros'
 import {
   GRUPOS_PARAMETROS,
@@ -24,8 +25,9 @@ const fechaHora = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeSt
 
 /**
  * Parámetros del sistema (RF-87): monto de alto valor, márgenes, plazos de
- * respuesta y verificación de la vitrina. Solo el Jefe Administrativo edita;
- * cada grupo se guarda por separado. La API es la de BE-D (/api/parametros).
+ * respuesta, verificación de la vitrina y feriados (D-18). Solo el Jefe
+ * Administrativo edita; cada grupo se guarda por separado. APIs: /api/parametros
+ * (BE-D) y /api/feriados (BE-B).
  */
 export function ParametrosPage() {
   const parametros = useParametros()
@@ -64,6 +66,9 @@ export function ParametrosPage() {
           ))}
         </dl>
       </section>
+
+      {/* D-18: feriados editables (API de BE-B), dentro de Parámetros. */}
+      <FeriadosSeccion />
     </div>
   )
 }
