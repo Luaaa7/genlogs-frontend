@@ -29,6 +29,10 @@ export const portalApi = {
     }),
   obtenerPedido: (id: string) =>
     axiosClient.get<Pedido>(`/portal/pedidos/${encodeURIComponent(id)}`).then((response) => response.data),
+  cancelarPedido: (id: string, motivo?: string) =>
+    axiosClient
+      .patch<void>(`/portal/pedidos/${encodeURIComponent(id)}/cancelar`, { motivo: motivo?.trim() || null })
+      .then(() => undefined),
   crearSolicitud: (payload: SolicitudRequest) =>
     axiosClient.post<SolicitudCreadaResponse>(RUTA_SOLICITUDES, payload).then((response) => response.data),
   subirFotoSolicitud: (archivo: File) => {
