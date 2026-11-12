@@ -164,7 +164,7 @@ function ItemRepuesto({ numero, item, errores, puedeQuitar, onCambiar, onQuitar 
     "aria-invalid": errores[campo] ? true : undefined,
     "aria-describedby": describedBy(id(campo), { error: errores[campo], ayuda }),
   })
-  const AYUDA_FOTO = "Obligatoria si no tienes el N.º de parte. JPG, PNG, WEBP o PDF, hasta 5 MB."
+  const AYUDA_FOTO = "Obligatoria si no tienes el N.º de parte. JPG, PNG, WEBP o PDF, hasta 10 MB."
 
   return (
     <div className="rounded-lg border border-border p-4">

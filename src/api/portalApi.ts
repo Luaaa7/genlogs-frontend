@@ -16,7 +16,7 @@ import type {
  * POST /solicitudes: endpoint único del Paso 0 (contrato en @/api/contratos/solicitudes).
  * El portal manda canal PORTAL; cada ítem lleva marcaTexto, numeroParte, gtin y urlFoto (D-01).
  * POST /solicitudes/fotos recibe un archivo multipart "file" (JPG, PNG, WEBP o PDF,
- * hasta 5 MB) y devuelve { url }; la URL va en urlFoto del ítem.
+ * hasta 10 MB) y devuelve { url }; la URL va en urlFoto del ítem.
  * Todas las rutas /portal/* requieren el token del cliente.
  */
 export const portalApi = {
