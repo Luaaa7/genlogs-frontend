@@ -14,8 +14,12 @@ import type {
  * RegistroClienteResponse (puede incluir token para iniciar sesión).
  * GET /portal/pedidos devuelve Pedido[] o { content/pedidos, total }.
  * GET /portal/pedidos/:id devuelve Pedido.
- * POST /portal/solicitudes recibe CrearSolicitudRequest y devuelve
- * CrearSolicitudResponse. Todas las rutas /portal/* requieren el token del cliente.
+ * POST /solicitudes (endpoint único del Paso 0 para portal, landing y vitrina) recibe
+ * CrearSolicitudRequest y devuelve CrearSolicitudResponse. Cada ítem lleva marcaTexto,
+ * numeroParte, gtin y urlFoto (D-01).
+ * POST /solicitudes/fotos recibe un archivo multipart "file" (JPG, PNG, WEBP o PDF,
+ * hasta 5 MB) y devuelve { url }; la URL va en urlFoto del ítem.
+ * Todas las rutas /portal/* requieren el token del cliente.
  */
 export const portalApi = {
   registrarCliente: (payload: RegistroClienteRequest) =>
@@ -28,5 +32,12 @@ export const portalApi = {
   obtenerPedido: (id: string) =>
     axiosClient.get<Pedido>(`/portal/pedidos/${encodeURIComponent(id)}`).then((response) => response.data),
   crearSolicitud: (payload: CrearSolicitudRequest) =>
-    axiosClient.post<CrearSolicitudResponse>("/portal/solicitudes", payload).then((response) => response.data),
+    axiosClient.post<CrearSolicitudResponse>("/solicitudes", payload).then((response) => response.data),
+  subirFotoSolicitud: (archivo: File) => {
+    const form = new FormData()
+    form.append("file", archivo)
+    return axiosClient
+      .post<{ url: string }>("/solicitudes/fotos", form, { headers: { "Content-Type": "multipart/form-data" } })
+      .then((response) => response.data.url)
+  },
 }
