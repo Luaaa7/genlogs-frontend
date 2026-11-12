@@ -23,6 +23,12 @@ vi.mock('@/api/parametrosApi', () => ({
   actualizarParametro: (c: string, v: string) => actualizarParametro(c, v),
   actualizarMargenesRepuesto: (m: unknown) => actualizarMargenesRepuesto(m),
 }))
+// La sección de feriados (D-18) va dentro de la página; aquí basta con que cargue vacía.
+vi.mock('@/api/feriadosApi', () => ({
+  listarFeriados: vi.fn().mockResolvedValue([]),
+  crearFeriado: vi.fn(),
+  quitarFeriado: vi.fn(),
+}))
 
 import { ParametrosPage } from './ParametrosPage'
 
