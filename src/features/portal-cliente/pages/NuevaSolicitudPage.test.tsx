@@ -41,7 +41,7 @@ describe("NuevaSolicitudPage (D-01)", () => {
   beforeEach(() => vi.restoreAllMocks())
 
   it("envía marca, N.º de parte y GTIN de cada repuesto y vuelve a Mis pedidos", async () => {
-    const crear = vi.spyOn(portalApi, "crearSolicitud").mockResolvedValue({ id: 10 })
+    const crear = vi.spyOn(portalApi, "crearSolicitud").mockResolvedValue({ idSolicitud: 10, codigoSolicitud: "SOL-10", estado: "PENDIENTE" })
     renderPagina()
     llenarGeneral()
     llenarRepuesto(1, { descripcion: "Filtro de aceite", cantidad: "2", marca: "Caterpillar", numeroParte: "1R-0750", gtin: "7750182002011" })
@@ -50,11 +50,12 @@ describe("NuevaSolicitudPage (D-01)", () => {
 
     await waitFor(() => expect(screen.getByText("Mis pedidos")).toBeTruthy())
     expect(crear.mock.calls[0][0]).toEqual({
+      canal: "PORTAL",
       asunto: "Filtros para cargador",
       descripcion: "Para el mantenimiento de 500 horas.",
       items: [{
         descripcion: "Filtro de aceite", cantidad: 2, unidad: "UND",
-        marcaTexto: "Caterpillar", numeroParte: "1R-0750", gtin: "7750182002011", urlFoto: null,
+        marcaTexto: "Caterpillar", numeroParte: "1R-0750", gtin: "7750182002011",
       }],
     })
   })
@@ -73,7 +74,7 @@ describe("NuevaSolicitudPage (D-01)", () => {
 
   it("sube la foto primero y manda su URL en el repuesto", async () => {
     const subir = vi.spyOn(portalApi, "subirFotoSolicitud").mockResolvedValue("https://res.cloudinary.com/x/pieza.jpg")
-    const crear = vi.spyOn(portalApi, "crearSolicitud").mockResolvedValue({ id: 11 })
+    const crear = vi.spyOn(portalApi, "crearSolicitud").mockResolvedValue({ idSolicitud: 11, codigoSolicitud: "SOL-11", estado: "PENDIENTE" })
     renderPagina()
     llenarGeneral()
     llenarRepuesto(1, { descripcion: "Pieza rota del chancador" })
@@ -84,7 +85,8 @@ describe("NuevaSolicitudPage (D-01)", () => {
 
     await waitFor(() => expect(crear).toHaveBeenCalled())
     expect(subir).toHaveBeenCalledWith(foto)
-    expect(crear.mock.calls[0][0].items?.[0]).toMatchObject({ urlFoto: "https://res.cloudinary.com/x/pieza.jpg", numeroParte: null })
+    expect(crear.mock.calls[0][0].items?.[0]).toMatchObject({ urlFoto: "https://res.cloudinary.com/x/pieza.jpg" })
+    expect(crear.mock.calls[0][0].items[0].numeroParte).toBeUndefined()
   })
 
   it("permite agregar y quitar repuestos", () => {
@@ -130,7 +132,7 @@ describe("NuevaSolicitudPage (D-01)", () => {
 
   it("si falla crear la solicitud, al reintentar no vuelve a subir la misma foto", async () => {
     const subir = vi.spyOn(portalApi, "subirFotoSolicitud").mockResolvedValue("https://res.cloudinary.com/x/pieza.jpg")
-    const crear = vi.spyOn(portalApi, "crearSolicitud").mockRejectedValueOnce(new Error("500")).mockResolvedValueOnce({ id: 12 })
+    const crear = vi.spyOn(portalApi, "crearSolicitud").mockRejectedValueOnce(new Error("500")).mockResolvedValueOnce({ idSolicitud: 12, codigoSolicitud: "SOL-12", estado: "PENDIENTE" })
     renderPagina()
     llenarGeneral()
     llenarRepuesto(1, { descripcion: "Pieza rota" })

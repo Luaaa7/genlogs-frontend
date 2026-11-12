@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 import { axiosClient } from "./axiosClient"
 import { portalApi } from "./portalApi"
+import { RUTA_SOLICITUDES, type SolicitudRequest } from "./contratos"
 
 describe("portalApi", () => {
   it("consulta pedidos usando la ruta del portal", async () => {
@@ -9,25 +10,19 @@ describe("portalApi", () => {
     expect(get).toHaveBeenCalledWith("/portal/pedidos")
   })
 
-  it("envía una nueva solicitud con el contrato esperado", async () => {
-    const post = vi.spyOn(axiosClient, "post").mockResolvedValueOnce({ data: { id: "p-2" } })
-    const payload = { asunto: "Rodamientos", descripcion: "Requerimos diez unidades." }
-    await expect(portalApi.crearSolicitud(payload)).resolves.toEqual({ id: "p-2" })
-    expect(post).toHaveBeenCalledWith("/solicitudes", payload)
-  })
-
-  it("envía cada repuesto con marca, N.º de parte, GTIN y foto (D-01)", async () => {
-    const post = vi.spyOn(axiosClient, "post").mockResolvedValueOnce({ data: { id: "p-3" } })
-    const payload = {
+  it("envía cada repuesto con marca, N.º de parte, GTIN y foto (D-01) por el canal PORTAL", async () => {
+    const post = vi.spyOn(axiosClient, "post").mockResolvedValueOnce({ data: { idSolicitud: 3, codigoSolicitud: "SOL-3", estado: "PENDIENTE" } })
+    const payload: SolicitudRequest = {
+      canal: "PORTAL",
       asunto: "Filtros",
       descripcion: "Para el mantenimiento del cargador.",
       items: [{
         descripcion: "Filtro de aceite", cantidad: 2, unidad: "UND",
-        marcaTexto: "Caterpillar", numeroParte: "1R-0750", gtin: "7750182002011", urlFoto: null,
+        marcaTexto: "Caterpillar", numeroParte: "1R-0750", gtin: "7750182002011",
       }],
     }
-    await portalApi.crearSolicitud(payload)
-    expect(post).toHaveBeenCalledWith("/solicitudes", payload)
+    await expect(portalApi.crearSolicitud(payload)).resolves.toMatchObject({ codigoSolicitud: "SOL-3" })
+    expect(post).toHaveBeenCalledWith(RUTA_SOLICITUDES, payload)
   })
 
   it("sube la foto o plano del cliente como multipart y devuelve la URL", async () => {
