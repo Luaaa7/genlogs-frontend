@@ -25,6 +25,14 @@ export const servicioSchema = z.object({
   visibleWeb: z.boolean(),
   descripcion: z.string().max(500, "La descripción no puede exceder 500 caracteres").optional(),
   idsSectores: z.array(z.number()),
+  costo: z.number({ message: "Ingresa un costo válido" }).positive("El costo tiene que ser mayor que 0").optional(),
+  margen: z
+    .number({ message: "Ingresa un margen válido" })
+    .min(0, "El margen tiene que estar entre 0 y 100")
+    .max(100, "El margen tiene que estar entre 0 y 100")
+    .optional(),
+  precioManual: z.boolean(),
+  precioReferencial: z.number({ message: "Ingresa un precio válido" }).positive("El precio tiene que ser mayor que 0").optional(),
 })
 
 export type ServicioSchemaValues = z.infer<typeof servicioSchema>
