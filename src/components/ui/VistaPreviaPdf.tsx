@@ -13,6 +13,8 @@ interface Props {
   /** Con `urlDirecta`: si el archivo es una imagen (JPG/PNG) en vez de un PDF. */
   esImagen?: boolean
   onClose: () => void
+  /** Línea bajo el título, p. ej. el N.º de OC de la minera. */
+  nota?: string | null
   /** Si se pasa, aparece el botón "Enviar al cliente" (solo para quien puede enviar). */
   onEnviar?: () => void
 }
@@ -24,8 +26,8 @@ const boton =
  * Ventana con la vista previa de un PDF (comprobante, cotización…) y sus acciones:
  * descargar, imprimir y, si se pide, enviar al cliente. Se monta solo cuando se abre.
  */
-export function VistaPreviaPdf({ titulo, nombreArchivo, cargar, urlDirecta, esImagen = false, onClose, onEnviar }: Props) {
-  const [url, setUrl] = useState<string | null>(null)
+export function VistaPreviaPdf({ titulo, nombreArchivo, cargar, urlDirecta, esImagen = false, onClose, nota, onEnviar }: Props) {
+  const [url, setUrl] = useState<string | null>(urlDirecta ?? null)
   const [error, setError] = useState<string | null>(null)
   const marco = useRef<HTMLIFrameElement>(null)
 
@@ -91,9 +93,12 @@ export function VistaPreviaPdf({ titulo, nombreArchivo, cargar, urlDirecta, esIm
         className="flex h-[90vh] w-full max-w-3xl flex-col rounded-lg bg-card p-4 shadow-xl"
       >
         <div className="flex items-center justify-between border-b border-border pb-3">
-          <h3 id="vista-pdf-t" className="text-lg font-semibold text-foreground">
-            {titulo}
-          </h3>
+          <div className="min-w-0">
+            <h3 id="vista-pdf-t" className="text-lg font-semibold text-foreground">
+              {titulo}
+            </h3>
+            {nota && <p className="mt-0.5 text-sm text-muted-foreground tabular-nums">{nota}</p>}
+          </div>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="text-muted-foreground hover:text-foreground">
             <X className="h-5 w-5" />
           </button>

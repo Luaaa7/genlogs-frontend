@@ -11,6 +11,7 @@ import { TasaAprobacionCard } from "../components/TasaAprobacionCard"
 import { CotizadoVsFacturadoCard } from "../components/CotizadoVsFacturadoCard"
 import { EstadosCotizacionCard } from "../components/EstadosCotizacionCard"
 import { MejoresClientesCard } from "../components/MejoresClientesCard"
+import { MetaPlazoCard } from "../components/MetaPlazoCard"
 import {
   actividadPorDia,
   calcularPendientes,
@@ -241,6 +242,7 @@ export function DashboardPage() {
           </div>
         </div>
       )}
+      <MetaPlazoCard />
     </div>
   )
 }

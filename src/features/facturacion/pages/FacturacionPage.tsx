@@ -22,6 +22,7 @@ import { EstadoBadge } from '@/components/ui/EstadoBadge'
 import { usePermisos } from '@/lib/permisos'
 import { formatearMoneda } from '@/lib/formatters/codigoCotizacion'
 import { formatearFechaCorta, parsearFechaLocal } from '@/lib/formatters/fechaLocal'
+import { textoOcMinera } from '../lib/ocMinera'
 import type { EstadoFacturacion, Factura } from '@/types/facturacion.types'
 import { mensajeError as mensajeDeError } from '@/lib/errores'
 
@@ -214,6 +215,9 @@ export function FacturacionPage() {
                       <Td className="min-w-44 max-w-72">
                         <p className="line-clamp-2 font-medium" title={f.clienteNombre ?? f.cliente ?? undefined}>{f.clienteNombre ?? f.cliente ?? '—'}</p>
                         <p className="text-xs text-muted-foreground tabular-nums">Orden {f.numeroOrdenCompra ?? `#${f.idOrdenCompra}`}</p>
+                        {textoOcMinera(f.numeroOcCliente) && (
+                          <p className="text-xs text-muted-foreground tabular-nums">{textoOcMinera(f.numeroOcCliente)}</p>
+                        )}
                       </Td>
                       <Td className="whitespace-nowrap">
                         <p className="tabular-nums">{formatearFechaCorta(f.fechaEmision)}</p>
@@ -314,6 +318,7 @@ export function FacturacionPage() {
         <VistaPreviaComprobante
           idFactura={idDe(viendo)}
           codigo={codigoDe(viendo)}
+          numeroOcCliente={viendo.numeroOcCliente}
           onClose={() => setViendo(null)}
           onEnviar={permisos.enviarFactura ? () => { setEnviando(viendo); setViendo(null) } : undefined}
         />

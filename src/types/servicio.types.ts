@@ -44,7 +44,20 @@ export interface Servicio extends Auditable {
   duracionEstimadaHoras?: number
   visibleWeb: boolean
   descripcion?: string
+  /** Costo del servicio. Null si todavía no se informó. */
+  costo?: number | null
+  /** Porcentaje de margen. Null: el servicio no queda pendiente. */
+  margen?: number | null
+  /** Precio de venta. Calculado, salvo que precioManual sea true. */
+  precioReferencial?: number | null
+  /** True: se guarda el precio escrito. False: costo × (1 + margen/100). */
+  precioManual?: boolean | null
+  /** APROBADO; PENDIENTE_APROBACION si el margen se sale del rango; RECHAZADO si el Jefe lo rechazó. */
+  estadoAprobacion?: EstadoAprobacionServicio | null
 }
+
+export const ESTADOS_APROBACION_SERVICIO = ['APROBADO', 'PENDIENTE_APROBACION', 'RECHAZADO'] as const
+export type EstadoAprobacionServicio = (typeof ESTADOS_APROBACION_SERVICIO)[number]
 
 export interface ServicioImagen extends Auditable {
   idServicioImagen: number
@@ -66,4 +79,9 @@ export interface ServicioFormValues {
   visibleWeb: boolean
   descripcion?: string
   idsSectores: number[]
+  costo?: number
+  margen?: number
+  precioManual: boolean
+  /** Con precio manual, el valor escrito. Con precio automático, el calculado al guardar. */
+  precioReferencial?: number
 }
