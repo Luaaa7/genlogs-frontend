@@ -1,5 +1,5 @@
 import { avisar } from '@/lib/avisos'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Download, Eye, Loader2, Receipt, Send } from 'lucide-react'
 import { useAnularFactura, useFacturas, useRegistrarPago, useSubirArchivoFactura } from '../hooks/useFacturacion'
@@ -88,7 +88,7 @@ export function FacturacionPage() {
   const data = datos && (filtradas
     ? { ...datos, content: filtradas.slice(pagina * tamano, (pagina + 1) * tamano), totalElements: filtradas.length, totalPages: Math.max(1, Math.ceil(filtradas.length / tamano)) }
     : datos)
-  const facturas = data?.content ?? []
+  const facturas = useMemo(() => data?.content ?? [], [data?.content])
 
   const [pagando, setPagando] = useState<Factura | null>(null)
   const [anulando, setAnulando] = useState<Factura | null>(null)
@@ -98,7 +98,8 @@ export function FacturacionPage() {
   const pedirVer = params.get('ver') === '1'
   useEffect(() => {
     if (!pedirVer || facturas.length === 0) return
-    setViendo(facturas[0])
+    const abrir = facturas[0]
+    queueMicrotask(() => setViendo(abrir))
     const siguiente = new URLSearchParams(params)
     siguiente.delete('ver')
     setParams(siguiente, { replace: true })

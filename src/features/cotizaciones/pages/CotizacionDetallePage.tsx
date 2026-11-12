@@ -75,6 +75,9 @@ const TRANSICIONES_ESTADOS: Record<EstadoCotizacion, EstadoCotizacion[]> = {
   [EstadoCotizacion.RECHAZADA]: [],
   [EstadoCotizacion.VENCIDA]: [],
   [EstadoCotizacion.ANULADA]: [],
+  // El flujo solicitar / aprobar / devolver llega en FE-3. Hasta entonces no hay transición manual.
+  [EstadoCotizacion.PENDIENTE_APROBACION]: [],
+  [EstadoCotizacion.APROBADA_INTERNA]: [],
 };
 
 const MENU_ENTRADA = 'origin-top-right animate-in fade-in-0 zoom-in-95 duration-150 ease-out motion-reduce:animate-none';
