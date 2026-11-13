@@ -135,4 +135,19 @@ describe('AgregarItemModal: margen según la escala', () => {
     expect(screen.getByText(/no hay tipo de cambio de hoy/i)).toBeTruthy()
     tipoCambio.valor = 4
   })
+
+  it('el costo no pasa de un repuesto a un servicio ni de un servicio a otro', () => {
+    render(<AgregarItemModal moneda="PEN" onAgregar={() => {}} onCerrar={() => {}} />)
+    const costo = () => screen.getByLabelText(/costo unitario/i) as HTMLInputElement
+    fireEvent.click(screen.getByText('elegir filtro'))
+    fireEvent.change(costo(), { target: { value: '60' } })
+    fireEvent.click(screen.getByRole('tab', { name: 'Servicio' }))
+    expect(costo().value).toBe('')
+    fireEvent.click(screen.getByText('elegir servicio con precio'))
+    expect(costo().value).toBe('100')
+    fireEvent.click(screen.getByText('elegir servicio sin costo'))
+    expect(costo().value).toBe('')
+    fireEvent.click(screen.getByRole('tab', { name: 'Producto' }))
+    expect(costo().value).toBe('')
+  })
 })
