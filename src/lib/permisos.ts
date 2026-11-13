@@ -137,7 +137,6 @@ export function permisosDe(nombreRol: string | null | undefined) {
     verNotificaciones: esInterno,
 
     // ---- Claves que ya usan las pantallas actuales (traducidas a la matriz) ----
-    verCotizacionesYOrdenes: esInterno && (puedeVer('cotizaciones') || puedeVer('pedidosOc')),
     verCatalogosYEmpresas: esInterno && puedeVer('vitrina'),
     editarCotizaciones: esInterno && (puedeCrear('cotizaciones') || puedeAprobar('cotizaciones')),
     cambiarEstadoCotizacion: esInterno && (puedeCrear('cotizaciones') || puedeAprobar('cotizaciones')),
@@ -159,6 +158,12 @@ export function permisosDe(nombreRol: string | null | undefined) {
     verServicios: esInterno && puedeVer('servicios'),
     /** Comprobantes: Gerente, Jefe, Contador y Asist. Adm. Sin SST ni Asist. Log. */
     verComprobantes: esInterno && puedeVer('comprobantes'),
+
+    // ---- C2 (v3.3): cotizaciones y órdenes por separado (antes verCotizacionesYOrdenes) ----
+    /** Cotizaciones: Gerente, Jefe, Asist. Log. y Asist. Adm. (sin margen). Sin Contador ni SST. */
+    verCotizaciones: esInterno && puedeVer('cotizaciones'),
+    /** Pedidos y OC de la minera: todo el personal. */
+    verOrdenes: esInterno && puedeVer('pedidosOc'),
   }
 }
 
