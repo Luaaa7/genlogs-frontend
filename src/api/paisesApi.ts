@@ -5,6 +5,8 @@ export interface Pais {
   idPais: number
   codigoIso: string
   nombrePais: string
+  /** Prefijo telefónico con "+" (p. ej. +51). Null si no se cargó (+1, +7). */
+  codigoTelefono?: string | null
 }
 
 /** Perú se identifica por su código ISO (PE o PER), no por el id, que cambia entre bases. */

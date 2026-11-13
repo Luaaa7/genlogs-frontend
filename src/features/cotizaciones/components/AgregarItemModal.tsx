@@ -9,7 +9,7 @@ import { SelectorCatalogoItem, type ItemCatalogo } from './SelectorCatalogoItem'
 import { RepuestoRapidoModal } from './RepuestoRapidoModal'
 import { usePermisos } from '@/lib/permisos'
 import { useEscalaMargenes } from '@/features/configuracion/hooks/useMargenes'
-import { MARGEN_MAXIMO, precioDesdeCosto, reglaProducto, reglaServicio, textoPorcentaje } from '@/lib/margenes'
+import { MARGEN_MAXIMO, margenDesdePrecio, precioDesdeCosto, reglaProducto, reglaServicio, textoPorcentaje } from '@/lib/margenes'
 
 export interface ItemNuevo {
   producto: string
@@ -66,6 +66,21 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
     !(cost > 0) && 'costo unitario',
     !(marg >= 0 && marg <= MARGEN_MAXIMO) && `margen entre 0 y ${MARGEN_MAXIMO}`,
   ].filter(Boolean) as string[]
+
+  // Al elegir un servicio se traen su costo y su precio del catálogo; los dos se
+  // pueden cambiar. El margen se calcula para que el precio de venta sea el del servicio.
+  function elegirItem(i: ItemCatalogo) {
+    setItem(i)
+    setTexto(i.nombre)
+    setMargenManual(null)
+    if (i.tipo !== 'servicio') return
+    const costoServicio = Number(i.costo)
+    const precioServicio = Number(i.precioReferencial)
+    if (costoServicio > 0) {
+      setCosto(String(costoServicio))
+      if (precioServicio > costoServicio) setMargenManual(String(margenDesdePrecio(costoServicio, precioServicio)))
+    }
+  }
 
   function reiniciar() {
     setTexto('')
@@ -160,7 +175,7 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
             valor={texto}
             seleccionado={item !== null}
             onEscribir={(t) => { setTexto(t); setItem(null) }}
-            onSeleccionar={(i) => { setItem(i); setTexto(i.nombre); setMargenManual(null) }}
+            onSeleccionar={elegirItem}
             ariaLabel={tipo === 'producto' ? 'Repuesto del ítem nuevo' : 'Servicio del ítem nuevo'}
             invalido={err(!item)}
           />
@@ -203,6 +218,12 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
             )}
           </label>
         </div>
+        {item?.tipo === 'servicio' && Number(item.costo) > 0 && (
+          <p className="text-xs text-muted-foreground">
+            Costo y precio traídos del catálogo de servicios
+            {Number(item.precioReferencial) > 0 && <> (precio {formatearMoneda(Number(item.precioReferencial), moneda)})</>}. Puedes cambiarlos para esta cotización.
+          </p>
+        )}
         {bajoMinimo && (
           <p role="alert" className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning-text">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />

@@ -1,3 +1,4 @@
+import { telefonoValido } from '@/lib/telefono'
 import { z } from 'zod'
 export const dniSchema = z.string().regex(/^\d{8}$/, 'El DNI debe tener 8 dígitos')
 export const rucSchema = z.string().regex(/^\d{11}$/, 'El RUC debe tener 11 dígitos')
@@ -24,8 +25,15 @@ export const terceroSchema = z.object({
   correo: z.union([z.string().email('Correo no válido'), z.literal('')]).optional(),
   ubigeo: z.string().optional(),
 }).superRefine((v, ctx) => {
+  if (!telefonoValido(v.telefono)) {
+    ctx.addIssue({ code: 'custom', path: ['telefono'], message: 'Entre 6 y 15 dígitos, con el código de país (p. ej. +51 984 215 330)' })
+  }
   // D-15: en Perú el distrito del catálogo es obligatorio; fuera de Perú, al menos la ciudad.
   if (v.esExtranjero) {
+    // Fuera de Perú (y siempre con pasaporte) hay que elegir el país.
+    if (!v.idPais) {
+      ctx.addIssue({ code: 'custom', path: ['idPais'], message: 'Elige el país' })
+    }
     if (!v.ciudadExtranjero?.trim()) {
       ctx.addIssue({ code: 'custom', path: ['ciudadExtranjero'], message: 'Escribe la ciudad' })
     }

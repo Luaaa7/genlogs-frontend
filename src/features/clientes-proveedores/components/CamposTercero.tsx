@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { listarDistritos } from '@/api/distritosApi'
 import { esPeru, listarPaises } from '@/api/paisesApi'
 import { separarNombreCompleto } from '@/lib/nombreTercero'
+import { cambiarPrefijo, completarPrefijo, ejemploTelefono, limpiarTelefono } from '@/lib/telefono'
 import { cn } from '@/lib/utils/utils'
 import { IconoTipoDocumento, PestanasTipoDocumento } from './PestanasTipoDocumento'
 import { UbicacionCampos } from './UbicacionCampos'
@@ -83,11 +84,18 @@ export function CamposTercero({ tipoFijo }: { tipoFijo?: TipoDocumentoId } = {})
     queryFn: listarPaises,
     staleTime: 30 * 60_000,
   })
+  const tipo = (tipoFijo ?? (watch('tercero.idTipoDocumento') as number | undefined) ?? 1) as TipoDocumentoId
+  const esPasaporte = tipo === 4
   const peru = paises?.find(esPeru)
   const idPais = watch('tercero.idPais') as number | undefined
   const paisElegido = idPais !== undefined ? paises?.find((p) => p.idPais === idPais) : undefined
-  // Sin país elegido, o con Perú, se usa el catálogo de distritos.
-  const esExtranjero = !!paisElegido && !esPeru(paisElegido)
+  // Con pasaporte la ubicación siempre es en texto libre y el país no puede ser Perú.
+  // Con RUC o DNI: sin país elegido, o con Perú, se usa el catálogo de distritos.
+  const esExtranjero = esPasaporte || (!!paisElegido && !esPeru(paisElegido))
+  const paisesVisibles = esPasaporte ? paises?.filter((p) => !esPeru(p)) : paises
+  // País con el que se arma el teléfono (sin elegir = Perú, salvo con pasaporte).
+  const paisDelTelefono = paisElegido ?? (esPasaporte ? undefined : peru)
+  const prefijo = paisDelTelefono?.codigoTelefono ?? null
 
   // El esquema necesita saber si es extranjero para pedir distrito o ciudad.
   useEffect(() => {
@@ -98,11 +106,16 @@ export function CamposTercero({ tipoFijo }: { tipoFijo?: TipoDocumentoId } = {})
     const id = valor ? Number(valor) : undefined
     setValue('tercero.idPais', id, { shouldDirty: true })
     const pais = paises?.find((p) => p.idPais === id)
-    if (pais && !esPeru(pais)) {
+    // Si el teléfono tenía el prefijo del país anterior, pasa al del nuevo.
+    const telefono = getValues('tercero.telefono') ?? ''
+    const conPrefijoNuevo = cambiarPrefijo(telefono, prefijo, pais?.codigoTelefono)
+    if (conPrefijoNuevo !== telefono) setValue('tercero.telefono', conPrefijoNuevo, { shouldDirty: true })
+    if (esPasaporte || (pais && !esPeru(pais))) {
       // Fuera de Perú no hay distrito del catálogo: se escriben región, ciudad y código postal.
       setValue('tercero.idDistrito', undefined, { shouldValidate: false })
       setValue('tercero.ubigeo', '')
       clearErrors('tercero.idDistrito')
+      if (id) clearErrors('tercero.idPais')
       setTimeout(() => setFocus('tercero.ciudadExtranjero'), 0)
     } else {
       setValue('tercero.regionExtranjero', '')
@@ -112,7 +125,6 @@ export function CamposTercero({ tipoFijo }: { tipoFijo?: TipoDocumentoId } = {})
     }
   }
 
-  const tipo = (tipoFijo ?? (watch('tercero.idTipoDocumento') as number | undefined) ?? 1) as TipoDocumentoId
   const info = infoTipoDocumento(tipo)
   const esPersona = tipo !== 1
   const tieneConsulta = tipo === 1 || tipo === 2
@@ -202,6 +214,9 @@ export function CamposTercero({ tipoFijo }: { tipoFijo?: TipoDocumentoId } = {})
 
   const errorDoc = e?.numeroDocumento?.message ?? (consultar.isError ? 'No se pudo consultar el documento. Completa los datos a mano.' : undefined)
   const ayudaDoc = AYUDA_DOCUMENTO[tipo]
+  const ayudaPais = esPasaporte
+    ? 'Con pasaporte la persona es del extranjero: elige su país y escribe la ubicación.'
+    : 'Si no es Perú, se escribe la ubicación en lugar de elegir el distrito.'
   const resaltar = (valor: unknown) => autocompletado && typeof valor === 'string' && valor.trim() !== ''
 
   const nombres = watch('tercero.nombres')
@@ -339,18 +354,20 @@ export function CamposTercero({ tipoFijo }: { tipoFijo?: TipoDocumentoId } = {})
         />
       </Campo>
 
-      <Campo id="tercero-pais" label="País" ayuda="Si no es Perú, se escribe la ubicación en lugar de elegir el distrito." obligatorio>
+      <Campo id="tercero-pais" label="País" ayuda={ayudaPais} error={e?.idPais?.message} obligatorio>
         <select
           id="tercero-pais"
-          value={String(idPais ?? peru?.idPais ?? '')}
+          value={String(esPasaporte ? (paisElegido && !esPeru(paisElegido) ? idPais : '') : (idPais ?? peru?.idPais ?? ''))}
           onChange={(ev) => cambiarPais(ev.target.value)}
           disabled={cargandoPaises || !paises?.length}
-          aria-describedby={describedBy('tercero-pais', { ayuda: 'Si no es Perú, se escribe la ubicación en lugar de elegir el distrito.' })}
+          aria-invalid={!!e?.idPais}
+          aria-describedby={describedBy('tercero-pais', { error: e?.idPais, ayuda: ayudaPais })}
           className={inputFormClass}
         >
           {/* Sin lista de países (cargando o sin catálogo) se trabaja con Perú. */}
-          {!paises?.length && <option value="">{cargandoPaises ? 'Cargando…' : 'Perú'}</option>}
-          {paises?.map((p) => (
+          {!paises?.length && <option value="">{cargandoPaises ? 'Cargando…' : esPasaporte ? 'Elige el país' : 'Perú'}</option>}
+          {esPasaporte && !!paises?.length && <option value="">Elige el país</option>}
+          {paisesVisibles?.map((p) => (
             <option key={p.idPais} value={p.idPais}>{p.nombrePais}</option>
           ))}
         </select>
@@ -421,19 +438,35 @@ export function CamposTercero({ tipoFijo }: { tipoFijo?: TipoDocumentoId } = {})
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Campo id="tercero-telefono" label={tipo === 4 ? 'Teléfono con código de país' : 'Teléfono'} opcional>
+        <Campo
+          id="tercero-telefono"
+          label="Teléfono con código de país"
+          opcional
+          error={e?.telefono?.message}
+          ayuda={prefijo ? `Si lo escribes sin "+", se le pone ${prefijo}.` : 'Escribe el código del país con "+".'}
+        >
           <input
             id="tercero-telefono"
             type="tel"
-            maxLength={15}
+            maxLength={16}
             autoComplete="tel"
-            placeholder={tipo === 4 ? '+1 000 000 0000' : '+51 984 215 330'}
+            placeholder={ejemploTelefono(prefijo)}
             {...register('tercero.telefono', {
               // Solo números y "+". Va dentro de register para que el valor sí llegue al formulario.
               onChange: (ev) => {
-                const limpio = ev.target.value.replace(/[^0-9+]/g, '')
+                const limpio = limpiarTelefono(ev.target.value)
                 if (limpio !== ev.target.value) setValue('tercero.telefono', limpio)
               },
+              // Al salir, si falta el código de país se pone el del país elegido.
+              onBlur: (ev) => {
+                const completo = completarPrefijo(ev.target.value, prefijo)
+                if (completo !== ev.target.value) setValue('tercero.telefono', completo, { shouldDirty: true, shouldValidate: true })
+              },
+            })}
+            aria-invalid={!!e?.telefono}
+            aria-describedby={describedBy('tercero-telefono', {
+              error: e?.telefono,
+              ayuda: prefijo ? `Si lo escribes sin "+", se le pone ${prefijo}.` : 'Escribe el código del país con "+".',
             })}
             className={inputFormClass}
           />
