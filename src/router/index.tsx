@@ -55,15 +55,20 @@ export const router = createBrowserRouter([
     { path: '/catalogo-repuestos/nuevo', element: <NuevoProductoPage /> },
     { path: '/catalogo-repuestos/:id', element: <ProductoDetallePage /> },
     { path: '/catalogo-repuestos/:id/editar', element: <EditarProductoPage /> },
-    { path: '/catalogo-servicios', element: <CatalogoServiciosPage /> },
-    { path: '/catalogo-servicios/nuevo', element: <ServicioFormPage /> },
-    { path: '/catalogo-servicios/:id/editar', element: <ServicioFormPage /> },
+    // S2: servicios y comprobantes según la matriz v3.2 (permisos.ts); el backend también bloquea.
+    { element: <RoleGuard permitido={(p) => p.verServicios} />, children: [
+      { path: '/catalogo-servicios', element: <CatalogoServiciosPage /> },
+      { path: '/catalogo-servicios/nuevo', element: <ServicioFormPage /> },
+      { path: '/catalogo-servicios/:id/editar', element: <ServicioFormPage /> },
+    ] },
     { path: '/reportes', element: <ReportesPage /> },
     { path: '/cotizaciones', element: <CotizacionesListPage /> },
     { path: '/cotizaciones/nueva', element: <NuevaCotizacionPage /> },
     { path: '/cotizaciones/:id', element: <CotizacionDetallePage /> },
     { path: '/ordenes-compra', element: <OrdenesCompraPage /> },
-    { path: '/facturacion', element: <FacturacionPage /> },
+    { element: <RoleGuard permitido={(p) => p.verComprobantes} />, children: [
+      { path: '/facturacion', element: <FacturacionPage /> },
+    ] },
     // Reclamos internos según la matriz v3.2 (permisos.ts). /usuarios y /configuracion/* están en rutas/fe-a.tsx.
     { element: <RoleGuard permitido={(p) => p.verReclamos} />, children: [
       { path: '/reclamos', element: <ReclamosPage /> },

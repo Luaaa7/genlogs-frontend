@@ -10,12 +10,9 @@
  * Diferencias con la matriz que este test NO cubre todavía (al corregirlas, agregar el caso):
  *  - Menú "Cotizaciones" y ruta /cotizaciones: el Contador y el Supervisor SST la ven (AppLayout usa
  *    verCotizacionesYOrdenes, que también da true con Pedidos y OC). La matriz no les da cotizaciones.
- *  - Menú "Comprobantes" (/facturacion): el Supervisor SST y el Asistente Logístico la ven; la matriz no.
  *  - Menú "Solicitudes" (FE-C): el Asistente Administrativo no la ve y /solicitudes lo manda al
  *    dashboard; la matriz le da "solo ve".
- *  - Menú "PASE y SCTR por vencer" (FE-E): la ven el SST y el Asistente Logístico; la matriz de
- *    Documentos es Gerente y Jefe (ven), Contador, SST y Asistente Administrativo (editan).
- *  - Empresas mineras, Repuestos y Servicios: el menú sigue la matriz, pero sus rutas no tienen
+ *  - Empresas mineras y Repuestos: el menú sigue la matriz, pero sus rutas no tienen
  *    RoleGuard y un rol sin acceso entra escribiendo la URL (el backend sí bloquea).
  *  - Búsqueda y Vitrina (FE-D) quedan fuera: dependen de sus interruptores.
  */
@@ -62,6 +59,9 @@ const TODOS_INTERNOS: Interno[] = [GG, JA, CG, SST, AL, AA]
 const MENU_ESPERADO: Record<string, Interno[]> = {
   Dashboard: TODOS_INTERNOS,
   'Órdenes de compra': TODOS_INTERNOS,
+  // S2: Comprobantes y PASE/SCTR con la matriz v3.2.
+  Comprobantes: [GG, JA, CG, AA],
+  'PASE y SCTR por vencer': [GG, JA, CG, SST, AA],
   Reclamos: [GG, JA, AL, AA],
   Despacho: [GG, JA, SST, AL, AA],
   'Acciones correctivas': [GG, JA, CG, AL],
@@ -82,6 +82,11 @@ const RUTAS_ESPERADAS: Record<string, Interno[]> = {
   '/reclamos': [GG, JA, AL, AA],
   '/despachos': [GG, JA, SST, AL, AA],
   '/acciones': [GG, JA, CG, AL],
+  // S2: rutas con RoleGuard (antes se entraba escribiendo la URL).
+  '/facturacion': [GG, JA, CG, AA],
+  '/catalogo-servicios': [GG, JA, AL, AA],
+  '/catalogo-servicios/nuevo': [GG, JA, AL, AA],
+  '/alertas-documentos': [GG, JA, CG, SST, AA],
   '/usuarios': [JA],
   '/configuracion/igv': [JA],
   '/configuracion/margenes': [JA],

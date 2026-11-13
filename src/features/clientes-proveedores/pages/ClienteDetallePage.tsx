@@ -8,6 +8,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EstadoBadge } from '@/components/ui/EstadoBadge'
+import { usePermisos } from '@/lib/permisos'
 
 export default function ClienteDetallePage() {
   const id = Number(useParams().id)
@@ -15,6 +16,8 @@ export default function ClienteDetallePage() {
   // id_cliente es UNIQUE en empresa_minera: a lo más una unidad por cliente
   // (ver EmpresaMineraController.buscarPorCliente), no una lista.
   const { data: unidad } = useEmpresaMineraPorCliente(id)
+  // S2: el historial de comprobantes solo para quien ve comprobantes.
+  const { verComprobantes } = usePermisos()
 
   if (isLoading) {
     return (
@@ -83,7 +86,7 @@ export default function ClienteDetallePage() {
             <ContactoClienteList idTercero={cliente.idTercero} />
           </section>
 
-          <HistorialVentasCliente idCliente={cliente.idCliente} />
+          {verComprobantes && <HistorialVentasCliente idCliente={cliente.idCliente} />}
         </div>
 
         <section aria-labelledby="unidades-t" className="rounded-xl border border-border bg-card p-5">

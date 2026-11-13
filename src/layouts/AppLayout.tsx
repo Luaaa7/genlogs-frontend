@@ -45,7 +45,7 @@ const NAV_BASE: NavGroup[] = [
       { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
       { label: 'Cotizaciones', path: '/cotizaciones', icon: FileText, permiso: 'verCotizacionesYOrdenes' },
       { label: 'Órdenes de compra', path: '/ordenes-compra', icon: ShoppingCart, permiso: 'verCotizacionesYOrdenes' },
-      { label: 'Comprobantes', path: '/facturacion', icon: Receipt },
+      { label: 'Comprobantes', path: '/facturacion', icon: Receipt, visible: (p) => p.verComprobantes },
       { label: 'Reclamos', path: '/reclamos', icon: MessageSquareWarning, permiso: 'verReclamos' },
     ],
   },
@@ -56,7 +56,7 @@ const NAV_BASE: NavGroup[] = [
       { label: 'Proveedores', path: '/proveedores', icon: Truck },
       { label: 'Empresas mineras', path: '/empresas-mineras', icon: Building2, permiso: 'verCatalogosYEmpresas' },
       { label: 'Repuestos', path: '/catalogo-repuestos', icon: Package, permiso: 'verCatalogosYEmpresas' },
-      { label: 'Servicios', path: '/catalogo-servicios', icon: Wrench, permiso: 'verCatalogosYEmpresas' },
+      { label: 'Servicios', path: '/catalogo-servicios', icon: Wrench, visible: (p) => p.verServicios },
     ],
   },
   {

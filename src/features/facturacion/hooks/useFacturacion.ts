@@ -7,8 +7,13 @@ export const facturacionKeys = {
   lista: (filtros: FacturacionFiltros) => ['facturacion', filtros] as const,
 }
 
-export function useFacturas(filtros: FacturacionFiltros = {}) {
-  return useQuery({ queryKey: facturacionKeys.lista(filtros), queryFn: () => facturacionApi.listar(filtros) })
+/** `enabled: false` para los roles sin comprobantes (S2): no se pide nada y no hay 403. */
+export function useFacturas(filtros: FacturacionFiltros = {}, opciones: { enabled?: boolean } = {}) {
+  return useQuery({
+    queryKey: facturacionKeys.lista(filtros),
+    queryFn: () => facturacionApi.listar(filtros),
+    enabled: opciones.enabled ?? true,
+  })
 }
 
 export function useCrearFactura() {

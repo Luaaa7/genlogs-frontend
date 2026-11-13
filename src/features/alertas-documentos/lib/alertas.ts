@@ -1,8 +1,13 @@
 import type { Rol } from '@/lib/permisos'
 import type { NotificacionResponse } from '@/api/contratos'
 
-/** A quienes avisa el backend: el Supervisor SST y el Asistente Logístico. */
-export const ROLES_ALERTAS_DOCUMENTOS: Rol[] = ['SUPERVISOR_SST', 'ASISTENTE_LOGISTICO']
+/**
+ * Quienes ven "PASE y SCTR por vencer" (S2, matriz de Documentos): Gerente y Jefe ven;
+ * Contador, Supervisor SST y Asistente Administrativo editan. El Asistente Logístico no.
+ */
+export const ROLES_ALERTAS_DOCUMENTOS: Rol[] = [
+  'GERENTE_GENERAL', 'JEFE_ADMINISTRATIVO', 'CONTADOR_GENERAL', 'SUPERVISOR_SST', 'ASISTENTE_ADMINISTRATIVO',
+]
 
 /** Tramo del aviso (7, 15 o 30 días) leído del título "… (aviso de N días)"; null si no lo trae. */
 export function tramoDe(titulo: string): number | null {
