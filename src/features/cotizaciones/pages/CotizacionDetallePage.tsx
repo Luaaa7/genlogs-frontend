@@ -36,7 +36,7 @@ import { EstadoVacio } from '@/components/ui/EstadoVacio'
 import { AprobacionCotizacion } from '../components/AprobacionCotizacion'
 import { AvisoAltoValor } from '../components/AvisoAltoValor'
 import { IndicadorAprobacion } from '../components/IndicadorAprobacion'
-import { esAsistenteLogistico, esJefeAdministrativo, veCotizaciones } from '../lib/rolesCotizacion'
+import { creaCotizaciones, esJefeAdministrativo, veCotizaciones } from '../lib/rolesCotizacion'
 
 const ESTADOS_ABIERTOS = new Set<string>(['BORRADOR', 'ENVIADA', 'EN_NEGOCIACION']);
 
@@ -120,7 +120,8 @@ export const CotizacionDetallePage: React.FC = () => {
 const CotizacionDetalleContenido: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const permisos = usePermisos();
-  const asistente = esAsistenteLogistico(permisos.rol)
+  // Quien crea (Asistente Logístico o Jefe) solicita aprobación, adjunta y envía.
+  const asistente = creaCotizaciones(permisos.rol)
   const jefe = esJefeAdministrativo(permisos.rol)
   const cotizacionId = id ? Number(id) : null;
 
@@ -135,7 +136,7 @@ const CotizacionDetalleContenido: React.FC = () => {
   // una orden generada a partir de esta cotización, y si esa orden ya tiene factura.
   const { data: ordenesData } = useOrdenesCompra();
   const ordenGenerada = ordenesData?.content?.find((o) => o.idCotizacion === cotizacionId);
-    // S2: solo quien ve comprobantes consulta las facturas.
+  // S2: solo quien ve comprobantes consulta las facturas.
   const { data: facturasData } = useFacturas({}, { enabled: permisos.verComprobantes });
   const facturaGenerada = facturasData?.content?.find((f) => f.idOrdenCompra === ordenGenerada?.idOrdenCompra);
 

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCotizaciones, useCotizacionesEstadisticas } from '../hooks/useCotizaciones';
-import { esAsistenteLogistico } from '../lib/rolesCotizacion';
+import { creaCotizaciones } from '../lib/rolesCotizacion';
 import { usePermisos } from '@/lib/permisos';
 import { useDuplicarCotizacion } from '../hooks/useCotizacionesMutations';
 import { cotizacionesApi } from '@/api/cotizacionesApi';
@@ -97,7 +97,7 @@ export const CotizacionesListPage: React.FC = () => {
   const { data: estadisticas } = useCotizacionesEstadisticas();
   const { mutate: duplicarCotizacion, isPending: isDuplicarPending } = useDuplicarCotizacion();
   const { rol } = usePermisos();
-  const creaCotizacion = esAsistenteLogistico(rol)
+  const creaCotizacion = creaCotizaciones(rol)
 
   const cambiarFiltros = (nuevos: Partial<CotizacionesFilterParams>) =>
     setFiltros((prev) => ({ ...prev, ...nuevos, page: 0 }));

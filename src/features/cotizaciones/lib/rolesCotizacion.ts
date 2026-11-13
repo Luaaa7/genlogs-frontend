@@ -25,3 +25,9 @@ export function esAsistenteLogistico(rol: Rol | null): boolean {
 export function esJefeAdministrativo(rol: Rol | null): boolean {
   return rol === ROL_JEFE_ADMINISTRATIVO
 }
+
+/** Crean, editan y envían cotizaciones: el Asistente Logístico y el Jefe Administrativo
+ *  (decisión del equipo, 13/11/2026). Aprobar sigue siendo solo del Jefe. */
+export function creaCotizaciones(rol: Rol | null): boolean {
+  return esAsistenteLogistico(rol) || esJefeAdministrativo(rol)
+}
