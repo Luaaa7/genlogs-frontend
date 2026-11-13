@@ -92,8 +92,12 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
     const sePuedeConvertir = !enDolares || tc !== null
     const precioServicio = i.tipo === 'servicio' && sePuedeConvertir ? Number(i.precioReferencial) : 0
     setPrecioEstandar(precioServicio > 0 ? (enDolares ? deSoles(precioServicio) : precioServicio) : null)
-    const costoServicio = i.tipo === 'servicio' && sePuedeConvertir ? Number(i.costo) : 0
-    if (costoServicio > 0) setCosto(String(enDolares ? deSoles(costoServicio) : costoServicio))
+    // Un servicio trae su propio costo: si el catálogo no lo tiene, el campo queda vacío
+    // para no arrastrar el costo del ítem anterior.
+    if (i.tipo === 'servicio') {
+      const costoServicio = sePuedeConvertir ? Number(i.costo) : 0
+      setCosto(costoServicio > 0 ? String(enDolares ? deSoles(costoServicio) : costoServicio) : '')
+    }
   }
 
   function reiniciar() {
@@ -113,6 +117,7 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
     setTexto('')
     setItem(null)
     setPrecioEstandar(null)
+    setCosto('')
     setMargenManual(null)
     setIntento(false)
   }
