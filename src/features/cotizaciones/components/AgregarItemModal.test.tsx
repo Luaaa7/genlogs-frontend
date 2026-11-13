@@ -20,6 +20,7 @@ vi.mock('./SelectorCatalogoItem', () => ({
       <button type="button" onClick={() => onSeleccionar({ tipo: 'producto', id: 9, nombre: 'Filtro', codigo: 'F-1' })}>elegir filtro</button>
       <button type="button" onClick={() => onSeleccionar({ tipo: 'servicio', id: 4, nombre: 'Mantenimiento', codigo: 'S-1' })}>elegir servicio</button>
       <button type="button" onClick={() => onSeleccionar({ tipo: 'servicio', id: 5, nombre: 'Traslado', codigo: 'S-2', costo: 100, precioReferencial: 125 })}>elegir servicio con precio</button>
+      <button type="button" onClick={() => onSeleccionar({ tipo: 'servicio', id: 6, nombre: 'PLC', codigo: 'S-3', precioReferencial: 500 })}>elegir servicio sin costo</button>
     </div>
   ),
 }))
@@ -64,17 +65,41 @@ describe('AgregarItemModal: margen según la escala', () => {
     expect(onAgregar).toHaveBeenCalledWith(expect.objectContaining({ idServicio: 4, tipoItem: 'servicio', margenPorcentaje: 35 }))
   })
 
-  it('trae el costo y el precio del servicio y deja cambiarlos', () => {
+  it('trae el costo y el precio estándar del servicio y deja cambiarlos', () => {
     const onAgregar = vi.fn()
     render(<AgregarItemModal moneda="PEN" onAgregar={onAgregar} onCerrar={() => {}} />)
     fireEvent.click(screen.getByRole('tab', { name: 'Servicio' }))
     fireEvent.click(screen.getByText('elegir servicio con precio'))
     expect((screen.getByLabelText(/costo unitario/i) as HTMLInputElement).value).toBe('100')
     expect((screen.getByLabelText(/margen %/i) as HTMLInputElement).value).toBe('20')
-    expect(screen.getByText(/traídos del catálogo de servicios/i)).toBeTruthy()
+    expect(screen.getByText(/precio estándar del servicio/i)).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
     expect(onAgregar).toHaveBeenCalledWith(expect.objectContaining({ idServicio: 5, costoUnitario: 100, precioUnitario: 125 }))
+  })
+
+  it('sin costo muestra el precio estándar y el margen sale al escribir el costo', () => {
+    const onAgregar = vi.fn()
+    render(<AgregarItemModal moneda="PEN" onAgregar={onAgregar} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Servicio' }))
+    fireEvent.click(screen.getByText('elegir servicio sin costo'))
+    expect((screen.getByLabelText(/costo unitario/i) as HTMLInputElement).value).toBe('')
+    expect(screen.getAllByText(/500\.00/).length).toBeGreaterThan(0)
+
+    fireEvent.change(screen.getByLabelText(/costo unitario/i), { target: { value: '400' } })
+    expect((screen.getByLabelText(/margen %/i) as HTMLInputElement).value).toBe('20')
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
+    expect(onAgregar).toHaveBeenCalledWith(expect.objectContaining({ idServicio: 6, costoUnitario: 400, precioUnitario: 500, margenPorcentaje: 20 }))
+  })
+
+  it('si se escribe otro margen, el precio se recalcula y se puede volver al estándar', () => {
+    render(<AgregarItemModal moneda="PEN" onAgregar={() => {}} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Servicio' }))
+    fireEvent.click(screen.getByText('elegir servicio con precio'))
+    fireEvent.change(screen.getByLabelText(/margen %/i), { target: { value: '50' } })
+    expect(screen.getAllByText(/200\.00/).length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByRole('button', { name: 'Usar el precio estándar' }))
+    expect((screen.getByLabelText(/margen %/i) as HTMLInputElement).value).toBe('20')
   })
 
   it('si el rol no ve el costo, el campo queda vacío para escribirlo', () => {
