@@ -33,7 +33,7 @@ import { nombreRolLegible } from '@/lib/formatters/roles';
 import { MENU_BLOQUES } from '@/menu';
 import type { Permisos } from '@/lib/permisos';
 
-type NavItem = { label: string; path: string; icon: React.ElementType; permiso?: 'verCotizacionesYOrdenes' | 'verCatalogosYEmpresas' | 'verReclamos'; visible?: (permisos: Permisos) => boolean };
+type NavItem = { label: string; path: string; icon: React.ElementType; permiso?: 'verCatalogosYEmpresas' | 'verReclamos'; visible?: (permisos: Permisos) => boolean };
 type NavGroup = { titulo: string; items: NavItem[] };
 
 /** Una sola navegación para todo el sistema (antes había un nav superior y
@@ -43,8 +43,8 @@ const NAV_BASE: NavGroup[] = [
     titulo: 'Operación',
     items: [
       { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-      { label: 'Cotizaciones', path: '/cotizaciones', icon: FileText, permiso: 'verCotizacionesYOrdenes' },
-      { label: 'Órdenes de compra', path: '/ordenes-compra', icon: ShoppingCart, permiso: 'verCotizacionesYOrdenes' },
+      { label: 'Cotizaciones', path: '/cotizaciones', icon: FileText, visible: (p) => p.verCotizaciones },
+      { label: 'Órdenes de compra', path: '/ordenes-compra', icon: ShoppingCart, visible: (p) => p.verOrdenes },
       { label: 'Comprobantes', path: '/facturacion', icon: Receipt, visible: (p) => p.verComprobantes },
       { label: 'Reclamos', path: '/reclamos', icon: MessageSquareWarning, permiso: 'verReclamos' },
     ],
@@ -266,7 +266,7 @@ export function AppLayout() {
   // El "Menú" de la barra inferior cuenta como activo cuando estamos en algo
   // que no vive en los 4 accesos fijos (para que siempre haya un ítem resaltado).
   const permisosNav = usePermisos();
-  const bottomNav = BOTTOM_NAV.filter((item) => !item.permiso || permisosNav[item.permiso]);
+  const bottomNav = BOTTOM_NAV.filter((item) => (!item.permiso || permisosNav[item.permiso]) && (!item.visible || item.visible(permisosNav)));
   const isMenuSectionActive = !bottomNav.some((item) => estaActivo(location.pathname, item.path));
 
   // El menú de usuario se abre/cierra con click (no solo hover), para que

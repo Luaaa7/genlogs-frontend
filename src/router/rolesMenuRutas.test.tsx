@@ -8,8 +8,6 @@
  * pendientes: aquí solo importa qué ve y a dónde entra cada rol.
  *
  * Diferencias con la matriz que este test NO cubre todavía (al corregirlas, agregar el caso):
- *  - Menú "Cotizaciones" y ruta /cotizaciones: el Contador y el Supervisor SST la ven (AppLayout usa
- *    verCotizacionesYOrdenes, que también da true con Pedidos y OC). La matriz no les da cotizaciones.
  *  - Menú "Solicitudes" (FE-C): el Asistente Administrativo no la ve y /solicitudes lo manda al
  *    dashboard; la matriz le da "solo ve".
  *  - Empresas mineras y Repuestos: el menú sigue la matriz, pero sus rutas no tienen
@@ -59,6 +57,8 @@ const TODOS_INTERNOS: Interno[] = [GG, JA, CG, SST, AL, AA]
 const MENU_ESPERADO: Record<string, Interno[]> = {
   Dashboard: TODOS_INTERNOS,
   'Órdenes de compra': TODOS_INTERNOS,
+  // C2: Cotizaciones sin Contador ni SST.
+  Cotizaciones: [GG, JA, AL, AA],
   // S2: Comprobantes y PASE/SCTR con la matriz v3.2.
   Comprobantes: [GG, JA, CG, AA],
   'PASE y SCTR por vencer': [GG, JA, CG, SST, AA],
@@ -79,6 +79,10 @@ const MENU_ESPERADO: Record<string, Interno[]> = {
 const RUTAS_ESPERADAS: Record<string, Interno[]> = {
   '/dashboard': TODOS_INTERNOS,
   '/ordenes-compra': TODOS_INTERNOS,
+  // C2: cotizaciones según la matriz; la nueva solo para quien crea (Asist. Log. y Jefe).
+  '/cotizaciones': [GG, JA, AL, AA],
+  '/cotizaciones/1': [GG, JA, AL, AA],
+  '/cotizaciones/nueva': [JA, AL],
   '/reclamos': [GG, JA, AL, AA],
   '/despachos': [GG, JA, SST, AL, AA],
   '/acciones': [GG, JA, CG, AL],

@@ -52,7 +52,8 @@ describe('permisos v3.2 (Paso 0)', () => {
   it('el cliente no entra a pantallas internas', () => {
     const p = permisosDe('CLIENTE')
     expect(p.esCliente).toBe(true)
-    expect(p.verCotizacionesYOrdenes).toBe(false)
+    expect(p.verCotizaciones).toBe(false)
+    expect(p.verOrdenes).toBe(false)
     expect(p.verReclamos).toBe(false)
     expect(p.editarCotizaciones).toBe(false)
     expect(p.verNotificaciones).toBe(false)
@@ -73,5 +74,12 @@ describe('permisos v3.2 (Paso 0)', () => {
     expect(p.rol).toBeNull()
     expect(p.esInterno).toBe(false)
     expect(Object.entries(p).filter(([, v]) => v === true)).toEqual([])
+  })
+
+  it('C2: cotizaciones sin Contador ni SST; órdenes para todo el personal', () => {
+    const conCotizaciones = ROLES.filter((r) => permisosDe(r).verCotizaciones)
+    expect(conCotizaciones).toEqual(['GERENTE_GENERAL', 'JEFE_ADMINISTRATIVO', 'ASISTENTE_LOGISTICO', 'ASISTENTE_ADMINISTRATIVO'])
+    const conOrdenes = ROLES.filter((r) => permisosDe(r).verOrdenes)
+    expect(conOrdenes).toEqual(ROLES_INTERNOS)
   })
 })

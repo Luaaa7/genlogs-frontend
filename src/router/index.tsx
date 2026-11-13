@@ -20,6 +20,7 @@ import { ReportesPage } from '@/features/reportes/pages/ReportesPage'
 import { CotizacionesListPage } from '@/features/cotizaciones/pages/CotizacionesListPage'
 import { NuevaCotizacionPage } from '@/features/cotizaciones/pages/NuevaCotizacionPage'
 import { CotizacionDetallePage } from '@/features/cotizaciones/pages/CotizacionDetallePage'
+import { creaCotizaciones } from '@/features/cotizaciones/lib/rolesCotizacion'
 import ClientesListPage from '@/features/clientes-proveedores/pages/ClientesListPage'
 import ClienteDetallePage from '@/features/clientes-proveedores/pages/ClienteDetallePage'
 import ProveedoresListPage from '@/features/clientes-proveedores/pages/ProveedoresListPage'
@@ -62,10 +63,17 @@ export const router = createBrowserRouter([
       { path: '/catalogo-servicios/:id/editar', element: <ServicioFormPage /> },
     ] },
     { path: '/reportes', element: <ReportesPage /> },
-    { path: '/cotizaciones', element: <CotizacionesListPage /> },
-    { path: '/cotizaciones/nueva', element: <NuevaCotizacionPage /> },
-    { path: '/cotizaciones/:id', element: <CotizacionDetallePage /> },
-    { path: '/ordenes-compra', element: <OrdenesCompraPage /> },
+    // C2: cotizaciones según la matriz (sin Contador ni SST); la nueva, solo quien crea.
+    { element: <RoleGuard permitido={(p) => p.verCotizaciones} />, children: [
+      { path: '/cotizaciones', element: <CotizacionesListPage /> },
+      { path: '/cotizaciones/:id', element: <CotizacionDetallePage /> },
+    ] },
+    { element: <RoleGuard permitido={(p) => creaCotizaciones(p.rol)} />, children: [
+      { path: '/cotizaciones/nueva', element: <NuevaCotizacionPage /> },
+    ] },
+    { element: <RoleGuard permitido={(p) => p.verOrdenes} />, children: [
+      { path: '/ordenes-compra', element: <OrdenesCompraPage /> },
+    ] },
     { element: <RoleGuard permitido={(p) => p.verComprobantes} />, children: [
       { path: '/facturacion', element: <FacturacionPage /> },
     ] },
