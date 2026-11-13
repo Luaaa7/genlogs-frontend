@@ -13,6 +13,10 @@ vi.mock('@/features/configuracion/hooks/useMargenes', () => ({
   }),
 }))
 vi.mock('@/lib/permisos', () => ({ usePermisos: () => ({ editarCatalogos: false }) }))
+const tipoCambio = vi.hoisted(() => ({ valor: 4 as number | null }))
+vi.mock('@/features/tipo-cambio/hooks/useTipoCambio', () => ({
+  useTipoCambio: () => ({ data: tipoCambio.valor === null ? null : { valor: tipoCambio.valor } }),
+}))
 vi.mock('./SelectorCatalogoItem', () => ({
   SelectorCatalogoItem: ({ onSeleccionar, tipo }: { onSeleccionar: (i: unknown) => void; tipo?: string }) => (
     <div>
@@ -107,5 +111,28 @@ describe('AgregarItemModal: margen según la escala', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Servicio' }))
     fireEvent.click(screen.getByText('elegir servicio'))
     expect((screen.getByLabelText(/costo unitario/i) as HTMLInputElement).value).toBe('')
+  })
+
+  it('en una cotización en dólares convierte el costo y el precio con el tipo de cambio', () => {
+    tipoCambio.valor = 4
+    const onAgregar = vi.fn()
+    render(<AgregarItemModal moneda="USD" onAgregar={onAgregar} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Servicio' }))
+    fireEvent.click(screen.getByText('elegir servicio con precio'))
+    // S/ 100 y S/ 125 a 4 soles por dólar: US$ 25 y US$ 31.25
+    expect((screen.getByLabelText(/costo unitario/i) as HTMLInputElement).value).toBe('25')
+    expect(screen.getByText(/al tipo de cambio 4\.000/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
+    expect(onAgregar).toHaveBeenCalledWith(expect.objectContaining({ costoUnitario: 25, precioUnitario: 31.25 }))
+  })
+
+  it('en dólares sin tipo de cambio no convierte y pide escribir el costo', () => {
+    tipoCambio.valor = null
+    render(<AgregarItemModal moneda="USD" onAgregar={() => {}} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Servicio' }))
+    fireEvent.click(screen.getByText('elegir servicio con precio'))
+    expect((screen.getByLabelText(/costo unitario/i) as HTMLInputElement).value).toBe('')
+    expect(screen.getByText(/no hay tipo de cambio de hoy/i)).toBeTruthy()
+    tipoCambio.valor = 4
   })
 })
