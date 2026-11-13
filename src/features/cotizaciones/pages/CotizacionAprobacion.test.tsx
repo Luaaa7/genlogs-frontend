@@ -156,21 +156,22 @@ describe('aprobación de la cotización', () => {
     expect((screen.getByRole('button', { name: 'Enviar al cliente' }) as HTMLButtonElement).disabled).toBe(false)
   })
 
-  it('desde borrador el menú del Jefe solo ofrece anular', async () => {
+  it('desde borrador el menú del Jefe solo ofrece anular, y puede solicitar la aprobación de la suya', async () => {
     pintarDetalle('JEFE_ADMINISTRATIVO')
     fireEvent.click(await screen.findByRole('button', { name: 'Cambiar estado' }))
     const menu = screen.getByRole('menu')
     expect(within(menu).getByRole('menuitemradio', { name: 'Anulada' })).toBeTruthy()
     expect(within(menu).queryByRole('menuitemradio', { name: 'Enviada' })).toBeNull()
     expect(within(menu).queryByRole('menuitemradio', { name: 'Aprobada' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Solicitar aprobación' })).toBeNull()
+    // El Jefe también crea cotizaciones (decisión del equipo, 13/11/2026).
+    expect(screen.getByRole('button', { name: 'Solicitar aprobación' })).toBeTruthy()
   })
 
-  it('el Jefe no ve Nueva cotización ni Duplicar', async () => {
+  it('el Jefe y el Asistente Logístico ven Nueva cotización y Duplicar', async () => {
     const primera = pintarLista('JEFE_ADMINISTRATIVO')
     expect(await screen.findByText('COT-001')).toBeTruthy()
-    expect(screen.queryByRole('link', { name: /nueva cotización/i })).toBeNull()
-    expect(screen.queryByRole('button', { name: /duplicar/i })).toBeNull()
+    expect(await screen.findByRole('link', { name: /nueva cotización/i })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: /duplicar cot-001/i })).toBeTruthy()
     primera.unmount()
     pintarLista('ASISTENTE_LOGISTICO')
     expect(await screen.findByRole('link', { name: /nueva cotización/i })).toBeTruthy()
