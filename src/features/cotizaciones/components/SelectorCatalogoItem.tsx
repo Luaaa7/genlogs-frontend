@@ -13,6 +13,9 @@ export interface ItemCatalogo {
   /** Solo servicios: categoría y su categoría padre (para sugerir el margen). */
   idCategoriaServicio?: number
   idCategoriaPadre?: number
+  /** Solo servicios: costo y precio del catálogo (null si el rol no ve el costo). */
+  costo?: number | null
+  precioReferencial?: number | null
 }
 
 interface SelectorCatalogoItemProps {
@@ -166,7 +169,7 @@ export const SelectorCatalogoItem: React.FC<SelectorCatalogoItemProps> = ({
                   aria-selected={false}
                   className={opcionClass}
                   onClick={() =>
-                    elegir({ tipo: 'servicio', id: s.idServicio, nombre: s.nombreServicio, codigo: s.codigoServicio, idUnidadMedida: s.unidadMedida?.idUnidadMedida, idCategoriaServicio: s.categoriaServicio?.idCategoriaServicio, idCategoriaPadre: s.categoriaServicio?.categoriaPadre?.idCategoriaServicio })
+                    elegir({ tipo: 'servicio', id: s.idServicio, nombre: s.nombreServicio, codigo: s.codigoServicio, idUnidadMedida: s.unidadMedida?.idUnidadMedida, idCategoriaServicio: s.categoriaServicio?.idCategoriaServicio, idCategoriaPadre: s.categoriaServicio?.categoriaPadre?.idCategoriaServicio, costo: s.costo, precioReferencial: s.precioReferencial })
                   }
                 >
                   <span className="font-medium text-foreground">{s.nombreServicio}</span>

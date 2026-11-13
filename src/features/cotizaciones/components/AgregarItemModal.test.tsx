@@ -19,6 +19,7 @@ vi.mock('./SelectorCatalogoItem', () => ({
       <span>buscando: {tipo}</span>
       <button type="button" onClick={() => onSeleccionar({ tipo: 'producto', id: 9, nombre: 'Filtro', codigo: 'F-1' })}>elegir filtro</button>
       <button type="button" onClick={() => onSeleccionar({ tipo: 'servicio', id: 4, nombre: 'Mantenimiento', codigo: 'S-1' })}>elegir servicio</button>
+      <button type="button" onClick={() => onSeleccionar({ tipo: 'servicio', id: 5, nombre: 'Traslado', codigo: 'S-2', costo: 100, precioReferencial: 125 })}>elegir servicio con precio</button>
     </div>
   ),
 }))
@@ -61,5 +62,25 @@ describe('AgregarItemModal: margen según la escala', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
     expect(onAgregar).toHaveBeenCalledWith(expect.objectContaining({ idServicio: 4, tipoItem: 'servicio', margenPorcentaje: 35 }))
+  })
+
+  it('trae el costo y el precio del servicio y deja cambiarlos', () => {
+    const onAgregar = vi.fn()
+    render(<AgregarItemModal moneda="PEN" onAgregar={onAgregar} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Servicio' }))
+    fireEvent.click(screen.getByText('elegir servicio con precio'))
+    expect((screen.getByLabelText(/costo unitario/i) as HTMLInputElement).value).toBe('100')
+    expect((screen.getByLabelText(/margen %/i) as HTMLInputElement).value).toBe('20')
+    expect(screen.getByText(/traídos del catálogo de servicios/i)).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
+    expect(onAgregar).toHaveBeenCalledWith(expect.objectContaining({ idServicio: 5, costoUnitario: 100, precioUnitario: 125 }))
+  })
+
+  it('si el rol no ve el costo, el campo queda vacío para escribirlo', () => {
+    render(<AgregarItemModal moneda="PEN" onAgregar={() => {}} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Servicio' }))
+    fireEvent.click(screen.getByText('elegir servicio'))
+    expect((screen.getByLabelText(/costo unitario/i) as HTMLInputElement).value).toBe('')
   })
 })

@@ -16,6 +16,15 @@ vi.mock('@/api/distritosApi', async (orig) => ({
   listarDistritos: vi.fn().mockResolvedValue(DISTRITOS),
 }))
 
+vi.mock('@/api/paisesApi', async (orig) => ({
+  ...(await orig<typeof import('@/api/paisesApi')>()),
+  listarPaises: vi.fn().mockResolvedValue([
+    { idPais: 1, codigoIso: 'PE', nombrePais: 'Perú', codigoTelefono: '+51' },
+    { idPais: 2, codigoIso: 'CL', nombrePais: 'Chile', codigoTelefono: '+56' },
+    { idPais: 3, codigoIso: 'US', nombrePais: 'Estados Unidos', codigoTelefono: null },
+  ]),
+}))
+
 vi.mock('@/api/tercerosApi', () => ({ tercerosApi: { consultarDocumento: (n: string) => consultarDocumento(n) } }))
 
 import { ProveedorForm } from './ProveedorForm'
@@ -148,8 +157,14 @@ describe('CamposTercero: pestañas RUC, DNI y Pasaporte', () => {
       expect(valor(/^dirección/i)).toBe('')
       expect(valor(/^teléfono/i)).toBe('')
       expect(valor(/^correo/i)).toBe('')
-      expect(valor(/^distrito/i)).toBe('')
-      expect(valor(/departamento/i)).toBe('')
+      if (pestana.source === '^Pasaporte') {
+        // Con pasaporte la ubicación es en texto libre y el país empieza sin elegir.
+        expect(valor(/^ciudad/i)).toBe('')
+        expect(screen.queryByLabelText(/departamento/i)).toBeNull()
+      } else {
+        expect(valor(/^distrito/i)).toBe('')
+        expect(valor(/departamento/i)).toBe('')
+      }
       if (pestana.source === '^RUC') expect(valor(/razón social/i)).toBe('')
       else expect(valor(/^nombres/i)).toBe('')
     }
@@ -275,5 +290,50 @@ describe('CamposTercero: pestañas RUC, DNI y Pasaporte', () => {
     expect(enviado.razonSocial).toBe('Ana María López Ruiz')
     expect(enviado.nombres).toBe('Ana María')
     expect(enviado.apellidoPaterno).toBe('López')
+  })
+
+  it('pasaporte: ubicación en texto libre, sin Perú en la lista y el país es obligatorio', async () => {
+    await act(async () => {
+      renderForm()
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('tab', { name: /^Pasaporte/ }))
+    })
+    await waitFor(() => expect(screen.getByRole('option', { name: 'Chile' })).toBeTruthy())
+    expect(screen.queryByRole('option', { name: 'Perú' })).toBeNull()
+    expect(valor(/^país/i)).toBe('')
+    expect(screen.getByLabelText(/^ciudad/i)).toBeTruthy()
+    expect(screen.queryByLabelText(/departamento/i)).toBeNull()
+
+    fireEvent.change(screen.getByLabelText(/número de pasaporte/i), { target: { value: 'AB123456' } })
+    fireEvent.change(screen.getByLabelText(/^nombres/i), { target: { value: 'John' } })
+    fireEvent.change(screen.getByLabelText(/apellido paterno/i), { target: { value: 'Smith' } })
+    fireEvent.change(screen.getByLabelText(/apellido materno/i), { target: { value: 'Doe' } })
+    fireEvent.change(screen.getByLabelText(/^ciudad/i), { target: { value: 'Calama' } })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /guardar proveedor/i }))
+    })
+    expect(await screen.findByText('Elige el país', { selector: 'p' })).toBeTruthy()
+  })
+
+  it('teléfono: pone el prefijo del país al salir y lo cambia si se cambia de país', async () => {
+    await act(async () => {
+      renderForm()
+    })
+    await waitFor(() => expect(screen.getByRole('option', { name: 'Chile' })).toBeTruthy())
+    const telefono = screen.getByLabelText(/^teléfono/i) as HTMLInputElement
+    expect(telefono.placeholder).toBe('+51 984 215 330')
+
+    await act(async () => {
+      fireEvent.change(telefono, { target: { value: '984215330' } })
+      fireEvent.blur(telefono)
+    })
+    await waitFor(() => expect(valor(/^teléfono/i)).toBe('+51984215330'))
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText(/^país/i), { target: { value: '2' } })
+    })
+    expect(valor(/^teléfono/i)).toBe('+56984215330')
+    expect(telefono.placeholder).toBe('+56 984 215 330')
   })
 })
