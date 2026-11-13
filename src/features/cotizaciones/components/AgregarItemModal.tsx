@@ -42,6 +42,8 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
   const [costo, setCosto] = useState('')
   // Margen escrito a mano; mientras sea null se usa el sugerido por la escala.
   const [margenManual, setMargenManual] = useState<string | null>(null)
+  // Precio estándar del servicio elegido (precio referencial del catálogo).
+  const [precioEstandar, setPrecioEstandar] = useState<number | null>(null)
   const [intento, setIntento] = useState(false)
   const [agregados, setAgregados] = useState(0)
   const [creandoRepuesto, setCreandoRepuesto] = useState(false)
@@ -56,9 +58,14 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
     : item.tipo === 'producto'
       ? (cost > 0 ? reglaProducto(escala, cost) : null)
       : reglaServicio(escala, item.idCategoriaServicio, item.idCategoriaPadre)
-  const margenTexto = margenManual ?? (regla ? String(regla.sugerido) : '0')
+  // Con precio estándar (y sin margen escrito a mano) el precio de venta es el del
+  // servicio y el margen sale del costo. Si se escribe otro margen, manda el margen.
+  const usaPrecioEstandar = precioEstandar !== null && margenManual === null
+  const margenTexto = margenManual
+    ?? (usaPrecioEstandar ? (cost > 0 ? String(margenDesdePrecio(cost, precioEstandar)) : '')
+      : regla ? String(regla.sugerido) : '0')
   const marg = Number(margenTexto)
-  const precioVenta = precioDesdeCosto(cost, marg)
+  const precioVenta = usaPrecioEstandar ? precioEstandar : precioDesdeCosto(cost, marg)
   const bajoMinimo = regla !== null && marg < regla.minimo
   const faltantes = [
     !item && (tipo === 'producto' ? 'repuesto' : 'servicio'),
@@ -67,24 +74,22 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
     !(marg >= 0 && marg <= MARGEN_MAXIMO) && `margen entre 0 y ${MARGEN_MAXIMO}`,
   ].filter(Boolean) as string[]
 
-  // Al elegir un servicio se traen su costo y su precio del catálogo; los dos se
-  // pueden cambiar. El margen se calcula para que el precio de venta sea el del servicio.
+  // Al elegir un servicio sale su precio estándar como precio de venta y, si el rol
+  // lo puede ver, su costo. Todo se puede cambiar para esta cotización.
   function elegirItem(i: ItemCatalogo) {
     setItem(i)
     setTexto(i.nombre)
     setMargenManual(null)
-    if (i.tipo !== 'servicio') return
-    const costoServicio = Number(i.costo)
-    const precioServicio = Number(i.precioReferencial)
-    if (costoServicio > 0) {
-      setCosto(String(costoServicio))
-      if (precioServicio > costoServicio) setMargenManual(String(margenDesdePrecio(costoServicio, precioServicio)))
-    }
+    const precioServicio = i.tipo === 'servicio' ? Number(i.precioReferencial) : 0
+    setPrecioEstandar(precioServicio > 0 ? precioServicio : null)
+    const costoServicio = i.tipo === 'servicio' ? Number(i.costo) : 0
+    if (costoServicio > 0) setCosto(String(costoServicio))
   }
 
   function reiniciar() {
     setTexto('')
     setItem(null)
+    setPrecioEstandar(null)
     setCantidad('1')
     setCosto('')
     setMargenManual(null)
@@ -97,6 +102,7 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
     setTipo(nuevo)
     setTexto('')
     setItem(null)
+    setPrecioEstandar(null)
     setMargenManual(null)
     setIntento(false)
   }
@@ -174,7 +180,7 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
             tipo={tipo}
             valor={texto}
             seleccionado={item !== null}
-            onEscribir={(t) => { setTexto(t); setItem(null) }}
+            onEscribir={(t) => { setTexto(t); setItem(null); setPrecioEstandar(null) }}
             onSeleccionar={elegirItem}
             ariaLabel={tipo === 'producto' ? 'Repuesto del ítem nuevo' : 'Servicio del ítem nuevo'}
             invalido={err(!item)}
@@ -207,21 +213,23 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
             <input type="number" min={0} max={MARGEN_MAXIMO} step="0.1" inputMode="decimal" value={margenTexto} onChange={(e) => setMargenManual(e.target.value)}
               aria-invalid={err(!(marg >= 0 && marg <= MARGEN_MAXIMO))} aria-describedby="margen-ayuda" className={`${inputFormClass} mt-1 text-right tabular-nums`} />
             <span id="margen-ayuda" className="mt-1 block text-xs font-normal text-muted-foreground">
-              {regla
-                ? `Sugerido ${textoPorcentaje(regla.sugerido)} · mínimo ${textoPorcentaje(regla.minimo)}`
-                : item?.tipo === 'producto' ? 'Escribe el costo para sugerirlo.' : 'Según la escala de márgenes.'}
+              {usaPrecioEstandar
+                ? (cost > 0 ? 'Sale del precio estándar.' : 'Escribe el costo para calcularlo.')
+                : regla
+                  ? `Sugerido ${textoPorcentaje(regla.sugerido)} · mínimo ${textoPorcentaje(regla.minimo)}`
+                  : item?.tipo === 'producto' ? 'Escribe el costo para sugerirlo.' : 'Según la escala de márgenes.'}
             </span>
-            {margenManual !== null && regla && (
+            {margenManual !== null && (precioEstandar !== null || regla) && (
               <button type="button" onClick={() => setMargenManual(null)} className="mt-0.5 text-xs font-normal text-accent underline-offset-2 hover:underline">
-                Usar el sugerido
+                {precioEstandar !== null ? 'Usar el precio estándar' : 'Usar el sugerido'}
               </button>
             )}
           </label>
         </div>
-        {item?.tipo === 'servicio' && Number(item.costo) > 0 && (
-          <p className="text-xs text-muted-foreground">
-            Costo y precio traídos del catálogo de servicios
-            {Number(item.precioReferencial) > 0 && <> (precio {formatearMoneda(Number(item.precioReferencial), moneda)})</>}. Puedes cambiarlos para esta cotización.
+        {precioEstandar !== null && (
+          <p role="status" className="rounded-md bg-muted px-3 py-2 text-sm text-foreground">
+            Precio estándar del servicio: <strong className="tabular-nums">{formatearMoneda(precioEstandar, moneda)}</strong>.
+            {' '}{Number(item?.costo) > 0 ? 'El costo también viene del catálogo.' : 'Escribe el costo para calcular el margen.'} Puedes cambiarlos para esta cotización.
           </p>
         )}
         {bajoMinimo && (
