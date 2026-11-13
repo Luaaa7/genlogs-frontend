@@ -153,6 +153,12 @@ export function permisosDe(nombreRol: string | null | undefined) {
     editarClientesYProveedores: es('JEFE_ADMINISTRATIVO', 'ASISTENTE_LOGISTICO'),
     editarCatalogos: puedeCrear('vitrina') || es('JEFE_ADMINISTRATIVO'),
     editarEmpresasMineras: es('JEFE_ADMINISTRATIVO'),
+
+    // ---- S2 (v3.3): servicios y comprobantes con la matriz ----
+    /** Catálogo de servicios: Gerente y Asist. Adm. ven; Jefe y Asist. Log. editan. Sin Contador ni SST. */
+    verServicios: esInterno && puedeVer('servicios'),
+    /** Comprobantes: Gerente, Jefe, Contador y Asist. Adm. Sin SST ni Asist. Log. */
+    verComprobantes: esInterno && puedeVer('comprobantes'),
   }
 }
 

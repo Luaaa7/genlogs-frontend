@@ -9,6 +9,8 @@ import { SelectorCatalogoItem, type ItemCatalogo } from './SelectorCatalogoItem'
 import { RepuestoRapidoModal } from './RepuestoRapidoModal'
 import { usePermisos } from '@/lib/permisos'
 import { useEscalaMargenes } from '@/features/configuracion/hooks/useMargenes'
+import { useTipoCambio } from '@/features/tipo-cambio/hooks/useTipoCambio'
+import { normalizarMoneda } from '@/lib/formatters/currency'
 import { MARGEN_MAXIMO, margenDesdePrecio, precioDesdeCosto, reglaProducto, reglaServicio, textoPorcentaje } from '@/lib/margenes'
 
 export interface ItemNuevo {
@@ -49,6 +51,12 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
   const [creandoRepuesto, setCreandoRepuesto] = useState(false)
   const { editarCatalogos } = usePermisos()
   const { data: escala } = useEscalaMargenes()
+  // Los servicios guardan su costo y precio en soles. En una cotización en dólares se
+  // convierten con el tipo de cambio del día (el mismo que se guarda en la cotización).
+  const { data: tipoCambio } = useTipoCambio()
+  const tc = Number(tipoCambio?.valor) > 0 ? Number(tipoCambio?.valor) : null
+  const enDolares = normalizarMoneda(moneda) === 'USD'
+  const deSoles = (soles: number) => Math.round((soles / (tc ?? 1)) * 100) / 100
 
   const cant = Number(cantidad)
   const cost = Number(costo)
@@ -75,15 +83,17 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
   ].filter(Boolean) as string[]
 
   // Al elegir un servicio sale su precio estándar como precio de venta y, si el rol
-  // lo puede ver, su costo. Todo se puede cambiar para esta cotización.
+  // lo puede ver, su costo, en la moneda de la cotización. Todo se puede cambiar.
+  // En dólares sin tipo de cambio no se convierte: se escribe a mano.
   function elegirItem(i: ItemCatalogo) {
     setItem(i)
     setTexto(i.nombre)
     setMargenManual(null)
-    const precioServicio = i.tipo === 'servicio' ? Number(i.precioReferencial) : 0
-    setPrecioEstandar(precioServicio > 0 ? precioServicio : null)
-    const costoServicio = i.tipo === 'servicio' ? Number(i.costo) : 0
-    if (costoServicio > 0) setCosto(String(costoServicio))
+    const sePuedeConvertir = !enDolares || tc !== null
+    const precioServicio = i.tipo === 'servicio' && sePuedeConvertir ? Number(i.precioReferencial) : 0
+    setPrecioEstandar(precioServicio > 0 ? (enDolares ? deSoles(precioServicio) : precioServicio) : null)
+    const costoServicio = i.tipo === 'servicio' && sePuedeConvertir ? Number(i.costo) : 0
+    if (costoServicio > 0) setCosto(String(enDolares ? deSoles(costoServicio) : costoServicio))
   }
 
   function reiniciar() {
@@ -226,10 +236,19 @@ export function AgregarItemModal({ moneda, onAgregar, onCerrar }: Props) {
             )}
           </label>
         </div>
-        {precioEstandar !== null && (
+        {precioEstandar !== null && item?.tipo === 'servicio' && (
           <p role="status" className="rounded-md bg-muted px-3 py-2 text-sm text-foreground">
-            Precio estándar del servicio: <strong className="tabular-nums">{formatearMoneda(precioEstandar, moneda)}</strong>.
-            {' '}{Number(item?.costo) > 0 ? 'El costo también viene del catálogo.' : 'Escribe el costo para calcular el margen.'} Puedes cambiarlos para esta cotización.
+            Precio estándar del servicio:{' '}
+            <strong className="tabular-nums">{formatearMoneda(Number(item.precioReferencial), 'PEN')}</strong>
+            {tc !== null && (
+              <span className="tabular-nums text-muted-foreground"> (≈ {formatearMoneda(deSoles(Number(item.precioReferencial)), 'USD')} al tipo de cambio {tc.toFixed(3)})</span>
+            )}
+            .{' '}{Number(item.costo) > 0 ? 'El costo también viene del catálogo.' : 'Escribe el costo para calcular el margen.'} Puedes cambiarlos para esta cotización.
+          </p>
+        )}
+        {enDolares && tc === null && item?.tipo === 'servicio' && Number(item.precioReferencial) > 0 && (
+          <p role="status" className="rounded-md bg-warning/10 px-3 py-2 text-sm text-foreground">
+            No hay tipo de cambio de hoy: escribe el costo en dólares. El precio del servicio es {formatearMoneda(Number(item.precioReferencial), 'PEN')}.
           </p>
         )}
         {bajoMinimo && (

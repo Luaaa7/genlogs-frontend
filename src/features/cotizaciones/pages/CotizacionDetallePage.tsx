@@ -135,7 +135,8 @@ const CotizacionDetalleContenido: React.FC = () => {
   // una orden generada a partir de esta cotización, y si esa orden ya tiene factura.
   const { data: ordenesData } = useOrdenesCompra();
   const ordenGenerada = ordenesData?.content?.find((o) => o.idCotizacion === cotizacionId);
-  const { data: facturasData } = useFacturas();
+    // S2: solo quien ve comprobantes consulta las facturas.
+  const { data: facturasData } = useFacturas({}, { enabled: permisos.verComprobantes });
   const facturaGenerada = facturasData?.content?.find((f) => f.idOrdenCompra === ordenGenerada?.idOrdenCompra);
 
   const [showEnvioModal, setShowEnvioModal] = useState(false);
