@@ -10,6 +10,8 @@ const api = vi.hoisted(() => ({
   probarSesion: vi.fn(),
   activarFuente: vi.fn(),
   cambiarParametros: vi.fn(),
+  listarSelectores: vi.fn(),
+  guardarSelectores: vi.fn(),
 }))
 vi.mock('@/api/fuentesApi', () => api)
 
@@ -124,6 +126,7 @@ describe('Configuración > Fuentes de búsqueda (L2, BPMN 9-A)', () => {
     expect(screen.queryByLabelText('Contraseña')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Probar sesión' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Activar' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Reglas de extracción' })).toBeNull()
     expect(within(tarjeta('eBay')).getByText('Con error')).toBeTruthy()
   })
 

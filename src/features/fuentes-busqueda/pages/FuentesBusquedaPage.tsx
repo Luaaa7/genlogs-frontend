@@ -15,6 +15,7 @@ import {
   useGuardarCuenta,
   useProbarSesion,
 } from '../hooks/useFuentes'
+import { ReglasExtraccion } from '../components/ReglasExtraccion'
 
 /** D-37: una tienda entra en la búsqueda solo con 4 o más aciertos en la prueba de 10 pedidos. */
 const ACIERTOS_MINIMOS = 4
@@ -100,6 +101,7 @@ function TarjetaFuente({ fuente, editable }: { fuente: FuenteConfig; editable: b
           <FormCuenta fuente={fuente} />
           <Acciones fuente={fuente} />
           <FormLimites fuente={fuente} />
+          <ReglasExtraccion codigo={fuente.codigo} nombre={fuente.nombre} />
         </>
       )}
     </section>

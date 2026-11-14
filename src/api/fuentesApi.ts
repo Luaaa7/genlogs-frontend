@@ -43,3 +43,22 @@ export async function cambiarParametros(codigo: string, p: { pausaSegundos: numb
   const { data } = await axiosClient.patch<FuenteConfig>(`/fuentes/${codigo}/parametros`, p)
   return data
 }
+
+export type PaginaSelector = 'BUSQUEDA' | 'FICHA'
+export type CampoSelector = 'ITEM' | 'NOMBRE' | 'DESCRIPCION' | 'PRECIO' | 'MONEDA' | 'IMAGEN' | 'ENLACE'
+export interface ReglaExtraccion {
+  pagina: PaginaSelector
+  campo: CampoSelector
+  regla: string
+}
+
+/** M4: reglas de extracción de una tienda (solo Jefe Administrativo). */
+export async function listarSelectores(codigo: string): Promise<ReglaExtraccion[]> {
+  const { data } = await axiosClient.get<ReglaExtraccion[]>(`/fuentes/${codigo}/selectores`)
+  return data ?? []
+}
+
+/** Crea o reemplaza las reglas enviadas; las que no vienen se quedan como están. */
+export async function guardarSelectores(codigo: string, reglas: ReglaExtraccion[]): Promise<void> {
+  await axiosClient.put(`/fuentes/${codigo}/selectores`, reglas)
+}
