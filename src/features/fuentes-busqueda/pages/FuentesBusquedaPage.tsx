@@ -40,7 +40,7 @@ function mensajeDe(err: unknown, porDefecto: string) {
  */
 export function FuentesBusquedaPage() {
   const fuentes = useFuentes()
-  const { esAdmin } = usePermisos()
+  const { configurarFuentes } = usePermisos()
 
   return (
     <div className="flex flex-col gap-6">
@@ -55,7 +55,7 @@ export function FuentesBusquedaPage() {
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {fuentes.data.map((f) => (
-            <TarjetaFuente key={`${f.codigo}:${f.pausaSegundos}:${f.limiteDiario}`} fuente={f} editable={esAdmin} />
+            <TarjetaFuente key={`${f.codigo}:${f.pausaSegundos}:${f.limiteDiario}`} fuente={f} editable={configurarFuentes} />
           ))}
         </div>
       )}

@@ -73,6 +73,8 @@ const MENU_ESPERADO: Record<string, Interno[]> = {
   Márgenes: [JA],
   Parámetros: [JA],
   'Tipo de cambio': [JA],
+  // L3 (v3.3, BPMN 9-A): el Jefe configura las tiendas; el Asistente Logístico solo ve su estado.
+  'Fuentes de búsqueda': [JA, AL],
 }
 
 /** Ruta interna → roles internos que entran; el resto vuelve al dashboard. */
@@ -96,6 +98,7 @@ const RUTAS_ESPERADAS: Record<string, Interno[]> = {
   '/configuracion/margenes': [JA],
   '/configuracion/parametros': [JA],
   '/configuracion/tipo-cambio': [JA],
+  '/configuracion/fuentes': [JA, AL],
 }
 
 function sesionInterna(rol: string) {
