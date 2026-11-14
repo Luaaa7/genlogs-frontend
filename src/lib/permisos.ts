@@ -164,6 +164,12 @@ export function permisosDe(nombreRol: string | null | undefined) {
     verCotizaciones: esInterno && puedeVer('cotizaciones'),
     /** Pedidos y OC de la minera: todo el personal. */
     verOrdenes: esInterno && puedeVer('pedidosOc'),
+
+    // ---- L3 (v3.3, BPMN 9-A): fuentes de búsqueda ----
+    /** Configuración > Fuentes de búsqueda: el Jefe Administrativo y el Asistente Logístico (solo estado). */
+    verFuentes: es('JEFE_ADMINISTRATIVO', 'ASISTENTE_LOGISTICO'),
+    /** Cuenta de búsqueda, probar sesión, activar, pausa y límite: solo el Jefe Administrativo. */
+    configurarFuentes: es('JEFE_ADMINISTRATIVO'),
   }
 }
 
