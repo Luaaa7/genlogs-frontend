@@ -28,6 +28,9 @@ const vacio: UsuarioRequest = {
 /** Alta o edición de usuario en el panel lateral. */
 export function UsuarioFormModal({ roles, usuario, onClose, onSubmit }: UsuarioFormModalProps) {
   const esEdicion = usuario != null
+  // Los clientes entran solo registrándose con su RUC (queda unido a su empresa). Aquí solo se
+  // muestra CLIENTE si se edita a alguien que ya lo es; el backend también lo rechaza.
+  const rolesElegibles = roles.filter((r) => r.nombreRol !== "CLIENTE" || usuario?.nombreRol === "CLIENTE")
   const [form, setForm] = useState<UsuarioRequest>(() =>
     usuario
       ? {
@@ -103,7 +106,7 @@ export function UsuarioFormModal({ roles, usuario, onClose, onSubmit }: UsuarioF
           <Campo id="usr-rol" label="Rol">
             <select id="usr-rol" className={inputFormClass} value={form.idRol} onChange={(e) => setForm({ ...form, idRol: Number(e.target.value) })} required>
               <option value={0} disabled>Selecciona un rol</option>
-              {roles.map((rol) => <option key={rol.idRol} value={rol.idRol}>{nombreRolLegible(rol.nombreRol)}</option>)}
+              {rolesElegibles.map((rol) => <option key={rol.idRol} value={rol.idRol}>{nombreRolLegible(rol.nombreRol)}</option>)}
             </select>
           </Campo>
           {!esEdicion && (
