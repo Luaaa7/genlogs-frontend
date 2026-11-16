@@ -50,7 +50,7 @@ export interface Servicio extends Auditable {
   margen?: number | null
   /** Precio de venta. Calculado, salvo que precioManual sea true. */
   precioReferencial?: number | null
-  /** True: se guarda el precio escrito. False: costo × (1 + margen/100). */
+    /** True: se guarda el precio escrito. False: costo / (1 − margen/100). */
   precioManual?: boolean | null
   /** APROBADO; PENDIENTE_APROBACION si el margen se sale del rango; RECHAZADO si el Jefe lo rechazó. */
   estadoAprobacion?: EstadoAprobacionServicio | null

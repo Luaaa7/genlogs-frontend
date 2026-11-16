@@ -14,7 +14,7 @@ const http = vi.hoisted(() => ({
 vi.mock('@/api/axiosClient', () => ({ axiosClient: http }))
 
 import { useAuthStore } from '@/features/auth/store/authStore'
-import { margenDePrecio } from '../lib/precioServicio'
+import { margenDePrecio, precioCalculado } from '../lib/precioServicio'
 import { ServicioForm } from './ServicioForm'
 
 const PARAMETROS = [
@@ -89,10 +89,11 @@ describe('rechazo del servicio y margen real con precio manual', () => {
     pintar()
     fireEvent.change(screen.getByLabelText('Costo'), { target: { value: '100' } })
     fireEvent.change(screen.getByLabelText('Margen (%)'), { target: { value: '30' } })
-    await screen.findByDisplayValue('130.00')
+    await screen.findByDisplayValue('142.86')
     fireEvent.click(screen.getByLabelText('Precio manual'))
-    fireEvent.change(screen.getByLabelText('Precio'), { target: { value: '150' } })
+    fireEvent.change(screen.getByLabelText('Precio'), { target: { value: '200' } })
 
+    // 200 sobre costo 100: la ganancia es 50 % del precio.
     expect(await screen.findByText('Margen real con este precio: 50.00 %')).toBeTruthy()
     expect(screen.getByText(/quedará pendiente de aprobación/i)).toBeTruthy()
   })
@@ -107,9 +108,16 @@ describe('rechazo del servicio y margen real con precio manual', () => {
     expect(await screen.findByText('El precio no puede ser menor que el costo.')).toBeTruthy()
   })
 
-  it('margenDePrecio sigue la fórmula del backend', () => {
-    expect(margenDePrecio(1000, 1250)).toBe(25)
-    expect(margenDePrecio(300, 400)).toBe(33.33)
-    expect(margenDePrecio(100, 90)).toBe(-10)
+  it('margenDePrecio sigue la fórmula del backend (margen sobre el precio)', () => {
+    expect(margenDePrecio(1000, 1250)).toBe(20)
+    expect(margenDePrecio(300, 400)).toBe(25)
+    expect(margenDePrecio(100, 90)).toBe(-11.11)
+  })
+
+  it('precioCalculado sigue la fórmula del backend', () => {
+    expect(precioCalculado(100, 30)).toBe(142.86)
+    expect(precioCalculado(1000, 25)).toBe(1333.33)
+    expect(precioCalculado(100, 0)).toBe(100)
+    expect(precioCalculado(100, 100)).toBe(0)
   })
 })

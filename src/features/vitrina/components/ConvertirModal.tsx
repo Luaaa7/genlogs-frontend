@@ -14,6 +14,7 @@ import { avisar } from "@/lib/avisos"
 import { mensajeError } from "@/lib/errores"
 import { formatCurrency } from "@/lib/formatters/currency"
 import { aNumero } from "@/lib/numeroDecimal"
+import { precioDesdeCosto } from "@/lib/margenes"
 import { useCatalogosProducto, useConvertirProducto } from "../hooks/useVitrina"
 
 const esquema = z
@@ -30,7 +31,7 @@ const esquema = z
     margen: z
       .string()
       .trim()
-      .refine((v) => v === "" || ((aNumero(v) ?? -1) >= 0 && (aNumero(v) ?? 101) <= 100), "El margen va de 0 a 100 %"),
+      .refine((v) => v === "" || ((aNumero(v) ?? -1) >= 0 && (aNumero(v) ?? 100) < 100), "El margen tiene que ser de 0 a menos de 100 %"),
   })
   .refine((v) => (aNumero(v.costo) ?? 0) > 0, { path: ["costo"], message: "Escribe el costo puesto en Lima" })
 type Valores = z.infer<typeof esquema>
@@ -43,6 +44,7 @@ interface Props {
 /**
  * Convertir una referencia ÚTIL en producto de la vitrina (BPMN 10). Categoría y
  * unidad son obligatorias, con "Unidad" por defecto (D-22). Nace en BORRADOR.
+ * Precio = costo / (1 − margen/100), igual que el backend y la cotización.
  */
 export function ConvertirModal({ referencia: r, onCerrar }: Props) {
   const uid = useId()
@@ -70,7 +72,7 @@ export function ConvertirModal({ referencia: r, onCerrar }: Props) {
   })
   const costo = aNumero(useWatch({ control, name: "costo" }))
   const margen = aNumero(useWatch({ control, name: "margen" }))
-  const precio = costo && margen != null ? Math.round(costo * (1 + margen / 100) * 100) / 100 : null
+  const precio = costo && margen != null && margen < 100 ? precioDesdeCosto(costo, margen) : null
 
   const enviar = handleSubmit((v) =>
     convertir.mutate(
