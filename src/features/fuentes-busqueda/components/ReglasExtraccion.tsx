@@ -17,7 +17,10 @@ import {
 
 const LARGO_MAXIMO = 1000
 
+// LOGIN guarda dónde están las casillas y el botón de la página de ingreso, nunca la clave en sí
+// (esa sigue cifrada en «Cuenta de búsqueda»). El backend rechaza mezclar campos entre páginas.
 const PAGINAS: { pagina: PaginaSelector; titulo: string; campos: CampoSelector[] }[] = [
+  { pagina: 'LOGIN', titulo: 'Página de inicio de sesión', campos: ['USUARIO', 'CLAVE', 'ENVIAR', 'EXITO'] },
   { pagina: 'BUSQUEDA', titulo: 'Página de búsqueda', campos: ['ITEM', 'NOMBRE', 'DESCRIPCION', 'PRECIO', 'MONEDA', 'IMAGEN', 'ENLACE'] },
   { pagina: 'FICHA', titulo: 'Ficha del producto', campos: ['NOMBRE', 'DESCRIPCION', 'PRECIO', 'MONEDA', 'IMAGEN', 'ENLACE'] },
 ]
@@ -30,6 +33,10 @@ const ETIQUETAS: Record<CampoSelector, string> = {
   MONEDA: 'Moneda',
   IMAGEN: 'Imagen',
   ENLACE: 'Enlace',
+  USUARIO: 'Casilla del usuario o correo',
+  CLAVE: 'Casilla de la clave',
+  ENVIAR: 'Botón para ingresar',
+  EXITO: 'Señal de sesión iniciada',
 }
 
 const clave = (pagina: PaginaSelector, campo: CampoSelector) => `${pagina}:${campo}`
@@ -117,8 +124,9 @@ function Formulario({ codigo, nombre, guardadas }: { codigo: string; nombre: str
   return (
     <form onSubmit={enviar} noValidate aria-label={`Reglas de extracción de ${nombre}`} className="flex flex-col gap-4">
       <p className="text-xs text-muted-foreground">
-        Selectores CSS que usa el servicio de lectura en esta tienda. «Bloque de cada resultado» marca cada ficha en la
-        búsqueda; los demás campos se leen dentro de ese bloque o en la ficha del producto.
+        Selectores CSS que usa el servicio de lectura en esta tienda. En el inicio de sesión van las casillas y el botón
+        de la página de ingreso (nunca la clave en sí) y algo que solo aparece ya dentro. «Bloque de cada resultado»
+        marca cada ficha en la búsqueda; los demás campos se leen dentro de ese bloque o en la ficha del producto.
       </p>
       {PAGINAS.map(({ pagina, titulo, campos }) => (
         <fieldset key={pagina} className="flex flex-col gap-3">

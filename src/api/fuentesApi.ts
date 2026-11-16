@@ -44,8 +44,10 @@ export async function cambiarParametros(codigo: string, p: { pausaSegundos: numb
   return data
 }
 
-export type PaginaSelector = 'BUSQUEDA' | 'FICHA'
-export type CampoSelector = 'ITEM' | 'NOMBRE' | 'DESCRIPCION' | 'PRECIO' | 'MONEDA' | 'IMAGEN' | 'ENLACE'
+export type PaginaSelector = 'LOGIN' | 'BUSQUEDA' | 'FICHA'
+export type CampoSelector =
+  | 'ITEM' | 'NOMBRE' | 'DESCRIPCION' | 'PRECIO' | 'MONEDA' | 'IMAGEN' | 'ENLACE'
+  | 'USUARIO' | 'CLAVE' | 'ENVIAR' | 'EXITO'
 export interface ReglaExtraccion {
   pagina: PaginaSelector
   campo: CampoSelector
