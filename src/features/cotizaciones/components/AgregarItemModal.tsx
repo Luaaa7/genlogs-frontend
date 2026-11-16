@@ -70,6 +70,8 @@ export function AgregarItemModal({ moneda, tipoCambio = null, onAgregar, onCerra
   const [pideMoneda, setPideMoneda] = useState(false)
   const [montoRef, setMontoRef] = useState('')
   const [monedaCosto, setMonedaCosto] = useState<'' | 'PEN' | 'USD'>('')
+  const [monedaProducto, setMonedaProducto] = useState<'' | 'PEN' | 'USD'>('')
+  const [costoEscritoCotizacion, setCostoEscritoCotizacion] = useState('')
   const [cantidad, setCantidad] = useState('1')
   const [costo, setCosto] = useState('')
   const [margenManual, setMargenManual] = useState<string | null>(null)
@@ -88,7 +90,15 @@ export function AgregarItemModal({ moneda, tipoCambio = null, onAgregar, onCerra
   const aMoneda = (monto: number, desde: string) => convertir(monto, desde, monedaCot, tc)
 
   const cant = Number(cantidad)
-  const cost = Number(costo)
+  const enProducto = tipo === 'producto'
+  const monedaDelCosto: 'PEN' | 'USD' = monedaProducto === '' ? (enDolares ? 'USD' : 'PEN') : monedaProducto
+  const otraMonedaProducto = enProducto && monedaDelCosto !== monedaCot
+  const montoEscrito = Number(costo)
+  const convertidoProducto = otraMonedaProducto && montoEscrito > 0 ? aMoneda(montoEscrito, monedaDelCosto) : null
+  const cost = otraMonedaProducto
+    ? (convertidoProducto ?? (Number(costoEscritoCotizacion) > 0 ? Number(costoEscritoCotizacion) : 0))
+    : montoEscrito
+  const faltaCambioProducto = otraMonedaProducto && montoEscrito > 0 && convertidoProducto == null
   const libre = tipo === 'producto' && !item && texto.trim().length > 0
   const comoProducto = item?.tipo === 'producto' || libre || referencia !== null
   const regla = !comoProducto
@@ -181,11 +191,41 @@ export function AgregarItemModal({ moneda, tipoCambio = null, onAgregar, onCerra
     ponerCosto(n, monedaOrigen)
   }
 
+  function costoUsado(monto: number, monedaOrigen: 'PEN' | 'USD'): number | null {
+    if (!(monto > 0)) return null
+    if (!enProducto || monedaOrigen === monedaCot) return redondear2(monto)
+    return aMoneda(monto, monedaOrigen)
+  }
+
   function alCambiarCosto(valor: string) {
     setCosto(valor)
+    setCostoEscritoCotizacion('')
     if (precioEscrito != null && precioEscrito > 0) {
-      const c = Number(valor)
-      if (c > 0) setMargenManual(String(margenDesdePrecio(c, precioEscrito)))
+      const usado = costoUsado(Number(valor), monedaDelCosto)
+      if (usado != null && usado > 0) {
+        setMargenManual(String(margenDesdePrecio(usado, precioEscrito)))
+        setAvisoCosto(true)
+      }
+    }
+  }
+
+  function alCambiarMonedaProducto(valor: 'PEN' | 'USD') {
+    setMonedaProducto(valor)
+    setCostoEscritoCotizacion('')
+    if (precioEscrito != null && precioEscrito > 0) {
+      const usado = costoUsado(Number(costo), valor)
+      if (usado != null && usado > 0) {
+        setMargenManual(String(margenDesdePrecio(usado, precioEscrito)))
+        setAvisoCosto(true)
+      }
+    }
+  }
+
+  function alCambiarCostoCotizacion(valor: string) {
+    setCostoEscritoCotizacion(valor)
+    const n = Number(valor)
+    if (precioEscrito != null && precioEscrito > 0 && n > 0) {
+      setMargenManual(String(margenDesdePrecio(n, precioEscrito)))
       setAvisoCosto(true)
     }
   }
@@ -214,6 +254,8 @@ export function AgregarItemModal({ moneda, tipoCambio = null, onAgregar, onCerra
     setPideMoneda(false)
     setMontoRef('')
     setMonedaCosto('')
+    setMonedaProducto('')
+    setCostoEscritoCotizacion('')
     setCantidad('1')
     setCosto('')
     limpiarCalculo()
@@ -229,6 +271,8 @@ export function AgregarItemModal({ moneda, tipoCambio = null, onAgregar, onCerra
     setPideMoneda(false)
     setMontoRef('')
     setMonedaCosto('')
+    setMonedaProducto('')
+    setCostoEscritoCotizacion('')
     setPrecioEstandar(null)
     setCosto('')
     setMargenManual(null)
@@ -368,6 +412,15 @@ export function AgregarItemModal({ moneda, tipoCambio = null, onAgregar, onCerra
               aria-invalid={err(faltaCosto)} className={`${inputFormClass} mt-1 text-right tabular-nums`} />
             {err(faltaCosto) && <span className="mt-1 block text-xs font-normal text-destructive">Debe ser mayor a 0.</span>}
           </label>
+          {tipo === 'producto' && (
+            <label className="block text-sm font-medium text-foreground">
+              Moneda del costo<MarcaObligatorio />
+              <select value={monedaDelCosto} onChange={(e) => alCambiarMonedaProducto(e.target.value as 'PEN' | 'USD')} className={`${inputFormClass} mt-1`}>
+                <option value="PEN">PEN</option>
+                <option value="USD">USD</option>
+              </select>
+            </label>
+          )}
           <label className="block text-sm font-medium text-foreground">
             Margen %
             <input type="number" min={0} max={MARGEN_MAXIMO} step="0.1" inputMode="decimal" value={margenTexto} onChange={(e) => alCambiarMargen(e.target.value)}
@@ -405,6 +458,18 @@ export function AgregarItemModal({ moneda, tipoCambio = null, onAgregar, onCerra
           <p role="status" className="rounded-md bg-warning/10 px-3 py-2 text-sm text-foreground">
             No hay tipo de cambio de hoy: escribe el costo en dólares. El precio del servicio es {formatearMoneda(Number(item.precioReferencial), 'PEN')}.
           </p>
+        )}
+        {faltaCambioProducto && (
+          <>
+            <p role="status" className="rounded-md bg-warning/10 px-3 py-2 text-sm text-foreground">
+              No hay tipo de cambio de hoy: escribe el costo en la moneda de la cotización.
+            </p>
+            <label className="block text-sm font-medium text-foreground">
+              Costo en la cotización<MarcaObligatorio />
+              <input type="number" min={0} step="0.01" inputMode="decimal" value={costoEscritoCotizacion} onChange={(e) => alCambiarCostoCotizacion(e.target.value)}
+                className={`${inputFormClass} mt-1 text-right tabular-nums`} />
+            </label>
+          </>
         )}
         {sinCambio && (
           <p role="status" className="rounded-md bg-warning/10 px-3 py-2 text-sm text-foreground">

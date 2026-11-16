@@ -265,6 +265,33 @@ describe('AgregarItemModal: margen según la escala', () => {
     expect(linea.fuente).toBeUndefined()
     expect(linea.urlReferencia).toBeUndefined()
   })
+
+  it('el costo del producto en dólares se muestra en soles antes del precio', () => {
+    render(<AgregarItemModal moneda="PEN" tipoCambio={4} onAgregar={() => {}} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByText('elegir filtro'))
+    fireEvent.change(screen.getByLabelText(/moneda del costo/i), { target: { value: 'USD' } })
+    fireEvent.change(screen.getByLabelText(/costo unitario/i), { target: { value: '100' } })
+    const resumen = screen.getByText('Precio de venta unitario').closest('dl')?.textContent ?? ''
+    expect(resumen).toMatch(/400\.00/)
+    expect(resumen.indexOf('400.00')).toBeLessThan(resumen.indexOf('533.33'))
+    expect(tipoCambioHook).not.toHaveBeenCalled()
+  })
+
+  it('sin tipo de cambio el costo en otra moneda queda vacío para escribirlo en la de la cotización', () => {
+    const onAgregar = vi.fn()
+    render(<AgregarItemModal moneda="PEN" tipoCambio={null} onAgregar={onAgregar} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'escribir texto libre' }))
+    fireEvent.change(screen.getByLabelText(/moneda del costo/i), { target: { value: 'USD' } })
+    fireEvent.change(screen.getByLabelText(/costo unitario/i), { target: { value: '100' } })
+    expect(screen.getByText(/escribe el costo en la moneda de la cotización/i)).toBeTruthy()
+    expect((screen.getByLabelText(/costo en la cotización/i) as HTMLInputElement).value).toBe('')
+    expect(screen.queryByText(/400\.00/)).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
+    expect(onAgregar).not.toHaveBeenCalled()
+    fireEvent.change(screen.getByLabelText(/costo en la cotización/i), { target: { value: '80' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
+    expect(onAgregar).toHaveBeenCalledWith(expect.objectContaining({ producto: 'Manguera suelta', costoUnitario: 80, idProducto: undefined }))
+  })
 })
 
 function referencia(parcial: Record<string, unknown>) {
