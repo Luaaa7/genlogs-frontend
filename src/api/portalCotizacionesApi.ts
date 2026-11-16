@@ -31,6 +31,8 @@ export interface CotizacionPortal {
   moneda?: string
   /** N.º de la OC de la minera, si la cotización ya tiene una. */
   numeroOcCliente?: string
+  /** Motivo exigido al anular. Solo se muestra cuando el estado es ANULADA. */
+  motivoAnulacion?: string | null
   lineas?: LineaCotizacionPortal[]
 }
 

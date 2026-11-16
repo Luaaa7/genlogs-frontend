@@ -87,6 +87,37 @@ describe("Detalle de cotización: revisar y aprobar en 2 clics", () => {
     expect(screen.queryByRole("button", { name: "Rechazar" })).toBeNull()
   })
 
+  it("en Anulada se lee Anulada y el motivo; en otro estado el motivo no se muestra", async () => {
+    const anulada: CotizacionPortal = {
+      ...enviada, id: 9, codigo: "COT-2026-9", estado: "ANULADA", codigoEstado: "ANULADA",
+      motivoAnulacion: "La minera canceló el pedido",
+    }
+    const enviadaConMotivo: CotizacionPortal = { ...enviada, motivoAnulacion: "No debe verse" }
+    const detalle = vi.spyOn(portalCotizacionesApi, "detalle").mockImplementation(async (id) => (id === 9 ? anulada : enviadaConMotivo))
+
+    const lista = vi.spyOn(portalCotizacionesApi, "listar").mockResolvedValue([anulada, enviadaConMotivo])
+    const listado = renderEn("/portal/cotizaciones")
+    expect(await screen.findByText("Anulada")).toBeTruthy()
+    expect(screen.getByText("La minera canceló el pedido")).toBeTruthy()
+    expect(screen.queryByText("No debe verse")).toBeNull()
+    listado.unmount()
+    lista.mockRestore()
+
+    detalle.mockResolvedValue(anulada)
+    const vistaAnulada = renderEn("/portal/cotizaciones/9")
+    expect(await screen.findByText("Anulada")).toBeTruthy()
+    expect(screen.getByText("La minera canceló el pedido")).toBeTruthy()
+    expect(screen.queryByRole("button", { name: "Aprobar cotización" })).toBeNull()
+    vistaAnulada.unmount()
+
+    detalle.mockResolvedValue(enviadaConMotivo)
+    renderEn("/portal/cotizaciones/7")
+    expect(await screen.findByText("Filtro de aceite 1R-0750")).toBeTruthy()
+    expect(screen.getByText("Enviada")).toBeTruthy()
+    expect(screen.queryByText("Anulada")).toBeNull()
+    expect(screen.queryByText("No debe verse")).toBeNull()
+  })
+
   it("si el backend rechaza la decisión, muestra su mensaje", async () => {
     vi.spyOn(portalCotizacionesApi, "detalle").mockResolvedValue(enviada)
     vi.spyOn(portalCotizacionesApi, "aprobar").mockRejectedValue({
