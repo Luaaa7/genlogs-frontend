@@ -18,16 +18,13 @@ export const cotizacionDetalleSchema = z
     precioUnitario: z.number({ message: 'Ingresa el precio unitario' }).positive('El precio unitario debe ser mayor a 0'),
     /** Costo unitario: con el margen da el precio de venta (no se guarda en el backend). */
     costoUnitario: z.number().min(0, 'El costo no puede ser negativo').optional(),
-    margenPorcentaje: z.number().min(0, 'El margen no puede ser negativo').max(90, 'El margen debe estar entre 0 y 90 %'),
+    /** Vacío si el servicio no trae costo: no se inventa 0 %. */
+    margenPorcentaje: z.number().min(0, 'El margen no puede ser negativo').max(90, 'El margen debe estar entre 0 y 90 %').optional(),
     /** Margen mínimo de la escala para este ítem; solo para avisar si se cotiza por debajo. */
     margenMinimo: z.number().optional(),
     subtotal: z.number().min(0),
     descripcion: z.string().optional(),
   })
-  .refine((d) => d.idProducto !== undefined || d.idServicio !== undefined, {
-    message: 'Elige un producto o servicio de la lista',
-    path: ['producto'],
-  });
 
 export type CotizacionDetalleFormData = z.infer<typeof cotizacionDetalleSchema>;
 

@@ -82,13 +82,21 @@ describe('aprobación de la cotización', () => {
   })
 
   it('muestra el margen y el tipo de cambio solo si vienen y el rol puede ver el margen', async () => {
-    cabecera = { ...cabecera, margen: 12.5, tipoCambioUsado: 3.7512 }
+    cabecera = { ...cabecera, moneda: 'USD', margen: 12.5, tipoCambioUsado: 3.7512 }
     const primera = pintarDetalle('GERENTE_GENERAL')
     expect(await screen.findByText('Margen')).toBeTruthy()
+    expect(screen.getByText('Válida hasta (inclusive)')).toBeTruthy()
     const cambio = (3.7512).toLocaleString('es-PE', { minimumFractionDigits: 4, maximumFractionDigits: 4 })
-    expect(screen.getByText(cambio)).toBeTruthy()
+    expect(screen.getByText(`S/ ${cambio}`)).toBeTruthy()
     primera.unmount()
-    cabecera = { ...cabecera, tipoCambioUsado: undefined }
+
+    cabecera = { ...cabecera, moneda: 'PEN', tipoCambioUsado: 3.7512 }
+    const enSoles = pintarDetalle('GERENTE_GENERAL')
+    expect(await screen.findByText('COT-001')).toBeTruthy()
+    expect(screen.queryByText('Tipo de cambio usado')).toBeNull()
+    enSoles.unmount()
+
+    cabecera = { ...cabecera, moneda: 'USD', tipoCambioUsado: undefined }
     pintarDetalle('JEFE_ADMINISTRATIVO')
     expect(await screen.findByText('COT-001')).toBeTruthy()
     expect(screen.queryByText('Tipo de cambio usado')).toBeNull()
@@ -138,15 +146,28 @@ describe('aprobación de la cotización', () => {
     expect(screen.queryByRole('button', { name: 'Solicitar aprobación' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Devolver' }))
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar devolución' }))
-    expect(await screen.findByText('Indica el motivo para devolver la cotización')).toBeTruthy()
+    expect(await screen.findByText('Indica el motivo para devolver la cotización (mínimo 5 caracteres)')).toBeTruthy()
     expect(http.post).not.toHaveBeenCalled()
     fireEvent.change(screen.getByLabelText('Motivo'), { target: { value: '  ' } })
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar devolución' }))
-    expect(await screen.findByText('Indica el motivo para devolver la cotización')).toBeTruthy()
+    expect(await screen.findByText('Indica el motivo para devolver la cotización (mínimo 5 caracteres)')).toBeTruthy()
     expect(http.post).not.toHaveBeenCalled()
-    fireEvent.change(screen.getByLabelText('Motivo'), { target: { value: 'ab' } })
+    fireEvent.change(screen.getByLabelText('Motivo'), { target: { value: 'Falta el detalle' } })
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar devolución' }))
-    await waitFor(() => expect(http.post).toHaveBeenCalledWith('/cotizaciones/1/devolver', { motivo: 'ab' }))
+    await waitFor(() => expect(http.post).toHaveBeenCalledWith('/cotizaciones/1/devolver', { motivo: 'Falta el detalle' }))
+  })
+
+  it('devolver no envía un motivo de 4 caracteres y sí uno de 5', async () => {
+    cabecera = { ...cabecera, estado: 'PENDIENTE_APROBACION' }
+    pintarDetalle('JEFE_ADMINISTRATIVO')
+    fireEvent.click(await screen.findByRole('button', { name: 'Devolver' }))
+    fireEvent.change(screen.getByLabelText('Motivo'), { target: { value: 'abcd' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar devolución' }))
+    expect(await screen.findByText('Indica el motivo para devolver la cotización (mínimo 5 caracteres)')).toBeTruthy()
+    expect(http.post).not.toHaveBeenCalled()
+    fireEvent.change(screen.getByLabelText('Motivo'), { target: { value: 'abcde' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar devolución' }))
+    await waitFor(() => expect(http.post).toHaveBeenCalledWith('/cotizaciones/1/devolver', { motivo: 'abcde' }))
   })
 
   it('enviar se habilita en aprobada por el Jefe', async () => {
@@ -154,6 +175,67 @@ describe('aprobación de la cotización', () => {
     pintarDetalle('ASISTENTE_LOGISTICO')
     expect(await screen.findByRole('button', { name: 'Enviar al cliente' })).toBeTruthy()
     expect((screen.getByRole('button', { name: 'Enviar al cliente' }) as HTMLButtonElement).disabled).toBe(false)
+  })
+
+  it('en borrador el Jefe y el asistente logístico ven Editar; el administrativo y otros estados no', async () => {
+    const jefe = pintarDetalle('JEFE_ADMINISTRATIVO')
+    const editar = await screen.findByRole('link', { name: 'Editar' })
+    expect(editar.getAttribute('href')).toBe('/cotizaciones/1/editar')
+    jefe.unmount()
+
+    const asistente = pintarDetalle('ASISTENTE_LOGISTICO')
+    expect(await screen.findByRole('link', { name: 'Editar' })).toBeTruthy()
+    asistente.unmount()
+
+    const administrativo = pintarDetalle('ASISTENTE_ADMINISTRATIVO')
+    expect(await screen.findByText('COT-001')).toBeTruthy()
+    expect(screen.queryByRole('link', { name: 'Editar' })).toBeNull()
+    administrativo.unmount()
+
+    cabecera = { ...cabecera, estado: 'ENVIADA' }
+    pintarDetalle('JEFE_ADMINISTRATIVO')
+    expect(await screen.findByText('COT-001')).toBeTruthy()
+    expect(screen.queryByRole('link', { name: 'Editar' })).toBeNull()
+  })
+
+  it('el menú ya no ofrece aprobar ni rechazar, y anular pide un motivo de al menos 5 caracteres', async () => {
+    cabecera = { ...cabecera, estado: 'ENVIADA' }
+    const enviada = pintarDetalle('JEFE_ADMINISTRATIVO')
+    expect(await screen.findByText('Esperando la respuesta del cliente en el portal')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Marcar como aprobada' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Cambiar estado' }))
+    const menuEnviada = screen.getByRole('menu')
+    expect(within(menuEnviada).getByRole('menuitemradio', { name: 'En negociación' })).toBeTruthy()
+    expect(within(menuEnviada).getByRole('menuitemradio', { name: 'Anulada' })).toBeTruthy()
+    expect(within(menuEnviada).queryByRole('menuitemradio', { name: 'Aprobada' })).toBeNull()
+    expect(within(menuEnviada).queryByRole('menuitemradio', { name: 'Rechazada' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Pasar a negociación' }))
+    await waitFor(() => expect(http.patch).toHaveBeenCalledWith('/cotizaciones/1/estado', { codigoEstado: 'EN_NEGOCIACION', comentario: '' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    enviada.unmount()
+
+    cabecera = { ...cabecera, estado: 'EN_NEGOCIACION' }
+    const negociacion = pintarDetalle('ASISTENTE_LOGISTICO')
+    expect(await screen.findByText('Esperando la respuesta del cliente en el portal')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Marcar como aprobada' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Pasar a negociación' })).toBeNull()
+    negociacion.unmount()
+
+    http.patch.mockClear()
+    cabecera = { ...cabecera, estado: 'BORRADOR' }
+    pintarDetalle('JEFE_ADMINISTRATIVO')
+    fireEvent.click(await screen.findByRole('button', { name: 'Cambiar estado' }))
+    fireEvent.click(within(screen.getByRole('menu')).getByRole('menuitemradio', { name: 'Anulada' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar anulación' }))
+    expect(await screen.findByText(/mínimo 5 caracteres/)).toBeTruthy()
+    expect(http.patch).not.toHaveBeenCalled()
+    fireEvent.change(screen.getByLabelText('Motivo'), { target: { value: 'abcd' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar anulación' }))
+    expect(await screen.findByText(/mínimo 5 caracteres/)).toBeTruthy()
+    expect(http.patch).not.toHaveBeenCalled()
+    fireEvent.change(screen.getByLabelText('Motivo'), { target: { value: 'Falta el alcance' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar anulación' }))
+    await waitFor(() => expect(http.patch).toHaveBeenCalledWith('/cotizaciones/1/estado', { codigoEstado: 'ANULADA', comentario: 'Falta el alcance' }))
   })
 
   it('desde borrador el menú del Jefe solo ofrece anular, y puede solicitar la aprobación de la suya', async () => {

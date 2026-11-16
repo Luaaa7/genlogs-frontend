@@ -10,7 +10,7 @@ import { mensajeError } from '@/lib/errores'
 import { useAprobacionCotizacion } from '../hooks/useAprobacionCotizacion'
 
 const devolverSchema = z.object({
-  motivo: z.string().trim().min(1, 'Indica el motivo para devolver la cotización'),
+  motivo: z.string().trim().min(5, 'Indica el motivo para devolver la cotización (mínimo 5 caracteres)'),
 })
 
 interface Props {

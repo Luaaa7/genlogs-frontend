@@ -13,15 +13,18 @@ vi.mock('@/features/configuracion/hooks/useMargenes', () => ({
   }),
 }))
 vi.mock('@/lib/permisos', () => ({ usePermisos: () => ({ editarCatalogos: false }) }))
-const tipoCambio = vi.hoisted(() => ({ valor: 4 as number | null }))
+const tipoCambioHook = vi.hoisted(() => vi.fn(() => ({ data: { valor: 9 } })))
 vi.mock('@/features/tipo-cambio/hooks/useTipoCambio', () => ({
-  useTipoCambio: () => ({ data: tipoCambio.valor === null ? null : { valor: tipoCambio.valor } }),
+  useTipoCambio: () => tipoCambioHook(),
 }))
+const historial = vi.hoisted(() => vi.fn())
+vi.mock('@/api/sourcingApi', () => ({ sourcingApi: { historial } }))
 vi.mock('./SelectorCatalogoItem', () => ({
-  SelectorCatalogoItem: ({ onSeleccionar, tipo }: { onSeleccionar: (i: unknown) => void; tipo?: string }) => (
+  SelectorCatalogoItem: ({ onSeleccionar, onEscribir, tipo }: { onSeleccionar: (i: unknown) => void; onEscribir: (t: string) => void; tipo?: string }) => (
     <div>
       <span>buscando: {tipo}</span>
       <button type="button" onClick={() => onSeleccionar({ tipo: 'producto', id: 9, nombre: 'Filtro', codigo: 'F-1' })}>elegir filtro</button>
+      <button type="button" onClick={() => onEscribir('Manguera suelta')}>escribir texto libre</button>
       <button type="button" onClick={() => onSeleccionar({ tipo: 'servicio', id: 4, nombre: 'Mantenimiento', codigo: 'S-1' })}>elegir servicio</button>
       <button type="button" onClick={() => onSeleccionar({ tipo: 'servicio', id: 5, nombre: 'Traslado', codigo: 'S-2', costo: 100, precioReferencial: 125 })}>elegir servicio con precio</button>
       <button type="button" onClick={() => onSeleccionar({ tipo: 'servicio', id: 6, nombre: 'PLC', codigo: 'S-3', precioReferencial: 500 })}>elegir servicio sin costo</button>
@@ -114,9 +117,8 @@ describe('AgregarItemModal: margen según la escala', () => {
   })
 
   it('en una cotización en dólares convierte el costo y el precio con el tipo de cambio', () => {
-    tipoCambio.valor = 4
     const onAgregar = vi.fn()
-    render(<AgregarItemModal moneda="USD" onAgregar={onAgregar} onCerrar={() => {}} />)
+    render(<AgregarItemModal moneda="USD" tipoCambio={4} onAgregar={onAgregar} onCerrar={() => {}} />)
     fireEvent.click(screen.getByRole('tab', { name: 'Servicio' }))
     fireEvent.click(screen.getByText('elegir servicio con precio'))
     // S/ 100 y S/ 125 a 4 soles por dólar: US$ 25 y US$ 31.25
@@ -127,13 +129,11 @@ describe('AgregarItemModal: margen según la escala', () => {
   })
 
   it('en dólares sin tipo de cambio no convierte y pide escribir el costo', () => {
-    tipoCambio.valor = null
-    render(<AgregarItemModal moneda="USD" onAgregar={() => {}} onCerrar={() => {}} />)
+    render(<AgregarItemModal moneda="USD" tipoCambio={null} onAgregar={() => {}} onCerrar={() => {}} />)
     fireEvent.click(screen.getByRole('tab', { name: 'Servicio' }))
     fireEvent.click(screen.getByText('elegir servicio con precio'))
     expect((screen.getByLabelText(/costo unitario/i) as HTMLInputElement).value).toBe('')
     expect(screen.getByText(/no hay tipo de cambio de hoy/i)).toBeTruthy()
-    tipoCambio.valor = 4
   })
 
   it('el costo no pasa de un repuesto a un servicio ni de un servicio a otro', () => {
@@ -150,4 +150,140 @@ describe('AgregarItemModal: margen según la escala', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Producto' }))
     expect(costo().value).toBe('')
   })
+
+  it('convierte un historial útil en dólares con el tipo de cambio recibido, no con el del día', async () => {
+    historial.mockResolvedValue([
+      referencia({ estado: 'UTIL', precioRef: 100, codigoMoneda: 'USD', titulo: 'Filtro de aceite' }),
+      referencia({ idSourcing: 2, estado: 'CAPTURADO', titulo: 'Capturada', precioRef: 10, urlReferencia: null }),
+    ])
+    const onAgregar = vi.fn()
+    render(<AgregarItemModal moneda="PEN" tipoCambio={4} onAgregar={onAgregar} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Historial' }))
+    fireEvent.change(screen.getByLabelText(/número de parte/i), { target: { value: '1R-0750' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar en el historial' }))
+    expect(historial).toHaveBeenCalledWith({ numeroParte: '1R-0750' })
+    expect(await screen.findByText('Capturada')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Capturada' })).toBeNull()
+    expect(screen.getByRole('link', { name: /ver en la tienda/i }).getAttribute('href')).toBe('https://tienda.example/item')
+    fireEvent.click(await screen.findByRole('button', { name: 'Filtro de aceite' }))
+
+    expect((screen.getByLabelText(/costo unitario/i) as HTMLInputElement).value).toBe('400')
+    expect(screen.getAllByText(/400\.00/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/533\.33/).length).toBeGreaterThan(0)
+    expect(tipoCambioHook).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
+    const linea = onAgregar.mock.calls[0][0] as Record<string, unknown>
+    expect(linea).toMatchObject({
+      producto: 'Filtro de aceite · CAT · 1R-0750',
+      tipoItem: 'producto',
+      costoUnitario: 400,
+      precioUnitario: 533.33,
+    })
+    expect(linea.idProducto).toBeUndefined()
+    expect(linea.idServicio).toBeUndefined()
+    expect(linea.fuente).toBeUndefined()
+    expect(linea.urlReferencia).toBeUndefined()
+    expect(linea.urlImagen).toBeUndefined()
+    expect(JSON.stringify(linea)).not.toMatch(/https?:|ALIEXPRESS|tienda\.example/)
+  })
+
+  it('con precioRef null no agrega ni muestra 0 hasta tener costo y moneda', async () => {
+    historial.mockResolvedValue([
+      referencia({ estado: 'UTIL', precioRef: null, costoPuestoLima: null, titulo: 'Sin precio', urlReferencia: null }),
+    ])
+    const onAgregar = vi.fn()
+    render(<AgregarItemModal moneda="PEN" tipoCambio={4} onAgregar={onAgregar} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Historial' }))
+    fireEvent.change(screen.getByLabelText(/número de parte/i), { target: { value: '1R-0750' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar en el historial' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Sin precio' }))
+
+    expect((screen.getByLabelText(/costo unitario/i) as HTMLInputElement).value).toBe('')
+    expect(screen.queryByText('0')).toBeNull()
+    expect(screen.queryByText(/0\.00/)).toBeNull()
+    expect(screen.queryByText(/0 %/)).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
+    expect(onAgregar).not.toHaveBeenCalled()
+
+    fireEvent.change(screen.getByLabelText(/costo de la referencia/i), { target: { value: '80' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
+    expect(onAgregar).not.toHaveBeenCalled()
+
+    fireEvent.change(screen.getByLabelText(/moneda del costo/i), { target: { value: 'USD' } })
+    expect((screen.getByLabelText(/costo unitario/i) as HTMLInputElement).value).toBe('320')
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
+    expect(onAgregar).toHaveBeenCalledWith(expect.objectContaining({ costoUnitario: 320, producto: 'Sin precio · CAT · 1R-0750' }))
+    const linea = onAgregar.mock.calls[0][0] as Record<string, unknown>
+    expect(linea.fuente).toBeUndefined()
+    expect(linea.urlReferencia).toBeUndefined()
+  })
+
+  it('agrega un servicio sin costo con el precio estándar y sin margen en 0 %', () => {
+    const onAgregar = vi.fn()
+    render(<AgregarItemModal moneda="PEN" onAgregar={onAgregar} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Servicio' }))
+    fireEvent.click(screen.getByText('elegir servicio sin costo'))
+    expect((screen.getByLabelText(/margen %/i) as HTMLInputElement).value).toBe('')
+    expect(screen.queryByText(/0 %/)).toBeNull()
+    expect(screen.getAllByText(/500\.00/).length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
+    const linea = onAgregar.mock.calls[0][0] as Record<string, unknown>
+    expect(linea).toMatchObject({ idServicio: 6, precioUnitario: 500 })
+    expect(linea.margenPorcentaje).toBeUndefined()
+    expect(linea.costoUnitario).toBeUndefined()
+  })
+
+  it('si se escribe el precio, al cambiar el costo se conserva y el margen se recalcula', () => {
+    render(<AgregarItemModal moneda="PEN" onAgregar={() => {}} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByText('elegir filtro'))
+    fireEvent.change(screen.getByLabelText(/costo unitario/i), { target: { value: '60' } })
+    fireEvent.change(screen.getByLabelText(/^precio de venta/i), { target: { value: '90' } })
+    fireEvent.change(screen.getByLabelText(/costo unitario/i), { target: { value: '40' } })
+    expect((screen.getByLabelText(/^precio de venta/i) as HTMLInputElement).value).toBe('90')
+    expect(screen.getAllByText(/90\.00/).length).toBeGreaterThan(0)
+    expect((screen.getByLabelText(/margen %/i) as HTMLInputElement).value).toBe('55.6')
+    expect(screen.getByText('El costo cambió. Se mantuvo el precio y se recalculó el margen.')).toBeTruthy()
+  })
+
+  it('un texto libre, sin ids, entra al formulario', () => {
+    const onAgregar = vi.fn()
+    render(<AgregarItemModal moneda="PEN" onAgregar={onAgregar} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'escribir texto libre' }))
+    fireEvent.change(screen.getByLabelText(/costo unitario/i), { target: { value: '60' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
+    const linea = onAgregar.mock.calls[0][0] as Record<string, unknown>
+    expect(linea).toMatchObject({
+      producto: 'Manguera suelta',
+      tipoItem: 'producto',
+      cantidad: 1,
+      costoUnitario: 60,
+      precioUnitario: 100,
+    })
+    expect(linea.idProducto).toBeUndefined()
+    expect(linea.idServicio).toBeUndefined()
+    expect(linea.fuente).toBeUndefined()
+    expect(linea.urlReferencia).toBeUndefined()
+  })
 })
+
+function referencia(parcial: Record<string, unknown>) {
+  return {
+    idSourcing: 1,
+    idSolicitudItem: null,
+    fuente: 'ALIEXPRESS',
+    metodo: 'NUMERO_PARTE',
+    titulo: 'Filtro',
+    marca: 'CAT',
+    numeroParte: '1R-0750',
+    precioRef: 100,
+    codigoMoneda: 'USD',
+    costoPuestoLima: null,
+    urlReferencia: 'https://tienda.example/item',
+    urlImagenRef: 'https://img.example/1.jpg',
+    estado: 'UTIL',
+    editadoAMano: false,
+    creadoEn: '2026-11-15T10:00:00',
+    ...parcial,
+  }
+}

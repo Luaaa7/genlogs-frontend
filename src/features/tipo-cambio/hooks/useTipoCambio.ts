@@ -3,8 +3,8 @@ import { corregirTipoCambio, obtenerTipoCambio } from '@/api/tipoCambioApi'
 
 export const CLAVE_TIPO_CAMBIO = ['tipo-cambio', 'hoy'] as const
 
-export function useTipoCambio() {
-  return useQuery({ queryKey: CLAVE_TIPO_CAMBIO, queryFn: obtenerTipoCambio, staleTime: 60_000 })
+export function useTipoCambio(activo = true) {
+  return useQuery({ queryKey: CLAVE_TIPO_CAMBIO, queryFn: obtenerTipoCambio, staleTime: 60_000, enabled: activo })
 }
 
 export function useCorregirTipoCambio() {

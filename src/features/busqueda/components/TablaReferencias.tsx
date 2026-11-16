@@ -16,6 +16,7 @@ const FUENTES: Record<string, string> = {
   EBAY: "eBay",
   MERCADO_LIBRE: "Mercado Libre",
   AMAZON: "Amazon",
+  ALIEXPRESS: "AliExpress",
   ALIBABA: "Alibaba",
   PROVEEDOR: "Proveedor",
 }

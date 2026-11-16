@@ -3,25 +3,32 @@ import type { CotizacionPortal } from "@/api/portalCotizacionesApi"
 
 const CODIGOS_ABIERTOS = new Set(["ENVIADA", "EN_NEGOCIACION"])
 
+/** yyyy-mm-dd en America/Lima, sin pasar la fecha por `new Date('yyyy-mm-dd')`. */
+function diaEnLima(fecha: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Lima",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(fecha)
+}
+
 /** Quita tildes y pasa a mayúsculas para comparar nombres de estado ("En negociación" → "EN NEGOCIACION"). */
 function normalizar(texto: string) {
   return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().trim()
 }
 
 /**
- * ¿El cliente todavía puede aprobar o rechazar? Igual que el backend (BE-C): solo ENVIADA o
- * EN_NEGOCIACION y dentro de la fecha de validez. Si el backend manda puedeDecidir o el código
- * del estado, se usan esos; si no, se compara el nombre.
+ * ¿El cliente todavía puede aprobar o rechazar? Si el API manda puedeDecidir, se usa tal cual.
+ * Si no viene, solo ENVIADA o EN_NEGOCIACION, y el día de validez inclusive: cierra a las
+ * 00:00 de America/Lima del día siguiente a fechaValidez.
  */
 export function puedeDecidir(
   cotizacion: Pick<CotizacionPortal, "estado" | "codigoEstado" | "puedeDecidir" | "fechaValidez">,
   hoy: Date = new Date(),
 ): boolean {
   if (typeof cotizacion.puedeDecidir === "boolean") return cotizacion.puedeDecidir
-  if (cotizacion.fechaValidez) {
-    const finDelDia = new Date(`${cotizacion.fechaValidez}T23:59:59`)
-    if (finDelDia < hoy) return false
-  }
+  if (cotizacion.fechaValidez && diaEnLima(hoy) > cotizacion.fechaValidez) return false
   const codigo = cotizacion.codigoEstado ?? normalizar(cotizacion.estado ?? "").replace(/ /g, "_")
   return CODIGOS_ABIERTOS.has(codigo)
 }

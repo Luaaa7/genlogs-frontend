@@ -19,6 +19,7 @@ import { ServicioFormPage } from '@/features/catalogo-servicios/pages/ServicioFo
 import { ReportesPage } from '@/features/reportes/pages/ReportesPage'
 import { CotizacionesListPage } from '@/features/cotizaciones/pages/CotizacionesListPage'
 import { NuevaCotizacionPage } from '@/features/cotizaciones/pages/NuevaCotizacionPage'
+import { EditarCotizacionPage } from '@/features/cotizaciones/pages/EditarCotizacionPage'
 import { CotizacionDetallePage } from '@/features/cotizaciones/pages/CotizacionDetallePage'
 import { creaCotizaciones } from '@/features/cotizaciones/lib/rolesCotizacion'
 import ClientesListPage from '@/features/clientes-proveedores/pages/ClientesListPage'
@@ -70,6 +71,7 @@ export const router = createBrowserRouter([
     ] },
     { element: <RoleGuard permitido={(p) => creaCotizaciones(p.rol)} />, children: [
       { path: '/cotizaciones/nueva', element: <NuevaCotizacionPage /> },
+      { path: '/cotizaciones/:id/editar', element: <EditarCotizacionPage /> },
     ] },
     { element: <RoleGuard permitido={(p) => p.verOrdenes} />, children: [
       { path: '/ordenes-compra', element: <OrdenesCompraPage /> },

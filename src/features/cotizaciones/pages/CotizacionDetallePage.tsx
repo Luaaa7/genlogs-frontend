@@ -2,8 +2,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
-import { avisar } from '@/lib/avisos';
 import { useCotizacion } from '../hooks/useCotizaciones';
 import { useCambiarEstado } from '../hooks/useCambiarEstado';
 import { useDescargarPDF } from '../hooks/useCotizacionesMutations';
@@ -37,6 +35,7 @@ import { AprobacionCotizacion } from '../components/AprobacionCotizacion'
 import { AvisoAltoValor } from '../components/AvisoAltoValor'
 import { IndicadorAprobacion } from '../components/IndicadorAprobacion'
 import { creaCotizaciones, esJefeAdministrativo, veCotizaciones } from '../lib/rolesCotizacion'
+import { AnularCotizacionModal } from '../components/AnularCotizacionModal'
 
 const ESTADOS_ABIERTOS = new Set<string>(['BORRADOR', 'ENVIADA', 'EN_NEGOCIACION']);
 
@@ -49,31 +48,19 @@ const ESTADOS_FINALES = new Set<EstadoCotizacion>([
 ]);
 
 /**
- * Transiciones permitidas desde cada estado.
- * Solo se muestran en el menú los estados a los que puede pasarse la cotización.
+ * Transiciones del PATCH /estado (BE v3.3).
+ * SUPUESTO a confirmar: se elimina la aprobación manual del Jefe por este menú
+ * (decisión 1 del Word). Aprobar y devolver siguen en sus propios POST.
+ * Aprobar o rechazar la cotización lo hace el cliente en el portal.
  */
 const TRANSICIONES_ESTADOS: Record<EstadoCotizacion, EstadoCotizacion[]> = {
-  // Desde borrador solo se anula a mano. Enviar y aprobar van por los botones del flujo.
   [EstadoCotizacion.BORRADOR]: [EstadoCotizacion.ANULADA],
-  [EstadoCotizacion.ENVIADA]: [
-    EstadoCotizacion.EN_NEGOCIACION,
-    EstadoCotizacion.APROBADA,
-    EstadoCotizacion.RECHAZADA,
-    EstadoCotizacion.ANULADA,
-  ],
-  [EstadoCotizacion.EN_NEGOCIACION]: [
-    EstadoCotizacion.APROBADA,
-    EstadoCotizacion.RECHAZADA,
-    EstadoCotizacion.ANULADA,
-  ],
-  [EstadoCotizacion.APROBADA]: [
-    EstadoCotizacion.RECHAZADA,
-    EstadoCotizacion.ANULADA,
-  ],
+  [EstadoCotizacion.ENVIADA]: [EstadoCotizacion.EN_NEGOCIACION, EstadoCotizacion.ANULADA],
+  [EstadoCotizacion.EN_NEGOCIACION]: [EstadoCotizacion.ANULADA],
+  [EstadoCotizacion.APROBADA]: [],
   [EstadoCotizacion.RECHAZADA]: [],
   [EstadoCotizacion.VENCIDA]: [],
   [EstadoCotizacion.ANULADA]: [],
-  // Solicitar, aprobar y devolver no pasan por este menú: van por los botones del flujo.
   [EstadoCotizacion.PENDIENTE_APROBACION]: [],
   [EstadoCotizacion.APROBADA_INTERNA]: [],
 };
@@ -142,7 +129,7 @@ const CotizacionDetalleContenido: React.FC = () => {
 
   const [showEnvioModal, setShowEnvioModal] = useState(false);
   const [showOrdenModal, setShowOrdenModal] = useState(false);
-  const queryClient = useQueryClient();
+  const [anulando, setAnulando] = useState(false);
   // ?facturar=1 llega desde Órdenes de compra al marcar la orden como Atendida:
   // la cotización se abre con el formulario de la factura listo.
   const [searchParams, setSearchParams] = useSearchParams();
@@ -171,19 +158,14 @@ const CotizacionDetalleContenido: React.FC = () => {
     };
   }, [menuEstado]);
 
-  const handleCambiarEstado = (nuevo: EstadoCotizacion) => {
+  const handleCambiarEstado = (nuevo: EstadoCotizacion, motivo?: string) => {
     setErrorAccion(null);
     cambiarEstado(
-      { estadoNuevo: nuevo, observaciones: '' },
+      { estadoNuevo: nuevo, observaciones: motivo ?? '' },
       {
         onSuccess: () => {
           setMenuEstado(false);
-          // Al aprobarla, el backend registra sola la orden de compra: se recarga para
-          // que aparezca en el recorrido (Cotización → Orden → Factura).
-          if (nuevo === EstadoCotizacion.APROBADA) {
-            void queryClient.invalidateQueries({ queryKey: ['ordenes-compra'] });
-            avisar('Cotización aprobada: su orden de compra se registró automáticamente');
-          }
+          setAnulando(false);
         },
         onError: (e) => setErrorAccion(`No se pudo cambiar el estado a "${mapearEstadoCotizacion(nuevo)}". ${mensajeError(e, '')}`.trim()),
       }
@@ -257,18 +239,10 @@ const CotizacionDetalleContenido: React.FC = () => {
     accionPrincipal = (
       <AprobacionCotizacion id={cotizacionId} estado={estado} asistente={asistente} jefe={jefe} onEnviar={() => setShowEnvioModal(true)} />
     );
-  } else if (estado === 'ENVIADA') {
-    // Ya se envió: el siguiente paso es la negociación (reenviar queda como acción secundaria).
+  } else if (estado === 'ENVIADA' && jefe) {
     accionPrincipal = (
       <Button onClick={() => handleCambiarEstado(EstadoCotizacion.EN_NEGOCIACION)} disabled={isChangingState}>
         Pasar a negociación
-      </Button>
-    );
-  } else if (estado === 'EN_NEGOCIACION') {
-    accionPrincipal = (
-      <Button onClick={() => handleCambiarEstado(EstadoCotizacion.APROBADA)} disabled={isChangingState}>
-        <Check className="mr-2 h-4 w-4" aria-hidden="true" />
-        Marcar como aprobada
       </Button>
     );
   } else if (estado === 'APROBADA' && ordenGenerada && !facturaGenerada) {
@@ -287,8 +261,6 @@ const CotizacionDetalleContenido: React.FC = () => {
     );
   }
 
-  // El backend ya bloquea lo no permitido; aquí solo se esconden los botones.
-  if ((estado === 'ENVIADA' || estado === 'EN_NEGOCIACION') && !jefe) accionPrincipal = null;
   if (estado === 'APROBADA' && ordenGenerada && !facturaGenerada && !permisos.emitirFactura) accionPrincipal = null;
   if (estado === 'APROBADA' && !ordenGenerada && !permisos.gestionarOrdenes) accionPrincipal = null;
 
@@ -313,6 +285,14 @@ const CotizacionDetalleContenido: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {estado === EstadoCotizacion.BORRADOR && asistente && (
+            <Button variant="outline" asChild>
+              <Link to={`/cotizaciones/${cotizacionId}/editar`}>Editar</Link>
+            </Button>
+          )}
+          {(estado === 'ENVIADA' || estado === 'EN_NEGOCIACION') && (
+            <p className="text-sm text-muted-foreground">Esperando la respuesta del cliente en el portal</p>
+          )}
           <Button variant="outline" onClick={handleDescargar} disabled={isDownloadingPDF}>
             {isDownloadingPDF
               ? <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
@@ -353,7 +333,14 @@ const CotizacionDetalleContenido: React.FC = () => {
                       role="menuitemradio"
                       aria-checked={e === estado}
                       disabled={isChangingState || e === estado}
-                      onClick={() => handleCambiarEstado(e)}
+                      onClick={() => {
+                        if (e === EstadoCotizacion.ANULADA) {
+                          setMenuEstado(false)
+                          setAnulando(true)
+                          return
+                        }
+                        handleCambiarEstado(e)
+                      }}
                       className={cn(
                         'flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring disabled:cursor-default',
                         e === estado ? 'font-medium text-accent' : 'text-foreground hover:bg-muted'
@@ -436,9 +423,12 @@ const CotizacionDetalleContenido: React.FC = () => {
               <div><dt className="text-[13px] text-muted-foreground">Forma de pago</dt><dd className="mt-1">{mapearCondicionPago(String(cotizacion.condicionPago))}</dd></div>
               <div><dt className="text-[13px] text-muted-foreground">Moneda</dt><dd className="mt-1">{simboloMoneda(moneda)}</dd></div>
               <div><dt className="text-[13px] text-muted-foreground">Emitida</dt><dd className="mt-1 tabular-nums">{formatearFechaCorta(cotizacion.fechaCotizacion ?? cotizacion.fechaCreacion)}</dd></div>
-              <div><dt className="text-[13px] text-muted-foreground">Válida hasta</dt><dd className="mt-1 tabular-nums">{formatearFechaCorta(cotizacion.fechaValidez)}</dd></div>
-              {cotizacion.tipoCambioUsado != null && (
-                <div><dt className="text-[13px] text-muted-foreground">Tipo de cambio usado</dt><dd className="mt-1 tabular-nums">{cotizacion.tipoCambioUsado.toLocaleString('es-PE', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}</dd></div>
+              <div><dt className="text-[13px] text-muted-foreground">Válida hasta (inclusive)</dt><dd className="mt-1 tabular-nums">{formatearFechaCorta(cotizacion.fechaValidez)}</dd></div>
+              {moneda === 'USD' && cotizacion.tipoCambioUsado != null && (
+                <div>
+                  <dt className="text-[13px] text-muted-foreground">Tipo de cambio usado</dt>
+                  <dd className="mt-1 tabular-nums">S/ {cotizacion.tipoCambioUsado.toLocaleString('es-PE', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}</dd>
+                </div>
               )}
               {permisos.verMargenes && cotizacion.margen != null && (
                 <div><dt className="text-[13px] text-muted-foreground">Margen</dt><dd className="mt-1 tabular-nums">{Number(cotizacion.margen).toLocaleString('es-PE', { maximumFractionDigits: 2 })}%</dd></div>
@@ -500,6 +490,13 @@ const CotizacionDetalleContenido: React.FC = () => {
         idCondicionPago={cotizacion.idCondicionPago}
         codigoCotizacion={cotizacion.codigoCotizacion ?? cotizacion.codigo}
       />
+      {anulando && (
+        <AnularCotizacionModal
+          ocupado={isChangingState}
+          onCerrar={() => setAnulando(false)}
+          onConfirmar={(motivo) => handleCambiarEstado(EstadoCotizacion.ANULADA, motivo)}
+        />
+      )}
       <ConfirmacionEnvioModal
         isOpen={showEnvioModal}
         onClose={() => setShowEnvioModal(false)}
