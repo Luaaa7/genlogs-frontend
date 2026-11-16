@@ -11,7 +11,7 @@ export function RegistrarDespachoButton({ idOrdenCompra }: { idOrdenCompra: numb
     <span className="inline-flex flex-col items-end gap-1">
       <button
         type="button"
-        disabled={crear.isPending || crear.isSuccess || crear.isError}
+        disabled={crear.isPending || crear.isSuccess}
         onClick={() => crear.mutate(idOrdenCompra)}
         className="rounded text-[13px] font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
       >

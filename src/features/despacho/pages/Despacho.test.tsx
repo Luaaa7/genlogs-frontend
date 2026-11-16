@@ -179,17 +179,21 @@ describe('despacho', () => {
       statusText: 'Bad Request',
       headers: {},
       config: { headers: {} } as never,
-      data: { message: 'La cotización de la orden no está aprobada' },
+      data: { message: 'Confirma la OC de la minera antes de registrar el despacho.' },
     }
-    http.post.mockRejectedValue(fallo)
+    http.post.mockRejectedValueOnce(fallo)
     pintarSuelto(<OrdenesCompraPage />, 'ASISTENTE_LOGISTICO')
     const fila = (await screen.findByText('OC-001')).closest('tr') as HTMLElement
     const boton = within(fila).getByRole('button', { name: 'Registrar despacho' })
     fireEvent.click(boton)
-    expect(await screen.findByText('La cotización de la orden no está aprobada')).toBeTruthy()
+    expect(await screen.findByText('Confirma la OC de la minera antes de registrar el despacho.')).toBeTruthy()
     expect(http.post).toHaveBeenCalledTimes(1)
     expect(http.post).toHaveBeenCalledWith('/despachos', { idOrdenCompra: 1 })
-    expect((boton as HTMLButtonElement).disabled).toBe(true)
+    expect((boton as HTMLButtonElement).disabled).toBe(false)
+
+    http.post.mockResolvedValueOnce({ data: { idDespacho: 9, numeroOrdenCompra: 'OC-001' } })
+    fireEvent.click(boton)
+    await waitFor(() => expect(http.post).toHaveBeenCalledTimes(2))
   })
 
   it('el portal muestra la etapa, el plazo y la orden, sin SST ni origen ni usuarios', async () => {
