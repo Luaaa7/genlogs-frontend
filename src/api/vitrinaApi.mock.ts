@@ -1,12 +1,13 @@
 import type { EstadoPublicacion } from "./contratos/enumeraciones"
 import type { ConvertirProductoRequest, ImagenProductoRequest, ProductoVitrina } from "./vitrinaApi"
+import { precioDesdeCosto } from "@/lib/margenes"
 
 /** Datos simulados de /api/vitrina/productos (VITE_VITRINA_MOCK=true). En memoria. */
 let productos: ProductoVitrina[] = [
   {
     idProducto: 1, codigo: "GLB-000101", nombre: "Filtro de combustible CAT 1R-0750", descripcion: null,
     idCategoria: 3, categoria: "Filtros", idUnidadMedida: 1, unidad: "Unidad", marca: "Caterpillar", numeroParte: "1R-0750",
-    tipoRepuesto: "OEM", origen: "IMPORTADO", estado: "BORRADOR", costoPuestoLima: 455, margen: 60, precioReferencial: 728,
+    tipoRepuesto: "OEM", origen: "IMPORTADO", estado: "BORRADOR", costoPuestoLima: 455, margen: 60, precioReferencial: 1137.5,
     evaluacionMargen: "FUERA_DE_RANGO", requiereJefe: true, tieneImagenVerificada: false, fechaUltimaVerificacion: null, imagenes: [],
   },
 ]
@@ -30,7 +31,7 @@ export const vitrinaMock = {
       idProducto: siguiente, codigo: `GLB-0001${siguiente++}`, nombre: b.nombre, descripcion: b.descripcion ?? null,
       idCategoria: b.idCategoriaProducto, categoria: "Categoría", idUnidadMedida: b.idUnidadMedida, unidad: "Unidad",
       marca: null, numeroParte: b.numeroParte ?? null, tipoRepuesto: b.tipoRepuesto, origen: b.origen ?? "NACIONAL",
-      estado: "BORRADOR", costoPuestoLima: costo, margen, precioReferencial: Math.round(costo * (1 + margen / 100) * 100) / 100,
+      estado: "BORRADOR", costoPuestoLima: costo, margen, precioReferencial: precioDesdeCosto(costo, margen),
       evaluacionMargen: fuera ? "FUERA_DE_RANGO" : margen > 35 ? "CON_AVISO" : "NORMAL", requiereJefe: fuera,
       tieneImagenVerificada: false, fechaUltimaVerificacion: new Date().toISOString(), imagenes: [],
     }

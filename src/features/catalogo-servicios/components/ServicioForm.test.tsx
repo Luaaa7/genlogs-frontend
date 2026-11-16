@@ -42,18 +42,26 @@ describe('precio y margen del servicio', () => {
     http.post.mockResolvedValue({ data: { idServicio: 7, estadoAprobacion: 'APROBADO' } })
   })
 
-  it('con costo 100 y margen 35 muestra 135.00', async () => {
+  it('con costo 100 y margen 35 muestra 153.85 (costo / (1 − margen/100))', async () => {
     pintar()
     fireEvent.change(screen.getByLabelText('Costo'), { target: { value: '100' } })
     fireEvent.change(screen.getByLabelText('Margen (%)'), { target: { value: '35' } })
-    expect(await screen.findByDisplayValue('135.00')).toBeTruthy()
+    expect(await screen.findByDisplayValue('153.85')).toBeTruthy()
+  })
+
+  it('con margen de 100 % no hay precio y lo avisa', async () => {
+    pintar()
+    fireEvent.change(screen.getByLabelText('Costo'), { target: { value: '100' } })
+    fireEvent.change(screen.getByLabelText('Margen (%)'), { target: { value: '100' } })
+    expect(await screen.findByText('El margen tiene que ser menor que 100 %.')).toBeTruthy()
+    expect((screen.getByLabelText('Precio') as HTMLInputElement).value).toBe('')
   })
 
   it('con precio manual, 200 no lo reemplaza la fórmula', async () => {
     pintar()
     fireEvent.change(screen.getByLabelText('Costo'), { target: { value: '100' } })
     fireEvent.change(screen.getByLabelText('Margen (%)'), { target: { value: '35' } })
-    await screen.findByDisplayValue('135.00')
+    await screen.findByDisplayValue('153.85')
     fireEvent.click(screen.getByLabelText('Precio manual'))
     fireEvent.change(screen.getByLabelText('Precio'), { target: { value: '200' } })
     fireEvent.change(screen.getByLabelText('Margen (%)'), { target: { value: '50' } })

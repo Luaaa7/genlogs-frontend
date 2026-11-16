@@ -22,11 +22,12 @@ export function PrecioServicio() {
   const margen = numeroDe(useWatch({ control, name: "margen" }))
   const precio = numeroDe(useWatch({ control, name: "precioReferencial" }))
   const { rango } = useRangoMargenServicio()
-  const calculado = costo != null && margen != null ? precioCalculado(costo, margen) : null
+  // Margen sobre el precio: con 100 % o más no hay precio posible.
+  const calculado = costo != null && margen != null && margen < 100 ? precioCalculado(costo, margen) : null
   // Con precio manual el backend deduce el margen del precio; aquí se muestra y se avisa con ese mismo.
-  const margenReal = manual && costo != null && costo > 0 && precio != null ? margenDePrecio(costo, precio) : null
+  const margenReal = manual && costo != null && costo > 0 && precio != null && precio > 0 ? margenDePrecio(costo, precio) : null
   const margenEfectivo = manual ? margenReal : margen
-  const avisa = rango != null && margenEfectivo != null && margenEfectivo >= 0 && margenEfectivo <= 100
+  const avisa = rango != null && margenEfectivo != null && margenEfectivo >= 0 && margenEfectivo < 100
     && margenFueraDeRango(margenEfectivo, rango.minimo, rango.maximo)
   const manualCampo = register("precioManual")
 
@@ -49,7 +50,7 @@ export function PrecioServicio() {
           id="margen-servicio"
           type="number"
           min="0"
-          max="100"
+          max="99.99"
           step="0.01"
           {...register("margen", { setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)) })}
           className={campo}
@@ -87,13 +88,14 @@ export function PrecioServicio() {
       {manual && costo == null && (
         <p className="sm:col-span-2 text-sm text-muted-foreground">Registra el costo para fijar el precio a mano.</p>
       )}
+      {!manual && margen != null && margen >= 100 && (
+        <p role="status" className="sm:col-span-2 text-sm text-destructive">El margen tiene que ser menor que 100 %.</p>
+      )}
       {margenReal != null && (
-        <p role="status" className={`sm:col-span-2 text-sm ${margenReal < 0 || margenReal > 100 ? "text-destructive" : "text-foreground"}`}>
+        <p role="status" className={`sm:col-span-2 text-sm ${margenReal < 0 ? "text-destructive" : "text-foreground"}`}>
           {margenReal < 0
             ? "El precio no puede ser menor que el costo."
-            : margenReal > 100
-              ? `Este precio deja un margen de ${margenReal.toFixed(2)} %; el máximo es 100 %.`
-              : `Margen real con este precio: ${margenReal.toFixed(2)} %`}
+            : `Margen real con este precio: ${margenReal.toFixed(2)} %`}
         </p>
       )}
       {avisa && (

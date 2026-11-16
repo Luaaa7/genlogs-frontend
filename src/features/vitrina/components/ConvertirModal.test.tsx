@@ -56,7 +56,17 @@ describe("ConvertirModal (BPMN 10, D-22)", () => {
     expect(api.convertir).not.toHaveBeenCalled()
 
     fireEvent.change(screen.getByLabelText(/margen/i), { target: { value: "25" } })
-    expect(await screen.findByText(/568\.75/)).toBeTruthy()
+    // 455 / (1 − 0,25)
+    expect(await screen.findByText(/606\.67/)).toBeTruthy()
+  })
+
+  it("un margen de 100 % no se acepta", async () => {
+    pintar()
+    await screen.findByRole("option", { name: "Filtros" })
+    fireEvent.change(screen.getByLabelText(/margen/i), { target: { value: "100" } })
+    fireEvent.click(screen.getByRole("button", { name: /crear borrador/i }))
+    expect(await screen.findByText(/menos de 100 %/i)).toBeTruthy()
+    expect(api.convertir).not.toHaveBeenCalled()
   })
 
   it("crea el borrador y abre su detalle", async () => {
