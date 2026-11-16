@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { useAuthStore } from '@/features/auth/store/authStore'
@@ -25,6 +25,7 @@ function diaLima(desfaseDias: number) {
 
 let cabecera: Record<string, unknown>
 let adjuntos: Record<string, unknown>[]
+let seguimientos: Record<string, unknown>[]
 
 function pintar(rol: string) {
   useAuthStore.setState({ nombreRol: rol })
@@ -50,7 +51,8 @@ async function elegir(destino: 'Aprobada' | 'Rechazada', comentario: string, arc
 describe('el Jefe registra la respuesta del cliente', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    adjuntos = [{ idAdjunto: 9, nombreArchivo: 'oc-minera.pdf' }]
+    adjuntos = [{ idAdjunto: 9, nombreArchivo: 'oc-minera.pdf', fechaSubida: '2026-11-02T10:00:00' }]
+    seguimientos = [{ codigoEstado: 'ENVIADA', fechaEvento: '2026-11-01T10:00:00' }]
     cabecera = {
       idCotizacion: 1, idCliente: 4, codigoCotizacion: 'COT-001', estado: 'ENVIADA',
       fechaCotizacion: '2026-11-10', fechaValidez: diaLima(10), condicionPago: 'CONTADO',
@@ -59,18 +61,20 @@ describe('el Jefe registra la respuesta del cliente', () => {
     http.get.mockImplementation((url: string) => {
       if (url === '/cotizaciones/1') return Promise.resolve({ data: cabecera })
       if (url.endsWith('/adjuntos')) return Promise.resolve({ data: adjuntos })
-      if (url.endsWith('/lineas') || url.endsWith('/seguimiento')) return Promise.resolve({ data: [] })
+      if (url.endsWith('/seguimiento')) return Promise.resolve({ data: seguimientos })
+      if (url.endsWith('/lineas')) return Promise.resolve({ data: [] })
       if (url.startsWith('/ordenes-compra')) return Promise.resolve({ data: { content: [] } })
       return Promise.resolve({ data: { content: [] } })
     })
     http.post.mockResolvedValue({ data: cabecera })
   })
 
-  it('el Jefe la ve en enviada y en negociación mientras sigue vigente', async () => {
-    const enviada = pintar('JEFE_ADMINISTRATIVO')
+  it('el Jefe la ve en enviada mientras sigue vigente', async () => {
+    pintar('JEFE_ADMINISTRATIVO')
     expect(await screen.findByRole('heading', { name: 'Registrar la respuesta del cliente' })).toBeTruthy()
-    enviada.unmount()
+  })
 
+  it('el Jefe la ve en negociación el día de la vigencia', async () => {
     cabecera = { ...cabecera, estado: 'EN_NEGOCIACION', fechaValidez: diaLima(0) }
     pintar('JEFE_ADMINISTRATIVO')
     expect(await screen.findByRole('heading', { name: 'Registrar la respuesta del cliente' })).toBeTruthy()
@@ -110,6 +114,36 @@ describe('el Jefe registra la respuesta del cliente', () => {
     pintar('JEFE_ADMINISTRATIVO')
     expect(await screen.findByText('COT-001')).toBeTruthy()
     expect(screen.queryByRole('heading', { name: 'Registrar la respuesta del cliente' })).toBeNull()
+  })
+
+  it('con dos envíos el corte es el primero: el borrador y la misma fecha no salen, uno posterior sí', async () => {
+    seguimientos = [
+      { codigoEstado: 'ENVIADA', fechaEvento: '2026-11-12T15:00:00' },
+      { codigoEstado: 'ENVIADA', fechaEvento: '2026-11-10T10:00:00' },
+    ]
+    adjuntos = [
+      { idAdjunto: 1, nombreArchivo: 'borrador.pdf', fechaSubida: '2026-11-09T09:00:00' },
+      { idAdjunto: 2, nombreArchivo: 'en-el-envio.pdf', fechaSubida: '2026-11-10T10:00:00' },
+      { idAdjunto: 3, nombreArchivo: 'correo-cliente.pdf', fechaSubida: '2026-11-11T08:00:00' },
+      { idAdjunto: 4, nombreArchivo: 'sin-fecha.pdf' },
+    ]
+    pintar('JEFE_ADMINISTRATIVO')
+    const selector = await screen.findByLabelText('Correo o orden de compra')
+    const nombres = within(selector).getAllByRole('option').map((opcion) => opcion.textContent)
+    expect(nombres).toContain('correo-cliente.pdf')
+    expect(nombres).not.toContain('borrador.pdf')
+    expect(nombres).not.toContain('en-el-envio.pdf')
+    expect(nombres).not.toContain('sin-fecha.pdf')
+    expect(screen.queryByText('Carga el correo o la orden de compra en los adjuntos de la cotización.')).toBeNull()
+  })
+
+  it('sin el primer envío el selector queda vacío y se mantiene el aviso de cargar el archivo', async () => {
+    seguimientos = [{ codigoEstado: 'BORRADOR', fechaEvento: '2026-11-01T10:00:00' }]
+    adjuntos = [{ idAdjunto: 1, nombreArchivo: 'borrador.pdf', fechaSubida: '2026-11-09T09:00:00' }]
+    pintar('JEFE_ADMINISTRATIVO')
+    const selector = await screen.findByLabelText('Correo o orden de compra')
+    expect(within(selector).queryByRole('option', { name: 'borrador.pdf' })).toBeNull()
+    expect(screen.getByText('Carga el correo o la orden de compra en los adjuntos de la cotización.')).toBeTruthy()
   })
 
   it('sin comentario o sin adjunto no llama al endpoint', async () => {

@@ -52,7 +52,7 @@ export function CotizacionPortalDetallePage() {
           </EstadoBadge>
         </div>
         {esCotizacionAnulada(c) && c.motivoAnulacion && (
-          <p className="mt-4 text-sm">{c.motivoAnulacion}</p>
+          <p className="mt-4 text-sm">Motivo: {c.motivoAnulacion}</p>
         )}
 
         {c.lineas && c.lineas.length > 0 && (

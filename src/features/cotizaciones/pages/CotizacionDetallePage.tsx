@@ -38,7 +38,7 @@ import { creaCotizaciones, esJefeAdministrativo, veCotizaciones } from '../lib/r
 import { AnularCotizacionModal } from '../components/AnularCotizacionModal'
 import { RespuestaClienteForm } from '../components/RespuestaClienteForm'
 import { useRegistrarRespuestaCliente } from '../hooks/useRegistrarRespuestaCliente'
-import { puedeRegistrarRespuestaCliente } from '../lib/respuestaCliente'
+import { adjuntosDeLaRespuesta, puedeRegistrarRespuestaCliente } from '../lib/respuestaCliente'
 
 const ESTADOS_ABIERTOS = new Set<string>(['BORRADOR', 'ENVIADA', 'EN_NEGOCIACION']);
 
@@ -373,7 +373,7 @@ const CotizacionDetalleContenido: React.FC = () => {
 
       {mostrarRespuesta && (
         <RespuestaClienteForm
-          adjuntos={cotizacion.adjuntos ?? []}
+          adjuntos={adjuntosDeLaRespuesta(cotizacion.adjuntos ?? [], cotizacion.seguimientos ?? [])}
           ocupado={respuestaCliente.isPending}
           error={respuestaCliente.isError ? mensajeError(respuestaCliente.error, 'No se pudo registrar la respuesta.') : null}
           onRegistrar={(body) => respuestaCliente.mutate(body)}

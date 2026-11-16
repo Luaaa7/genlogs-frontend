@@ -38,7 +38,7 @@ export function MisCotizacionesPage() {
                       {c.numeroOcCliente ? ` · OC ${c.numeroOcCliente}` : ""}
                     </span>
                     {esCotizacionAnulada(c) && c.motivoAnulacion && (
-                      <span className="mt-1 block text-sm">{c.motivoAnulacion}</span>
+                      <span className="mt-1 block text-sm">Motivo: {c.motivoAnulacion}</span>
                     )}
                   </span>
                 </span>

@@ -98,15 +98,16 @@ describe("Detalle de cotización: revisar y aprobar en 2 clics", () => {
     const lista = vi.spyOn(portalCotizacionesApi, "listar").mockResolvedValue([anulada, enviadaConMotivo])
     const listado = renderEn("/portal/cotizaciones")
     expect(await screen.findByText("Anulada")).toBeTruthy()
-    expect(screen.getByText("La minera canceló el pedido")).toBeTruthy()
+    expect(screen.getByText("Motivo: La minera canceló el pedido")).toBeTruthy()
     expect(screen.queryByText("No debe verse")).toBeNull()
+    expect(screen.queryByText("Motivo: No debe verse")).toBeNull()
     listado.unmount()
     lista.mockRestore()
 
     detalle.mockResolvedValue(anulada)
     const vistaAnulada = renderEn("/portal/cotizaciones/9")
     expect(await screen.findByText("Anulada")).toBeTruthy()
-    expect(screen.getByText("La minera canceló el pedido")).toBeTruthy()
+    expect(screen.getByText("Motivo: La minera canceló el pedido")).toBeTruthy()
     expect(screen.queryByRole("button", { name: "Aprobar cotización" })).toBeNull()
     vistaAnulada.unmount()
 
@@ -116,6 +117,7 @@ describe("Detalle de cotización: revisar y aprobar en 2 clics", () => {
     expect(screen.getByText("Enviada")).toBeTruthy()
     expect(screen.queryByText("Anulada")).toBeNull()
     expect(screen.queryByText("No debe verse")).toBeNull()
+    expect(screen.queryByText(/Motivo:/)).toBeNull()
   })
 
   it("si el backend rechaza la decisión, muestra su mensaje", async () => {
