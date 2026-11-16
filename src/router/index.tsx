@@ -51,11 +51,17 @@ export const router = createBrowserRouter([
     { path: '/clientes', element: <ClientesListPage /> },
     { path: '/clientes/:id', element: <ClienteDetallePage /> },
     { path: '/proveedores', element: <ProveedoresListPage /> },
-    { path: '/empresas-mineras', element: <EmpresasMinerasPage /> },
-    { path: '/catalogo-repuestos', element: <CatalogoProductosPage /> },
-    { path: '/catalogo-repuestos/nuevo', element: <NuevoProductoPage /> },
-    { path: '/catalogo-repuestos/:id', element: <ProductoDetallePage /> },
-    { path: '/catalogo-repuestos/:id/editar', element: <EditarProductoPage /> },
+    // R3 (v3.3): empresas mineras y repuestos según la matriz (Gerente, Jefe, Asist. Log. y Asist. Adm.).
+    // Crear y editar repuestos, solo Jefe y Asist. Log. (igual que el @PreAuthorize de ProductoController).
+    { element: <RoleGuard permitido={(p) => p.verCatalogosYEmpresas} />, children: [
+      { path: '/empresas-mineras', element: <EmpresasMinerasPage /> },
+      { path: '/catalogo-repuestos', element: <CatalogoProductosPage /> },
+      { path: '/catalogo-repuestos/:id', element: <ProductoDetallePage /> },
+    ] },
+    { element: <RoleGuard permitido={(p) => p.verCatalogosYEmpresas && p.editarCatalogos} />, children: [
+      { path: '/catalogo-repuestos/nuevo', element: <NuevoProductoPage /> },
+      { path: '/catalogo-repuestos/:id/editar', element: <EditarProductoPage /> },
+    ] },
     // S2: servicios y comprobantes según la matriz v3.2 (permisos.ts); el backend también bloquea.
     { element: <RoleGuard permitido={(p) => p.verServicios} />, children: [
       { path: '/catalogo-servicios', element: <CatalogoServiciosPage /> },

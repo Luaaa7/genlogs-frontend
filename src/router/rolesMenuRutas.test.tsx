@@ -10,8 +10,6 @@
  * Diferencias con la matriz que este test NO cubre todavía (al corregirlas, agregar el caso):
  *  - Menú "Solicitudes" (FE-C): el Asistente Administrativo no la ve y /solicitudes lo manda al
  *    dashboard; la matriz le da "solo ve".
- *  - Empresas mineras y Repuestos: el menú sigue la matriz, pero sus rutas no tienen
- *    RoleGuard y un rol sin acceso entra escribiendo la URL (el backend sí bloquea).
  *  - Búsqueda y Vitrina (FE-D) quedan fuera: dependen de sus interruptores.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -91,6 +89,12 @@ const RUTAS_ESPERADAS: Record<string, Interno[]> = {
   '/catalogo-servicios': [GG, JA, AL, AA],
   '/catalogo-servicios/nuevo': [GG, JA, AL, AA],
   '/alertas-documentos': [GG, JA, CG, SST, AA],
+  // R3 (v3.3): empresas mineras y repuestos con RoleGuard; crear y editar repuestos, Jefe y Asist. Log.
+  '/empresas-mineras': [GG, JA, AL, AA],
+  '/catalogo-repuestos': [GG, JA, AL, AA],
+  '/catalogo-repuestos/1': [GG, JA, AL, AA],
+  '/catalogo-repuestos/nuevo': [JA, AL],
+  '/catalogo-repuestos/1/editar': [JA, AL],
   '/usuarios': [JA],
   '/configuracion/igv': [JA],
   '/configuracion/margenes': [JA],
