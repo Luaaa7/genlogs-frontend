@@ -12,13 +12,19 @@ import { ClienteBuscador } from './ClienteBuscador'
 interface CotizacionFormProps {
   clientes: Cliente[]
   isLoadingClientes?: boolean
+  /**
+   * SUPUESTO a confirmar con el equipo: en edición la moneda queda fija
+   * para no desalinear el tipo de cambio ya guardado. El cliente sí se cambia.
+   * Para revertirlo, no pases monedaBloqueada.
+   */
+  monedaBloqueada?: boolean
 }
 
 // El sistema solo trabaja con soles y dólares.
 const MONEDAS: Record<string, string> = { PEN: 'Soles (S/)', USD: 'Dólares ($)' }
 
 /** Grupo de opciones tipo "tarjeta" (radio) para valores cortos. */
-function OpcionesRadio<T extends string>({ name, legend, opciones, valor, onChange, error, columnas }: {
+function OpcionesRadio<T extends string>({ name, legend, opciones, valor, onChange, error, columnas, disabled, ayudaId }: {
   name: string
   legend: string
   opciones: { valor: T; label: string }[]
@@ -26,20 +32,24 @@ function OpcionesRadio<T extends string>({ name, legend, opciones, valor, onChan
   onChange: (v: T) => void
   error?: string
   columnas: string
+  disabled?: boolean
+  ayudaId?: string
 }) {
+  const descrito = [error ? `${name}-error` : null, ayudaId].filter(Boolean).join(' ') || undefined
   return (
-    <fieldset aria-describedby={error ? `${name}-error` : undefined}>
+    <fieldset aria-describedby={descrito}>
       <legend className="mb-1.5 text-sm font-medium text-foreground">{legend}<MarcaObligatorio /></legend>
       <div className={cn('grid gap-2', columnas)}>
         {opciones.map((o) => (
           <label
             key={o.valor}
             className={cn(
-              'flex h-10 cursor-pointer items-center gap-2.5 rounded-md border px-3 text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring',
+              'flex h-10 items-center gap-2.5 rounded-md border px-3 text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring',
+              disabled ? 'cursor-not-allowed opacity-70' : 'cursor-pointer',
               valor === o.valor ? 'border-accent bg-accent/10 font-medium text-foreground' : 'border-input text-foreground hover:bg-muted'
             )}
           >
-            <input type="radio" name={name} required checked={valor === o.valor} onChange={() => onChange(o.valor)} className="accent-[var(--accent)]" />
+            <input type="radio" name={name} required checked={valor === o.valor} disabled={disabled} aria-describedby={descrito} onChange={() => onChange(o.valor)} className="accent-[var(--accent)]" />
             {o.label}
           </label>
         ))}
@@ -50,7 +60,7 @@ function OpcionesRadio<T extends string>({ name, legend, opciones, valor, onChan
 }
 
 /** Datos generales de la cotización: cliente, condiciones y observaciones. */
-export const CotizacionForm: React.FC<CotizacionFormProps> = ({ clientes, isLoadingClientes = false }) => {
+export const CotizacionForm: React.FC<CotizacionFormProps> = ({ clientes, isLoadingClientes = false, monedaBloqueada = false }) => {
   const { control, formState: { errors } } = useFormContext<CrearCotizacionFormData>()
 
   return (
@@ -98,15 +108,24 @@ export const CotizacionForm: React.FC<CotizacionFormProps> = ({ clientes, isLoad
         name="moneda"
         control={control}
         render={({ field }) => (
-          <OpcionesRadio
-            name="cot-moneda"
-            legend="Moneda"
-            opciones={Object.values(Moneda).map((m) => ({ valor: m, label: MONEDAS[m] ?? m }))}
-            valor={field.value}
-            onChange={field.onChange}
-            error={errors.moneda?.message}
-            columnas="grid-cols-1 sm:grid-cols-3"
-          />
+          <>
+            <OpcionesRadio
+              name="cot-moneda"
+              legend="Moneda"
+              opciones={Object.values(Moneda).map((m) => ({ valor: m, label: MONEDAS[m] ?? m }))}
+              valor={field.value}
+              onChange={field.onChange}
+              error={errors.moneda?.message}
+              columnas="grid-cols-1 sm:grid-cols-3"
+              disabled={monedaBloqueada}
+              ayudaId={monedaBloqueada ? 'cot-moneda-ayuda' : undefined}
+            />
+            {monedaBloqueada && (
+              <p id="cot-moneda-ayuda" className="mt-1.5 text-xs text-muted-foreground">
+                La moneda no se puede cambiar al editar un borrador. Para cotizar en otra moneda, duplica la cotización.
+              </p>
+            )}
+          </>
         )}
       />
 

@@ -5,6 +5,7 @@ import { useFormContext, useFieldArray, useWatch } from 'react-hook-form';
 import type { CrearCotizacionFormData } from '@/lib/validators/cotizacion.schema';
 import { formatearMoneda, calcularSubtotal } from '@/lib/formatters/codigoCotizacion';
 import { MARGEN_MAXIMO, margenDesdePrecio, precioDesdeCosto, textoPorcentaje } from '@/lib/margenes';
+import { usePermisos } from '@/lib/permisos';
 import { Button } from '@/components/ui/button';
 import { Package, Plus, Trash2 } from 'lucide-react';
 import { MarcaObligatorio } from '@/components/ui/campo';
@@ -14,6 +15,22 @@ import { AgregarItemModal } from './AgregarItemModal';
 
 interface CotizacionDetalleFormProps {
   moneda: string;
+  /** Borrador devuelto: las líneas que ya venían no traen costo ni margen. */
+  editando?: boolean;
+  /** Soles por 1 dólar. null: no hay cambio y no se inventa uno. */
+  tipoCambio?: number | null;
+}
+
+const NOTA_COSTO_MARGEN = 'El costo y el margen no se guardan en la cotización. Si cambias el precio de una línea, el margen no se recalcula.'
+
+function CeldaNoGuardada({ etiqueta, aviso }: { etiqueta: string; aviso: string }) {
+  return (
+    <div>
+      <span className={etiquetaApilada}>{etiqueta}</span>
+      <p className="h-9 text-right leading-9 tabular-nums text-muted-foreground" aria-label={aviso}>—</p>
+      <p className="text-right text-xs text-muted-foreground">No guardado</p>
+    </div>
+  )
 }
 
 // Inputs compactos de las líneas (mismos tokens que los formularios)
@@ -30,10 +47,15 @@ const etiquetaApilada = 'mb-1 block text-xs text-muted-foreground @2xl:sr-only';
 /** Líneas de la cotización: producto o servicio del catálogo, cantidad, costo,
  *  margen y precio de venta. Costo y margen calculan el precio; si se cambia el
  *  precio a mano, se recalcula el margen. */
-export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ moneda }) => {
+export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ moneda, editando = false, tipoCambio = null }) => {
+  const { verMargenes } = usePermisos()
   const { control, register, setValue, getValues, formState: { errors } } = useFormContext<CrearCotizacionFormData>();
   const { fields, append, remove } = useFieldArray({ control, name: 'detalles' });
+  const [idsPrecargados] = useState(() => new Set(editando ? fields.map((campo) => campo.id) : []))
   const detalles = useWatch({ control, name: 'detalles' });
+  const columnas = verMargenes
+    ? COLUMNAS
+    : '@2xl:grid-cols-[minmax(0,1fr)_4.5rem_6.5rem_7rem_2.5rem]'
 
   // "Agregar ítem" abre una ventana con el catálogo; el ítem entra a la lista ya completo.
   const [agregando, setAgregando] = useState(false);
@@ -96,6 +118,10 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
         )}
       </div>
 
+      {editando && verMargenes && (
+        <p className="mx-5 mb-4 text-sm text-muted-foreground sm:mx-6">{NOTA_COSTO_MARGEN}</p>
+      )}
+
       {errorGeneral && (
         <p role="alert" className="mx-5 mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive sm:mx-6">
           {errorGeneral === 'Debe agregar al menos un detalle' ? 'Agrega al menos un ítem a la cotización.' : errorGeneral}
@@ -118,12 +144,12 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
           {/* Encabezados: solo en ancho amplio; apilado, cada campo trae su etiqueta */}
           <div
             aria-hidden="true"
-            className={cn('hidden gap-x-2 border-y border-border px-5 py-2.5 text-xs font-medium text-muted-foreground sm:px-6 @2xl:grid', COLUMNAS)}
+            className={cn('hidden gap-x-2 border-y border-border px-5 py-2.5 text-xs font-medium text-muted-foreground sm:px-6 @2xl:grid', columnas)}
           >
             <span>Producto o servicio<MarcaObligatorio /></span>
             <span className="text-right">Cantidad<MarcaObligatorio /></span>
-            <span className="text-right">Costo unit.</span>
-            <span className="text-right">Margen %</span>
+            {verMargenes && <span className="text-right">Costo unit.</span>}
+            {verMargenes && <span className="text-right">Margen %</span>}
             <span className="text-right">Precio unit.<MarcaObligatorio /></span>
             <span className="text-right">Subtotal</span>
             <span />
@@ -136,7 +162,9 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
               const costo = Number(d?.costoUnitario) || 0;
               const ganancia = d && costo > 0 ? ((d.precioUnitario || 0) - costo) * (d.cantidad || 0) : 0;
               const minimo = d?.margenMinimo;
-              const bajoMinimo = minimo !== undefined && Number(d?.margenPorcentaje) < minimo;
+              const precargada = idsPrecargados.has(field.id)
+              const sinMargen = precargada || d?.margenPorcentaje == null
+              const bajoMinimo = !sinMargen && minimo !== undefined && Number(d?.margenPorcentaje) < minimo;
               const err = errors.detalles?.[index];
               const n = index + 1;
               return (
@@ -144,7 +172,7 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
                   key={field.id}
                   className={cn(
                     'grid grid-cols-2 gap-x-3 gap-y-3 border-t border-border px-5 py-3.5 first:border-t-0 sm:px-6 @2xl:items-start @2xl:gap-x-2',
-                    COLUMNAS,
+                    columnas,
                   )}
                 >
                   <div className="col-span-2 @2xl:col-span-1">
@@ -177,40 +205,55 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
                     {err?.cantidad && <p className="mt-1 text-xs text-destructive">{err.cantidad.message}</p>}
                   </div>
 
-                  <div>
-                    <span className={etiquetaApilada}>Costo unit.</span>
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      inputMode="decimal"
-                      placeholder="0.00"
-                      {...register(`detalles.${index}.costoUnitario`, { valueAsNumber: true, onChange: () => recalcularPrecio(index) })}
-                      aria-label={`Costo unitario del ítem ${n}`}
-                      aria-invalid={!!err?.costoUnitario}
-                      className={cn(celdaInput, 'text-right tabular-nums')}
-                    />
-                    {err?.costoUnitario && <p className="mt-1 text-xs text-destructive">{err.costoUnitario.message}</p>}
-                  </div>
+                  {verMargenes && (precargada ? (
+                    <CeldaNoGuardada etiqueta="Costo unit." aviso={`Costo unitario del ítem ${n}, no guardado`} />
+                  ) : (
+                    <div>
+                      <span className={etiquetaApilada}>Costo unit.</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        inputMode="decimal"
+                        placeholder="0.00"
+                        {...register(`detalles.${index}.costoUnitario`, {
+                          setValueAs: (valor) => {
+                            if (valor === '' || valor == null) return undefined
+                            const numero = Number(valor)
+                            return Number.isNaN(numero) ? undefined : numero
+                          },
+                          onChange: () => recalcularPrecio(index),
+                        })}
+                        aria-label={`Costo unitario del ítem ${n}`}
+                        aria-invalid={!!err?.costoUnitario}
+                        className={cn(celdaInput, 'text-right tabular-nums')}
+                      />
+                      {err?.costoUnitario && <p className="mt-1 text-xs text-destructive">{err.costoUnitario.message}</p>}
+                    </div>
+                  ))}
 
-                  <div>
-                    <span className={etiquetaApilada}>Margen %</span>
-                    <input
-                      type="number"
-                      min={0}
-                      max={MARGEN_MAXIMO}
-                      step="0.1"
-                      inputMode="decimal"
-                      {...register(`detalles.${index}.margenPorcentaje`, { valueAsNumber: true, onChange: () => recalcularPrecio(index) })}
-                      aria-label={`Margen del ítem ${n} en porcentaje`}
-                      aria-invalid={!!err?.margenPorcentaje || bajoMinimo}
-                      className={cn(celdaInput, 'text-right tabular-nums')}
-                    />
-                    {err?.margenPorcentaje && <p className="mt-1 text-xs text-destructive">{err.margenPorcentaje.message}</p>}
-                    {!err?.margenPorcentaje && bajoMinimo && (
-                      <p className="mt-1 text-xs text-warning-text">Bajo el mínimo ({textoPorcentaje(minimo ?? 0)})</p>
-                    )}
-                  </div>
+                  {verMargenes && (sinMargen ? (
+                    <CeldaNoGuardada etiqueta="Margen %" aviso={`Margen del ítem ${n}, no guardado`} />
+                  ) : (
+                    <div>
+                      <span className={etiquetaApilada}>Margen %</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={MARGEN_MAXIMO}
+                        step="0.1"
+                        inputMode="decimal"
+                        {...register(`detalles.${index}.margenPorcentaje`, { valueAsNumber: true, onChange: () => recalcularPrecio(index) })}
+                        aria-label={`Margen del ítem ${n} en porcentaje`}
+                        aria-invalid={!!err?.margenPorcentaje || bajoMinimo}
+                        className={cn(celdaInput, 'text-right tabular-nums')}
+                      />
+                      {err?.margenPorcentaje && <p className="mt-1 text-xs text-destructive">{err.margenPorcentaje.message}</p>}
+                      {!err?.margenPorcentaje && bajoMinimo && (
+                        <p className="mt-1 text-xs text-warning-text">Bajo el mínimo ({textoPorcentaje(minimo ?? 0)})</p>
+                      )}
+                    </div>
+                  ))}
 
                   <div>
                     <span className={etiquetaApilada}>Precio unit.<MarcaObligatorio /></span>
@@ -255,6 +298,7 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
       {agregando && (
         <AgregarItemModal
           moneda={moneda}
+          tipoCambio={tipoCambio}
           onAgregar={(item) => append(item)}
           onCerrar={() => setAgregando(false)}
         />

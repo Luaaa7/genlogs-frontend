@@ -8,6 +8,7 @@ import {
 import type {
   Cotizacion,
   CreateCotizacionRequest,
+  UpdateCotizacionRequest,
   CotizacionesListResponse,
   CotizacionesFilterParams,
   UpdateEstadoCotizacionRequest,
@@ -58,9 +59,11 @@ export const cotizacionesApi = {
       idCotizacionDetalle: l.idCotizacionDetalle,
       idProducto: l.idProducto,
       idServicio: l.idServicio,
-      idUnidadMedida: 0,
-      producto: l.productoNombre ?? undefined,
-      servicio: l.servicioNombre ?? undefined,
+      idUnidadMedida: l.idUnidadMedida ?? 0,
+      producto: l.producto ?? l.productoNombre ?? undefined,
+      servicio: l.servicio ?? l.servicioNombre ?? undefined,
+      margen: l.margen ?? null,
+      margenPorcentaje: l.margenPorcentaje ?? l.margen ?? undefined,
       descripcionPersonalizada: l.descripcionPersonalizada,
       cantidad: Number(l.cantidad),
       precioUnitario: Number(l.precioUnitario),
@@ -108,6 +111,12 @@ export const cotizacionesApi = {
 
   async crearCotizacion(data: CreateCotizacionRequest): Promise<Cotizacion> {
     const response = await axiosClient.post<Cotizacion>("/cotizaciones", data)
+    return response.data
+  },
+
+  /** Mismo id y código. La respuesta se lee igual que en el alta. */
+  async actualizarCotizacion(id: number, data: UpdateCotizacionRequest): Promise<Cotizacion> {
+    const response = await axiosClient.put<Cotizacion>(`/cotizaciones/${id}`, data)
     return response.data
   },
 

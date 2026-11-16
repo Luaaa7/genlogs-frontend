@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { avisar } from '@/lib/avisos'
 import { despachosApi } from '../api/despachosApi'
+import type { EtapaCodigo, TipoSst } from '../api/despachoTipos'
 
 export function useDespachos() {
   return useQuery({ queryKey: ['despachos'], queryFn: () => despachosApi.listar() })
@@ -14,23 +15,48 @@ export function useDespacho(id: number | null) {
   })
 }
 
-function useAccionDespacho(id: number, texto: string, accion: (id: number) => Promise<unknown>) {
+export function useDespachosPortal() {
+  return useQuery({ queryKey: ['portal-despachos'], queryFn: () => despachosApi.listarPortal() })
+}
+
+export function useCrearDespacho() {
   const cliente = useQueryClient()
   return useMutation({
-    mutationFn: () => accion(id),
+    retry: false,
+    mutationFn: (idOrdenCompra: number) => despachosApi.crear(idOrdenCompra),
+    onSuccess: (creado) => {
+      avisar(`Despacho de la orden ${creado.numeroOrdenCompra} registrado.`)
+      void cliente.invalidateQueries({ queryKey: ['despachos'] })
+    },
+  })
+}
+
+export function useAvanzarDespacho(id: number) {
+  const cliente = useQueryClient()
+  return useMutation({
+    retry: false,
+    mutationFn: (etapa: EtapaCodigo) => despachosApi.avanzar(id, etapa),
     onSuccess: () => {
-      avisar(texto)
+      avisar('Etapa avanzada.')
       void cliente.invalidateQueries({ queryKey: ['despachos'] })
       void cliente.invalidateQueries({ queryKey: ['despachos', id] })
     },
   })
 }
 
-export function useAccionesDespacho(id: number) {
-  return {
-    avanzar: useAccionDespacho(id, 'Etapa avanzada.', despachosApi.avanzar),
-    salida: useAccionDespacho(id, 'Salida registrada.', despachosApi.darSalida),
-    pase: useAccionDespacho(id, 'Pase confirmado.', despachosApi.confirmarPase),
-    sctr: useAccionDespacho(id, 'SCTR confirmado.', despachosApi.confirmarSctr),
-  }
+/** Confirma el documento y, si esta sesión puede avanzar, reintenta la misma etapa. */
+export function useConfirmarSst(id: number, etapa: EtapaCodigo | null, puedeAvanzar: boolean) {
+  const cliente = useQueryClient()
+  return useMutation({
+    retry: false,
+    mutationFn: async (cuerpo: { tipo: TipoSst; fechaVencimiento: string }) => {
+      await despachosApi.confirmarSst(id, cuerpo)
+      if (puedeAvanzar && etapa) await despachosApi.avanzar(id, etapa)
+    },
+    onSuccess: () => {
+      avisar(puedeAvanzar && etapa ? 'Documento confirmado. Se reintentó la etapa.' : 'Documento confirmado.')
+      void cliente.invalidateQueries({ queryKey: ['despachos'] })
+      void cliente.invalidateQueries({ queryKey: ['despachos', id] })
+    },
+  })
 }

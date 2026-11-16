@@ -4,6 +4,7 @@ import { Eye, ShoppingCart } from 'lucide-react'
 import { VistaPreviaPdf } from '@/components/ui/VistaPreviaPdf'
 import { useOrdenesCompra } from '../hooks/useOrdenesCompra'
 import { EstadoOrdenSelect } from '../components/EstadoOrdenSelect'
+import { RegistrarDespachoButton } from '@/features/despacho/components/RegistrarDespachoButton'
 import { OcMineraPanel } from '../components/OcMineraPanel'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
 import { TableSkeletonRows } from '@/components/ui/TableSkeletonRows'
@@ -118,10 +119,11 @@ export function OrdenesCompraPage() {
                             Ver
                           </button>
                         )}
+                        <RegistrarDespachoButton idOrdenCompra={o.idOrdenCompra ?? o.id ?? 0} />
                         <button
                           type="button"
                           onClick={() => setPanelId(o.idOrdenCompra ?? o.id ?? 0)}
-                          className="rounded text-[13px] font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          className="ml-3 rounded text-[13px] font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           OC de la minera
                         </button>

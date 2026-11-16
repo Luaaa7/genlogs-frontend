@@ -26,6 +26,12 @@ describe("puedeDecidir (aprobar o rechazar desde el portal)", () => {
 
   it("si el backend manda puedeDecidir, manda ese valor", () => {
     expect(puedeDecidir({ estado: "Enviada", puedeDecidir: false, fechaValidez: "2026-11-20" }, hoy)).toBe(false)
+    expect(puedeDecidir({ estado: "Aprobada", puedeDecidir: true, fechaValidez: "2026-11-01" }, hoy)).toBe(true)
+  })
+
+  it("el día de validez inclusive se puede decidir y cierra a las 00:00 de Lima del día siguiente", () => {
+    expect(puedeDecidir({ estado: "Enviada", fechaValidez: "2026-11-12" }, new Date("2026-11-12T23:30:00-05:00"))).toBe(true)
+    expect(puedeDecidir({ estado: "Enviada", fechaValidez: "2026-11-12" }, new Date("2026-11-13T00:00:00-05:00"))).toBe(false)
   })
 })
 

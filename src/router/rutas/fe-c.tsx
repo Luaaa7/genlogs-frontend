@@ -6,6 +6,7 @@ import { SolicitudesListPage } from '@/features/solicitudes/pages/SolicitudesLis
 import { ROLES_PANTALLA } from '@/features/solicitudes/lib/reglasSolicitud'
 import { DespachoDetallePage } from '@/features/despacho/pages/DespachoDetallePage'
 import { DespachosPage } from '@/features/despacho/pages/DespachosPage'
+import { MisDespachosPage } from '@/features/portal-cliente/pages/MisDespachosPage'
 import { ROLES_DESPACHO } from '@/features/despacho/lib/reglasDespacho'
 
 /** Rutas de FE-C. /solicitudes/:id no choca con /portal/solicitud ni con otra ruta interna. */
@@ -29,6 +30,8 @@ export const rutasFeC: RutasBloque = {
       ],
     },
   ],
-  portal: [],
+  portal: [
+    { path: '/portal/despachos', element: <MisDespachosPage /> },
+  ],
   publicas: [],
 }

@@ -23,6 +23,17 @@ describe("TablaReferencias: enlaces", () => {
     expect(screen.getByText(url)).toBeTruthy()
   })
 
+  it("muestra AliExpress y Amazon, y un precio vacío como raya", () => {
+    const ali = { ...ref(null), fuente: "ALIEXPRESS", precioRef: null, titulo: "Filtro Ali" }
+    const amazon = { ...ref(null), idSourcing: 3, fuente: "AMAZON", precioRef: null, titulo: "Filtro Amazon" }
+    render(<TablaReferencias referencias={[ali, amazon]} puedeMarcar={false} onMarcar={() => {}} />)
+    expect(screen.getByText("AliExpress")).toBeTruthy()
+    expect(screen.getByText("Amazon")).toBeTruthy()
+    expect(screen.getAllByText("—").length).toBeGreaterThan(0)
+    expect(screen.queryByText("0")).toBeNull()
+    expect(screen.queryByText("0.00")).toBeNull()
+  })
+
   it("ofrece Convertir solo en las referencias útiles", () => {
     const onConvertir = vi.fn()
     const util = { ...ref("https://www.ebay.com/itm/1"), idSourcing: 2, estado: "UTIL" as const, titulo: "Útil" }

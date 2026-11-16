@@ -18,14 +18,17 @@ interface Props {
   error?: string
   onConfirmar: () => void
   onVolver: () => void
+  titulo?: string
+  descripcion?: string
+  textoConfirmar?: string
 }
 
 /** Resumen antes de guardar: se revisa todo y recién ahí se crea el borrador. */
-export function ConfirmarCotizacionModal({ cliente, condicion, moneda, observaciones, items, subtotal, igv, porcentajeIgv, isPending, error, onConfirmar, onVolver }: Props) {
+export function ConfirmarCotizacionModal({ cliente, condicion, moneda, observaciones, items, subtotal, igv, porcentajeIgv, isPending, error, onConfirmar, onVolver, titulo = 'Revisa la cotización antes de crearla', descripcion = 'Se guardará como borrador; podrás editarla y enviarla después.', textoConfirmar = 'Confirmar y crear' }: Props) {
   return (
     <Ventana
-      titulo="Revisa la cotización antes de crearla"
-      descripcion="Se guardará como borrador; podrás editarla y enviarla después."
+      titulo={titulo}
+      descripcion={descripcion}
       onCerrar={onVolver}
       cerrable={!isPending}
       ancho="max-w-2xl"
@@ -34,7 +37,7 @@ export function ConfirmarCotizacionModal({ cliente, condicion, moneda, observaci
           <Button type="button" variant="ghost" onClick={onVolver} disabled={isPending}>Volver y corregir</Button>
           <Button type="button" onClick={onConfirmar} disabled={isPending}>
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
-            {isPending ? 'Creando…' : 'Confirmar y crear'}
+            {isPending ? 'Guardando…' : textoConfirmar}
           </Button>
         </>
       }

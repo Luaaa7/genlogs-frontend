@@ -15,6 +15,7 @@ export function ClienteLayout() {
           <nav aria-label="Portal del cliente" className="flex items-center gap-1 text-sm">
             <NavLink to="/portal/pedidos" className={({ isActive }) => `rounded-md px-3 py-2 ${isActive ? "bg-muted font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>Mis pedidos</NavLink>
             <NavLink to="/portal/cotizaciones" className={({ isActive }) => `rounded-md px-3 py-2 ${isActive ? "bg-muted font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>Mis cotizaciones</NavLink>
+            <NavLink to="/portal/despachos" className={({ isActive }) => `rounded-md px-3 py-2 ${isActive ? "bg-muted font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>Mis despachos</NavLink>
             {vitrinaHabilitada && <NavLink to="/portal/repuestos" className={({ isActive }) => `rounded-md px-3 py-2 ${isActive ? "bg-muted font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>Repuestos</NavLink>}
             <NavLink to="/portal/reclamos" className={({ isActive }) => `rounded-md px-3 py-2 ${isActive ? "bg-muted font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>Reclamos</NavLink>
             <NavLink to="/portal/solicitud" className={({ isActive }) => `rounded-md px-3 py-2 ${isActive ? "bg-muted font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>Nueva solicitud</NavLink>

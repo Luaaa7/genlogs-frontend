@@ -81,6 +81,7 @@ const RUTAS_ESPERADAS: Record<string, Interno[]> = {
   '/cotizaciones': [GG, JA, AL, AA],
   '/cotizaciones/1': [GG, JA, AL, AA],
   '/cotizaciones/nueva': [JA, AL],
+  '/cotizaciones/1/editar': [JA, AL],
   '/reclamos': [GG, JA, AL, AA],
   '/despachos': [GG, JA, SST, AL, AA],
   '/acciones': [GG, JA, CG, AL],
