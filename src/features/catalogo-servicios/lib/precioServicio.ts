@@ -1,5 +1,5 @@
 /**
- * Margen sobre el precio de venta, igual que el backend y la cotización:
+ * Margen sobre el precio de venta (D-40), igual que el backend y la cotización:
  *   precio = costo / (1 − margen/100)
  *   costo S/ 100 con 30 % -> S/ 142.86
  */
