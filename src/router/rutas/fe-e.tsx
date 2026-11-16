@@ -3,6 +3,7 @@ import type { RutasBloque } from './tipos'
 import { AccionesPage } from '@/features/acciones/pages/AccionesPage'
 import { AlertasDocumentosPage } from '@/features/alertas-documentos/pages/AlertasDocumentosPage'
 import { ROLES_ALERTAS_DOCUMENTOS } from '@/features/alertas-documentos/lib/alertas'
+import { PruebaFuentesPage } from '@/features/prueba-fuentes/pages/PruebaFuentesPage'
 
 /** Quienes pueden ver el dashboard: Gerente, Jefe, Contador y asistente logístico. */
 const ROLES_ACCIONES = ['GERENTE_GENERAL', 'JEFE_ADMINISTRATIVO', 'CONTADOR_GENERAL', 'ASISTENTE_LOGISTICO']
@@ -17,6 +18,11 @@ export const rutasFeE: RutasBloque = {
     {
       element: <RoleGuard allowedRoles={[...ROLES_ALERTAS_DOCUMENTOS]} />,
       children: [{ path: '/alertas-documentos', element: <AlertasDocumentosPage /> }],
+    },
+    // M3 (v3.3, BPMN 9-C): prueba de 10 pedidos, solo Jefe Administrativo (permisos.ts: configurarFuentes).
+    {
+      element: <RoleGuard permitido={(p) => p.configurarFuentes} />,
+      children: [{ path: '/configuracion/prueba-fuentes', element: <PruebaFuentesPage /> }],
     },
   ],
   portal: [],
