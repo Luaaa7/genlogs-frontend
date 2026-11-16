@@ -61,8 +61,8 @@ const TRANSICIONES_ESTADOS: Record<EstadoCotizacion, EstadoCotizacion[]> = {
   [EstadoCotizacion.RECHAZADA]: [],
   [EstadoCotizacion.VENCIDA]: [],
   [EstadoCotizacion.ANULADA]: [],
-  [EstadoCotizacion.PENDIENTE_APROBACION]: [],
-  [EstadoCotizacion.APROBADA_INTERNA]: [],
+  [EstadoCotizacion.PENDIENTE_APROBACION]: [EstadoCotizacion.ANULADA],
+  [EstadoCotizacion.APROBADA_INTERNA]: [EstadoCotizacion.ANULADA],
 };
 
 const MENU_ENTRADA = 'origin-top-right animate-in fade-in-0 zoom-in-95 duration-150 ease-out motion-reduce:animate-none';
