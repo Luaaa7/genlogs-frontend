@@ -5,7 +5,7 @@ import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { EstadoBadge } from "@/components/ui/EstadoBadge"
 import { formatCurrency } from "@/lib/formatters/currency"
 import { useCotizacionesPortal } from "../hooks/useCotizacionesPortal"
-import { puedeDecidir, tonoEstadoCotizacion } from "../lib/cotizacionPortal"
+import { esCotizacionAnulada, puedeDecidir, tonoEstadoCotizacion } from "../lib/cotizacionPortal"
 
 export function MisCotizacionesPage() {
   const query = useCotizacionesPortal()
@@ -37,11 +37,16 @@ export function MisCotizacionesPage() {
                       {c.fechaValidez ? `Válida hasta ${new Date(`${c.fechaValidez}T00:00:00`).toLocaleDateString("es-PE")}` : "Sin fecha de validez"}
                       {c.numeroOcCliente ? ` · OC ${c.numeroOcCliente}` : ""}
                     </span>
+                    {esCotizacionAnulada(c) && c.motivoAnulacion && (
+                      <span className="mt-1 block text-sm">Motivo: {c.motivoAnulacion}</span>
+                    )}
                   </span>
                 </span>
                 <span className="flex items-center gap-3">
                   <span className="text-lg font-semibold tabular-nums">{formatCurrency(Number(c.total ?? 0), c.moneda ?? "PEN")}</span>
-                  <EstadoBadge tono={tonoEstadoCotizacion(c.estado)}>{c.estado}</EstadoBadge>
+                  <EstadoBadge tono={tonoEstadoCotizacion(c.estado)}>
+                    {esCotizacionAnulada(c) ? "Anulada" : c.estado}
+                  </EstadoBadge>
                   {puedeDecidir(c) && <span className="text-sm font-medium text-accent">Revisar</span>}
                 </span>
               </Link>

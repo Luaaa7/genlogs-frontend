@@ -36,6 +36,9 @@ import { AvisoAltoValor } from '../components/AvisoAltoValor'
 import { IndicadorAprobacion } from '../components/IndicadorAprobacion'
 import { creaCotizaciones, esJefeAdministrativo, veCotizaciones } from '../lib/rolesCotizacion'
 import { AnularCotizacionModal } from '../components/AnularCotizacionModal'
+import { RespuestaClienteForm } from '../components/RespuestaClienteForm'
+import { useRegistrarRespuestaCliente } from '../hooks/useRegistrarRespuestaCliente'
+import { adjuntosDeLaRespuesta, puedeRegistrarRespuestaCliente } from '../lib/respuestaCliente'
 
 const ESTADOS_ABIERTOS = new Set<string>(['BORRADOR', 'ENVIADA', 'EN_NEGOCIACION']);
 
@@ -114,6 +117,7 @@ const CotizacionDetalleContenido: React.FC = () => {
 
   const { data: cotizacion, isLoading, isError, refetch } = useCotizacion(cotizacionId);
   const { mutate: cambiarEstado, isPending: isChangingState } = useCambiarEstado(cotizacionId || 0);
+  const respuestaCliente = useRegistrarRespuestaCliente(cotizacionId || 0);
   const { mutate: descargarPDF, isPending: isDownloadingPDF } = useDescargarPDF(
     cotizacionId || 0,
     cotizacion ? `${cotizacion.codigoCotizacion ?? cotizacion.codigo}.pdf` : undefined
@@ -209,6 +213,7 @@ const CotizacionDetalleContenido: React.FC = () => {
   const detalles = cotizacion.detalles ?? [];
   const esEstadoFinal = ESTADOS_FINALES.has(estado);
   const opcionesMenu = TRANSICIONES_ESTADOS[estado] ?? [];
+  const mostrarRespuesta = puedeRegistrarRespuestaCliente(jefe, estado, cotizacion.fechaValidez);
 
   // Totales: los del servidor; si no vienen, se calculan de las líneas.
   const subtotal = cotizacion.subtotal ?? detalles.reduce((s, d) => s + (d.subtotal || 0), 0);
@@ -366,6 +371,15 @@ const CotizacionDetalleContenido: React.FC = () => {
 
       {errorAccion && <ErrorBanner message={errorAccion} />}
 
+      {mostrarRespuesta && (
+        <RespuestaClienteForm
+          adjuntos={adjuntosDeLaRespuesta(cotizacion.adjuntos ?? [], cotizacion.seguimientos ?? [])}
+          ocupado={respuestaCliente.isPending}
+          error={respuestaCliente.isError ? mensajeError(respuestaCliente.error, 'No se pudo registrar la respuesta.') : null}
+          onRegistrar={(body) => respuestaCliente.mutate(body)}
+        />
+      )}
+
       <div className="grid items-start gap-4 lg:grid-cols-3">
         {/* Columna principal */}
         <div className="flex min-w-0 flex-col gap-4 lg:col-span-2">
@@ -445,7 +459,7 @@ const CotizacionDetalleContenido: React.FC = () => {
           <AdjuntoCotizacionUploader
             cotizacionId={cotizacionId}
             adjuntos={cotizacion.adjuntos || []}
-            readonly={estado !== EstadoCotizacion.BORRADOR || !asistente}
+            readonly={!(estado === EstadoCotizacion.BORRADOR && asistente) && !mostrarRespuesta}
           />
         </div>
 

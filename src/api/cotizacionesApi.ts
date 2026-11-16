@@ -16,6 +16,13 @@ import type {
   AdjuntoCotizacion,
 } from "@/types/cotizacion.types"
 
+/** POST /cotizaciones/{id}/respuesta-cliente. idAdjunto es un adjunto que la cotización ya tiene. */
+export interface RespuestaClienteRequest {
+  codigoEstado: "APROBADA" | "RECHAZADA"
+  comentario: string
+  idAdjunto: number
+}
+
 export const cotizacionesApi = {
   async listarCotizaciones(
     filtros?: CotizacionesFilterParams
@@ -177,6 +184,12 @@ export const cotizacionesApi = {
 
   async devolverCotizacion(id: number, body: DevolverCotizacionRequest): Promise<Cotizacion> {
     const { data } = await axiosClient.post<Cotizacion>(rutaCotizacionDevolver(id), body)
+    return data
+  },
+
+  /** El Jefe registra la respuesta que el cliente dio fuera del portal. La orden, si aprueba, la crea el backend. */
+  async registrarRespuestaCliente(id: number, body: RespuestaClienteRequest): Promise<Cotizacion> {
+    const { data } = await axiosClient.post<Cotizacion>(`/cotizaciones/${id}/respuesta-cliente`, body)
     return data
   },
 

@@ -33,6 +33,14 @@ export function puedeDecidir(
   return CODIGOS_ABIERTOS.has(codigo)
 }
 
+/** ANULADA por código o por el nombre que muestra el portal ("Anulada"). */
+export function esCotizacionAnulada(
+  cotizacion: Pick<CotizacionPortal, "estado" | "codigoEstado">,
+): boolean {
+  if ((cotizacion.codigoEstado ?? "").toUpperCase() === "ANULADA") return true
+  return normalizar(cotizacion.estado ?? "") === "ANULADA"
+}
+
 export function tonoEstadoCotizacion(estado: string): EstadoBadgeTono {
   const e = normalizar(estado ?? "")
   if (e.startsWith("APROBADA")) return "success"

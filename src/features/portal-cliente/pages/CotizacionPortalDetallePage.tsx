@@ -8,7 +8,7 @@ import { EstadoBadge } from "@/components/ui/EstadoBadge"
 import { formatCurrency } from "@/lib/formatters/currency"
 import { mensajeError } from "@/lib/errores"
 import { useCotizacionPortal, useDecidirCotizacion } from "../hooks/useCotizacionesPortal"
-import { puedeDecidir, tonoEstadoCotizacion } from "../lib/cotizacionPortal"
+import { esCotizacionAnulada, puedeDecidir, tonoEstadoCotizacion } from "../lib/cotizacionPortal"
 
 const MAX_COMENTARIO = 300
 
@@ -47,8 +47,13 @@ export function CotizacionPortalDetallePage() {
             </p>
             {c.numeroOcCliente && <p className="mt-1 text-sm font-medium">Tu N.º de OC: {c.numeroOcCliente}</p>}
           </div>
-          <EstadoBadge tono={tonoEstadoCotizacion(c.estado)}>{c.estado}</EstadoBadge>
+          <EstadoBadge tono={tonoEstadoCotizacion(c.estado)}>
+            {esCotizacionAnulada(c) ? "Anulada" : c.estado}
+          </EstadoBadge>
         </div>
+        {esCotizacionAnulada(c) && c.motivoAnulacion && (
+          <p className="mt-4 text-sm">Motivo: {c.motivoAnulacion}</p>
+        )}
 
         {c.lineas && c.lineas.length > 0 && (
           <table className="mt-8 w-full text-sm">
