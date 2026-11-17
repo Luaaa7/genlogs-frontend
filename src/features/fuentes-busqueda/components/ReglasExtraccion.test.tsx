@@ -54,6 +54,37 @@ describe('Editor de reglas de extracción (M4, BPMN 9-A)', () => {
     expect(within(ficha).getByLabelText('Precio')).toBeTruthy()
   })
 
+  it('la página de inicio de sesión tiene solo sus 4 campos', async () => {
+    const form = await abrir()
+    const login = within(form).getByRole('group', { name: 'Página de inicio de sesión' })
+    expect(campo(login, 'Casilla del usuario o correo')).toBeTruthy()
+    expect(campo(login, 'Casilla de la clave')).toBeTruthy()
+    expect(campo(login, 'Botón para ingresar')).toBeTruthy()
+    expect(campo(login, 'Señal de sesión iniciada')).toBeTruthy()
+    expect(within(login).queryByLabelText('Precio')).toBeNull()
+    expect(within(login).queryByLabelText('Bloque de cada resultado')).toBeNull()
+    for (const nombre of ['Página de búsqueda', 'Ficha del producto']) {
+      const zona = within(form).getByRole('group', { name: nombre })
+      expect(within(zona).queryByLabelText('Casilla de la clave')).toBeNull()
+    }
+  })
+
+  it('muestra y guarda las reglas de la página de inicio de sesión', async () => {
+    api.listarSelectores.mockResolvedValue([{ pagina: 'LOGIN', campo: 'USUARIO', regla: '#userid' }])
+    const form = await abrir()
+    const login = within(form).getByRole('group', { name: 'Página de inicio de sesión' })
+    await waitFor(() => expect(campo(login, 'Casilla del usuario o correo').value).toBe('#userid'))
+
+    fireEvent.change(campo(login, 'Casilla de la clave'), { target: { value: '#pass' } })
+    fireEvent.change(campo(login, 'Señal de sesión iniciada'), { target: { value: '#gh-ug' } })
+    fireEvent.click(within(form).getByRole('button', { name: 'Guardar reglas' }))
+
+    await waitFor(() => expect(api.guardarSelectores).toHaveBeenCalledWith('EBAY', [
+      { pagina: 'LOGIN', campo: 'CLAVE', regla: '#pass' },
+      { pagina: 'LOGIN', campo: 'EXITO', regla: '#gh-ug' },
+    ]))
+  })
+
   it('guarda solo las reglas nuevas o cambiadas', async () => {
     const form = await abrir()
     const busqueda = within(form).getByRole('group', { name: 'Página de búsqueda' })
