@@ -1,4 +1,4 @@
-import { ListChecks, ShieldAlert } from 'lucide-react'
+import { FlaskConical, ListChecks, ShieldAlert } from 'lucide-react'
 import type { ItemMenu } from './tipos'
 import { ROLES_ALERTAS_DOCUMENTOS } from '@/features/alertas-documentos/lib/alertas'
 
@@ -17,5 +17,13 @@ export const menuFeE: ItemMenu[] = [
     path: '/alertas-documentos',
     icon: ShieldAlert,
     visible: (p) => p.rol !== null && ROLES_ALERTAS_DOCUMENTOS.includes(p.rol),
+  },
+  // M3 (v3.3, BPMN 9-C): la prueba de 10 pedidos la hace solo el Jefe Administrativo (permisos.ts: configurarFuentes).
+  {
+    grupo: 'Administración',
+    label: 'Prueba de 10 pedidos',
+    path: '/configuracion/prueba-fuentes',
+    icon: FlaskConical,
+    visible: (p) => p.configurarFuentes,
   },
 ]
