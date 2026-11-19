@@ -7,7 +7,6 @@ import type { OrdenCompra, OrdenCompraFiltros, OrdenCompraInput, EstadoOrdenComp
  * Borrar la asignación deja el GET, el POST del PDF y el PATCH reales.
  */
 let usarMock = false
-usarMock = true // borra esta línea para los POST y PATCH reales
 
 function ordenDeEjemplo(parcial: Partial<OrdenCompra> & Pick<OrdenCompra, 'idOrdenCompra' | 'numeroOrdenCompra' | 'total'>): OrdenCompra {
   return {
