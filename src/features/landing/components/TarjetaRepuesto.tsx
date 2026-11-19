@@ -2,6 +2,7 @@ import { CheckCircle2, Clock, Loader2 } from "lucide-react"
 import type { RepuestoPublico } from "@/api/publicApi"
 import { visualCategoria } from "../lib/visualCategoria"
 import { cn } from "@/lib/utils/utils"
+import { imagenCloudinary } from "@/lib/imagenCloudinary"
 
 const TIPO: Record<RepuestoPublico["tipoRepuesto"], string> = {
   OEM: "Original (OEM)",
@@ -23,7 +24,7 @@ export function TarjetaRepuesto({ repuesto: r, cotizando, cotizado, onCotizar }:
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
         {r.urlImagen ? (
           <img
-            src={r.urlImagen}
+            src={imagenCloudinary(r.urlImagen, 480)}
             alt={r.nombre}
             loading="lazy"
             className="h-full w-full object-cover motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-105"

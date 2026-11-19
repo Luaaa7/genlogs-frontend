@@ -6,39 +6,42 @@ import { ClienteLayout } from '@/layouts/ClienteLayout'
 import { ProtectedRoute } from '@/router/ProtectedRoute'
 import { ClienteRoute } from '@/router/ClienteRoute'
 import { RoleGuard } from '@/router/RoleGuard'
+import { perezosa } from '@/router/perezosa'
 import { LoginPage } from '@/features/auth/components/LoginPage'
-import { ForgotPasswordPage } from '@/features/auth/components/ForgotPasswordPage'
-import { ResetPasswordPage } from '@/features/auth/components/ResetPasswordPage'
-import { DashboardPage } from '@/features/dashboard/pages/DashboardPage'
-import { CatalogoProductosPage } from '@/features/catalogo-repuestos/pages/CatalogoProductosPage'
-import { ProductoDetallePage } from '@/features/catalogo-repuestos/pages/ProductoDetallePage'
-import { NuevoProductoPage } from '@/features/catalogo-repuestos/pages/NuevoProductoPage'
-import { EditarProductoPage } from '@/features/catalogo-repuestos/pages/EditarProductoPage'
-import { CatalogoServiciosPage } from '@/features/catalogo-servicios/pages/CatalogoServiciosPage'
-import { ServicioFormPage } from '@/features/catalogo-servicios/pages/ServicioFormPage'
-import { ReportesPage } from '@/features/reportes/pages/ReportesPage'
-import { CotizacionesListPage } from '@/features/cotizaciones/pages/CotizacionesListPage'
-import { NuevaCotizacionPage } from '@/features/cotizaciones/pages/NuevaCotizacionPage'
-import { EditarCotizacionPage } from '@/features/cotizaciones/pages/EditarCotizacionPage'
-import { CotizacionDetallePage } from '@/features/cotizaciones/pages/CotizacionDetallePage'
 import { creaCotizaciones } from '@/features/cotizaciones/lib/rolesCotizacion'
-import ClientesListPage from '@/features/clientes-proveedores/pages/ClientesListPage'
-import ClienteDetallePage from '@/features/clientes-proveedores/pages/ClienteDetallePage'
-import ProveedoresListPage from '@/features/clientes-proveedores/pages/ProveedoresListPage'
-import { EmpresasMinerasPage } from '@/features/empresas-mineras/pages/EmpresasMinerasPage'
-import { OrdenesCompraPage } from '@/features/ordenes-compra/pages/OrdenesCompraPage'
-import { FacturacionPage } from '@/features/facturacion/pages/FacturacionPage'
-import { ReclamosPage } from '@/features/reclamos/pages/ReclamosPage'
-import { ReclamoDetallePage } from '@/features/reclamos/pages/ReclamoDetallePage'
 import { NoEncontradaPage } from '@/router/NoEncontradaPage'
 import { LandingPage } from '@/features/landing/LandingPage'
-import { RegistroClientePage } from '@/features/portal-cliente/pages/RegistroClientePage'
-import { IngresoClientePage } from '@/features/acceso-cliente/pages/IngresoClientePage'
-import { MisPedidosPage } from '@/features/portal-cliente/pages/MisPedidosPage'
-import { PedidoDetallePage } from '@/features/portal-cliente/pages/PedidoDetallePage'
-import { NuevaSolicitudPage } from '@/features/portal-cliente/pages/NuevaSolicitudPage'
 // Paso 0: cada bloque agrega sus rutas en router/rutas/fe-x.tsx, no aqui.
 import { RUTAS_BLOQUES } from '@/router/rutas'
+
+// Páginas que se cargan solo al abrir su ruta (code splitting).
+const ForgotPasswordPage = perezosa(() => import('@/features/auth/components/ForgotPasswordPage'), 'ForgotPasswordPage')
+const ResetPasswordPage = perezosa(() => import('@/features/auth/components/ResetPasswordPage'), 'ResetPasswordPage')
+const DashboardPage = perezosa(() => import('@/features/dashboard/pages/DashboardPage'), 'DashboardPage')
+const CatalogoProductosPage = perezosa(() => import('@/features/catalogo-repuestos/pages/CatalogoProductosPage'), 'CatalogoProductosPage')
+const ProductoDetallePage = perezosa(() => import('@/features/catalogo-repuestos/pages/ProductoDetallePage'), 'ProductoDetallePage')
+const NuevoProductoPage = perezosa(() => import('@/features/catalogo-repuestos/pages/NuevoProductoPage'), 'NuevoProductoPage')
+const EditarProductoPage = perezosa(() => import('@/features/catalogo-repuestos/pages/EditarProductoPage'), 'EditarProductoPage')
+const CatalogoServiciosPage = perezosa(() => import('@/features/catalogo-servicios/pages/CatalogoServiciosPage'), 'CatalogoServiciosPage')
+const ServicioFormPage = perezosa(() => import('@/features/catalogo-servicios/pages/ServicioFormPage'), 'ServicioFormPage')
+const ReportesPage = perezosa(() => import('@/features/reportes/pages/ReportesPage'), 'ReportesPage')
+const CotizacionesListPage = perezosa(() => import('@/features/cotizaciones/pages/CotizacionesListPage'), 'CotizacionesListPage')
+const NuevaCotizacionPage = perezosa(() => import('@/features/cotizaciones/pages/NuevaCotizacionPage'), 'NuevaCotizacionPage')
+const EditarCotizacionPage = perezosa(() => import('@/features/cotizaciones/pages/EditarCotizacionPage'), 'EditarCotizacionPage')
+const CotizacionDetallePage = perezosa(() => import('@/features/cotizaciones/pages/CotizacionDetallePage'), 'CotizacionDetallePage')
+const ClientesListPage = perezosa(() => import('@/features/clientes-proveedores/pages/ClientesListPage'), 'default')
+const ClienteDetallePage = perezosa(() => import('@/features/clientes-proveedores/pages/ClienteDetallePage'), 'default')
+const ProveedoresListPage = perezosa(() => import('@/features/clientes-proveedores/pages/ProveedoresListPage'), 'default')
+const EmpresasMinerasPage = perezosa(() => import('@/features/empresas-mineras/pages/EmpresasMinerasPage'), 'EmpresasMinerasPage')
+const OrdenesCompraPage = perezosa(() => import('@/features/ordenes-compra/pages/OrdenesCompraPage'), 'OrdenesCompraPage')
+const FacturacionPage = perezosa(() => import('@/features/facturacion/pages/FacturacionPage'), 'FacturacionPage')
+const ReclamosPage = perezosa(() => import('@/features/reclamos/pages/ReclamosPage'), 'ReclamosPage')
+const ReclamoDetallePage = perezosa(() => import('@/features/reclamos/pages/ReclamoDetallePage'), 'ReclamoDetallePage')
+const RegistroClientePage = perezosa(() => import('@/features/portal-cliente/pages/RegistroClientePage'), 'RegistroClientePage')
+const IngresoClientePage = perezosa(() => import('@/features/acceso-cliente/pages/IngresoClientePage'), 'IngresoClientePage')
+const MisPedidosPage = perezosa(() => import('@/features/portal-cliente/pages/MisPedidosPage'), 'MisPedidosPage')
+const PedidoDetallePage = perezosa(() => import('@/features/portal-cliente/pages/PedidoDetallePage'), 'PedidoDetallePage')
+const NuevaSolicitudPage = perezosa(() => import('@/features/portal-cliente/pages/NuevaSolicitudPage'), 'NuevaSolicitudPage')
 
 export const router = createBrowserRouter([
   { element: <PublicLayout />, children: [{ path: '/', element: <LandingPage /> }, ...RUTAS_BLOQUES.publicas] },

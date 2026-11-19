@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom"
-import logoGenlogs from "@/assets/GENLOGS.png"
+import logoGenlogs from "@/assets/GENLOGS.webp"
 import { vitrinaHabilitada } from "@/lib/interruptores"
 import { cerrarSesionCliente } from "@/lib/sesiones"
 

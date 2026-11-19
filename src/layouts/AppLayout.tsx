@@ -21,7 +21,7 @@ import {
   Search,
   MessageSquareWarning,
 } from 'lucide-react';
-import logoGenlogs from '../assets/GENLOGS.png';
+import logoGenlogs from '../assets/GENLOGS.webp';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { usePermisos } from '@/lib/permisos';
 import { useTheme } from '@/hooks/useTheme';
