@@ -1,6 +1,6 @@
 import { Link, Outlet } from "react-router-dom"
 import { Sun, Moon, ShieldCheck, Lock } from "lucide-react"
-import logoGenlogs from "../assets/GENLOGS.png"
+import logoGenlogs from "../assets/GENLOGS.webp"
 import { useTheme } from "@/hooks/useTheme"
 
 /**

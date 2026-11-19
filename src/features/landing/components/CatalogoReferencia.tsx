@@ -7,6 +7,7 @@ import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { EstadoVacio } from "@/components/ui/EstadoVacio"
 import { cn } from "@/lib/utils/utils"
 import type { ProductoPublico } from "@/types/portal.types"
+import { imagenCloudinary } from "@/lib/imagenCloudinary"
 
 /** Foto del producto (Cloudinary, imagenUrl); si no hay o no carga, la ilustración de su categoría. */
 function MediaProducto({ producto }: { producto: ProductoPublico }) {
@@ -17,7 +18,7 @@ function MediaProducto({ producto }: { producto: ProductoPublico }) {
     return (
       <div className="flex h-40 items-center justify-center overflow-hidden bg-muted">
         <img
-          src={producto.imagenUrl}
+          src={imagenCloudinary(producto.imagenUrl, 400)}
           alt={producto.nombre}
           loading="lazy"
           onError={() => setFallo(true)}
