@@ -24,3 +24,9 @@ dist-ssr
 *.sw?
 
 .env
+
+# Playwright y Lighthouse
+e2e/.auth/
+e2e-reporte/
+test-results/
+lighthouse-reportes/
