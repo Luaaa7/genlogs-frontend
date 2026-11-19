@@ -33,6 +33,13 @@ type Pedido = { marca: string; numeroParte: string; descripcion: string; cantida
 /** Al volver del registro, la landing llega con esta ruta y envía el pedido guardado (D-30). */
 const VOLVER = "/#solicitud"
 
+/** Lo que pasa después de enviar, en tres pasos. */
+const PASOS = [
+  "Escribe el repuesto, con marca y N.º de parte si los tienes",
+  "Crea tu acceso con el RUC de tu empresa",
+  "Sigue tu cotización desde el portal",
+]
+
 function mensajeEnvio(error: unknown): string {
   if (axios.isAxiosError(error)) {
     const s = error.response?.status
@@ -88,30 +95,40 @@ export function SolicitudRapida() {
 
   return (
     <section id="solicitud" aria-labelledby="solicitud-titulo" className="bg-primary text-primary-foreground">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-16 sm:px-6 md:grid-cols-2 md:items-center lg:px-8">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 md:items-center md:py-20 lg:px-8">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide opacity-80">Solicitud rápida</p>
-          <h2 id="solicitud-titulo" className="mt-2 text-3xl font-bold">Cuéntanos qué necesitas.</h2>
-          <p className="mt-4 max-w-lg text-primary-foreground/80">
+          <h2 id="solicitud-titulo" className="mt-2 text-3xl font-bold tracking-tight">Cuéntanos qué necesitas.</h2>
+          <p className="mt-4 max-w-lg leading-7 text-primary-foreground/80">
             Escribe la marca y el N.º de parte si los tienes. Para cotizar te pediremos crear tu acceso con el RUC
             de tu empresa; es inmediato y no pierdes lo que escribiste.
           </p>
+          <ol className="mt-8 space-y-4">
+            {PASOS.map((paso, i) => (
+              <li key={paso} className="flex items-center gap-3 text-sm">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-foreground/15 font-semibold ring-1 ring-primary-foreground/25">
+                  {i + 1}
+                </span>
+                <span className="text-primary-foreground/90">{paso}</span>
+              </li>
+            ))}
+          </ol>
         </div>
 
         {envio.data ? (
-          <div role="status" className="rounded-xl bg-card p-6 text-card-foreground">
-            <CheckCircle2 className="h-6 w-6 text-success" aria-hidden="true" />
-            <h3 className="mt-2 text-lg font-semibold">Recibimos tu pedido {envio.data.codigoSolicitud}</h3>
+          <div role="status" className="rounded-2xl bg-card p-6 text-card-foreground shadow-lg sm:p-8">
+            <CheckCircle2 className="h-7 w-7 text-success" aria-hidden="true" />
+            <h3 className="mt-3 text-lg font-semibold">Recibimos tu pedido {envio.data.codigoSolicitud}</h3>
             <p className="mt-2 text-sm text-muted-foreground">Puedes seguir su avance en el portal.</p>
             <Link
               to="/portal/pedidos"
-              className="mt-5 inline-flex rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              className="mt-5 inline-flex rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               Ver mis pedidos
             </Link>
           </div>
         ) : (
-          <form onSubmit={alEnviar} noValidate className="grid gap-4 rounded-xl bg-card p-6 text-card-foreground sm:grid-cols-2">
+          <form onSubmit={alEnviar} noValidate className="grid gap-4 rounded-2xl bg-card p-6 text-card-foreground shadow-lg sm:grid-cols-2 sm:p-8">
             <Campo id="sr-marca" label="Marca" opcional error={errors.marca?.message}>
               <input
                 id="sr-marca"
@@ -159,7 +176,7 @@ export function SolicitudRapida() {
             <button
               type="submit"
               disabled={envio.isPending}
-              className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground ring-offset-background hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 sm:col-span-2"
+              className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground ring-offset-background transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 sm:col-span-2"
             >
               {envio.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden="true" />}
               {envio.isPending ? "Enviando…" : "Pedir cotización"}

@@ -10,6 +10,7 @@ import { inputFormClass } from "@/components/ui/campoEstilos"
 import { rutaRegistro } from "@/api/contratos/registro"
 import type { RepuestoPublico } from "@/api/publicApi"
 import { mensajeError } from "@/lib/errores"
+import { cn } from "@/lib/utils/utils"
 import { useCategoriasVitrina, useRepuestosPublicos } from "../hooks/useVitrinaPublica"
 import { guardarPedidoPendiente, tokenCliente } from "../lib/pedidoPendiente"
 import { enviarSolicitudLanding } from "../lib/enviarSolicitudLanding"
@@ -69,35 +70,37 @@ export function VitrinaLanding() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-accent">Repuestos disponibles</p>
-          <h2 id="vitrina-titulo" className="mt-2 text-3xl font-bold">Encuentra tu repuesto.</h2>
+          <h2 id="vitrina-titulo" className="mt-2 text-3xl font-bold tracking-tight">Encuentra tu repuesto.</h2>
         </div>
-        <p className="max-w-md text-sm text-muted-foreground">
+        <p className="max-w-md text-sm leading-6 text-muted-foreground">
           Pide la cotización y te confirmamos precio y plazo. Para cotizar te pediremos crear tu acceso con el RUC de tu empresa.
         </p>
       </div>
 
       <form
         role="search"
-        className="mt-8 flex gap-2"
+        className="mt-8 flex gap-2 rounded-xl border border-border bg-card p-2 shadow-sm"
         onSubmit={(e) => {
           e.preventDefault()
           setBusqueda(texto.trim())
         }}
       >
         <label htmlFor="vitrina-buscar" className="sr-only">Buscar por nombre o N.º de parte</label>
-        <input
-          id="vitrina-buscar"
-          type="search"
-          value={texto}
-          onChange={(e) => setTexto(e.target.value)}
-          placeholder="Nombre o N.º de parte, por ejemplo 1R-0750"
-          className={inputFormClass}
-        />
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <input
+            id="vitrina-buscar"
+            type="search"
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            placeholder="Nombre o N.º de parte, por ejemplo 1R-0750"
+            className={cn(inputFormClass, "pl-9")}
+          />
+        </div>
         <button
           type="submit"
-          className="inline-flex shrink-0 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="inline-flex shrink-0 items-center rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <Search className="mr-1.5 h-4 w-4" aria-hidden="true" />
           Buscar
         </button>
       </form>
@@ -136,7 +139,10 @@ export function VitrinaLanding() {
           />
         ) : (
           <>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <p className="mb-4 text-sm text-muted-foreground" aria-live="polite">
+              {lista.length} {lista.length === 1 ? "repuesto" : "repuestos"}
+            </p>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {lista.map((r) => (
                 <TarjetaRepuesto
                   key={r.idProducto}
@@ -147,7 +153,7 @@ export function VitrinaLanding() {
                 />
               ))}
             </div>
-            <p className="mt-8 text-center text-sm text-muted-foreground">
+            <p className="mt-10 text-center text-sm text-muted-foreground">
               ¿No está lo que buscas?{" "}
               <a href="#solicitud" className="font-semibold text-accent hover:underline">Pídelo aquí</a>
             </p>
