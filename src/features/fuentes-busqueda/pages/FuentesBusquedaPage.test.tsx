@@ -41,6 +41,14 @@ describe('Configuración > Fuentes de búsqueda (L2, BPMN 9-A)', () => {
     Object.values(api).forEach((f) => f.mockReset())
     api.listarFuentes.mockResolvedValue([
       fuente({ codigo: 'MERCADO_LIBRE', nombre: 'Mercado Libre' }),
+      fuente({
+        codigo: 'SIN_REGLAS',
+        nombre: 'Tienda sin reglas',
+        estado: 'CON_ERROR',
+        tieneUsuario: true,
+        tieneClave: true,
+        ultimoError: 'Mercado Libre: faltan reglas de la página de inicio de sesión (casilla del usuario, casilla de la clave, botón para ingresar y señal de sesión iniciada) en Configuración > Fuentes > Reglas de extracción.',
+      }),
       fuente({ codigo: 'EBAY', nombre: 'eBay', estado: 'CON_ERROR', ultimoError: 'La tienda bloqueó la lectura.', tieneUsuario: true, tieneClave: true }),
       fuente({ codigo: 'AMAZON', nombre: 'Amazon', estado: 'ACTIVA', aciertosPrueba: 3, tieneUsuario: true, tieneClave: true }),
       fuente({ codigo: 'ALIEXPRESS', nombre: 'AliExpress', estado: 'ACTIVA', aciertosPrueba: 6, tieneUsuario: true, tieneClave: true }),
@@ -53,8 +61,15 @@ describe('Configuración > Fuentes de búsqueda (L2, BPMN 9-A)', () => {
 
   it('muestra una tarjeta por tienda con su estado en palabras y el último error', async () => {
     await renderPagina()
-    expect(await screen.findAllByRole('region')).toHaveLength(5)
-    expect(within(tarjeta('Mercado Libre')).getByText('Sin probar')).toBeTruthy()
+    expect(await screen.findAllByRole('region')).toHaveLength(6)
+    const libre = tarjeta('Mercado Libre')
+    expect(within(libre).getByText('Sin configurar')).toBeTruthy()
+    expect(within(libre).getByText('Falta la cuenta de búsqueda.')).toBeTruthy()
+    expect(within(libre).queryByText('Sin probar')).toBeNull()
+    const sinReglas = tarjeta('Tienda sin reglas')
+    expect(within(sinReglas).getByText('Sin configurar')).toBeTruthy()
+    expect(within(sinReglas).getByText('Faltan las reglas de la página de inicio de sesión.')).toBeTruthy()
+    expect(within(sinReglas).queryByText('Con error')).toBeNull()
     expect(within(tarjeta('eBay')).getByText('Con error')).toBeTruthy()
     expect(within(tarjeta('eBay')).getByText('La tienda bloqueó la lectura.')).toBeTruthy()
     expect(within(tarjeta('Alibaba')).getByText('Requiere verificación')).toBeTruthy()

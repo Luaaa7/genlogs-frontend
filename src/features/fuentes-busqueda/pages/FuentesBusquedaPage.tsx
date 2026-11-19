@@ -27,6 +27,22 @@ const ESTADOS: Record<FuenteConfig['estado'], { texto: string; clase: string }> 
   REQUIERE_VERIFICACION: { texto: 'Requiere verificación', clase: 'bg-warning/10 text-warning-text' },
 }
 
+const SIN_CONFIGURAR = { texto: 'Sin configurar', clase: 'bg-muted text-muted-foreground' }
+const AVISO_REGLAS = 'faltan reglas de la página de inicio de sesión'
+
+/** Configuración pendiente, no un fallo de conexión. No agrega un estado al API. */
+function lecturaDe(fuente: FuenteConfig): { insignia: { texto: string; clase: string }; paso: string | null; error: string | null } {
+  const sinCuenta = !fuente.tieneUsuario || !fuente.tieneClave
+  const yaProbada = fuente.estado === 'ACTIVA' || fuente.estado === 'REQUIERE_VERIFICACION'
+  if (sinCuenta && !yaProbada) {
+    return { insignia: SIN_CONFIGURAR, paso: 'Falta la cuenta de búsqueda.', error: null }
+  }
+  if (fuente.estado === 'CON_ERROR' && (fuente.ultimoError ?? '').includes(AVISO_REGLAS)) {
+    return { insignia: SIN_CONFIGURAR, paso: 'Faltan las reglas de la página de inicio de sesión.', error: null }
+  }
+  return { insignia: ESTADOS[fuente.estado] ?? ESTADOS.SIN_PROBAR, paso: null, error: fuente.ultimoError }
+}
+
 const fechaHora = new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
 const fecha = (iso: string | null) => (iso ? fechaHora.format(new Date(iso)) : '—')
 
@@ -66,7 +82,7 @@ export function FuentesBusquedaPage() {
 
 function TarjetaFuente({ fuente, editable }: { fuente: FuenteConfig; editable: boolean }) {
   const idTitulo = `fuente-${fuente.codigo}`
-  const estado = ESTADOS[fuente.estado] ?? ESTADOS.SIN_PROBAR
+  const lectura = lecturaDe(fuente)
   return (
     <section aria-labelledby={idTitulo} className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -75,7 +91,7 @@ function TarjetaFuente({ fuente, editable }: { fuente: FuenteConfig; editable: b
           <p className="text-xs text-muted-foreground">{fuente.urlBase}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-medium', estado.clase)}>{estado.texto}</span>
+          <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-medium', lectura.insignia.clase)}>{lectura.insignia.texto}</span>
           <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-medium',
             fuente.activa ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground')}>
             {fuente.activa ? 'En la búsqueda' : 'Apagada'}
@@ -92,8 +108,9 @@ function TarjetaFuente({ fuente, editable }: { fuente: FuenteConfig; editable: b
         </div>
       </dl>
 
-      {fuente.ultimoError && (
-        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{fuente.ultimoError}</p>
+      {lectura.paso && <p className="text-sm text-muted-foreground">{lectura.paso}</p>}
+      {lectura.error && (
+        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{lectura.error}</p>
       )}
 
       {editable && (
