@@ -37,7 +37,17 @@ async function revisar(page: Page, modulo: Modulo) {
   const sinAcceso = modulo.ruta !== '/dashboard' && new URL(page.url()).pathname === '/dashboard'
 
   const info = test.info()
-  await info.attach(`${modulo.nombre} - captura`, { body: await page.screenshot({ fullPage: true }), contentType: 'image/png' })
+   // Si la captura completa no responde en 20 s, se toma solo la parte visible y se anota.
+  let captura: Buffer
+  let capturaCompleta = true
+  try {
+    captura = await page.screenshot({ fullPage: true, animations: 'disabled', timeout: 20_000 })
+  } catch {
+    capturaCompleta = false
+    captura = await page.screenshot({ animations: 'disabled', timeout: 20_000 }).catch(() => Buffer.from(''))
+  }
+  if (captura.length) await info.attach(`${modulo.nombre} - captura`, { body: captura, contentType: 'image/png' })
+  if (!capturaCompleta) info.annotations.push({ type: 'aviso', description: 'La captura completa no respondió en 20 s' })
   await info.attach(`${modulo.nombre} - debug`, {
     body: JSON.stringify({ ruta: modulo.ruta, urlFinal: page.url(), sinAcceso, cargaMs: ms, ...debug }, null, 2),
     contentType: 'application/json',
