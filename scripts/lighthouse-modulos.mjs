@@ -67,6 +67,8 @@ for (const m of modulos) {
   console.log(`rendimiento ${pct(c.performance)} · accesibilidad ${pct(c.accessibility)}`)
 }
 
-fs.writeFileSync(path.join(SALIDA, 'resumen.csv'), filas.map((f) => f.join(',')).join('\n'))
+// BOM + «;» para que Excel en español muestre las tildes y separe las columnas.
+fs.writeFileSync(path.join(SALIDA, 'resumen.csv'), '\uFEFF' + filas.map((f) => f.join(';')).join('\r\n'))
+
 await navegador.close()
 console.log(`Listo: ${SALIDA}/resumen.csv y un .html por módulo.`)
