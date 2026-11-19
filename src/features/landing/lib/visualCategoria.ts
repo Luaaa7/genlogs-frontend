@@ -1,5 +1,5 @@
 import {
-  Cable, Cog, Droplets, Gauge, Package, Plug, ShieldCheck, Speaker, Thermometer, Truck, Wind, Wrench, Zap,
+  Cable, Cog, Droplets, Filter, Gauge, Package, Plug, ShieldCheck, Speaker, Thermometer, Truck, Wind, Wrench, Zap,
   type LucideIcon,
 } from "lucide-react"
 
@@ -9,26 +9,29 @@ export interface VisualCategoria {
   tono: string
 }
 
-/** Sin naranja: el naranja queda solo para «requiere atención». */
-const TONOS = [
+/**
+ * Solo azules. Sin verde, porque «éxito» significa que algo está OK, ni naranja,
+ * que queda para «requiere atención».
+ */
+export const TONOS = [
   "bg-accent/10 text-accent",
-  "bg-success/10 text-success",
   "bg-primary/10 text-primary",
   "bg-info/10 text-info",
 ]
 
-/** Primero se mira el nombre del producto y, si no dice nada, su categoría. */
+/** Primero se mira el nombre del producto y, si no dice nada, su categoría. El orden importa: gana la primera. */
 const REGLAS: [RegExp, LucideIcon][] = [
+  [/filtr/, Filter],
   [/adaptador|cargador|fuente de poder|enchufe/, Plug],
   [/altavoz|parlante|speaker|amplific|audio|bocina/, Speaker],
-  [/anem[oó]metro|viento|ventil|aire/, Wind],
+  [/anem[oó]metro|viento|ventil/, Wind],
   [/termo|temperat|termocupla/, Thermometer],
   [/rodam|cojinet|engran|transmis|motor|mec[aá]n/, Cog],
   [/el[eé]ctric|energ|bater|cable/, Zap],
   [/automat|control|sensor|instrument|medic|aislad/, Gauge],
   [/segur|epp|protecc|casco/, ShieldCheck],
   [/herramient|llave/, Wrench],
-  [/hidr[aá]ul|bomba|fluid|lubric|filtr|aceite/, Droplets],
+  [/hidr[aá]ul|bomba|fluid|lubric|aceite/, Droplets],
   [/veh[ií]cul|cami[oó]n|transporte|neum/, Truck],
   [/componente|accesorio|electr[oó]nic|conector/, Cable],
 ]
