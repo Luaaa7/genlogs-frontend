@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import type { OrdenCompra } from '@/types/ordenCompra.types'
+import { axiosClient } from '@/api/axiosClient'
 import { OcMineraForm } from '../components/OcMineraForm'
 import { OrdenesCompraPage } from './OrdenesCompraPage'
 
@@ -77,6 +78,41 @@ describe('OC de la minera', () => {
   })
 
   it('Confirmar solo lo ve el asistente administrativo, y la fila aguanta sin número de la minera', async () => {
+    vi.spyOn(axiosClient, 'get').mockImplementation((url: string) => {
+      if (url === '/ordenes-compra') {
+        return Promise.resolve({
+          data: {
+            content: [
+              {
+                idOrdenCompra: 1,
+                idCotizacion: 9,
+                numeroOrdenCompra: 'OC-001',
+                fechaRecepcion: '2026-11-01',
+                total: 1180,
+                moneda: 'PEN',
+                estadoCodigo: 'RECIBIDA',
+                clienteNombre: 'Minera Sur',
+                numeroOcCliente: 'MIN-100',
+              },
+              {
+                idOrdenCompra: 3,
+                idCotizacion: 11,
+                numeroOrdenCompra: 'OC-003',
+                fechaRecepcion: '2026-11-01',
+                total: 800,
+                moneda: 'PEN',
+                estadoCodigo: 'RECIBIDA',
+                clienteNombre: 'Minera Sur',
+                numeroOcCliente: null,
+              },
+            ],
+            totalElements: 2,
+            totalPages: 1,
+          },
+        })
+      }
+      return Promise.resolve({ data: [] })
+    })
     const asistente = pintarLista('ASISTENTE_ADMINISTRATIVO')
     expect(await screen.findByText('OC-003')).toBeTruthy()
     const filaVacia = screen.getByText('OC-003').closest('tr')

@@ -101,6 +101,38 @@ describe('despacho', () => {
       if (url === '/despachos/1') return Promise.resolve({ data: nacional })
       if (url === '/despachos/2') return Promise.resolve({ data: importado })
       if (url === '/despachos/3') return Promise.resolve({ data: bloqueado })
+      if (url === '/ordenes-compra') {
+        return Promise.resolve({
+          data: {
+            content: [
+              {
+                idOrdenCompra: 1,
+                idCotizacion: 9,
+                numeroOrdenCompra: 'OC-001',
+                fechaRecepcion: '2026-11-01',
+                total: 1180,
+                moneda: 'PEN',
+                estadoCodigo: 'RECIBIDA',
+                clienteNombre: 'Minera Sur',
+                numeroOcCliente: 'MIN-100',
+              },
+              {
+                idOrdenCompra: 3,
+                idCotizacion: 11,
+                numeroOrdenCompra: 'OC-003',
+                fechaRecepcion: '2026-11-01',
+                total: 800,
+                moneda: 'PEN',
+                estadoCodigo: 'RECIBIDA',
+                clienteNombre: 'Minera Sur',
+                numeroOcCliente: null,
+              },
+            ],
+            totalElements: 2,
+            totalPages: 1,
+          },
+        })
+      }
       if (url === '/portal/despachos') {
         return Promise.resolve({ data: [{
           id: 4,
