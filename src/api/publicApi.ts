@@ -1,3 +1,4 @@
+import axios from "axios"
 import { axiosClient } from "./axiosClient"
 import type { CoberturaMinera, ProductoPublico } from "@/types/portal.types"
 import type { TipoRepuesto } from "./contratos/enumeraciones"
@@ -28,6 +29,16 @@ export interface FiltroVitrina {
   idCategoria?: number
   marca?: string
 }
+
+/**
+ * Resultado de la consulta pública del RUC (RU3 a RU9). Nunca bloquea el registro:
+ * "sinDato" y "limite" dejan escribir la razón social a mano.
+ */
+export type ResultadoRuc =
+  | { tipo: "ok"; razonSocial: string }
+  | { tipo: "sinDato" }
+  | { tipo: "invalido" }
+  | { tipo: "limite" }
 
 const vitrinaMock = import.meta.env.VITE_VITRINA_MOCK === "true"
 
@@ -67,6 +78,30 @@ export const publicApi = {
     if (vitrinaMock) return [{ idCategoria: 3, nombre: "Filtros", cantidad: 2 }, { idCategoria: 5, nombre: "Rodamientos", cantidad: 1 }]
     const { data } = await axiosClient.get<CategoriaConteo[]>("/public/catalogo/categorias")
     return data
+  },
+  /**
+   * GET /public/ruc/{ruc} (RU3). Contrato del backend: 200 con { razonSocial } (null es «sin dato»),
+   * 400 «Ingresa un RUC válido» y 429 cuando la IP pasó el límite de consultas.
+   * Usa axios sin los interceptores de axiosClient para no reintentar un 429 ni tocar la sesión.
+   * Un error de red o un 5xx se trata como «sin dato». Si se cancela, relanza el error.
+   */
+  async consultarRazonSocial(ruc: string, signal?: AbortSignal): Promise<ResultadoRuc> {
+    try {
+      const { data } = await axios.get<{ razonSocial: string | null }>(`/public/ruc/${encodeURIComponent(ruc)}`, {
+        baseURL: axiosClient.defaults.baseURL,
+        timeout: 15_000,
+        headers: { Accept: "application/json" },
+        signal,
+      })
+      const razonSocial = data?.razonSocial?.trim()
+      return razonSocial ? { tipo: "ok", razonSocial } : { tipo: "sinDato" }
+    } catch (error) {
+      if (axios.isCancel(error)) throw error
+      const status = (error as { response?: { status?: number } }).response?.status
+      if (status === 400) return { tipo: "invalido" }
+      if (status === 429) return { tipo: "limite" }
+      return { tipo: "sinDato" }
+    }
   },
   async listarCobertura(): Promise<CoberturaMinera[]> {
     const { data } = await axiosClient.get<CoberturaMinera[] | { content: CoberturaMinera[] }>("/public/cobertura")
