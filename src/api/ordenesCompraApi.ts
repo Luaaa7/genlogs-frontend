@@ -6,7 +6,7 @@ import type { OrdenCompra, OrdenCompraFiltros, OrdenCompraInput, EstadoOrdenComp
  * Mientras el confirmar-oc no está en la rama, la lista muestra tres órdenes de ejemplo.
  * Borrar la asignación deja el GET, el POST del PDF y el PATCH reales.
  */
-let usarMock = false
+const usarMock = false
 
 function ordenDeEjemplo(parcial: Partial<OrdenCompra> & Pick<OrdenCompra, 'idOrdenCompra' | 'numeroOrdenCompra' | 'total'>): OrdenCompra {
   return {
