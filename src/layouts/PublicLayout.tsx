@@ -18,7 +18,7 @@ export function PublicLayout() {
             <button type="button" onClick={alternarTema} aria-label={tema === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"} className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               {tema === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
-            <Link to="/portal/registro" className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Ingresar</Link>
+            <Link to="/portal/ingreso" className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Ingresar</Link>
           </nav>
         </div>
       </header>
