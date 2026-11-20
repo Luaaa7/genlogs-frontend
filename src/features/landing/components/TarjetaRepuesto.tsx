@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { CheckCircle2, Clock, Loader2 } from "lucide-react"
 import type { RepuestoPublico } from "@/api/publicApi"
 import { visualCategoria } from "../lib/visualCategoria"
@@ -16,17 +17,24 @@ interface Props {
   onCotizar: () => void
 }
 
-/** Tarjeta de la vitrina pública: sin precio (RF-82). Solo fotos propias; si no hay, la ilustración de su categoría. */
+/**
+ * Tarjeta de la vitrina pública: sin precio (RF-82). Solo fotos propias; si no hay,
+ * o si la foto falla al cargar (IC10, BPMN v3.4 de Mell), la ilustración de su categoría.
+ */
 export function TarjetaRepuesto({ repuesto: r, cotizando, cotizado, onCotizar }: Props) {
   const { Icono, tono } = visualCategoria(r.categoria, r.nombre)
+  // Se guarda la URL que falló: si el repuesto cambia de foto, se vuelve a intentar.
+  const [urlFallida, setUrlFallida] = useState<string | null>(null)
+  const foto = r.urlImagen && r.urlImagen !== urlFallida ? r.urlImagen : null
   return (
     <article className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:border-accent/40 hover:shadow-md motion-safe:hover:-translate-y-0.5">
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-        {r.urlImagen ? (
+        {foto ? (
           <img
-            src={imagenCloudinary(r.urlImagen, 480)}
+            src={imagenCloudinary(foto, 480)}
             alt={r.nombre}
             loading="lazy"
+            onError={() => setUrlFallida(foto)}
             className="h-full w-full object-cover motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-105"
           />
         ) : (
