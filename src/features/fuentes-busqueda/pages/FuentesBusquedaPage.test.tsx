@@ -21,7 +21,7 @@ function fuente(parcial: Partial<FuenteConfig>): FuenteConfig {
   return {
     codigo: 'EBAY', nombre: 'eBay', urlBase: 'https://www.ebay.com', activa: false, estado: 'SIN_PROBAR',
     sesionValidaHasta: null, ultimaPrueba: null, ultimoError: null, pausaSegundos: 5, limiteDiario: 50,
-    aciertosPrueba: null, tieneUsuario: false, tieneClave: false, ...parcial,
+    aciertosPrueba: null, tieneUsuario: false, tieneClave: false, reglasFaltantes: [], ...parcial,
   }
 }
 
@@ -74,6 +74,37 @@ describe('Configuración > Fuentes de búsqueda (L2, BPMN 9-A)', () => {
     expect(within(tarjeta('eBay')).getByText('La tienda bloqueó la lectura.')).toBeTruthy()
     expect(within(tarjeta('Alibaba')).getByText('Requiere verificación')).toBeTruthy()
     expect(within(tarjeta('AliExpress')).getByText('6 de 10')).toBeTruthy()
+  })
+
+  it('con reglasFaltantes muestra «Sin configurar» con lo que falta, aunque la base diga Con error (EF2/EF3)', async () => {
+    api.listarFuentes.mockResolvedValue([
+      fuente({
+        codigo: 'EBAY', nombre: 'eBay', estado: 'CON_ERROR', tieneUsuario: true, tieneClave: true,
+        ultimoError: 'eBay: faltan reglas para buscar.', reglasFaltantes: ['PRECIO', 'ENLACE'],
+      }),
+      fuente({
+        codigo: 'AMAZON', nombre: 'Amazon', estado: 'SIN_PROBAR', tieneUsuario: true, tieneClave: true,
+        reglasFaltantes: ['ENVIAR', 'EXITO'],
+      }),
+    ])
+    await renderPagina()
+    const ebay = await screen.findByRole('region', { name: 'eBay' })
+    expect(within(ebay).getByText('Sin configurar')).toBeTruthy()
+    expect(within(ebay).getByText('Faltan reglas de búsqueda: precio y enlace.')).toBeTruthy()
+    expect(within(ebay).queryByText('Con error')).toBeNull()
+    expect(within(ebay).queryByText('eBay: faltan reglas para buscar.')).toBeNull()
+    const amazon = tarjeta('Amazon')
+    expect(within(amazon).getByText('Faltan reglas de ingreso: botón para ingresar y señal de sesión iniciada.')).toBeTruthy()
+  })
+
+  it('el Asistente Logístico también ve qué reglas faltan', async () => {
+    api.listarFuentes.mockResolvedValue([
+      fuente({ codigo: 'EBAY', nombre: 'eBay', estado: 'CON_ERROR', tieneUsuario: true, tieneClave: true, reglasFaltantes: ['ITEM'] }),
+    ])
+    await renderPagina('ASISTENTE_LOGISTICO')
+    const ebay = await screen.findByRole('region', { name: 'eBay' })
+    expect(within(ebay).getByText('Sin configurar')).toBeTruthy()
+    expect(within(ebay).getByText('Faltan reglas de búsqueda: bloque de cada resultado.')).toBeTruthy()
   })
 
   it('guarda la cuenta de búsqueda: la clave se escribe enmascarada y no vuelve a mostrarse', async () => {

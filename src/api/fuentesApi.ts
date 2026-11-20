@@ -14,8 +14,9 @@ export interface FuenteConfig {
   aciertosPrueba: number | null
   tieneUsuario: boolean
   tieneClave: boolean
+  /** EF2: reglas mínimas que faltan configurar (vacío si están completas). */
+  reglasFaltantes?: string[]
 }
-
 /** Configuración > Fuentes de búsqueda (L5 y L1, backend /api/fuentes). Nunca devuelve usuario, clave ni sesión. */
 export async function listarFuentes(): Promise<FuenteConfig[]> {
   const { data } = await axiosClient.get<FuenteConfig[]>('/fuentes')
