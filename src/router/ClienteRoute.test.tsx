@@ -1,9 +1,14 @@
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it, beforeEach } from "vitest"
-import { MemoryRouter, Route, Routes } from "react-router-dom"
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom"
 import { ClienteRoute } from "./ClienteRoute"
 import { ClienteLayout } from "@/layouts/ClienteLayout"
 import { cerrarSesionCliente, cerrarSesionInterna } from "@/lib/sesiones"
+
+function VerRuta() {
+  const l = useLocation()
+  return <div>{l.pathname + l.search}</div>
+}
 
 function renderGuard() {
   return render(<MemoryRouter initialEntries={["/portal/pedidos"]}><Routes><Route element={<ClienteRoute />}><Route path="/portal/pedidos" element={<div>Pedidos privados</div>} /></Route><Route path="/portal/ingreso" element={<div>Ingreso</div>} /></Routes></MemoryRouter>)
@@ -68,5 +73,19 @@ describe("ClienteRoute", () => {
     expect(localStorage.getItem("cliente_access_token")).toBe("cliente")
     expect(sessionStorage.getItem("genlogs-cliente-auth")).not.toBeNull()
     cerrarSesionCliente()
+  })
+
+  it("cuenta de Google sin empresa: manda a los datos de la empresa con ?volver=", () => {
+    localStorage.setItem("cliente_access_token", "token")
+    sessionStorage.setItem("genlogs-cliente-auth", JSON.stringify({ nombre: "Gina", rol: "CLIENTE", perfilCompleto: false }))
+    render(<MemoryRouter initialEntries={["/portal/pedidos"]}><Routes><Route element={<ClienteRoute />}><Route path="/portal/pedidos" element={<div>Pedidos privados</div>} /><Route path="/portal/empresa" element={<VerRuta />} /></Route></Routes></MemoryRouter>)
+    expect(screen.getByText("/portal/empresa?volver=%2Fportal%2Fpedidos")).toBeTruthy()
+  })
+
+  it("en la página de datos de la empresa no redirige a sí misma", () => {
+    localStorage.setItem("cliente_access_token", "token")
+    sessionStorage.setItem("genlogs-cliente-auth", JSON.stringify({ nombre: "Gina", rol: "CLIENTE", perfilCompleto: false }))
+    render(<MemoryRouter initialEntries={["/portal/empresa"]}><Routes><Route element={<ClienteRoute />}><Route path="/portal/empresa" element={<div>Formulario empresa</div>} /></Route></Routes></MemoryRouter>)
+    expect(screen.getByText("Formulario empresa")).toBeTruthy()
   })
 })

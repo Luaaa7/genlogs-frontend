@@ -39,6 +39,7 @@ const ReclamosPage = perezosa(() => import('@/features/reclamos/pages/ReclamosPa
 const ReclamoDetallePage = perezosa(() => import('@/features/reclamos/pages/ReclamoDetallePage'), 'ReclamoDetallePage')
 const RegistroClientePage = perezosa(() => import('@/features/portal-cliente/pages/RegistroClientePage'), 'RegistroClientePage')
 const IngresoClientePage = perezosa(() => import('@/features/acceso-cliente/pages/IngresoClientePage'), 'IngresoClientePage')
+const CompletarEmpresaPage = perezosa(() => import('@/features/acceso-cliente/pages/CompletarEmpresaPage'), 'CompletarEmpresaPage')
 const MisPedidosPage = perezosa(() => import('@/features/portal-cliente/pages/MisPedidosPage'), 'MisPedidosPage')
 const PedidoDetallePage = perezosa(() => import('@/features/portal-cliente/pages/PedidoDetallePage'), 'PedidoDetallePage')
 const NuevaSolicitudPage = perezosa(() => import('@/features/portal-cliente/pages/NuevaSolicitudPage'), 'NuevaSolicitudPage')
@@ -106,6 +107,7 @@ export const router = createBrowserRouter([
     { path: '/portal/pedidos', element: <MisPedidosPage /> },
     { path: '/portal/pedidos/:id', element: <PedidoDetallePage /> },
     { path: '/portal/solicitud', element: <NuevaSolicitudPage /> },
+    { path: '/portal/empresa', element: <CompletarEmpresaPage /> },
     ...RUTAS_BLOQUES.portal,
   ] }] },
 ])

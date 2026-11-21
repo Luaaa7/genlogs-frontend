@@ -12,6 +12,11 @@ const CLAVE_SESION_CLIENTE = "genlogs-cliente-auth"
 export interface SesionCliente {
   nombre: string
   rol: "CLIENTE"
+  /**
+   * false: la cuenta entró con Google y todavía no dio los datos de su empresa;
+   * el portal se los pide antes de la primera cotización (v3.4). Sin el dato, true.
+   */
+  perfilCompleto: boolean
 }
 
 export function cerrarSesionInterna() {
@@ -46,11 +51,11 @@ export function haySesionInterna(): boolean {
  * Abre la sesión del cliente. Cierra antes la interna: en un mismo navegador
  * no conviven las dos (el portal rechaza entrar si hay una sesión interna).
  */
-export function iniciarSesionCliente(token: string, nombre: string): boolean {
+export function iniciarSesionCliente(token: string, nombre: string, perfilCompleto = true): boolean {
   cerrarSesionInterna()
   try {
     localStorage.setItem(CLAVE_TOKEN_CLIENTE, token)
-    const sesion: SesionCliente = { nombre, rol: "CLIENTE" }
+    const sesion: SesionCliente = { nombre, rol: "CLIENTE", perfilCompleto }
     sessionStorage.setItem(CLAVE_SESION_CLIENTE, JSON.stringify(sesion))
     return true
   } catch {
@@ -64,12 +69,28 @@ export function leerSesionCliente(): SesionCliente | null {
     const token = localStorage.getItem(CLAVE_TOKEN_CLIENTE)
     const crudo = sessionStorage.getItem(CLAVE_SESION_CLIENTE)
     if (!token || !crudo) return null
-    const datos = JSON.parse(crudo) as { nombre?: unknown; rol?: unknown }
+    const datos = JSON.parse(crudo) as { nombre?: unknown; rol?: unknown; perfilCompleto?: unknown }
     const rol = typeof datos.rol === "string" ? datos.rol.toUpperCase() : "CLIENTE"
     if (rol !== "CLIENTE") return null
-    return { nombre: typeof datos.nombre === "string" ? datos.nombre : "", rol: "CLIENTE" }
+    return {
+      nombre: typeof datos.nombre === "string" ? datos.nombre : "",
+      rol: "CLIENTE",
+      perfilCompleto: datos.perfilCompleto !== false,
+    }
   } catch {
     return null
+  }
+}
+
+/** La cuenta ya dio los datos de su empresa: el portal deja de pedirlos. */
+export function marcarPerfilCompleto(nombre?: string) {
+  const actual = leerSesionCliente()
+  if (!actual) return
+  try {
+    const sesion: SesionCliente = { nombre: nombre?.trim() || actual.nombre, rol: "CLIENTE", perfilCompleto: true }
+    sessionStorage.setItem(CLAVE_SESION_CLIENTE, JSON.stringify(sesion))
+  } catch {
+    /* sin almacenamiento: se volverá a pedir al recargar */
   }
 }
 

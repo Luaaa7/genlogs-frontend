@@ -9,6 +9,8 @@ import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { IngresoConGoogle } from "@/features/acceso-cliente/components/IngresoConGoogle"
+import { SeparadorO } from "@/features/acceso-cliente/components/SeparadorO"
 import { iniciarSesionCliente } from "@/lib/sesiones"
 import { cn } from "@/lib/utils/utils"
 import { mensajeErrorAcceso } from "@/features/acceso-cliente/api/ingresoClienteApi"
@@ -183,6 +185,8 @@ export function RegistroClientePage() {
         <p className="mt-2 text-muted-foreground">Registra tu empresa para consultar pedidos y enviar solicitudes.</p>
       </div>
       <form onSubmit={enviar} className="space-y-5 rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
+        <IngresoConGoogle texto="signup_with" />
+        <SeparadorO texto="o regístrate con tu RUC" />
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
             <Label htmlFor="registro-documento">RUC / documento</Label>
