@@ -10,6 +10,7 @@ const ETIQUETAS: Record<string, string> = {
   ...ETIQUETA_ESTADO,
   PENDIENTE_APROBACION: "Pendiente de aprobación",
   APROBADA_INTERNA: "Aprobada por el Jefe",
+  ACEPTADA_CLIENTE: "Aceptada por el cliente",
 }
 
 type Tono = "neutro" | "interno" | "cliente" | "exito" | "cerrada"
@@ -23,6 +24,7 @@ const TONO_POR_ESTADO: Record<string, Tono> = {
   EN_NEGOCIACION: "cliente",
   APROBADA: "exito",
   ACEPTADA: "exito",
+  ACEPTADA_CLIENTE: "exito",
   CONVERTIDA_OC: "exito",
   RECHAZADA: "cerrada",
   VENCIDA: "cerrada",
