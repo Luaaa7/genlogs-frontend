@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { AxiosError, type AxiosResponse } from 'axios'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { CotizacionDetallePage } from './CotizacionDetallePage'
 
@@ -23,8 +24,14 @@ function diaLima(desfaseDias: number) {
   }).format(new Date(Date.now() + desfaseDias * 86_400_000))
 }
 
+function errorHttp(status: number, message: string) {
+  return new AxiosError(`Request failed with status code ${status}`, 'ERR_BAD_REQUEST', undefined, undefined, {
+    status,
+    data: { message },
+  } as AxiosResponse)
+}
+
 let cabecera: Record<string, unknown>
-let adjuntos: Record<string, unknown>[]
 let seguimientos: Record<string, unknown>[]
 
 function pintar(rol: string) {
@@ -41,18 +48,39 @@ function pintar(rol: string) {
   )
 }
 
-async function elegir(destino: 'Aprobada' | 'Rechazada', comentario: string, archivo?: string) {
-  fireEvent.click(await screen.findByRole('radio', { name: destino }))
-  fireEvent.change(screen.getByLabelText('Cómo y cuándo respondió'), { target: { value: comentario } })
-  if (archivo) fireEvent.change(screen.getByLabelText('Correo o orden de compra'), { target: { value: '9' } })
-  fireEvent.click(screen.getByRole('button', { name: 'Registrar respuesta' }))
+async function cargar() {
+  expect(await screen.findByText('COT-001')).toBeTruthy()
 }
 
-describe('el Jefe registra la respuesta del cliente', () => {
+async function abrir(nombre: string) {
+  await cargar()
+  fireEvent.click(screen.getByRole('button', { name: nombre }))
+  expect(await screen.findByRole('heading', { name: 'Registrar respuesta del cliente' })).toBeTruthy()
+}
+
+function completar(fecha = diaLima(-1), medio = 'correo', nota = '') {
+  fireEvent.change(screen.getByLabelText(/Fecha de la respuesta/), { target: { value: fecha } })
+  fireEvent.change(screen.getByLabelText(/^Medio/), { target: { value: medio } })
+  if (nota) fireEvent.change(screen.getByLabelText(/^Nota/), { target: { value: nota } })
+}
+
+const precarga = {
+  idCotizacion: 1,
+  codigoCotizacion: 'COT-001',
+  idCliente: 4,
+  cliente: 'Minera Sur',
+  moneda: 'PEN',
+  idCondicionPago: 2,
+  subtotal: 100,
+  igv: 18,
+  total: 118,
+  items: [{ idCotizacionDetalle: 7, descripcion: 'Filtro de aceite', cantidad: 2, unidad: 'und', precioUnitario: 50, importe: 100 }],
+}
+
+describe('respuesta del cliente en el detalle', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    adjuntos = [{ idAdjunto: 9, nombreArchivo: 'oc-minera.pdf', fechaSubida: '2026-11-02T10:00:00' }]
-    seguimientos = [{ codigoEstado: 'ENVIADA', fechaEvento: '2026-11-01T10:00:00' }]
+    seguimientos = []
     cabecera = {
       idCotizacion: 1, idCliente: 4, codigoCotizacion: 'COT-001', estado: 'ENVIADA',
       fechaCotizacion: '2026-11-10', fechaValidez: diaLima(10), condicionPago: 'CONTADO',
@@ -60,133 +88,283 @@ describe('el Jefe registra la respuesta del cliente', () => {
     }
     http.get.mockImplementation((url: string) => {
       if (url === '/cotizaciones/1') return Promise.resolve({ data: cabecera })
-      if (url.endsWith('/adjuntos')) return Promise.resolve({ data: adjuntos })
+      if (url.endsWith('/adjuntos')) return Promise.resolve({ data: [] })
       if (url.endsWith('/seguimiento')) return Promise.resolve({ data: seguimientos })
       if (url.endsWith('/lineas')) return Promise.resolve({ data: [] })
+      if (url.includes('/desde-cotizacion/')) return Promise.resolve({ data: precarga })
       if (url.startsWith('/ordenes-compra')) return Promise.resolve({ data: { content: [] } })
       return Promise.resolve({ data: { content: [] } })
     })
-    http.post.mockResolvedValue({ data: cabecera })
+    http.post.mockResolvedValue({ data: { cotizacion: cabecera } })
   })
 
-  it('el Jefe la ve en enviada mientras sigue vigente', async () => {
+  it('el vendedor y el jefe ven las tres respuestas en enviada y en negociación', async () => {
+    pintar('ASISTENTE_LOGISTICO')
+    await cargar()
+    expect(screen.getByRole('button', { name: 'Cliente aceptó' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Pidió cambios' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Rechazó' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Marcar como enviada' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Registrar orden de compra' })).toBeNull()
+  })
+
+  it('en negociación el jefe también las ve', async () => {
+    cabecera = { ...cabecera, estado: 'EN_NEGOCIACION' }
     pintar('JEFE_ADMINISTRATIVO')
-    expect(await screen.findByRole('heading', { name: 'Registrar la respuesta del cliente' })).toBeTruthy()
+    await cargar()
+    expect(screen.getByRole('button', { name: 'Cliente aceptó' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Pasar a negociación' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Pidió cambios' })).toBeTruthy()
   })
 
-  it('el Jefe la ve en negociación el día de la vigencia', async () => {
-    cabecera = { ...cabecera, estado: 'EN_NEGOCIACION', fechaValidez: diaLima(0) }
-    pintar('JEFE_ADMINISTRATIVO')
-    expect(await screen.findByRole('heading', { name: 'Registrar la respuesta del cliente' })).toBeTruthy()
-  })
-
-  it('el Asistente logístico y el administrativo no la ven', async () => {
-    const asistente = pintar('ASISTENTE_LOGISTICO')
-    expect(await screen.findByText('COT-001')).toBeTruthy()
-    expect(screen.queryByRole('heading', { name: 'Registrar la respuesta del cliente' })).toBeNull()
-    asistente.unmount()
-
+  it('el administrativo y el gerente no ven los botones', async () => {
     pintar('ASISTENTE_ADMINISTRATIVO')
-    expect(await screen.findByText('COT-001')).toBeTruthy()
-    expect(screen.queryByRole('heading', { name: 'Registrar la respuesta del cliente' })).toBeNull()
+    await cargar()
+    expect(screen.queryByRole('button', { name: 'Cliente aceptó' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Pidió cambios' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Rechazó' })).toBeNull()
   })
 
-  it('no aparece en borrador, pendiente, aprobada interna ni aprobada', async () => {
-    for (const estado of ['BORRADOR', 'PENDIENTE_APROBACION', 'APROBADA_INTERNA', 'APROBADA']) {
-      cabecera = { ...cabecera, estado, fechaValidez: diaLima(10) }
-      const vista = pintar('JEFE_ADMINISTRATIVO')
-      expect(await screen.findByText('COT-001')).toBeTruthy()
-      expect(screen.queryByRole('heading', { name: 'Registrar la respuesta del cliente' })).toBeNull()
-      vista.unmount()
-    }
-  })
-
-  it('no aparece en rechazada, vencida, anulada ni pasada la vigencia', async () => {
-    for (const estado of ['RECHAZADA', 'VENCIDA', 'ANULADA']) {
-      cabecera = { ...cabecera, estado, fechaValidez: diaLima(10) }
-      const vista = pintar('JEFE_ADMINISTRATIVO')
-      expect(await screen.findByText('COT-001')).toBeTruthy()
-      expect(screen.queryByRole('heading', { name: 'Registrar la respuesta del cliente' })).toBeNull()
-      vista.unmount()
-    }
-
-    cabecera = { ...cabecera, estado: 'ENVIADA', fechaValidez: diaLima(-1) }
+  it('en borrador no hay botones de respuesta', async () => {
+    cabecera = { ...cabecera, estado: 'BORRADOR' }
     pintar('JEFE_ADMINISTRATIVO')
-    expect(await screen.findByText('COT-001')).toBeTruthy()
-    expect(screen.queryByRole('heading', { name: 'Registrar la respuesta del cliente' })).toBeNull()
+    await cargar()
+    expect(screen.queryByRole('button', { name: 'Cliente aceptó' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Marcar como enviada' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Registrar orden de compra' })).toBeNull()
   })
 
-  it('con dos envíos el corte es el primero: el borrador y la misma fecha no salen, uno posterior sí', async () => {
-    seguimientos = [
-      { codigoEstado: 'ENVIADA', fechaEvento: '2026-11-12T15:00:00' },
-      { codigoEstado: 'ENVIADA', fechaEvento: '2026-11-10T10:00:00' },
-    ]
-    adjuntos = [
-      { idAdjunto: 1, nombreArchivo: 'borrador.pdf', fechaSubida: '2026-11-09T09:00:00' },
-      { idAdjunto: 2, nombreArchivo: 'en-el-envio.pdf', fechaSubida: '2026-11-10T10:00:00' },
-      { idAdjunto: 3, nombreArchivo: 'correo-cliente.pdf', fechaSubida: '2026-11-11T08:00:00' },
-      { idAdjunto: 4, nombreArchivo: 'sin-fecha.pdf' },
-    ]
-    pintar('JEFE_ADMINISTRATIVO')
-    const selector = await screen.findByLabelText('Correo o orden de compra')
-    const nombres = within(selector).getAllByRole('option').map((opcion) => opcion.textContent)
-    expect(nombres).toContain('correo-cliente.pdf')
-    expect(nombres).not.toContain('borrador.pdf')
-    expect(nombres).not.toContain('en-el-envio.pdf')
-    expect(nombres).not.toContain('sin-fecha.pdf')
-    expect(screen.queryByText('Carga el correo o la orden de compra en los adjuntos de la cotización.')).toBeNull()
+  it('aprobada por el Jefe se distingue y ofrece marcar como enviada', async () => {
+    cabecera = { ...cabecera, estado: 'APROBADA_INTERNA' }
+    pintar('ASISTENTE_LOGISTICO')
+    await cargar()
+    const etiqueta = screen.getByRole('heading', { name: 'COT-001' }).parentElement?.textContent ?? ''
+    expect(etiqueta).toContain('Aprobada por el Jefe')
+    expect(etiqueta).not.toContain('Aceptada por el cliente')
+    expect(screen.getByRole('button', { name: 'Marcar como enviada' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Cliente aceptó' })).toBeNull()
   })
 
-  it('sin el primer envío el selector queda vacío y se mantiene el aviso de cargar el archivo', async () => {
-    seguimientos = [{ codigoEstado: 'BORRADOR', fechaEvento: '2026-11-01T10:00:00' }]
-    adjuntos = [{ idAdjunto: 1, nombreArchivo: 'borrador.pdf', fechaSubida: '2026-11-09T09:00:00' }]
-    pintar('JEFE_ADMINISTRATIVO')
-    const selector = await screen.findByLabelText('Correo o orden de compra')
-    expect(within(selector).queryByRole('option', { name: 'borrador.pdf' })).toBeNull()
-    expect(screen.getByText('Carga el correo o la orden de compra en los adjuntos de la cotización.')).toBeTruthy()
+  it('marcar como enviada llama a marcar-enviada, muestra Enviando y recarga Enviada', async () => {
+    cabecera = { ...cabecera, estado: 'APROBADA_INTERNA' }
+    let resolver: (valor: unknown) => void = () => {}
+    http.post.mockImplementation((url: string) => {
+      if (url === '/cotizaciones/1/marcar-enviada') {
+        return new Promise((resolve) => {
+          resolver = resolve
+        })
+      }
+      return Promise.resolve({ data: {} })
+    })
+    pintar('ASISTENTE_LOGISTICO')
+    await cargar()
+    fireEvent.click(screen.getByRole('button', { name: 'Marcar como enviada' }))
+    expect(await screen.findByRole('button', { name: 'Enviando…' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Enviar Cotización' })).toBeNull()
+    cabecera = { ...cabecera, estado: 'ENVIADA' }
+    resolver({ data: cabecera })
+    const encabezado = screen.getByRole('heading', { name: 'COT-001' }).parentElement
+    await waitFor(() => expect(encabezado?.textContent).toContain('Enviada'))
+    expect(encabezado?.textContent).not.toContain('Aprobada por el Jefe')
+    expect(screen.queryByRole('button', { name: 'Marcar como enviada' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Enviando…' })).toBeNull()
+    expect(http.post.mock.calls.map((llamada) => llamada[0])).toEqual(['/cotizaciones/1/marcar-enviada'])
   })
 
-  it('sin comentario o sin adjunto no llama al endpoint', async () => {
+  it('un 400 al marcar como enviada muestra el mensaje y no la deja enviada', async () => {
+    cabecera = { ...cabecera, estado: 'APROBADA_INTERNA' }
+    http.post.mockRejectedValue(errorHttp(400, 'El cliente no tiene un correo para enviar la cotización.'))
     pintar('JEFE_ADMINISTRATIVO')
-    fireEvent.click(await screen.findByRole('button', { name: 'Registrar respuesta' }))
-    expect(await screen.findByText('Marca si el cliente aprobó o rechazó.')).toBeTruthy()
-    expect(screen.getByText('Indica cómo y cuándo respondió el cliente.')).toBeTruthy()
-    expect(screen.getByText('Adjunta el correo o la orden de compra de la minera.')).toBeTruthy()
+    await cargar()
+    fireEvent.click(screen.getByRole('button', { name: 'Marcar como enviada' }))
+    expect(await screen.findByText('El cliente no tiene un correo para enviar la cotización.')).toBeTruthy()
+    const encabezado = screen.getByRole('heading', { name: 'COT-001' }).parentElement
+    expect(encabezado?.textContent).toContain('Aprobada por el Jefe')
+    expect(screen.getByRole('button', { name: 'Marcar como enviada' })).toBeTruthy()
+  })
+
+  it('un 409 al marcar como enviada muestra el mensaje del backend', async () => {
+    cabecera = { ...cabecera, estado: 'APROBADA_INTERNA' }
+    http.post.mockRejectedValue(errorHttp(409, 'Solo se marca como enviada una cotización aprobada por el Jefe. Ahora está en Enviada.'))
+    pintar('JEFE_ADMINISTRATIVO')
+    await cargar()
+    fireEvent.click(screen.getByRole('button', { name: 'Marcar como enviada' }))
+    expect(await screen.findByText('Solo se marca como enviada una cotización aprobada por el Jefe. Ahora está en Enviada.')).toBeTruthy()
+    const encabezado = screen.getByRole('heading', { name: 'COT-001' }).parentElement
+    expect(encabezado?.textContent).toContain('Aprobada por el Jefe')
+    expect(screen.getByRole('button', { name: 'Marcar como enviada' })).toBeTruthy()
+  })
+
+  it('el gerente no marca como enviada', async () => {
+    cabecera = { ...cabecera, estado: 'APROBADA_INTERNA' }
+    pintar('GERENTE_GENERAL')
+    await cargar()
+    expect(screen.queryByRole('button', { name: 'Marcar como enviada' })).toBeNull()
+  })
+
+  it('aceptada por el cliente se distingue y abre la orden', async () => {
+    cabecera = { ...cabecera, estado: 'ACEPTADA_CLIENTE' }
+    pintar('ASISTENTE_LOGISTICO')
+    await cargar()
+    const etiqueta = screen.getByRole('heading', { name: 'COT-001' }).parentElement?.textContent ?? ''
+    expect(etiqueta).toContain('Aceptada por el cliente')
+    expect(etiqueta).not.toContain('Aprobada por el Jefe')
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar orden de compra' }))
+    expect(await screen.findByText(/Filtro de aceite/)).toBeTruthy()
+    expect(screen.getByText('Cotización de origen COT-001.')).toBeTruthy()
+    expect(screen.getByText('PEN')).toBeTruthy()
+  })
+
+  it('una fecha futura no se envía', async () => {
+    pintar('ASISTENTE_LOGISTICO')
+    await abrir('Cliente aceptó')
+    const fecha = screen.getByLabelText(/Fecha de la respuesta/) as HTMLInputElement
+    fecha.removeAttribute('max')
+    completar('2099-01-01', 'correo', 'Aceptó')
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar respuesta' }))
+    expect(await screen.findByText('La fecha de respuesta no puede ser futura')).toBeTruthy()
     expect(http.post).not.toHaveBeenCalled()
+  })
 
-    await elegir('Aprobada', '   ', 'oc-minera.pdf')
-    expect(screen.getByText('Indica cómo y cuándo respondió el cliente.')).toBeTruthy()
-    expect(http.post).not.toHaveBeenCalled()
-
-    fireEvent.change(screen.getByLabelText('Correo o orden de compra'), { target: { value: '' } })
-    await elegir('Rechazada', 'Respondió por correo el 16/11 a las 9:00')
-    expect(screen.getByText('Adjunta el correo o la orden de compra de la minera.')).toBeTruthy()
+  it('aceptó sin nota ni adjunto no llama al endpoint', async () => {
+    pintar('JEFE_ADMINISTRATIVO')
+    await abrir('Cliente aceptó')
+    completar()
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar respuesta' }))
+    expect(await screen.findByText('Para registrar que el cliente aceptó, escribe una nota o adjunta la evidencia')).toBeTruthy()
     expect(http.post).not.toHaveBeenCalled()
   })
 
-  it('Aprobada llama al registro del Jefe y no crea la orden en el frontend', async () => {
+  it('pidió cambios exige el motivo', async () => {
+    pintar('ASISTENTE_LOGISTICO')
+    await abrir('Pidió cambios')
+    completar()
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar respuesta' }))
+    expect(await screen.findByText('Indica el motivo del cambio que pidió el cliente')).toBeTruthy()
+    expect(http.post).not.toHaveBeenCalled()
+  })
+
+  it('rechazó exige el motivo', async () => {
     pintar('JEFE_ADMINISTRATIVO')
-    await elegir('Aprobada', '  Aprobó por correo el 16/11 a las 9:00  ', 'oc-minera.pdf')
+    await abrir('Rechazó')
+    completar()
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar respuesta' }))
+    expect(await screen.findByText('Indica el motivo del rechazo')).toBeTruthy()
+    expect(http.post).not.toHaveBeenCalled()
+  })
+
+  it('un archivo que no es PDF, PNG o JPG no se envía', async () => {
+    pintar('ASISTENTE_LOGISTICO')
+    await abrir('Cliente aceptó')
+    completar()
+    const archivo = new File(['hola'], 'notas.txt', { type: 'text/plain' })
+    fireEvent.change(screen.getByLabelText(/Adjunto \(opcional/), { target: { files: [archivo] } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar respuesta' }))
+    expect(await screen.findByText('El adjunto solo puede ser PDF, PNG o JPG')).toBeTruthy()
+    expect(http.post).not.toHaveBeenCalled()
+  })
+
+  it('aceptó envía ACEPTADA_CLIENTE y no escribe APROBADA', async () => {
+    pintar('ASISTENTE_LOGISTICO')
+    await abrir('Cliente aceptó')
+    const fecha = diaLima(-1)
+    completar(fecha, 'whatsapp', '  Aceptó por WhatsApp  ')
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar respuesta' }))
     await waitFor(() => expect(http.post).toHaveBeenCalledWith('/cotizaciones/1/respuesta-cliente', {
-      codigoEstado: 'APROBADA',
-      comentario: 'Aprobó por correo el 16/11 a las 9:00',
+      codigoEstado: 'ACEPTADA_CLIENTE',
+      comentario: 'Aceptó por WhatsApp',
+      fechaRespuesta: fecha,
+      medio: 'whatsapp',
+    }))
+    expect(JSON.stringify(http.post.mock.calls)).not.toContain('APROBADA')
+    expect(http.post.mock.calls.map((llamada) => llamada[0])).toEqual(['/cotizaciones/1/respuesta-cliente'])
+  })
+
+  it('pidió cambios envía EN_NEGOCIACION', async () => {
+    pintar('JEFE_ADMINISTRATIVO')
+    await abrir('Pidió cambios')
+    const fecha = diaLima(-1)
+    completar(fecha, 'correo', 'Pidió otro plazo')
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar respuesta' }))
+    await waitFor(() => expect(http.post).toHaveBeenCalledWith('/cotizaciones/1/respuesta-cliente', {
+      codigoEstado: 'EN_NEGOCIACION',
+      comentario: 'Pidió otro plazo',
+      fechaRespuesta: fecha,
+      medio: 'correo',
+    }))
+    expect(JSON.stringify(http.post.mock.calls)).not.toContain('APROBADA')
+  })
+
+  it('el adjunto se sube aparte y la respuesta manda su id', async () => {
+    http.post.mockImplementation((url: string) => {
+      if (String(url).endsWith('/adjuntos')) return Promise.resolve({ data: { idAdjunto: 9 } })
+      return Promise.resolve({ data: cabecera })
+    })
+    pintar('JEFE_ADMINISTRATIVO')
+    await abrir('Rechazó')
+    const fecha = diaLima(-1)
+    completar(fecha, 'correo', 'No les sirve el plazo')
+    const archivo = new File(['pdf'], 'evidencia.pdf', { type: 'application/pdf' })
+    fireEvent.change(screen.getByLabelText(/Adjunto \(opcional/), { target: { files: [archivo] } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar respuesta' }))
+    await waitFor(() => expect(http.post).toHaveBeenCalledWith('/cotizaciones/1/respuesta-cliente', {
+      codigoEstado: 'RECHAZADA',
+      comentario: 'No les sirve el plazo',
+      fechaRespuesta: fecha,
+      medio: 'correo',
       idAdjunto: 9,
     }))
     const destinos = http.post.mock.calls.map((llamada) => llamada[0])
-    expect(destinos).toEqual(['/cotizaciones/1/respuesta-cliente'])
-    expect(screen.queryByRole('button', { name: 'Registrar orden de compra' })).toBeNull()
+    expect(destinos).toEqual(['/cotizaciones/1/adjuntos', '/cotizaciones/1/respuesta-cliente'])
+    expect(http.post.mock.calls[0][1]).toBeInstanceOf(FormData)
+    expect(JSON.stringify(http.post.mock.calls)).not.toContain('APROBADA')
   })
 
-  it('Rechazada usa el mismo registro y no muestra una orden nueva', async () => {
-    pintar('JEFE_ADMINISTRATIVO')
-    await elegir('Rechazada', 'Rechazó por correo el 16/11 a las 11:00', 'oc-minera.pdf')
-    await waitFor(() => expect(http.post).toHaveBeenCalledWith('/cotizaciones/1/respuesta-cliente', {
+  it('un 403 muestra el mensaje del backend y deja el botón listo al terminar', async () => {
+    let soltar: (error: unknown) => void = () => {}
+    http.post.mockImplementation(() => new Promise((_resolver, reject) => { soltar = reject }))
+    pintar('ASISTENTE_LOGISTICO')
+    await abrir('Rechazó')
+    completar(diaLima(-1), 'llamada', 'El precio no les cierra')
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar respuesta' }))
+    await waitFor(() => expect(http.post).toHaveBeenCalledWith('/cotizaciones/1/respuesta-cliente', expect.objectContaining({
       codigoEstado: 'RECHAZADA',
-      comentario: 'Rechazó por correo el 16/11 a las 11:00',
-      idAdjunto: 9,
-    }))
-    expect(http.post.mock.calls.map((llamada) => llamada[0])).toEqual(['/cotizaciones/1/respuesta-cliente'])
-    expect(screen.queryByText(/orden nueva/i)).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Registrar orden de compra' })).toBeNull()
+    })))
+    expect((await screen.findByRole('button', { name: 'Guardando…' }) as HTMLButtonElement).disabled).toBe(true)
+    soltar(errorHttp(403, 'Solo el asistente logístico o el jefe administrativo pueden registrar esto'))
+    expect(await screen.findByText('Solo el asistente logístico o el jefe administrativo pueden registrar esto')).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'Guardar respuesta' }) as HTMLButtonElement).disabled).toBe(false)
+  })
+
+  it('un 409 al registrar muestra el mensaje del backend', async () => {
+    http.post.mockRejectedValue(errorHttp(409, 'La cotización ya no está enviada ni en negociación.'))
+    pintar('JEFE_ADMINISTRATIVO')
+    await abrir('Pidió cambios')
+    completar(diaLima(-1), 'otro', 'Pidió otro plazo')
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar respuesta' }))
+    expect(await screen.findByText('La cotización ya no está enviada ni en negociación.')).toBeTruthy()
+  })
+
+  it('el seguimiento muestra el cambio, el medio, la nota y el adjunto', async () => {
+    seguimientos = [{
+      idSeguimiento: 3,
+      estadoAnterior: 'ENVIADA',
+      estadoNuevo: 'ACEPTADA_CLIENTE',
+      fechaEvento: '2026-11-18T15:30:00',
+      fechaRespuesta: '2026-11-18',
+      usuario: 'Ana',
+      medio: 'correo',
+      comentario: 'Confirmó por correo',
+      rutaAdjunto: 'https://archivos.example/evidencia.pdf',
+    }]
+    pintar('ASISTENTE_LOGISTICO')
+    await cargar()
+    expect(screen.getByText('Enviada → Aceptada por el cliente')).toBeTruthy()
+    expect(screen.getByText(/Ana/)).toBeTruthy()
+    expect(screen.getByText(/Correo/)).toBeTruthy()
+    expect(screen.getByText('Confirmó por correo')).toBeTruthy()
+    expect(screen.getByText(/18\/11\/2026/)).toBeTruthy()
+    const enlace = screen.getByRole('link', { name: 'Ver adjunto' })
+    expect(enlace.getAttribute('href')).toBe('https://archivos.example/evidencia.pdf')
   })
 })

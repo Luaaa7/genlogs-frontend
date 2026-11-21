@@ -20,6 +20,8 @@ export const ETIQUETA_ESTADO: Record<string, string> = {
   ENVIADA: "Enviada",
   EN_NEGOCIACION: "En negociación",
   APROBADA: "Aprobada",
+  ACEPTADA_CLIENTE: "Aceptada por el cliente",
+  APROBADA_INTERNA: "Aprobada por el Jefe",
   ACEPTADA: "Aceptada",
   CONVERTIDA_OC: "Convertida a OC",
   RECHAZADA: "Rechazada",

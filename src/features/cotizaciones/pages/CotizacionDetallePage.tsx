@@ -36,15 +36,16 @@ import { AvisoAltoValor } from '../components/AvisoAltoValor'
 import { IndicadorAprobacion } from '../components/IndicadorAprobacion'
 import { creaCotizaciones, esJefeAdministrativo, veCotizaciones } from '../lib/rolesCotizacion'
 import { AnularCotizacionModal } from '../components/AnularCotizacionModal'
-import { RespuestaClienteForm } from '../components/RespuestaClienteForm'
-import { useRegistrarRespuestaCliente } from '../hooks/useRegistrarRespuestaCliente'
-import { adjuntosDeLaRespuesta, puedeRegistrarRespuestaCliente } from '../lib/respuestaCliente'
+import { RegistrarRespuestaClienteModal } from '../components/RegistrarRespuestaClienteModal'
+import { useMarcarEnviada, useRegistrarRespuestaFlujo } from '../hooks/useFlujoRespuestaCliente'
+import type { AccionRespuestaCliente } from '@/api/cotizacionesApi'
 
 const ESTADOS_ABIERTOS = new Set<string>(['BORRADOR', 'ENVIADA', 'EN_NEGOCIACION']);
 
 /** Estados finales: una vez alcanzados, la cotización no puede cambiar de estado. */
 const ESTADOS_FINALES = new Set<EstadoCotizacion>([
   EstadoCotizacion.APROBADA,
+  EstadoCotizacion.ACEPTADA_CLIENTE,
   EstadoCotizacion.RECHAZADA,
   EstadoCotizacion.VENCIDA,
   EstadoCotizacion.ANULADA,
@@ -61,6 +62,7 @@ const TRANSICIONES_ESTADOS: Record<EstadoCotizacion, EstadoCotizacion[]> = {
   [EstadoCotizacion.ENVIADA]: [EstadoCotizacion.EN_NEGOCIACION, EstadoCotizacion.ANULADA],
   [EstadoCotizacion.EN_NEGOCIACION]: [EstadoCotizacion.ANULADA],
   [EstadoCotizacion.APROBADA]: [],
+  [EstadoCotizacion.ACEPTADA_CLIENTE]: [],
   [EstadoCotizacion.RECHAZADA]: [],
   [EstadoCotizacion.VENCIDA]: [],
   [EstadoCotizacion.ANULADA]: [],
@@ -117,7 +119,9 @@ const CotizacionDetalleContenido: React.FC = () => {
 
   const { data: cotizacion, isLoading, isError, refetch } = useCotizacion(cotizacionId);
   const { mutate: cambiarEstado, isPending: isChangingState } = useCambiarEstado(cotizacionId || 0);
-  const respuestaCliente = useRegistrarRespuestaCliente(cotizacionId || 0);
+  const envioMarcado = useMarcarEnviada(cotizacionId || 0);
+  const respuestaFlujo = useRegistrarRespuestaFlujo(cotizacionId || 0);
+  const [accionRespuesta, setAccionRespuesta] = useState<AccionRespuestaCliente | null>(null);
   const { mutate: descargarPDF, isPending: isDownloadingPDF } = useDescargarPDF(
     cotizacionId || 0,
     cotizacion ? `${cotizacion.codigoCotizacion ?? cotizacion.codigo}.pdf` : undefined
@@ -213,7 +217,8 @@ const CotizacionDetalleContenido: React.FC = () => {
   const detalles = cotizacion.detalles ?? [];
   const esEstadoFinal = ESTADOS_FINALES.has(estado);
   const opcionesMenu = TRANSICIONES_ESTADOS[estado] ?? [];
-  const mostrarRespuesta = puedeRegistrarRespuestaCliente(jefe, estado, cotizacion.fechaValidez);
+  const clienteAcepto = estado === EstadoCotizacion.ACEPTADA_CLIENTE || estado === EstadoCotizacion.APROBADA;
+  const puedeRegistrarCliente = asistente && (estado === 'ENVIADA' || estado === 'EN_NEGOCIACION');
 
   // Totales: los del servidor; si no vienen, se calculan de las líneas.
   const subtotal = cotizacion.subtotal ?? detalles.reduce((s, d) => s + (d.subtotal || 0), 0);
@@ -250,14 +255,14 @@ const CotizacionDetalleContenido: React.FC = () => {
         Pasar a negociación
       </Button>
     );
-  } else if (estado === 'APROBADA' && ordenGenerada && !facturaGenerada) {
+  } else if (clienteAcepto && ordenGenerada && !facturaGenerada) {
     accionPrincipal = (
       <Button onClick={() => setShowFacturaModal(true)}>
         <Receipt className="mr-2 h-4 w-4" aria-hidden="true" />
         Registrar factura
       </Button>
     );
-  } else if (estado === 'APROBADA' && !ordenGenerada) {
+  } else if (clienteAcepto && !ordenGenerada && asistente) {
     accionPrincipal = (
       <Button onClick={() => setShowOrdenModal(true)}>
         <ShoppingCart className="mr-2 h-4 w-4" aria-hidden="true" />
@@ -266,8 +271,7 @@ const CotizacionDetalleContenido: React.FC = () => {
     );
   }
 
-  if (estado === 'APROBADA' && ordenGenerada && !facturaGenerada && !permisos.emitirFactura) accionPrincipal = null;
-  if (estado === 'APROBADA' && !ordenGenerada && !permisos.gestionarOrdenes) accionPrincipal = null;
+  if (clienteAcepto && ordenGenerada && !facturaGenerada && !permisos.emitirFactura) accionPrincipal = null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -305,7 +309,7 @@ const CotizacionDetalleContenido: React.FC = () => {
             PDF
           </Button>
           {/* Reenviar solo mientras la cotización sigue viva (no en Rechazada, Anulada ni Vencida). */}
-          {asistente && (estado === 'ENVIADA' || estado === 'EN_NEGOCIACION' || estado === 'APROBADA') && (
+          {asistente && (estado === 'ENVIADA' || estado === 'EN_NEGOCIACION' || estado === 'APROBADA' || estado === 'ACEPTADA_CLIENTE') && (
             <Button variant="outline" onClick={() => setShowEnvioModal(true)}>
               <Send className="mr-2 h-4 w-4" aria-hidden="true" />
               Reenviar
@@ -360,6 +364,27 @@ const CotizacionDetalleContenido: React.FC = () => {
             )}
           </div>}
 
+          {asistente && estado === EstadoCotizacion.APROBADA_INTERNA && (
+            <Button
+              onClick={() => {
+                setErrorAccion(null)
+                envioMarcado.mutate(undefined, {
+                  onError: (e) => setErrorAccion(mensajeError(e, 'No se pudo marcar la cotización como enviada.')),
+                })
+              }}
+              disabled={envioMarcado.isPending}
+            >
+              {envioMarcado.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
+              {envioMarcado.isPending ? 'Enviando…' : 'Marcar como enviada'}
+            </Button>
+          )}
+          {puedeRegistrarCliente && (
+            <>
+              <Button onClick={() => setAccionRespuesta('acepto')}>Cliente aceptó</Button>
+              <Button variant="outline" onClick={() => setAccionRespuesta('pidio_cambios')}>Pidió cambios</Button>
+              <Button variant="outline" onClick={() => setAccionRespuesta('rechazo')}>Rechazó</Button>
+            </>
+          )}
           {accionPrincipal}
         </div>
       </div>
@@ -370,15 +395,6 @@ const CotizacionDetalleContenido: React.FC = () => {
       <PipelineBreadcrumb steps={pasos} />
 
       {errorAccion && <ErrorBanner message={errorAccion} />}
-
-      {mostrarRespuesta && (
-        <RespuestaClienteForm
-          adjuntos={adjuntosDeLaRespuesta(cotizacion.adjuntos ?? [], cotizacion.seguimientos ?? [])}
-          ocupado={respuestaCliente.isPending}
-          error={respuestaCliente.isError ? mensajeError(respuestaCliente.error, 'No se pudo registrar la respuesta.') : null}
-          onRegistrar={(body) => respuestaCliente.mutate(body)}
-        />
-      )}
 
       <div className="grid items-start gap-4 lg:grid-cols-3">
         {/* Columna principal */}
@@ -459,7 +475,7 @@ const CotizacionDetalleContenido: React.FC = () => {
           <AdjuntoCotizacionUploader
             cotizacionId={cotizacionId}
             adjuntos={cotizacion.adjuntos || []}
-            readonly={!(estado === EstadoCotizacion.BORRADOR && asistente) && !mostrarRespuesta}
+            readonly={!(estado === EstadoCotizacion.BORRADOR && asistente)}
           />
         </div>
 
@@ -509,6 +525,22 @@ const CotizacionDetalleContenido: React.FC = () => {
           ocupado={isChangingState}
           onCerrar={() => setAnulando(false)}
           onConfirmar={(motivo) => handleCambiarEstado(EstadoCotizacion.ANULADA, motivo)}
+        />
+      )}
+      {accionRespuesta && (
+        <RegistrarRespuestaClienteModal
+          key={accionRespuesta}
+          accion={accionRespuesta}
+          ocupado={respuestaFlujo.isPending}
+          error={respuestaFlujo.isError ? mensajeError(respuestaFlujo.error, 'No se pudo registrar la respuesta.') : null}
+          onCerrar={() => {
+            setAccionRespuesta(null)
+            respuestaFlujo.reset()
+          }}
+          onGuardar={(body) => {
+            setErrorAccion(null)
+            respuestaFlujo.mutate(body, { onSuccess: () => setAccionRespuesta(null) })
+          }}
         />
       )}
       <ConfirmacionEnvioModal
