@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { cn } from "@/lib/utils/utils"
 import { mensajeError } from "@/lib/errores"
 import type { MetaPeriodo } from "@/api/metasApi"
 import { DashboardCard } from "./DashboardCard"
@@ -25,6 +26,7 @@ function Cuerpo({ meta }: { meta: MetaPeriodo }) {
       <p className="text-sm text-muted-foreground">{nombreMes(meta.anio, meta.mes)}</p>
       <p className="text-sm text-muted-foreground">Meta {textoPorcentaje(meta.metaPorcentaje)}</p>
       <p className="text-4xl font-bold tracking-tight tabular-nums">{sinPorcentaje ? "—" : textoPorcentaje(meta.porcentaje as number)}</p>
+      {!sinPorcentaje && <BarraMeta porcentaje={meta.porcentaje as number} meta={meta.metaPorcentaje} cumple={meta.cumple === true} />}
       <p className="text-sm text-muted-foreground">
         {meta.cotizacionesEnPlazo} de {meta.cotizacionesConsideradas} cotizaciones en el plazo
       </p>
@@ -42,6 +44,20 @@ function Cuerpo({ meta }: { meta: MetaPeriodo }) {
           </Link>
         </>
       )}
+    </div>
+  )
+}
+
+/** Barra del avance con una marca en la meta (decorativa: el dato ya está en el número). */
+function BarraMeta({ porcentaje, meta, cumple }: { porcentaje: number; meta: number; cumple: boolean }) {
+  const limitar = (v: number) => Math.max(0, Math.min(100, v))
+  return (
+    <div data-barra-meta={cumple ? "cumple" : "no-cumple"} className="relative my-1 h-2.5 rounded-full bg-muted" aria-hidden="true">
+      <span
+        className={cn("block h-full rounded-full", cumple ? "bg-success" : "bg-destructive")}
+        style={{ width: `${limitar(porcentaje)}%` }}
+      />
+      <span className="absolute -top-1 h-4.5 w-0.5 rounded-full bg-foreground" style={{ left: `${limitar(meta)}%` }} />
     </div>
   )
 }

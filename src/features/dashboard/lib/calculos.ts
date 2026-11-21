@@ -223,7 +223,7 @@ export function cotizacionesPorMes(cotizaciones: Cotizacion[], hoy: Date, meses 
     const fila = filas.find((f) => f.clave === claveMes(c.fechaCotizacion))
     if (!fila) continue
     const estado = estadoCotizacion(c)
-    if (estado === "APROBADA") fila.aprobadas++
+    if (estado === "APROBADA" || estado === "ACEPTADA_CLIENTE") fila.aprobadas++
     else if (ESTADOS_ABIERTOS.has(estado)) fila.enCurso++
     else if (estado === "RECHAZADA" || estado === "VENCIDA") fila.rechazadas++
   }
@@ -303,7 +303,7 @@ export function actividadPorDia(cotizaciones: Cotizacion[], hoy: Date, semanas =
 /** Aprobadas sobre respondidas (aprobadas + rechazadas). null si aún no hay respuestas. */
 export function tasaAprobacion(estados: CotizacionEstadoItem[]): number | null {
   const contar = (codigos: string[]) => estados.filter((e) => codigos.includes(normalizarEstado(e.estado))).reduce((s, e) => s + e.cantidad, 0)
-  const aprobadas = contar(["APROBADA", "ACEPTADA", "CONVERTIDA_OC"])
+  const aprobadas = contar(["APROBADA", "ACEPTADA", "ACEPTADA_CLIENTE", "CONVERTIDA_OC"])
   const rechazadas = contar(["RECHAZADA"])
   const respondidas = aprobadas + rechazadas
   return respondidas === 0 ? null : Math.round((aprobadas / respondidas) * 100)
