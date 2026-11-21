@@ -1,4 +1,4 @@
-export const EstadoCotizacion = { BORRADOR: 'BORRADOR', ENVIADA: 'ENVIADA', EN_NEGOCIACION: 'EN_NEGOCIACION', APROBADA: 'APROBADA', RECHAZADA: 'RECHAZADA', VENCIDA: 'VENCIDA', ANULADA: 'ANULADA', CADUCADA: 'VENCIDA', PENDIENTE_APROBACION: 'PENDIENTE_APROBACION', APROBADA_INTERNA: 'APROBADA_INTERNA' } as const
+export const EstadoCotizacion = { BORRADOR: 'BORRADOR', ENVIADA: 'ENVIADA', EN_NEGOCIACION: 'EN_NEGOCIACION', APROBADA: 'APROBADA', ACEPTADA_CLIENTE: 'ACEPTADA_CLIENTE', RECHAZADA: 'RECHAZADA', VENCIDA: 'VENCIDA', ANULADA: 'ANULADA', CADUCADA: 'VENCIDA', PENDIENTE_APROBACION: 'PENDIENTE_APROBACION', APROBADA_INTERNA: 'APROBADA_INTERNA' } as const
 export type EstadoCotizacion = (typeof EstadoCotizacion)[keyof typeof EstadoCotizacion]
 export const CondicionPago = { CONTADO: 'CONTADO', CREDITO_15: 'CREDITO_15', CREDITO_30: 'CREDITO_30', CREDITO_45: 'CREDITO_45', CREDITO_60: 'CREDITO_60' } as const
 export type CondicionPago = (typeof CondicionPago)[keyof typeof CondicionPago]
@@ -26,7 +26,7 @@ export interface CotizacionDetalle {
   descripcion?: string
 }
 export interface AdjuntoCotizacion { idAdjunto?: number; id?: number; idCotizacion?: number; nombreArchivo: string; urlArchivo: string; urlCloudinary: string; tipoArchivo: string; tamanio: number; fechaSubida?: string; subidoPor: string }
-export interface SeguimientoCotizacion { idSeguimiento?: number; id?: number; idCotizacion?: number; idEstadoCotizacion: number; estadoCodigo?: EstadoCotizacion; estadoAnterior: EstadoCotizacion; estadoNuevo: EstadoCotizacion; fechaEvento: string; fecha: string; idUsuario?: number; usuarioNombre?: string; comentario?: string; observaciones: string }
+export interface SeguimientoCotizacion { idSeguimiento?: number; id?: number; idCotizacion?: number; idEstadoCotizacion: number; estadoCodigo?: EstadoCotizacion; estadoAnterior?: string; estadoNuevo: string; fechaEvento: string; fecha: string; idUsuario?: number; usuarioNombre?: string; comentario?: string; observaciones: string; medio?: string | null; rutaAdjunto?: string | null; fechaRespuesta?: string | null }
 
 /** Modelo canónico de cotizacion; los campos de presentación provienen de las vistas V8. */
 export interface Cotizacion {

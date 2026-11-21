@@ -3,8 +3,16 @@
 import React from 'react';
 import type { SeguimientoCotizacion } from '@/types/cotizacion.types';
 import { formatearFechaHora, mapearEstadoCotizacion } from '@/lib/formatters/codigoCotizacion';
+import { formatearFechaCorta } from '@/lib/formatters/fechaLocal';
 import { Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils/utils';
+
+const MEDIOS: Record<string, string> = {
+  correo: 'Correo',
+  whatsapp: 'WhatsApp',
+  llamada: 'Llamada',
+  otro: 'Otro',
+};
 
 interface SeguimientoTimelineProps {
   seguimientos?: SeguimientoCotizacion[];
@@ -29,6 +37,7 @@ export const SeguimientoTimeline: React.FC<SeguimientoTimelineProps> = ({ seguim
             const negativo = s.estadoNuevo === 'RECHAZADA' || s.estadoNuevo === 'ANULADA';
             const ultimo = i === ordenados.length - 1;
             const nota = s.observaciones || s.comentario;
+            const medio = s.medio ? (MEDIOS[s.medio] ?? s.medio) : null;
             return (
               <li key={s.idSeguimiento ?? s.id ?? i} className="grid grid-cols-[20px_1fr] gap-3">
                 <div className="flex flex-col items-center">
@@ -50,9 +59,21 @@ export const SeguimientoTimeline: React.FC<SeguimientoTimelineProps> = ({ seguim
                   </p>
                   <p className="text-[13px] text-muted-foreground">
                     {formatearFechaHora(s.fecha ?? s.fechaEvento)}
+                    {s.fechaRespuesta ? ` · respondió el ${formatearFechaCorta(s.fechaRespuesta)}` : ''}
                     {s.usuarioNombre ? ` · ${s.usuarioNombre}` : ''}
+                    {medio ? ` · ${medio}` : ''}
                   </p>
                   {nota && <p className="mt-1 text-[13px] text-foreground">{nota}</p>}
+                  {s.rutaAdjunto && (
+                    <a
+                      href={s.rutaAdjunto}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1 inline-block text-[13px] text-accent hover:underline"
+                    >
+                      Ver adjunto
+                    </a>
+                  )}
                 </div>
               </li>
             );
