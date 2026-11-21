@@ -309,7 +309,7 @@ const CotizacionDetalleContenido: React.FC = () => {
             PDF
           </Button>
           {/* Reenviar solo mientras la cotización sigue viva (no en Rechazada, Anulada ni Vencida). */}
-          {asistente && (estado === 'ENVIADA' || estado === 'EN_NEGOCIACION' || estado === 'APROBADA') && (
+          {asistente && (estado === 'ENVIADA' || estado === 'EN_NEGOCIACION' || estado === 'APROBADA' || estado === 'ACEPTADA_CLIENTE') && (
             <Button variant="outline" onClick={() => setShowEnvioModal(true)}>
               <Send className="mr-2 h-4 w-4" aria-hidden="true" />
               Reenviar

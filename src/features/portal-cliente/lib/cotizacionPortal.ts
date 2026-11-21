@@ -15,7 +15,7 @@ function diaEnLima(fecha: Date): string {
 
 /** Quita tildes y pasa a mayúsculas para comparar nombres de estado ("En negociación" → "EN NEGOCIACION"). */
 function normalizar(texto: string) {
-  return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().trim()
+  return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim()
 }
 
 /**
@@ -43,7 +43,7 @@ export function esCotizacionAnulada(
 
 export function tonoEstadoCotizacion(estado: string): EstadoBadgeTono {
   const e = normalizar(estado ?? "")
-  if (e.startsWith("APROBADA")) return "success"
+  if (e.startsWith("APROBADA") || e.startsWith("ACEPTADA")) return "success"
   if (e.startsWith("RECHAZADA") || e.startsWith("ANULADA")) return "destructive"
   if (e.startsWith("VENCIDA")) return "neutral"
   return "warning"
