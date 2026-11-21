@@ -50,14 +50,14 @@ describe("IngresoConGoogle", () => {
     expect(leerSesionCliente()?.perfilCompleto).toBe(true)
   })
 
-  it("cuenta nueva sin empresa: abre la sesión y pide los datos de la empresa", async () => {
+  it("cuenta nueva sin empresa: abre la sesión sin pedir datos todavía (se piden al cotizar)", async () => {
     vi.mocked(ingresarConGoogle).mockResolvedValue({
       token: "tok", nombre: "Gina", nombreRol: "CLIENTE", perfilCompleto: false, pendiente: false,
     })
     renderGoogle()
     fireEvent.click(screen.getByRole("button", { name: "Continuar con Google" }))
 
-    expect(await screen.findByText("Datos de la empresa")).toBeTruthy()
+    expect(await screen.findByText("Mis pedidos")).toBeTruthy()
     expect(leerSesionCliente()?.perfilCompleto).toBe(false)
   })
 

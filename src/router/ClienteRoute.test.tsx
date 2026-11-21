@@ -75,11 +75,20 @@ describe("ClienteRoute", () => {
     cerrarSesionCliente()
   })
 
-  it("cuenta de Google sin empresa: manda a los datos de la empresa con ?volver=", () => {
+  it("cuenta de Google sin empresa: navega el portal y ve cómo pedir su primera cotización", () => {
     localStorage.setItem("cliente_access_token", "token")
     sessionStorage.setItem("genlogs-cliente-auth", JSON.stringify({ nombre: "Gina", rol: "CLIENTE", perfilCompleto: false }))
-    render(<MemoryRouter initialEntries={["/portal/pedidos"]}><Routes><Route element={<ClienteRoute />}><Route path="/portal/pedidos" element={<div>Pedidos privados</div>} /><Route path="/portal/empresa" element={<VerRuta />} /></Route></Routes></MemoryRouter>)
-    expect(screen.getByText("/portal/empresa?volver=%2Fportal%2Fpedidos")).toBeTruthy()
+    render(<MemoryRouter initialEntries={["/portal/pedidos"]}><Routes><Route element={<ClienteRoute />}><Route path="/portal/pedidos" element={<div>Pedidos privados</div>} /></Route></Routes></MemoryRouter>)
+    expect(screen.queryByText("Pedidos privados")).toBeNull()
+    expect(screen.getByText("Aún no tienes pedidos")).toBeTruthy()
+    expect(screen.getByRole("link", { name: "Pedir mi primera cotización" }).getAttribute("href")).toBe("/portal/solicitud")
+  })
+
+  it("cuenta de Google sin empresa: al pedir una cotización le pide los datos de la empresa con ?volver=", () => {
+    localStorage.setItem("cliente_access_token", "token")
+    sessionStorage.setItem("genlogs-cliente-auth", JSON.stringify({ nombre: "Gina", rol: "CLIENTE", perfilCompleto: false }))
+    render(<MemoryRouter initialEntries={["/portal/solicitud"]}><Routes><Route element={<ClienteRoute />}><Route path="/portal/solicitud" element={<div>Formulario solicitud</div>} /><Route path="/portal/empresa" element={<VerRuta />} /></Route></Routes></MemoryRouter>)
+    expect(screen.getByText("/portal/empresa?volver=%2Fportal%2Fsolicitud")).toBeTruthy()
   })
 
   it("en la página de datos de la empresa no redirige a sí misma", () => {

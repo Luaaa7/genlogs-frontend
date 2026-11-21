@@ -1,7 +1,6 @@
 import { useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { leerVolver, PARAMETRO_VOLVER } from "@/api/contratos/registro"
-import { RUTA_EMPRESA_PORTAL } from "@/api/contratos/ingresoGoogle"
+import { leerVolver } from "@/api/contratos/registro"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { iniciarSesionCliente } from "@/lib/sesiones"
 import { BotonGoogle } from "./BotonGoogle"
@@ -13,8 +12,8 @@ interface Props {
 }
 
 /**
- * «Continuar con Google» del ingreso y del registro (v3.4). Si la cuenta todavía no
- * tiene empresa, abre la sesión y lleva a los datos de la empresa, con ?volver=.
+ * «Continuar con Google» del ingreso y del registro (v3.4). Abre la sesión aunque la
+ * cuenta todavía no tenga empresa: los datos se le piden al pedir su primera cotización.
  */
 export function IngresoConGoogle({ texto = "continue_with" }: Props) {
   const navigate = useNavigate()
@@ -42,12 +41,8 @@ export function IngresoConGoogle({ texto = "continue_with" }: Props) {
         setError("Tu navegador no permite guardar la sesión. Revisa que no esté en modo privado o con el almacenamiento bloqueado.")
         return
       }
-      const destino = leerVolver(location.search)
-      if (!respuesta.perfilCompleto) {
-        navigate(`${RUTA_EMPRESA_PORTAL}?${PARAMETRO_VOLVER}=${encodeURIComponent(destino)}`, { replace: true })
-        return
-      }
-      navigate(destino, { replace: true })
+      // Sin empresa también entra: los datos se piden recién al pedir una cotización (ClienteRoute).
+      navigate(leerVolver(location.search), { replace: true })
     } catch (cause) {
       setError(mensajeErrorAcceso(cause, "No pudimos ingresar con Google. Inténtalo de nuevo."))
     } finally {
