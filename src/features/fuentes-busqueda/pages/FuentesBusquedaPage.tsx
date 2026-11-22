@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
 import { Button } from '@/components/ui/button'
@@ -92,6 +93,9 @@ function mensajeDe(err: unknown, porDefecto: string) {
 export function FuentesBusquedaPage() {
   const fuentes = useFuentes()
   const { configurarFuentes } = usePermisos()
+  // El aviso de «fuente con error» enlaza a /configuracion/fuentes?fuente=<CÓDIGO> (AvisoFuenteConError).
+  const [params] = useSearchParams()
+  const seleccionada = (params.get('fuente') ?? '').trim().toUpperCase()
 
   return (
     <div className="flex flex-col gap-6">
@@ -106,7 +110,12 @@ export function FuentesBusquedaPage() {
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {fuentes.data.map((f) => (
-            <TarjetaFuente key={`${f.codigo}:${f.pausaSegundos}:${f.limiteDiario}`} fuente={f} editable={configurarFuentes} />
+            <TarjetaFuente
+              key={`${f.codigo}:${f.pausaSegundos}:${f.limiteDiario}`}
+              fuente={f}
+              editable={configurarFuentes}
+              resaltada={seleccionada !== '' && f.codigo.toUpperCase() === seleccionada}
+            />
           ))}
         </div>
       )}
@@ -114,11 +123,28 @@ export function FuentesBusquedaPage() {
   )
 }
 
-function TarjetaFuente({ fuente, editable }: { fuente: FuenteConfig; editable: boolean }) {
+function TarjetaFuente({ fuente, editable, resaltada = false }: { fuente: FuenteConfig; editable: boolean; resaltada?: boolean }) {
   const idTitulo = `fuente-${fuente.codigo}`
   const lectura = lecturaDe(fuente)
+  const tarjeta = useRef<HTMLElement>(null)
+  // Al llegar desde el aviso, la tienda indicada queda a la vista y con el foco.
+  useEffect(() => {
+    if (!resaltada || !tarjeta.current) return
+    tarjeta.current.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+    tarjeta.current.focus({ preventScroll: true })
+  }, [resaltada])
   return (
-    <section aria-labelledby={idTitulo} className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+    <section
+      ref={tarjeta}
+      aria-labelledby={idTitulo}
+      aria-current={resaltada ? 'true' : undefined}
+      tabIndex={resaltada ? -1 : undefined}
+      data-resaltada={resaltada || undefined}
+      className={cn(
+        'flex flex-col gap-4 rounded-xl border bg-card p-5 focus:outline-none',
+        resaltada ? 'border-primary ring-2 ring-primary/40' : 'border-border',
+      )}
+    >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 id={idTitulo} className="text-base font-semibold text-foreground">{fuente.nombre}</h2>
