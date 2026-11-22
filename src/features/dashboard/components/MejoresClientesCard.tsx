@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { Trophy } from "lucide-react"
 import { formatearMontos, iniciales, type ClienteDestacado } from "../lib/calculos"
 
 // Franja superior de cada tarjeta: decorativa, en los tres colores de la paleta.
@@ -8,7 +9,12 @@ const FRANJAS = ["bg-brand-navy", "bg-brand-blue", "bg-viz-3"]
 export function MejoresClientesCard({ clientes }: { clientes: ClienteDestacado[] }) {
   return (
     <section aria-labelledby="dash-mejores">
-      <h2 id="dash-mejores" className="mb-3 text-[15px] font-semibold">Mejores clientes del año</h2>
+      <div className="mb-3 flex items-center gap-2.5">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent" aria-hidden="true">
+          <Trophy className="h-4 w-4" />
+        </span>
+        <h2 id="dash-mejores" className="text-[15px] font-semibold">Mejores clientes del año</h2>
+      </div>
       {clientes.length === 0 ? (
         <p className="rounded-xl border border-border bg-card p-5 text-center text-sm text-muted-foreground">
           Aparecerán cuando haya facturas emitidas este año.

@@ -239,3 +239,44 @@
   html, body { background: #fff !important; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* Portal del cliente (v3.4): entradas escalonadas, tarjetas que flotan y el paso actual que late. */
+@keyframes portal-sube { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes portal-inclina { from { opacity: 0; transform: translateY(28px) rotate(0); } to { opacity: 1; transform: rotate(-5deg); } }
+@keyframes portal-flota { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes portal-late { 0% { box-shadow: 0 0 0 0 rgb(46 107 168 / 0.5); } 100% { box-shadow: 0 0 0 12px rgb(46 107 168 / 0); } }
+@keyframes portal-dibuja-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes portal-dibuja-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+
+.portal-sube { animation: portal-sube 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.portal-retraso-1 { animation-delay: 0.08s; }
+.portal-retraso-2 { animation-delay: 0.16s; }
+.portal-retraso-3 { animation-delay: 0.24s; }
+.portal-retraso-4 { animation-delay: 0.34s; }
+.portal-retraso-5 { animation-delay: 0.46s; }
+.portal-retraso-6 { animation-delay: 0.58s; }
+.portal-inclina { animation: portal-inclina 0.8s 0.2s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.portal-flota { animation: portal-sube 0.6s 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both, portal-flota 5s 1.4s ease-in-out infinite; }
+.portal-flota-lenta { animation-delay: 0.9s, 1.8s; animation-duration: 0.6s, 6s; }
+.portal-late { animation: portal-late 1.8s ease-out infinite; }
+.portal-dibuja-x { transform-origin: left; animation: portal-dibuja-x 0.9s 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.portal-dibuja-y { transform-origin: top; animation: portal-dibuja-y 0.9s 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-sube, .portal-flota, .portal-late, .portal-dibuja-x, .portal-dibuja-y { animation: none; }
+  .portal-inclina { animation: none; transform: rotate(-5deg); }
+}
+
+/* Portal: el paso actual con un anillo que se expande y los avisos que aparecen con un rebote corto. */
+@keyframes portal-anillo { 0% { box-shadow: 0 0 0 0 rgb(255 255 255 / 0.45); } 100% { box-shadow: 0 0 0 12px rgb(255 255 255 / 0); } }
+@keyframes portal-aparece { 0% { opacity: 0; transform: scale(0.6); } 60% { opacity: 1; transform: scale(1.06); } 100% { transform: scale(1); } }
+.portal-anillo { animation: portal-anillo 2s ease-out infinite; }
+.portal-aparece { animation: portal-aparece 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .portal-anillo, .portal-aparece { animation: none; }
+}
+
+/* Barra de espera sin porcentaje (servidor activándose). */
+@keyframes portal-indeterminada { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
+.portal-indeterminada { animation: portal-indeterminada 1.3s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .portal-indeterminada { animation: none; } }

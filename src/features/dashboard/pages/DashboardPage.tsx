@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react"
 import { Link } from "react-router-dom"
-import { Plus, Printer, RefreshCw, AlertTriangle } from "lucide-react"
+import { Plus, Printer, RefreshCw, AlertTriangle, FileText, Clock, ShoppingCart } from "lucide-react"
 import { useDashboardData } from "../hooks/useDashboardData"
 import { useDashboardOperativo } from "../hooks/useDashboardOperativo"
 import { RequiereAtencionCard } from "../components/RequiereAtencionCard"
@@ -202,6 +202,7 @@ export function DashboardPage() {
             <KpiColorCard
               tono="navy"
               titulo="Cotizaciones pendientes"
+              icono={FileText}
               valor={String(indicadores.cotizacionesPendientes ?? 0)}
               detalle={textoPendiente ? `${textoPendiente} por cerrar` : undefined}
               serie={calculado.serieCotizaciones}
@@ -210,6 +211,7 @@ export function DashboardPage() {
             <KpiColorCard
               tono="navy"
               titulo="Tiempo de respuesta"
+              icono={Clock}
               valor={tiempoRespuesta ?? "—"}
               detalle={tiempoRespuesta ? "promedio del envío a la respuesta del cliente" : "Aún no hay cotizaciones respondidas"}
               href="/cotizaciones"
@@ -217,6 +219,7 @@ export function DashboardPage() {
             <KpiColorCard
               tono="blue"
               titulo="Órdenes en proceso"
+              icono={ShoppingCart}
               valor={String(indicadores.ordenesCompraProceso ?? 0)}
               detalle={`${indicadores.clientesActivos ?? 0} clientes activos`}
               href="/ordenes-compra"

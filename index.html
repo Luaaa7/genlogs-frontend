@@ -3,6 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/LOGO.png" />
+    <!-- PWA: manifiesto, color de la barra y ícono para iPhone/iPad. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#1E3A5F" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="GenLogs" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <!-- Conexión anticipada al API y a Cloudinary: la landing pide el catálogo y sus fotos al cargar. -->
     <link rel="preconnect" href="https://genlogs-backend-bkuv.onrender.com" crossorigin />
     <link rel="preconnect" href="https://res.cloudinary.com" />
