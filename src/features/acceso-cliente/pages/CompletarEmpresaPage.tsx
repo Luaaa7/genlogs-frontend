@@ -1,7 +1,8 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { leerVolver } from "@/api/contratos/registro"
 import { rucValido } from "@/api/contratos/ingresoGoogle"
+import { publicApi } from "@/api/publicApi"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -23,6 +24,50 @@ export function CompletarEmpresaPage() {
   const [pendiente, setPendiente] = useState("")
   const [cargando, setCargando] = useState(false)
   const nombreSesion = leerSesionCliente()?.nombre ?? ""
+  const [razonSocial, setRazonSocial] = useState("")
+  const [avisoRuc, setAvisoRuc] = useState("")
+  // Igual que el registro: la razón social de SUNAT solo se pone si la persona no escribió otra.
+  const razonAutomatica = useRef(false)
+  const razonActual = useRef("")
+  const consulta = useRef<AbortController | null>(null)
+
+  function cambiarRazonSocial(valor: string) {
+    setRazonSocial(valor)
+    razonActual.current = valor
+    razonAutomatica.current = false
+  }
+
+  function cambiarRuc(valor: string) {
+    const ruc = valor.replace(/\D/g, "")
+    consulta.current?.abort()
+    consulta.current = null
+    if (razonAutomatica.current) {
+      setRazonSocial("")
+      razonActual.current = ""
+      razonAutomatica.current = false
+    }
+    setAvisoRuc("")
+    if (!rucValido(ruc)) return
+    const control = new AbortController()
+    consulta.current = control
+    setAvisoRuc("Buscando la razón social…")
+    publicApi
+      .consultarRazonSocial(ruc, control.signal)
+      .then((resultado) => {
+        if (control.signal.aborted) return
+        if (resultado.tipo === "ok" && (razonActual.current.trim() === "" || razonAutomatica.current)) {
+          setRazonSocial(resultado.razonSocial)
+          razonActual.current = resultado.razonSocial
+          razonAutomatica.current = true
+          setAvisoRuc("Razón social completada con SUNAT. Puedes corregirla si hace falta.")
+          return
+        }
+        setAvisoRuc(resultado.tipo === "ok" ? "" : "No pudimos obtener la razón social, escríbela a mano.")
+      })
+      .catch(() => {
+        if (!control.signal.aborted) setAvisoRuc("No pudimos obtener la razón social, escríbela a mano.")
+      })
+  }
 
   async function enviar(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -77,7 +122,17 @@ export function CompletarEmpresaPage() {
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
             <Label htmlFor="empresa-ruc">RUC</Label>
-            <Input id="empresa-ruc" name="ruc" inputMode="numeric" autoComplete="off" maxLength={11} className="mt-2" required />
+            <Input
+              id="empresa-ruc"
+              name="ruc"
+              inputMode="numeric"
+              autoComplete="off"
+              maxLength={11}
+              className="mt-2"
+              onChange={(e) => cambiarRuc(e.target.value)}
+              aria-describedby={avisoRuc ? "empresa-ruc-aviso" : undefined}
+              required
+            />
           </div>
           <div>
             <Label htmlFor="empresa-telefono">Teléfono (opcional)</Label>
@@ -86,7 +141,17 @@ export function CompletarEmpresaPage() {
         </div>
         <div>
           <Label htmlFor="empresa-razon">Razón social</Label>
-          <Input id="empresa-razon" name="razonSocial" autoComplete="organization" maxLength={200} className="mt-2" required />
+          <Input
+            id="empresa-razon"
+            name="razonSocial"
+            autoComplete="organization"
+            maxLength={200}
+            className="mt-2"
+            value={razonSocial}
+            onChange={(e) => cambiarRazonSocial(e.target.value)}
+            required
+          />
+          {avisoRuc && <p id="empresa-ruc-aviso" role="status" className="mt-1.5 text-xs text-muted-foreground">{avisoRuc}</p>}
         </div>
         <div>
           <Label htmlFor="empresa-contacto">Persona de contacto</Label>

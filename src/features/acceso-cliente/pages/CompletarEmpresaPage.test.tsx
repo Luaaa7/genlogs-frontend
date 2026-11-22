@@ -4,11 +4,14 @@ import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { CompletarEmpresaPage } from "./CompletarEmpresaPage"
 import { completarEmpresa } from "../api/ingresoGoogleApi"
 import { iniciarSesionCliente, leerSesionCliente } from "@/lib/sesiones"
+import { publicApi } from "@/api/publicApi"
 
 vi.mock("../api/ingresoGoogleApi", async (importOriginal) => {
   const original = await importOriginal<typeof import("../api/ingresoGoogleApi")>()
   return { ...original, completarEmpresa: vi.fn() }
 })
+
+vi.mock("@/api/publicApi", () => ({ publicApi: { consultarRazonSocial: vi.fn() } }))
 
 function renderPagina(ruta = "/portal/empresa?volver=%2Fportal%2Fsolicitud") {
   return render(
@@ -33,6 +36,8 @@ describe("CompletarEmpresaPage", () => {
     localStorage.clear()
     sessionStorage.clear()
     vi.mocked(completarEmpresa).mockReset()
+    vi.mocked(publicApi.consultarRazonSocial).mockReset()
+    vi.mocked(publicApi.consultarRazonSocial).mockResolvedValue({ tipo: "sinDato" })
     iniciarSesionCliente("tok", "Gina", false)
   })
 
@@ -85,5 +90,29 @@ describe("CompletarEmpresaPage", () => {
 
     expect(await screen.findByText("No pudimos validar tu RUC en SUNAT.")).toBeTruthy()
     expect(screen.getByRole("button", { name: "Guardar y continuar" })).toBeTruthy()
+  })
+
+  it("con un RUC válido completa la razón social con SUNAT y sigue editable", async () => {
+    vi.mocked(publicApi.consultarRazonSocial).mockResolvedValue({ tipo: "ok", razonSocial: "MINERA SOL S.A.C." })
+    renderPagina()
+    fireEvent.change(screen.getByLabelText("RUC"), { target: { value: "20123456789" } })
+
+    await vi.waitFor(() => expect((screen.getByLabelText("Razón social") as HTMLInputElement).value).toBe("MINERA SOL S.A.C."))
+    expect(publicApi.consultarRazonSocial).toHaveBeenCalledWith("20123456789", expect.anything())
+    expect(screen.getByText(/completada con SUNAT/)).toBeTruthy()
+    fireEvent.change(screen.getByLabelText("Razón social"), { target: { value: "Minera Sol" } })
+    expect((screen.getByLabelText("Razón social") as HTMLInputElement).value).toBe("Minera Sol")
+  })
+
+  it("no pisa la razón social escrita a mano ni consulta un RUC incompleto", async () => {
+    vi.mocked(publicApi.consultarRazonSocial).mockResolvedValue({ tipo: "ok", razonSocial: "DE SUNAT" })
+    renderPagina()
+    fireEvent.change(screen.getByLabelText("Razón social"), { target: { value: "Escrita a mano" } })
+    fireEvent.change(screen.getByLabelText("RUC"), { target: { value: "2012345" } })
+    expect(publicApi.consultarRazonSocial).not.toHaveBeenCalled()
+
+    fireEvent.change(screen.getByLabelText("RUC"), { target: { value: "20123456789" } })
+    await vi.waitFor(() => expect(publicApi.consultarRazonSocial).toHaveBeenCalled())
+    expect((screen.getByLabelText("Razón social") as HTMLInputElement).value).toBe("Escrita a mano")
   })
 })
