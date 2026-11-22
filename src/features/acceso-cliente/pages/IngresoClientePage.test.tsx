@@ -58,11 +58,11 @@ describe("IngresoClientePage", () => {
     expect(localStorage.getItem("cliente_access_token")).toBeNull()
   })
 
-  it("muestra el panel de marca, el enlace al personal y el espacio para Google (v3.4, K3)", () => {
-    const { container } = renderIngreso()
+    it("muestra el panel de marca, el enlace al personal y el ingreso con Google (v3.4, K3)", () => {
+    renderIngreso()
     expect(screen.getByRole("complementary", { name: "GenLogs S.A.C." })).toBeTruthy()
     expect(screen.getByRole("link", { name: "Ingresa aquí" }).getAttribute("href")).toBe("/login")
-    expect(container.querySelector("[data-google-slot]")).not.toBeNull()
+    expect(screen.getByRole("separator", { name: "o con tu correo" })).toBeTruthy()
   })
 
   it("muestra el mensaje del backend si la contraseña es incorrecta", async () => {
