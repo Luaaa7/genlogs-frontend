@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#1E3A5F" />
+<title>Sin conexión · GenLogs</title>
+<style>
+  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+         font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #F9FAFB; color: #1F2937; }
+  main { max-width: 360px; padding: 24px; text-align: center; }
+  img { width: 72px; height: 72px; }
+  h1 { font-size: 20px; margin: 16px 0 8px; color: #1E3A5F; }
+  p { font-size: 15px; line-height: 1.5; margin: 0 0 20px; }
+  button { font: inherit; padding: 10px 20px; border: 0; border-radius: 8px; background: #1E3A5F; color: #F9FAFB; cursor: pointer; }
+  @media (prefers-color-scheme: dark) { body { background: #0F172A; color: #E5E7EB; } h1 { color: #E5E7EB; } }
+</style>
+</head>
+<body>
+<main>
+  <img src="/icons/icon-192.png" alt="" />
+  <h1>Sin conexión</h1>
+  <p>GenLogs necesita internet para mostrar tus datos. Revisa tu conexión y vuelve a intentarlo.</p>
+  <button type="button" onclick="location.reload()">Reintentar</button>
+</main>
+</body>
+</html>
