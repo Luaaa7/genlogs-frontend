@@ -5,7 +5,7 @@ import { vitrinaHabilitada } from "@/lib/interruptores"
 import { cerrarSesionCliente, leerSesionCliente } from "@/lib/sesiones"
 
 const claseEnlace = ({ isActive }: { isActive: boolean }) =>
-  `rounded-md px-3 py-2 ${isActive ? "bg-muted font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`
+  `shrink-0 whitespace-nowrap rounded-md px-3 py-2 ${isActive ? "bg-muted font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`
 
 /**
  * Barra del portal del cliente. Con sesión de cliente muestra el menú completo y
@@ -27,7 +27,7 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
             <img src={logoGenlogs} alt="GenLogs S.A.C." width={140} height={58} className="-my-2 h-14 w-auto object-contain dark:brightness-0 dark:invert" />
           </Link>
           {conSesion ? (
-            <nav aria-label="Portal del cliente" className="flex items-center gap-1 text-sm">
+            <nav aria-label="Portal del cliente" className="-mx-4 flex w-[calc(100%+2rem)] items-center gap-1 overflow-x-auto px-4 pb-1 text-sm sm:mx-0 sm:w-auto sm:overflow-visible sm:px-0 sm:pb-0">
               <NavLink to="/portal/pedidos" className={claseEnlace}>Mis pedidos</NavLink>
               <NavLink to="/portal/cotizaciones" className={claseEnlace}>Mis cotizaciones</NavLink>
               <NavLink to="/portal/despachos" className={claseEnlace}>Mis despachos</NavLink>
@@ -40,7 +40,7 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
                   cerrarSesionCliente()
                   navigate("/portal/ingreso", { replace: true })
                 }}
-                className="ml-1 rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="ml-1 shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Cerrar sesión
               </button>

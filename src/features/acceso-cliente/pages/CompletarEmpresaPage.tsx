@@ -185,19 +185,19 @@ export function CompletarEmpresaPage() {
           <div>
             <Label htmlFor="empresa-ruc">RUC</Label>
             <div className="relative mt-2">
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+              <Search className="pointer-events-none absolute left-3.5 top-6 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
               <Input
                 id="empresa-ruc"
                 name="ruc"
                 inputMode="numeric"
                 autoComplete="off"
                 maxLength={11}
-                className={`h-12 pl-10 pr-44 text-lg font-semibold tracking-wider tabular-nums transition-colors ${bordeRuc}`}
+                className={`h-12 pl-10 pr-3 text-lg sm:pr-44 font-semibold tracking-wider tabular-nums transition-colors ${bordeRuc}`}
                 onChange={(e) => cambiarRuc(e.target.value)}
                 aria-describedby={avisoRuc ? "empresa-ruc-aviso" : undefined}
                 required
               />
-              <span className="absolute right-2.5 top-1/2 -translate-y-1/2">
+              <span className="mt-2 flex sm:absolute sm:right-2.5 sm:top-6 sm:mt-0 sm:-translate-y-1/2">
                 {estadoRuc === "buscando" && (
                   <span className="flex h-7 items-center gap-1.5 rounded-full bg-accent/10 px-2.5 text-xs font-semibold text-accent">
                     <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />Buscando…
