@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useMutation } from "@tanstack/react-query"
 import { PackageSearch, Search } from "lucide-react"
@@ -15,9 +15,14 @@ import { useCategoriasVitrina, useRepuestosPublicos } from "../hooks/useVitrinaP
 import { guardarPedidoPendiente, tokenCliente } from "../lib/pedidoPendiente"
 import { enviarSolicitudLanding } from "../lib/enviarSolicitudLanding"
 import { TarjetaRepuesto } from "./TarjetaRepuesto"
+import { SelectorMarca } from "./SelectorMarca"
+import { Paginacion } from "./Paginacion"
 
 /** Al volver del registro, la solicitud rápida envía el pedido guardado (D-30). */
 const VOLVER = "/#solicitud"
+
+/** Repuestos por página (3 filas de 4 en escritorio). */
+const POR_PAGINA = 12
 
 /**
  * Vitrina de la landing (Fase 3, RF-82): destacados, categorías con conteo, marcas en
@@ -31,6 +36,7 @@ export function VitrinaLanding() {
   const [categoria, setCategoria] = useState<string>()
   const [marca, setMarca] = useState<string>()
   const [cotizados, setCotizados] = useState<number[]>([])
+  const inicioLista = useRef<HTMLParagraphElement>(null)
 
   const filtro = { q: busqueda || undefined, idCategoria: categoria ? Number(categoria) : undefined, marca }
   const repuestos = useRepuestosPublicos(filtro)
@@ -44,6 +50,18 @@ export function VitrinaLanding() {
     () => [...new Set((repuestos.data ?? []).map((r) => r.marca).filter((m): m is string => !!m))].sort(),
     [repuestos.data],
   )
+
+  // Paginación: al cambiar la búsqueda, la categoría o la marca, se vuelve a la página 1.
+  const claveFiltro = `${busqueda}|${categoria ?? ""}|${marca ?? ""}`
+  const [paginaGuardada, setPaginaGuardada] = useState({ clave: claveFiltro, numero: 1 })
+  const totalPaginas = Math.max(1, Math.ceil(lista.length / POR_PAGINA))
+  const pagina = paginaGuardada.clave === claveFiltro ? Math.min(paginaGuardada.numero, totalPaginas) : 1
+  const visibles = lista.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA)
+
+  function irAPagina(numero: number) {
+    setPaginaGuardada({ clave: claveFiltro, numero })
+    inicioLista.current?.scrollIntoView?.({ behavior: "smooth", block: "start" })
+  }
 
   const cotizar = useMutation({
     mutationFn: ({ r, token }: { r: RepuestoPublico; token: string }) => enviarSolicitudLanding(pedidoDe(r), token),
@@ -110,12 +128,10 @@ export function VitrinaLanding() {
           <FiltroChips etiqueta="Filtrar por categoría" opciones={opcionesCategoria} valor={categoria} onChange={setCategoria} />
         )}
         {marcas.length > 0 && (
-          <FiltroChips
-            etiqueta="Filtrar por marca"
-            opciones={[{ label: "Todas las marcas" }, ...marcas.map((m) => ({ valor: m, label: m }))]}
-            valor={marca}
-            onChange={setMarca}
-          />
+          <div className="flex flex-wrap items-center gap-3">
+            <span id="vitrina-marca" className="text-sm font-medium text-foreground">Marca</span>
+            <SelectorMarca marcas={marcas} valor={marca} onChange={setMarca} etiquetaId="vitrina-marca" />
+          </div>
         )}
       </div>
 
@@ -139,11 +155,12 @@ export function VitrinaLanding() {
           />
         ) : (
           <>
-            <p className="mb-4 text-sm text-muted-foreground" aria-live="polite">
+            <p ref={inicioLista} className="mb-4 scroll-mt-24 text-sm text-muted-foreground" aria-live="polite">
               {lista.length} {lista.length === 1 ? "repuesto" : "repuestos"}
+              {totalPaginas > 1 && ` · página ${pagina} de ${totalPaginas}`}
             </p>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {lista.map((r) => (
+              {visibles.map((r) => (
                 <TarjetaRepuesto
                   key={r.idProducto}
                   repuesto={r}
@@ -153,6 +170,7 @@ export function VitrinaLanding() {
                 />
               ))}
             </div>
+            <Paginacion pagina={pagina} total={totalPaginas} onCambiar={irAPagina} />
             <p className="mt-10 text-center text-sm text-muted-foreground">
               ¿No está lo que buscas?{" "}
               <a href="#solicitud" className="font-semibold text-accent hover:underline">Pídelo aquí</a>
