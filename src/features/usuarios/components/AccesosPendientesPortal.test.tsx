@@ -89,4 +89,32 @@ describe("AccesosPendientesPortal (BPMN 8.4)", () => {
     expect(await screen.findByText("No hay un acceso pendiente con ese usuario")).toBeTruthy()
     expect(screen.getByText("ana@minera.pe")).toBeTruthy()
   })
+
+  it("resume cuántos hay por revisar y por qué vía llegaron", async () => {
+    vi.mocked(listarAccesosPendientes).mockResolvedValue(PENDIENTES)
+    renderSeccion()
+
+    const resumen = await screen.findByRole("list", { name: "Resumen de accesos pendientes" })
+    const valor = (etiqueta: string) => within(resumen).getByText(etiqueta).parentElement?.textContent
+    expect(valor("Por revisar")).toContain("2")
+    expect(valor("Con Google")).toContain("1")
+    expect(valor("Con registro")).toContain("1")
+  })
+
+  it("muestra hace cuánto lo pidieron y las iniciales del contacto", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] })
+    vi.setSystemTime(new Date("2026-11-21T12:30:00"))
+    try {
+      vi.mocked(listarAccesosPendientes).mockResolvedValue(PENDIENTES)
+      renderSeccion()
+
+      const fila = (await screen.findByText("Ana Ruiz")).closest("tr") as HTMLElement
+      expect(within(fila).getByText("hace 2 h")).toBeTruthy()
+      expect(within(fila).getByText("AR")).toBeTruthy()
+      const filaGoogle = screen.getByText("Gina Paz").closest("tr") as HTMLElement
+      expect(within(filaGoogle).getByText("hace 1 h")).toBeTruthy()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })

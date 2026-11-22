@@ -4,6 +4,7 @@ import { RUTA_EMPRESA_PORTAL } from "@/api/contratos/ingresoGoogle"
 import { PARAMETRO_VOLVER } from "@/api/contratos/registro"
 import { leerSesionCliente, puedeEntrarAlPortal } from "@/lib/sesiones"
 import { PortalSinEmpresa } from "@/features/acceso-cliente/components/PortalSinEmpresa"
+import { ClienteLayout } from "@/layouts/ClienteLayout"
 
 const RUTA_SOLICITUD_PORTAL = "/portal/solicitud"
 
@@ -20,14 +21,15 @@ export function ClienteRoute() {
     return <Navigate to={rutaIngresoCliente(`${location.pathname}${location.search}`)} replace />
   }
 
-  if (leerSesionCliente()?.perfilCompleto === false && location.pathname !== RUTA_EMPRESA_PORTAL) {
+  const sesion = leerSesionCliente()
+  if (sesion?.perfilCompleto === false && location.pathname !== RUTA_EMPRESA_PORTAL) {
     // Pedir una cotización necesita la empresa (RUC): ahí se piden los datos y luego vuelve.
     if (location.pathname === RUTA_SOLICITUD_PORTAL) {
       const volver = `${location.pathname}${location.search}`
       return <Navigate to={`${RUTA_EMPRESA_PORTAL}?${PARAMETRO_VOLVER}=${encodeURIComponent(volver)}`} replace />
     }
     // El resto del portal se recorre libremente; sin empresa todavía no hay nada que mostrar.
-    return <PortalSinEmpresa />
+    return <ClienteLayout><PortalSinEmpresa nombre={sesion.nombre} /></ClienteLayout>
   }
 
   return <Outlet />
