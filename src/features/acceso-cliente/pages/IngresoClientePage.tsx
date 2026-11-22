@@ -5,6 +5,7 @@ import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { PanelMarca } from "@/components/marca/PanelMarca"
 import { iniciarSesionCliente } from "@/lib/sesiones"
 import { ingresarCliente, mensajeErrorAcceso } from "../api/ingresoClienteApi"
 
@@ -46,28 +47,38 @@ export function IngresoClientePage() {
   }
 
   return (
-    <div className="mx-auto max-w-md">
-      <div className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-wide text-accent">Portal del cliente</p>
-        <h1 className="mt-2 text-3xl font-bold">Ingresa a tu cuenta</h1>
-        <p className="mt-2 text-muted-foreground">Consulta tus pedidos y envía nuevas solicitudes.</p>
+    <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-2 lg:items-stretch">
+      {/* v3.4 (K3): panel de marca. La página va dentro de ClienteLayout, por eso el panel va aquí. */}
+      <PanelMarca className="hidden rounded-2xl lg:flex" />
+      <div className="mx-auto w-full max-w-md lg:self-center">
+        <div className="mb-8">
+          <p className="text-sm font-semibold uppercase tracking-wide text-accent">Portal del cliente</p>
+          <h1 className="mt-2 text-3xl font-bold">Ingresa a tu cuenta</h1>
+          <p className="mt-2 text-muted-foreground">Consulta tus pedidos y envía nuevas solicitudes.</p>
+        </div>
+        <form onSubmit={enviar} className="space-y-5 rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
+          <div>
+            <Label htmlFor="ingreso-correo">Correo</Label>
+            <Input id="ingreso-correo" name="correo" type="email" autoComplete="email" className="mt-2" required />
+          </div>
+          <div>
+            <Label htmlFor="ingreso-password">Contraseña</Label>
+            <Input id="ingreso-password" name="password" type="password" autoComplete="current-password" className="mt-2" required />
+          </div>
+          {error && <ErrorBanner message={error} />}
+          <Button className="w-full" disabled={cargando}>{cargando ? "Ingresando..." : "Ingresar"}</Button>
+          {/* v3.4 (K3): aquí Luana agrega el botón «Ingresar con Google». */}
+          <div data-google-slot="" />
+          <p className="text-center text-sm text-muted-foreground">
+            ¿Aún no tienes cuenta?{" "}
+            <Link to={rutaRegistro(volverCrudo)} className="font-medium text-accent hover:underline">Regístrate</Link>
+          </p>
+          <p className="border-t border-border pt-4 text-center text-sm text-muted-foreground">
+            ¿Eres del personal de GENLOGS?{" "}
+            <Link to="/login" className="font-medium text-accent hover:underline">Ingresa aquí</Link>
+          </p>
+        </form>
       </div>
-      <form onSubmit={enviar} className="space-y-5 rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
-        <div>
-          <Label htmlFor="ingreso-correo">Correo</Label>
-          <Input id="ingreso-correo" name="correo" type="email" autoComplete="email" className="mt-2" required />
-        </div>
-        <div>
-          <Label htmlFor="ingreso-password">Contraseña</Label>
-          <Input id="ingreso-password" name="password" type="password" autoComplete="current-password" className="mt-2" required />
-        </div>
-        {error && <ErrorBanner message={error} />}
-        <Button className="w-full" disabled={cargando}>{cargando ? "Ingresando..." : "Ingresar"}</Button>
-        <p className="text-center text-sm text-muted-foreground">
-          ¿Aún no tienes cuenta?{" "}
-          <Link to={rutaRegistro(volverCrudo)} className="font-medium text-accent hover:underline">Regístrate</Link>
-        </p>
-      </form>
     </div>
   )
 }
