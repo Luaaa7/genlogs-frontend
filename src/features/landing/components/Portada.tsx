@@ -11,7 +11,7 @@ export function Portada() {
           <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">Centralizamos tu abastecimiento para que cada operación avance con rapidez, trazabilidad y respaldo técnico.</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link to="/portal/solicitud" className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Solicitar cotización <ArrowRight className="h-4 w-4" /></Link>
-            <Link to="/portal/registro" className="inline-flex items-center justify-center rounded-md border border-border bg-card px-5 py-3 font-semibold hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Ingresar</Link>
+            <Link to="/portal/registro" className="inline-flex items-center justify-center rounded-md border border-border bg-card px-5 py-3 font-semibold hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Crear cuenta</Link>
           </div>
           <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
             {["Atención especializada", "Cobertura minera", "Seguimiento de pedidos"].map((item) => <span key={item} className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-success" />{item}</span>)}
