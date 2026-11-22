@@ -48,7 +48,7 @@ export async function cambiarParametros(codigo: string, p: { pausaSegundos: numb
 export type PaginaSelector = 'LOGIN' | 'BUSQUEDA' | 'FICHA'
 export type CampoSelector =
   | 'ITEM' | 'NOMBRE' | 'DESCRIPCION' | 'PRECIO' | 'MONEDA' | 'IMAGEN' | 'ENLACE'
-  | 'USUARIO' | 'CLAVE' | 'ENVIAR' | 'EXITO'
+  | 'USUARIO' | 'CLAVE' | 'ENVIAR' | 'EXITO' | 'CONTINUAR'
 export interface ReglaExtraccion {
   pagina: PaginaSelector
   campo: CampoSelector
