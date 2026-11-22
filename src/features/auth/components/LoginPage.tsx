@@ -135,10 +135,7 @@ export function LoginPage() {
         {loading ? "Ingresando..." : "Ingresar"}
       </button>
 
-      {/* v3.4 (K3): aquí Luana agrega el botón «Ingresar con Google». */}
-      <div data-google-slot="" />
-
-      <p className="text-center text-sm">
+            <p className="text-center text-sm">
         <Link to="/recuperar-password" className="font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded">
           ¿Olvidaste tu contraseña?
         </Link>
