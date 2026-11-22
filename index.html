@@ -3,8 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/LOGO.png" />
-    <!-- PWA: manifiesto, color de la barra y ícono para iPhone/iPad. -->
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- PWA: manifiesto, color de la barra y ícono para iPhone/iPad.
+         Se enlaza el .json porque Render sirve .webmanifest como binary/octet-stream. -->
+    <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#1E3A5F" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="GenLogs" />
