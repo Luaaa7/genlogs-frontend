@@ -67,6 +67,7 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
     setValue(`detalles.${index}.idProducto`, undefined, { shouldDirty: true });
     setValue(`detalles.${index}.idServicio`, undefined, { shouldDirty: true });
     setValue(`detalles.${index}.idUnidadMedida`, undefined, { shouldDirty: true });
+    setValue(`detalles.${index}.idSourcing`, undefined, { shouldDirty: true });
   };
 
   const elegirItem = (index: number, item: ItemCatalogo) => {
@@ -76,6 +77,7 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
     setValue(`detalles.${index}.idServicio`, item.tipo === 'servicio' ? item.id : undefined, opciones);
     setValue(`detalles.${index}.idUnidadMedida`, item.idUnidadMedida, opciones);
     setValue(`detalles.${index}.tipoItem`, item.tipo, opciones);
+    setValue(`detalles.${index}.idSourcing`, undefined, opciones);
   };
 
   const opcionesCalculo = { shouldDirty: true, shouldValidate: true } as const;

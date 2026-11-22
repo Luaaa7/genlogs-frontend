@@ -13,6 +13,7 @@ export function lineaAlFormulario(detalle: CotizacionDetalle): CotizacionDetalle
   return {
     idProducto: detalle.idProducto ?? undefined,
     idServicio: detalle.idServicio ?? undefined,
+    ...(typeof detalle.idSourcing === 'number' ? { idSourcing: detalle.idSourcing } : {}),
     producto: detalle.producto || detalle.servicio || detalle.descripcionPersonalizada || detalle.descripcion || '',
     cantidad,
     precioUnitario,

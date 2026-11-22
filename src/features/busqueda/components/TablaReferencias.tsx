@@ -24,6 +24,13 @@ const FUENTES: Record<string, string> = {
 /** Defensa extra: solo se enlaza lo que es http(s); el backend ya lo valida (UrlSegura). */
 const esEnlaceSeguro = (url: string | null): url is string => !!url && /^https?:\/\/\S+$/i.test(url)
 
+function tituloMarca(valor: string | null | undefined) {
+  if (!valor) return ""
+  const fecha = new Date(valor)
+  if (Number.isNaN(fecha.getTime())) return valor
+  return new Intl.DateTimeFormat("es-PE", { dateStyle: "short", timeStyle: "short" }).format(fecha)
+}
+
 interface Props {
   referencias: Referencia[]
   /** Solo el Asistente Logístico marca; los demás roles ven la tabla sin acciones. */
@@ -88,6 +95,14 @@ export function TablaReferencias({ referencias, puedeMarcar, marcando, onMarcar,
               </Td>
               <Td>
                 <EstadoBadge tono={estado.tono}>{estado.label}</EstadoBadge>
+                {r.estado === "UTIL" && r.marcadaUtilDesde === "COTIZACION" && (
+                  <span
+                    className="mt-1 block text-xs text-muted-foreground"
+                    title={[tituloMarca(r.marcadaUtilEn), r.marcadaUtilPor].filter(Boolean).join(" · ")}
+                  >
+                    Desde la cotización
+                  </span>
+                )}
               </Td>
               {puedeMarcar && (
                 <Td alinear="derecha" className="whitespace-nowrap">

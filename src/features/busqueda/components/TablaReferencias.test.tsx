@@ -34,6 +34,21 @@ describe("TablaReferencias: enlaces", () => {
     expect(screen.queryByText("0.00")).toBeNull()
   })
 
+  it("marca Desde la cotización cuando el útil se eligió al cotizar", () => {
+    const marcada = {
+      ...ref(null),
+      estado: "UTIL" as const,
+      marcadaUtilDesde: "COTIZACION" as const,
+      marcadaUtilEn: "2026-11-20T15:30:00",
+      marcadaUtilPor: "ana",
+    }
+    render(<TablaReferencias referencias={[marcada]} puedeMarcar onMarcar={() => {}} />)
+    const aviso = screen.getByText("Desde la cotización")
+    expect(aviso.getAttribute("title")).toMatch(/ana/)
+    expect(screen.getByRole("button", { name: /marcar como útil/i })).toBeTruthy()
+    expect(screen.getByRole("button", { name: /descartar/i })).toBeTruthy()
+  })
+
   it("ofrece Convertir solo en las referencias útiles", () => {
     const onConvertir = vi.fn()
     const util = { ...ref("https://www.ebay.com/itm/1"), idSourcing: 2, estado: "UTIL" as const, titulo: "Útil" }

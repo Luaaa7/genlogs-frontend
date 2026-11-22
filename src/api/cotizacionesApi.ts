@@ -66,6 +66,7 @@ export const cotizacionesApi = {
       idCotizacionDetalle: l.idCotizacionDetalle,
       idProducto: l.idProducto,
       idServicio: l.idServicio,
+      ...(l.idSourcing != null ? { idSourcing: l.idSourcing } : {}),
       idUnidadMedida: l.idUnidadMedida ?? 0,
       producto: l.producto ?? l.productoNombre ?? undefined,
       servicio: l.servicio ?? l.servicioNombre ?? undefined,

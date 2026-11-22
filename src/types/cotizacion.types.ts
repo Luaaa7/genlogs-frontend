@@ -10,6 +10,8 @@ export interface CotizacionDetalle {
   idCotizacion?: number
   idProducto?: number | null
   idServicio?: number | null
+  /** Referencia de sourcing. Las líneas anteriores no la traen. */
+  idSourcing?: number | null
   idUnidadMedida: number
   descripcionPersonalizada?: string | null
   cantidad: number
@@ -75,7 +77,7 @@ export interface Cotizacion {
 export interface CreateCotizacionRequest { idCliente?: number; clienteId?: number; idContacto?: number | null; idUsuarioVendedor?: number; idEstadoCotizacion?: number; idMoneda?: number; idCondicionPago?: number; moneda?: Moneda; condicionPago?: CondicionPago; idSectorEconomico?: number | null; codigoCotizacion?: string; fechaCotizacion?: string; fechaValidez?: string; observaciones?: string; /** Propuesta C1. Solo al crear en USD, o al editar si el guardado venía null. */ tipoCambio?: number; /** yyyy-mm-dd tal cual viene en TipoCambioDia.fecha. */ fechaTipoCambio?: string; detalles: CreateCotizacionDetalleRequest[] }
 /** Mismo cuerpo que el alta. El id y el código los conserva el backend. */
 export type UpdateCotizacionRequest = CreateCotizacionRequest
-export interface CreateCotizacionDetalleRequest { idProducto?: number; idServicio?: number; idUnidadMedida?: number; producto?: string; servicio?: string; descripcionPersonalizada?: string; descripcion?: string; cantidad: number; precioUnitario: number; descuentoUnitario?: number; margenPorcentaje?: number }
+export interface CreateCotizacionDetalleRequest { idProducto?: number; idServicio?: number; idSourcing?: number; idUnidadMedida?: number; producto?: string; servicio?: string; descripcionPersonalizada?: string; descripcion?: string; cantidad: number; precioUnitario: number; descuentoUnitario?: number; margenPorcentaje?: number }
 export interface UpdateEstadoCotizacionRequest { idEstadoCotizacion?: number; estadoNuevo?: EstadoCotizacion; comentario?: string; observaciones?: string }
 export interface CotizacionesListResponse { content: Cotizacion[]; totalElements: number; totalPages: number; currentPage: number; pageSize: number }
 export interface CotizacionesFilterParams { estadoCodigo?: EstadoCotizacion; estadoCotizacion?: EstadoCotizacion; idCliente?: number; clienteId?: number; idMoneda?: number; moneda?: Moneda; page?: number; size?: number; sortBy?: string; sortDir?: 'ASC' | 'DESC' }

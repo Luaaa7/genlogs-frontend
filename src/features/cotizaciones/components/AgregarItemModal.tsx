@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { AlertTriangle, Plus } from 'lucide-react'
 import type { Referencia } from '@/api/sourcingApi'
 import { Ventana } from '@/components/ui/Ventana'
@@ -7,7 +7,7 @@ import { MarcaObligatorio } from '@/components/ui/campo'
 import { inputFormClass } from '@/components/ui/campoEstilos'
 import { formatearMoneda, calcularSubtotal } from '@/lib/formatters/codigoCotizacion'
 import { SelectorCatalogoItem, type ItemCatalogo } from './SelectorCatalogoItem'
-import { HistorialItemPanel } from './HistorialItemPanel'
+import { ReferenciasEncontradasPanel } from './ReferenciasEncontradasPanel'
 import { RepuestoRapidoModal } from './RepuestoRapidoModal'
 import { usePermisos } from '@/lib/permisos'
 import { useEscalaMargenes } from '@/features/configuracion/hooks/useMargenes'
@@ -26,6 +26,8 @@ export interface ItemNuevo {
   margenMinimo?: number
   precioUnitario: number
   subtotal: number
+  /** Referencia elegida en el panel. Producto de catálogo, servicio y texto libre no la llevan. */
+  idSourcing?: number
 }
 
 interface Props {
@@ -36,7 +38,7 @@ interface Props {
   onCerrar: () => void
 }
 
-type Pestana = 'producto' | 'servicio' | 'historial'
+type Pestana = 'producto' | 'servicio'
 
 const AVISO_COSTO = 'El costo cambió. Se mantuvo el precio y se recalculó el margen.'
 
@@ -60,9 +62,10 @@ function textoReferencia(r: Referencia): string {
   return [r.titulo, r.marca, r.numeroParte].filter((p) => p && p.trim()).join(' · ')
 }
 
-/** Ventana para sumar un ítem: catálogo, texto libre o historial útil.
+/** Ventana para sumar un ítem: catálogo, texto libre o una referencia ya encontrada.
  *  Agregar solo lo mete al formulario; no guarda la cotización. */
 export function AgregarItemModal({ moneda, tipoCambio = null, onAgregar, onCerrar }: Props) {
+  const costoRef = useRef<HTMLInputElement>(null)
   const [tipo, setTipo] = useState<Pestana>('producto')
   const [texto, setTexto] = useState('')
   const [item, setItem] = useState<ItemCatalogo | null>(null)
@@ -82,7 +85,7 @@ export function AgregarItemModal({ moneda, tipoCambio = null, onAgregar, onCerra
   const [intento, setIntento] = useState(false)
   const [agregados, setAgregados] = useState(0)
   const [creandoRepuesto, setCreandoRepuesto] = useState(false)
-  const { editarCatalogos } = usePermisos()
+  const { editarCatalogos, puedeCrear } = usePermisos()
   const { data: escala } = useEscalaMargenes()
   const tc = tipoCambio != null && tipoCambio > 0 ? tipoCambio : null
   const monedaCot = normalizarMoneda(moneda) || 'PEN'
@@ -118,7 +121,7 @@ export function AgregarItemModal({ moneda, tipoCambio = null, onAgregar, onCerra
   const faltaMoneda = pideMoneda && monedaCosto === ''
   const haySeleccion = item !== null || libre || referencia !== null
   const faltantes = [
-    !haySeleccion && (tipo === 'historial' ? 'referencia útil' : tipo === 'producto' ? 'repuesto o texto del ítem' : 'servicio'),
+    !haySeleccion && (tipo === 'producto' ? 'repuesto o texto del ítem' : 'servicio'),
     !(cant >= 1) && 'cantidad (mínimo 1)',
     faltaMoneda && 'moneda del costo',
     faltaCosto && 'costo unitario',
@@ -159,7 +162,7 @@ export function AgregarItemModal({ moneda, tipoCambio = null, onAgregar, onCerra
   }
 
   function elegirReferencia(r: Referencia) {
-    if (r.estado !== 'UTIL') return
+    if (r.estado !== 'UTIL' && r.estado !== 'CONVERTIDO') return
     setReferencia(r)
     setItem(null)
     setTexto(textoReferencia(r))
@@ -297,6 +300,7 @@ export function AgregarItemModal({ moneda, tipoCambio = null, onAgregar, onCerra
       ...(hayMargen ? { margenPorcentaje: marg, margenMinimo: regla?.minimo } : {}),
       precioUnitario: precioVenta,
       subtotal: calcularSubtotal(cant, precioVenta),
+      ...(referencia ? { idSourcing: referencia.idSourcing } : {}),
     })
     if (seguir) {
       setAgregados((n) => n + 1)
@@ -314,7 +318,7 @@ export function AgregarItemModal({ moneda, tipoCambio = null, onAgregar, onCerra
   return (
     <Ventana
       titulo="Agregar ítem"
-      descripcion="Elige un repuesto, un servicio o una referencia útil. El precio se calcula con el costo y el margen, y también se puede escribir."
+      descripcion="Elige un repuesto o un servicio. También puedes usar una referencia ya encontrada. El precio se calcula con el costo y el margen, y también se puede escribir."
       onCerrar={onCerrar}
       ancho="max-w-xl"
       cerrable={!creandoRepuesto}
@@ -335,8 +339,8 @@ export function AgregarItemModal({ moneda, tipoCambio = null, onAgregar, onCerra
             {agregados === 1 ? 'Se agregó 1 ítem a la cotización.' : `Se agregaron ${agregados} ítems a la cotización.`} Puedes añadir otro.
           </p>
         )}
-        <div role="tablist" aria-label="Tipo de ítem" className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
-          {(['producto', 'servicio', 'historial'] as const).map((t) => (
+        <div role="tablist" aria-label="Tipo de ítem" className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+          {(['producto', 'servicio'] as const).map((t) => (
             <button
               key={t}
               type="button"
@@ -347,38 +351,55 @@ export function AgregarItemModal({ moneda, tipoCambio = null, onAgregar, onCerra
                 tipo === t ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              {t === 'producto' ? 'Producto' : t === 'servicio' ? 'Servicio' : 'Historial'}
+              {t === 'producto' ? 'Producto' : 'Servicio'}
             </button>
           ))}
         </div>
         <div role="tabpanel">
-          {tipo === 'historial' ? (
-            <HistorialItemPanel onElegir={elegirReferencia} />
-          ) : (
-            <>
-              <span className="mb-1 block text-sm font-medium text-foreground">{tipo === 'producto' ? 'Repuesto' : 'Servicio'}<MarcaObligatorio /></span>
-              <SelectorCatalogoItem
-                key={tipo}
-                tipo={tipo}
-                valor={texto}
-                seleccionado={item !== null}
-                onEscribir={(t) => { setTexto(t); setItem(null); setPrecioEstandar(null) }}
-                onSeleccionar={elegirItem}
-                ariaLabel={tipo === 'producto' ? 'Repuesto del ítem nuevo' : 'Servicio del ítem nuevo'}
-                invalido={err(!item && !libre)}
-              />
-              {err(!item && !libre) && <p className="mt-1 text-xs text-destructive">Busca y elige {tipo === 'producto' ? 'un repuesto o escribe el texto del ítem' : 'un servicio'} de la lista.</p>}
-              {editarCatalogos && !item && tipo === 'producto' && (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  ¿No está en el catálogo?{' '}
-                  <button type="button" onClick={() => setCreandoRepuesto(true)} className="font-medium text-accent underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                    + Crear repuesto nuevo
-                  </button>
-                </p>
+          <>
+            <span className="mb-1 block text-sm font-medium text-foreground">{tipo === 'producto' ? 'Repuesto' : 'Servicio'}<MarcaObligatorio /></span>
+            {tipo === 'producto' && <p className="mb-1 text-xs font-medium text-muted-foreground">Catálogo</p>}
+            <SelectorCatalogoItem
+              key={tipo}
+              tipo={tipo}
+              valor={texto}
+              seleccionado={item !== null}
+              onEscribir={(t) => { setTexto(t); setItem(null); setReferencia(null); setPrecioEstandar(null) }}
+              onSeleccionar={elegirItem}
+              ariaLabel={tipo === 'producto' ? 'Repuesto del ítem nuevo' : 'Servicio del ítem nuevo'}
+              invalido={err(!item && !libre)}
+            />
+            {err(!item && !libre) && <p className="mt-1 text-xs text-destructive">Busca y elige {tipo === 'producto' ? 'un repuesto o escribe el texto del ítem' : 'un servicio'} de la lista.</p>}
+            {editarCatalogos && !item && tipo === 'producto' && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                ¿No está en el catálogo?{' '}
+                <button type="button" onClick={() => setCreandoRepuesto(true)} className="font-medium text-accent underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  + Crear repuesto nuevo
+                </button>
+              </p>
+            )}
+            {tipo === 'producto' && (
+              <div className="mt-3">
+                <ReferenciasEncontradasPanel
+                  consulta={texto}
+                  puedeBuscar={puedeCrear('busqueda')}
+                  onElegir={elegirReferencia}
+                  onSinResultados={() => costoRef.current?.focus()}
+                />
+              </div>
+            )}
+          </>
+          {referencia && (
+            <p className="mt-2 text-sm text-foreground">
+              {texto}
+              {referencia.marcadaUtilDesde === 'COTIZACION' && (
+                <span className="ml-2 text-xs text-muted-foreground">Útil desde la cotización</span>
               )}
-            </>
+              {referencia.marcadaUtilDesde === 'BUSQUEDA' && (
+                <span className="ml-2 text-xs text-muted-foreground">Útil desde Búsqueda</span>
+              )}
+            </p>
           )}
-          {referencia && <p className="mt-2 text-sm text-foreground">{texto}</p>}
         </div>
         {pideMoneda && (
           <div className="grid gap-4 sm:grid-cols-2">
@@ -408,7 +429,7 @@ export function AgregarItemModal({ moneda, tipoCambio = null, onAgregar, onCerra
           </label>
           <label className="block text-sm font-medium text-foreground">
             Costo unitario{servicioConPrecio ? '' : <MarcaObligatorio />}
-            <input type="number" min={0} step="0.01" inputMode="decimal" placeholder="0.00" value={costo} onChange={(e) => alCambiarCosto(e.target.value)}
+            <input ref={costoRef} id="costo-unitario-item" type="number" min={0} step="0.01" inputMode="decimal" placeholder="0.00" value={costo} onChange={(e) => alCambiarCosto(e.target.value)}
               aria-invalid={err(faltaCosto)} className={`${inputFormClass} mt-1 text-right tabular-nums`} />
             {err(faltaCosto) && <span className="mt-1 block text-xs font-normal text-destructive">Debe ser mayor a 0.</span>}
           </label>

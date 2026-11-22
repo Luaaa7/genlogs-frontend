@@ -11,6 +11,8 @@ import { RUTA_TIPO_CAMBIO, type TipoCambioDia } from "./contratos/parametros"
 export type EstadoReferencia = "CAPTURADO" | "UTIL" | "DESCARTADO" | "CONVERTIDO"
 export type MetodoBusqueda = "NUMERO_PARTE" | "GTIN" | "PALABRAS" | "IMAGEN" | "URL"
 export type Origen = "NACIONAL" | "IMPORTADO"
+/** Dónde se marcó ÚTIL. Nombre del campo en ReferenciaResponse. */
+export type OrigenMarcaUtil = "BUSQUEDA" | "COTIZACION"
 
 export interface Referencia {
   idSourcing: number
@@ -28,6 +30,25 @@ export interface Referencia {
   estado: EstadoReferencia
   editadoAMano: boolean
   creadoEn: string
+  marcadaUtilDesde?: OrigenMarcaUtil | null
+  marcadaUtilEn?: string | null
+  marcadaUtilPor?: string | null
+}
+
+/** Cuerpo de POST /sourcing/{id}/elegir-desde-cotizacion. Vacío si la referencia no tiene ítem de solicitud. */
+export interface ElegirDesdeCotizacionRequest {
+  idSolicitudItem?: number
+}
+
+export interface HistorialFiltro {
+  numeroParte?: string
+  idSolicitudItem?: number
+  /** Texto libre: número de parte o nombre. */
+  q?: string
+  /** Excluye DESCARTADO. */
+  soloElegibles?: boolean
+  /** Tope de filas. El backend usa 20 si no se manda. */
+  limite?: number
 }
 
 export interface BuscarReferenciasRequest {
@@ -85,9 +106,25 @@ export const sourcingApi = {
     return data
   },
 
-  async historial(filtro: { numeroParte?: string; idSolicitudItem?: number }): Promise<Referencia[]> {
+  async historial(filtro: HistorialFiltro, signal?: AbortSignal): Promise<Referencia[]> {
     if (usarMock) return sourcingMock.historial(filtro)
-    const { data } = await axiosClient.get<Referencia[]>("/sourcing/historial", { params: filtro })
+    const params: HistorialFiltro = {}
+    if (filtro.numeroParte != null && filtro.numeroParte !== "") params.numeroParte = filtro.numeroParte
+    if (filtro.idSolicitudItem != null) params.idSolicitudItem = filtro.idSolicitudItem
+    if (filtro.q != null && filtro.q !== "") params.q = filtro.q
+    if (filtro.soloElegibles != null) params.soloElegibles = filtro.soloElegibles
+    if (filtro.limite != null) params.limite = filtro.limite
+    const config: { params: HistorialFiltro; signal?: AbortSignal } = { params }
+    if (signal) config.signal = signal
+    const { data } = await axiosClient.get<Referencia[]>("/sourcing/historial", config)
+    return data
+  },
+
+  /** Marca la referencia elegida desde la cotización. No toca las demás filas. */
+  async elegirDesdeCotizacion(idSourcing: number, body: ElegirDesdeCotizacionRequest = {}): Promise<Referencia> {
+    const enviado = body.idSolicitudItem != null ? { idSolicitudItem: body.idSolicitudItem } : {}
+    if (usarMock) return sourcingMock.elegirDesdeCotizacion(idSourcing, enviado)
+    const { data } = await axiosClient.post<Referencia>(`/sourcing/${idSourcing}/elegir-desde-cotizacion`, enviado)
     return data
   },
 

@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { beforeEach, describe, it, expect, vi } from 'vitest'
+import axios from 'axios'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 
 vi.mock('@/features/configuracion/hooks/useMargenes', () => ({
   useEscalaMargenes: () => ({
@@ -12,19 +13,29 @@ vi.mock('@/features/configuracion/hooks/useMargenes', () => ({
     },
   }),
 }))
-vi.mock('@/lib/permisos', () => ({ usePermisos: () => ({ editarCatalogos: false }) }))
+const sesion = vi.hoisted(() => ({ rol: null as string | null }))
+vi.mock('@/lib/permisos', () => ({
+  usePermisos: () => ({
+    editarCatalogos: false,
+    rol: sesion.rol,
+    puedeCrear: (modulo: string) => modulo === 'busqueda' && sesion.rol === 'ASISTENTE_LOGISTICO',
+  }),
+}))
 const tipoCambioHook = vi.hoisted(() => vi.fn(() => ({ data: { valor: 9 } })))
 vi.mock('@/features/tipo-cambio/hooks/useTipoCambio', () => ({
   useTipoCambio: () => tipoCambioHook(),
 }))
 const historial = vi.hoisted(() => vi.fn())
-vi.mock('@/api/sourcingApi', () => ({ sourcingApi: { historial } }))
+const elegirDesdeCotizacion = vi.hoisted(() => vi.fn())
+const buscar = vi.hoisted(() => vi.fn())
+vi.mock('@/api/sourcingApi', () => ({ sourcingApi: { historial, elegirDesdeCotizacion, buscar } }))
 vi.mock('./SelectorCatalogoItem', () => ({
   SelectorCatalogoItem: ({ onSeleccionar, onEscribir, tipo }: { onSeleccionar: (i: unknown) => void; onEscribir: (t: string) => void; tipo?: string }) => (
     <div>
       <span>buscando: {tipo}</span>
       <button type="button" onClick={() => onSeleccionar({ tipo: 'producto', id: 9, nombre: 'Filtro', codigo: 'F-1' })}>elegir filtro</button>
       <button type="button" onClick={() => onEscribir('Manguera suelta')}>escribir texto libre</button>
+      <button type="button" onClick={() => onEscribir('1R-0750')}>escribir parte</button>
       <button type="button" onClick={() => onSeleccionar({ tipo: 'servicio', id: 4, nombre: 'Mantenimiento', codigo: 'S-1' })}>elegir servicio</button>
       <button type="button" onClick={() => onSeleccionar({ tipo: 'servicio', id: 5, nombre: 'Traslado', codigo: 'S-2', costo: 100, precioReferencial: 125 })}>elegir servicio con precio</button>
       <button type="button" onClick={() => onSeleccionar({ tipo: 'servicio', id: 6, nombre: 'PLC', codigo: 'S-3', precioReferencial: 500 })}>elegir servicio sin costo</button>
@@ -35,6 +46,14 @@ vi.mock('./SelectorCatalogoItem', () => ({
 import { AgregarItemModal } from './AgregarItemModal'
 
 describe('AgregarItemModal: margen según la escala', () => {
+  beforeEach(() => {
+    sesion.rol = null
+    historial.mockReset()
+    historial.mockResolvedValue([])
+    elegirDesdeCotizacion.mockReset()
+    buscar.mockReset()
+  })
+
   it('sugiere el margen por costo, calcula el precio y avisa si baja del mínimo', () => {
     const onAgregar = vi.fn()
     render(<AgregarItemModal moneda="PEN" onAgregar={onAgregar} onCerrar={() => {}} />)
@@ -151,26 +170,32 @@ describe('AgregarItemModal: margen según la escala', () => {
     expect(costo().value).toBe('')
   })
 
-  it('convierte un historial útil en dólares con el tipo de cambio recibido, no con el del día', async () => {
+  it('convierte una referencia en dólares con el tipo de cambio recibido, no con el del día', async () => {
+    const util = referencia({ estado: 'UTIL', precioRef: 100, codigoMoneda: 'USD', titulo: 'Filtro de aceite' })
     historial.mockResolvedValue([
-      referencia({ estado: 'UTIL', precioRef: 100, codigoMoneda: 'USD', titulo: 'Filtro de aceite' }),
-      referencia({ idSourcing: 2, estado: 'CAPTURADO', titulo: 'Capturada', precioRef: 10, urlReferencia: null }),
+      util,
+      referencia({ idSourcing: 2, estado: 'CAPTURADO', titulo: 'Capturada', precioRef: 10, codigoMoneda: 'PEN', urlReferencia: null }),
     ])
+    elegirDesdeCotizacion.mockResolvedValue(util)
     const onAgregar = vi.fn()
     render(<AgregarItemModal moneda="PEN" tipoCambio={4} onAgregar={onAgregar} onCerrar={() => {}} />)
-    fireEvent.click(screen.getByRole('tab', { name: 'Historial' }))
-    fireEvent.change(screen.getByLabelText(/número de parte/i), { target: { value: '1R-0750' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Buscar en el historial' }))
-    expect(historial).toHaveBeenCalledWith({ numeroParte: '1R-0750' })
+    fireEvent.click(screen.getByRole('button', { name: 'escribir parte' }))
     expect(await screen.findByText('Capturada')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Capturada' })).toBeNull()
+    await waitFor(() => expect(historial).toHaveBeenCalledWith(
+      { q: '1R-0750', soloElegibles: true, limite: 20 },
+      expect.anything(),
+    ))
+    expect(buscar).not.toHaveBeenCalled()
     expect(screen.getByRole('link', { name: /ver en la tienda/i }).getAttribute('href')).toBe('https://tienda.example/item')
-    fireEvent.click(await screen.findByRole('button', { name: 'Filtro de aceite' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Filtro de aceite' }))
 
-    expect((screen.getByLabelText(/costo unitario/i) as HTMLInputElement).value).toBe('400')
+    await waitFor(() => expect((screen.getByLabelText(/costo unitario/i) as HTMLInputElement).value).toBe('400'))
     expect(screen.getAllByText(/400\.00/).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/533\.33/).length).toBeGreaterThan(0)
     expect(tipoCambioHook).not.toHaveBeenCalled()
+    expect(elegirDesdeCotizacion).not.toHaveBeenCalled()
+    expect((await screen.findByText('Capturada')).closest('li')?.textContent).toMatch(/Capturado/)
 
     fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
     const linea = onAgregar.mock.calls[0][0] as Record<string, unknown>
@@ -182,6 +207,7 @@ describe('AgregarItemModal: margen según la escala', () => {
     })
     expect(linea.idProducto).toBeUndefined()
     expect(linea.idServicio).toBeUndefined()
+    expect(linea.idSourcing).toBe(1)
     expect(linea.fuente).toBeUndefined()
     expect(linea.urlReferencia).toBeUndefined()
     expect(linea.urlImagen).toBeUndefined()
@@ -189,15 +215,14 @@ describe('AgregarItemModal: margen según la escala', () => {
   })
 
   it('con precioRef null no agrega ni muestra 0 hasta tener costo y moneda', async () => {
-    historial.mockResolvedValue([
-      referencia({ estado: 'UTIL', precioRef: null, costoPuestoLima: null, titulo: 'Sin precio', urlReferencia: null }),
-    ])
+    const sinPrecio = referencia({ estado: 'UTIL', precioRef: null, costoPuestoLima: null, titulo: 'Sin precio', urlReferencia: null })
+    historial.mockResolvedValue([sinPrecio])
+    elegirDesdeCotizacion.mockResolvedValue(sinPrecio)
     const onAgregar = vi.fn()
     render(<AgregarItemModal moneda="PEN" tipoCambio={4} onAgregar={onAgregar} onCerrar={() => {}} />)
-    fireEvent.click(screen.getByRole('tab', { name: 'Historial' }))
-    fireEvent.change(screen.getByLabelText(/número de parte/i), { target: { value: '1R-0750' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Buscar en el historial' }))
+    fireEvent.click(screen.getByRole('button', { name: 'escribir parte' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Sin precio' }))
+    expect(elegirDesdeCotizacion).not.toHaveBeenCalled()
 
     expect((screen.getByLabelText(/costo unitario/i) as HTMLInputElement).value).toBe('')
     expect(screen.queryByText('0')).toBeNull()
@@ -210,7 +235,8 @@ describe('AgregarItemModal: margen según la escala', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
     expect(onAgregar).not.toHaveBeenCalled()
 
-    fireEvent.change(screen.getByLabelText(/moneda del costo/i), { target: { value: 'USD' } })
+    const monedaRef = screen.getAllByLabelText(/moneda del costo/i).find((nodo) => (nodo as HTMLSelectElement).value === '')
+    fireEvent.change(monedaRef as HTMLSelectElement, { target: { value: 'USD' } })
     expect((screen.getByLabelText(/costo unitario/i) as HTMLInputElement).value).toBe('320')
     fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
     expect(onAgregar).toHaveBeenCalledWith(expect.objectContaining({ costoUnitario: 320, producto: 'Sin precio · CAT · 1R-0750' }))
@@ -262,6 +288,8 @@ describe('AgregarItemModal: margen según la escala', () => {
     })
     expect(linea.idProducto).toBeUndefined()
     expect(linea.idServicio).toBeUndefined()
+    expect(linea.idSourcing).toBeUndefined()
+    expect(Object.prototype.hasOwnProperty.call(linea, 'idSourcing')).toBe(false)
     expect(linea.fuente).toBeUndefined()
     expect(linea.urlReferencia).toBeUndefined()
   })
@@ -291,6 +319,144 @@ describe('AgregarItemModal: margen según la escala', () => {
     fireEvent.change(screen.getByLabelText(/costo en la cotización/i), { target: { value: '80' } })
     fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
     expect(onAgregar).toHaveBeenCalledWith(expect.objectContaining({ producto: 'Manguera suelta', costoUnitario: 80, idProducto: undefined }))
+    expect((onAgregar.mock.calls[0][0] as { idSourcing?: number }).idSourcing).toBeUndefined()
+  })
+
+  it('un CAPTURADO llama al POST una sola vez y el costo puesto en Lima llena el ítem', async () => {
+    sesion.rol = 'ASISTENTE_LOGISTICO'
+    const capturada = referencia({ idSourcing: 8, estado: 'CAPTURADO', titulo: 'Capturada', precioRef: 100, codigoMoneda: 'USD', costoPuestoLima: 80, urlReferencia: null })
+    const otra = referencia({ idSourcing: 9, estado: 'CAPTURADO', titulo: 'Otra pieza', precioRef: 5, codigoMoneda: 'PEN', urlReferencia: null })
+    historial.mockResolvedValue([capturada, otra])
+    elegirDesdeCotizacion.mockResolvedValue({ ...capturada, estado: 'UTIL', marcadaUtilDesde: 'COTIZACION' })
+    const onAgregar = vi.fn()
+    render(<AgregarItemModal moneda="PEN" tipoCambio={4} onAgregar={onAgregar} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'escribir parte' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Capturada' }))
+
+    expect(await screen.findByText('Útil · desde la cotización')).toBeTruthy()
+    expect(elegirDesdeCotizacion).toHaveBeenCalledTimes(1)
+    expect(elegirDesdeCotizacion).toHaveBeenCalledWith(8, {})
+    expect(screen.getByRole('button', { name: 'Otra pieza' }).textContent).not.toMatch(/Marcando/)
+    expect((screen.getByLabelText(/costo unitario/i) as HTMLInputElement).value).toBe('80')
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
+    expect(onAgregar).toHaveBeenCalledWith(expect.objectContaining({ idSourcing: 8, costoUnitario: 80, producto: 'Capturada · CAT · 1R-0750' }))
+  })
+
+  it('no muestra una referencia descartada', async () => {
+    sesion.rol = 'ASISTENTE_LOGISTICO'
+    historial.mockResolvedValue([
+      referencia({ idSourcing: 3, estado: 'DESCARTADO', titulo: 'Descartada en origen', urlReferencia: null }),
+      referencia({ idSourcing: 4, estado: 'CAPTURADO', titulo: 'Sigue capturada', precioRef: 10, codigoMoneda: 'PEN', urlReferencia: null }),
+    ])
+    render(<AgregarItemModal moneda="PEN" onAgregar={() => {}} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'escribir parte' }))
+    expect(await screen.findByRole('button', { name: 'Sigue capturada' })).toBeTruthy()
+    expect(screen.queryByText('Descartada en origen')).toBeNull()
+    expect(elegirDesdeCotizacion).not.toHaveBeenCalled()
+  })
+
+  it('si elegir falla, muestra el mensaje y no agrega el ítem', async () => {
+    sesion.rol = 'ASISTENTE_LOGISTICO'
+    historial.mockResolvedValue([
+      referencia({ idSourcing: 8, estado: 'CAPTURADO', titulo: 'Capturada', urlReferencia: null }),
+    ])
+    elegirDesdeCotizacion.mockRejectedValue(new axios.AxiosError('no', '403', undefined, undefined, {
+      status: 403, data: { message: 'No tienes permiso para elegir esta referencia.' }, headers: {}, config: { headers: {} },
+    } as never))
+    const onAgregar = vi.fn()
+    render(<AgregarItemModal moneda="PEN" onAgregar={onAgregar} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'escribir parte' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Capturada' }))
+
+    expect((await screen.findByRole('alert')).textContent).toMatch(/No tienes permiso para elegir esta referencia/)
+    expect(screen.queryByText('Útil · desde la cotización')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
+    expect(onAgregar).not.toHaveBeenCalled()
+  })
+
+  it('Buscar en fuentes solo corre al hacer clic y avisa reutilización y fuentes caídas', async () => {
+    sesion.rol = 'ASISTENTE_LOGISTICO'
+    historial.mockResolvedValue([])
+    buscar.mockResolvedValue({
+      reutilizada: true,
+      fuentesConsultadas: ['AMAZON'],
+      fuentesConError: ['EBAY', 'ALIEXPRESS'],
+      sugerirUrl: false,
+      referencias: [referencia({ idSourcing: 12, estado: 'CAPTURADO', titulo: 'Llegó de Amazon', precioRef: 20, codigoMoneda: 'USD', urlReferencia: null })],
+    })
+    render(<AgregarItemModal moneda="PEN" onAgregar={() => {}} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'escribir parte' }))
+    await screen.findByText(/No hay referencias guardadas/i)
+    expect(buscar).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar en fuentes' }))
+    expect(buscar).toHaveBeenCalledWith({ numeroParte: '1R-0750', forzar: false })
+    expect(await screen.findByText(/Se reutilizó una búsqueda reciente/)).toBeTruthy()
+    expect(screen.getByText(/No respondieron: EBAY, ALIEXPRESS/)).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'Llegó de Amazon' })).toBeTruthy()
+  })
+
+  it('sin resultados de fuentes deja el foco en el costo', async () => {
+    sesion.rol = 'ASISTENTE_LOGISTICO'
+    buscar.mockResolvedValue({
+      reutilizada: false, fuentesConsultadas: ['AMAZON'], fuentesConError: [], sugerirUrl: false, referencias: [],
+    })
+    render(<AgregarItemModal moneda="PEN" onAgregar={() => {}} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'escribir parte' }))
+    await screen.findByText(/No hay referencias guardadas/i)
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar en fuentes' }))
+    expect(await screen.findByText(/Sin resultados: escribe costo y moneda como ítem libre/)).toBeTruthy()
+    expect(document.activeElement).toBe(screen.getByLabelText(/costo unitario/i))
+  })
+
+  it('el Jefe agrega un Útil sin POST y no puede elegir un Capturado', async () => {
+    sesion.rol = 'JEFE_ADMINISTRATIVO'
+    historial.mockResolvedValue([
+      referencia({ estado: 'UTIL', marcadaUtilDesde: 'BUSQUEDA', titulo: 'Filtro de aceite', precioRef: 100, codigoMoneda: 'USD', urlReferencia: null }),
+      referencia({ idSourcing: 2, estado: 'CAPTURADO', titulo: 'Capturada', precioRef: 10, codigoMoneda: 'PEN', urlReferencia: null }),
+    ])
+    const onAgregar = vi.fn()
+    render(<AgregarItemModal moneda="PEN" tipoCambio={4} onAgregar={onAgregar} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'escribir parte' }))
+    expect(await screen.findByRole('button', { name: 'Filtro de aceite' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Buscar en fuentes' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Capturada' })).toBeNull()
+    expect(screen.getByText('Solo el asistente logístico puede marcarla desde la cotización')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Filtro de aceite' }))
+    expect(elegirDesdeCotizacion).not.toHaveBeenCalled()
+    expect((screen.getByLabelText(/costo unitario/i) as HTMLInputElement).value).toBe('400')
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
+    expect(onAgregar).toHaveBeenCalledWith(expect.objectContaining({ idSourcing: 1, costoUnitario: 400 }))
+  })
+
+  it('un Convertido entra al formulario sin llamar al POST', async () => {
+    historial.mockResolvedValue([
+      referencia({ idSourcing: 6, estado: 'CONVERTIDO', titulo: 'Ya convertida', precioRef: 50, codigoMoneda: 'PEN', urlReferencia: null }),
+    ])
+    const onAgregar = vi.fn()
+    render(<AgregarItemModal moneda="PEN" onAgregar={onAgregar} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'escribir parte' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Ya convertida' }))
+    expect(elegirDesdeCotizacion).not.toHaveBeenCalled()
+    expect(screen.queryByText('Ya está en el catálogo')).toBeNull()
+    expect((screen.getByLabelText(/costo unitario/i) as HTMLInputElement).value).toBe('50')
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
+    expect(onAgregar).toHaveBeenCalledWith(expect.objectContaining({ idSourcing: 6, costoUnitario: 50, producto: 'Ya convertida · CAT · 1R-0750' }))
+  })
+
+  it('con un 404 el modal sigue con catálogo y texto libre', async () => {
+    historial.mockRejectedValue(new axios.AxiosError('no', '404', undefined, undefined, {
+      status: 404, data: {}, headers: {}, config: { headers: {} },
+    } as never))
+    const onAgregar = vi.fn()
+    render(<AgregarItemModal moneda="PEN" onAgregar={onAgregar} onCerrar={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'escribir parte' }))
+    expect(await screen.findByText(/no está disponible/i)).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Referencias ya encontradas' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'escribir texto libre' }))
+    fireEvent.change(screen.getByLabelText(/costo unitario/i), { target: { value: '60' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
+    expect(onAgregar).toHaveBeenCalledWith(expect.objectContaining({ producto: 'Manguera suelta', costoUnitario: 60 }))
+    expect((onAgregar.mock.calls[0][0] as { idSourcing?: number }).idSourcing).toBeUndefined()
   })
 })
 

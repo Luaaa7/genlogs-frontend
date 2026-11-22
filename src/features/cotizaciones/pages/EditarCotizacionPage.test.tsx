@@ -139,10 +139,24 @@ describe('editar un borrador', () => {
     expect(cuerpo.detalles[0].producto).toBe('Filtro CAT')
     expect(cuerpo.detalles[0].margenPorcentaje).toBe(0)
     expect(cuerpo.detalles[0].costoUnitario).toBeUndefined()
+    expect(cuerpo.detalles[0].idSourcing).toBeUndefined()
     expect(cuerpo.tipoCambio).toBeUndefined()
     expect(cuerpo.fechaTipoCambio).toBeUndefined()
     expect(await screen.findByText('Cotización actualizada. Vuelve a solicitar la aprobación.')).toBeTruthy()
     expect(screen.getByText('Volvió al detalle')).toBeTruthy()
+  })
+
+  it('si la línea trae idSourcing, el PUT lo conserva', async () => {
+    lineas = [{ ...lineas[0], idSourcing: 15 }]
+    pintar()
+    expect(await screen.findByDisplayValue('Filtro CAT')).toBeTruthy()
+    const revisar = screen.getByRole('button', { name: 'Revisar y guardar' }) as HTMLButtonElement
+    await waitFor(() => expect(revisar.disabled).toBe(false))
+    fireEvent.click(revisar)
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar y guardar' }))
+    await waitFor(() => expect(http.put).toHaveBeenCalledTimes(1))
+    const cuerpo = http.put.mock.calls[0][1] as { detalles: { idSourcing?: number }[] }
+    expect(cuerpo.detalles[0].idSourcing).toBe(15)
   })
 
   it('si el borrador no trae tipo de cambio, el PUT no lo inventa ni pide el del día', async () => {

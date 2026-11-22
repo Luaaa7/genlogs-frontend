@@ -11,6 +11,8 @@ export const cotizacionDetalleSchema = z
     servicio: z.string().optional(),
     idProducto: z.number().optional(),
     idServicio: z.number().optional(),
+    /** Referencia de sourcing. Si no viene, la línea se guarda como antes. */
+    idSourcing: z.number().optional(),
     idUnidadMedida: z.number().optional(),
     /** Repuesto o servicio: la línea solo busca en su propio catálogo (no se envía al backend). */
     tipoItem: z.enum(['producto', 'servicio']).optional(),

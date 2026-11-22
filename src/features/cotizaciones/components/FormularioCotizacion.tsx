@@ -73,7 +73,14 @@ export function FormularioCotizacion({ modo, valoresIniciales, monedaBloqueada =
   ].filter(Boolean) as string[]
 
   function cuerpoDe(data: CrearCotizacionFormData): UpdateCotizacionRequest {
-    const cuerpo: UpdateCotizacionRequest = { ...data }
+    const cuerpo: UpdateCotizacionRequest = {
+      ...data,
+      detalles: data.detalles.map((detalle) => {
+        const linea = { ...detalle }
+        if (typeof linea.idSourcing !== 'number') delete linea.idSourcing
+        return linea
+      }),
+    }
     delete cuerpo.tipoCambio
     delete cuerpo.fechaTipoCambio
     return cuerpo

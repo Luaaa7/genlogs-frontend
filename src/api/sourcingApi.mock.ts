@@ -1,7 +1,9 @@
 import type {
   BuscarReferenciasRequest,
   DatosUrl,
+  ElegirDesdeCotizacionRequest,
   GuardarUrlRequest,
+  HistorialFiltro,
   Referencia,
   ResultadoBusqueda,
 } from "./sourcingApi"
@@ -26,6 +28,14 @@ let referencias: Referencia[] = [
     precioRef: 95, codigoMoneda: "PEN", costoPuestoLima: null,
     urlReferencia: "https://articulo.mercadolibre.com.pe/ejemplo-2", urlImagenRef: null,
     estado: "UTIL", editadoAMano: false, creadoEn: new Date().toISOString(),
+    marcadaUtilDesde: "BUSQUEDA",
+  },
+  {
+    idSourcing: 3, idSolicitudItem: null, fuente: "AMAZON", metodo: "NUMERO_PARTE",
+    titulo: "Filtro descartado 1R-0750", marca: "Caterpillar", numeroParte: "1R-0750",
+    precioRef: 10, codigoMoneda: "USD", costoPuestoLima: null,
+    urlReferencia: null, urlImagenRef: null,
+    estado: "DESCARTADO", editadoAMano: false, creadoEn: new Date().toISOString(),
   },
 ]
 
@@ -45,11 +55,40 @@ export const sourcingMock = {
     })
   },
 
-  historial(filtro: { numeroParte?: string; idSolicitudItem?: number }): Promise<Referencia[]> {
-    const lista = filtro.idSolicitudItem
-      ? referencias.filter((r) => r.idSolicitudItem === filtro.idSolicitudItem)
-      : referencias.filter((r) => mismoNumero(r.numeroParte, filtro.numeroParte ?? ""))
-    return esperar(lista)
+  historial(filtro: HistorialFiltro): Promise<Referencia[]> {
+    let lista = referencias
+    if (filtro.idSolicitudItem != null) {
+      lista = lista.filter((r) => r.idSolicitudItem === filtro.idSolicitudItem)
+    } else if (filtro.numeroParte) {
+      lista = lista.filter((r) => mismoNumero(r.numeroParte, filtro.numeroParte ?? ""))
+    }
+    const q = filtro.q?.trim().toLowerCase()
+    if (q) {
+      lista = lista.filter((r) =>
+        [r.titulo, r.numeroParte, r.marca, r.fuente].some((v) => (v ?? "").toLowerCase().includes(q)),
+      )
+    }
+    if (filtro.soloElegibles) lista = lista.filter((r) => r.estado !== "DESCARTADO")
+    return esperar(lista.slice(0, filtro.limite ?? 20))
+  },
+
+  /** Igual que el POST: solo la fila elegida pasa a ÚTIL con origen COTIZACION. */
+  elegirDesdeCotizacion(idSourcing: number, body: ElegirDesdeCotizacionRequest = {}): Promise<Referencia> {
+    const ref = referencias.find((r) => r.idSourcing === idSourcing)
+    if (!ref) return Promise.reject(new Error(`No existe la referencia ${idSourcing}`))
+    if (ref.estado === "DESCARTADO") {
+      return Promise.reject(new Error("No se puede elegir una referencia descartada"))
+    }
+    if (ref.estado === "CAPTURADO" || ref.estado === "UTIL") {
+      ref.estado = "UTIL"
+      ref.marcadaUtilDesde = "COTIZACION"
+      ref.marcadaUtilEn = new Date().toISOString()
+      ref.marcadaUtilPor = "asistente"
+    }
+    if (body.idSolicitudItem != null && ref.idSolicitudItem == null) {
+      ref.idSolicitudItem = body.idSolicitudItem
+    }
+    return esperar(ref)
   },
 
   cambiarEstado(idSourcing: number, estado: "UTIL" | "DESCARTADO"): Promise<Referencia> {
