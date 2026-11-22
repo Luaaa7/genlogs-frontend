@@ -29,3 +29,28 @@ export async function cambiarBloqueoUsuario(
   )
   return response.data
 }
+
+/** Acceso del portal que espera la revisión del Jefe Administrativo (BPMN 8.4). */
+export interface AccesoPendiente {
+  idUsuario: number
+  nombres: string
+  correo: string
+  empresa: string | null
+  ruc: string | null
+  fechaSolicitud: string | null
+  /** REGISTRO: se registró con el RUC de una empresa cliente. GOOGLE: entró con Google y dio ese RUC. */
+  origen: "REGISTRO" | "GOOGLE"
+}
+
+export async function listarAccesosPendientes(): Promise<AccesoPendiente[]> {
+  const response = await axiosClient.get<AccesoPendiente[]>("/usuarios/pendientes-portal")
+  return response.data
+}
+
+export async function activarAccesoPendiente(idUsuario: number): Promise<void> {
+  await axiosClient.patch(`/usuarios/${idUsuario}/activar`)
+}
+
+export async function rechazarAccesoPendiente(idUsuario: number): Promise<void> {
+  await axiosClient.patch(`/usuarios/${idUsuario}/rechazar`)
+}

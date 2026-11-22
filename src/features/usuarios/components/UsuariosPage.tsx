@@ -4,6 +4,7 @@ import { UsuarioFormModal } from "./UsuarioFormModal"
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
 import type { UsuarioResponse } from "@/types/usuario"
 import { useUsuarios } from "../hooks/useUsuarios"
+import { AccesosPendientesPortal } from "./AccesosPendientesPortal"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { TableSkeletonRows } from "@/components/ui/TableSkeletonRows"
 import { EstadoBadge } from "@/components/ui/EstadoBadge"
@@ -70,6 +71,8 @@ export function UsuariosPage() {
           </>
         }
       />
+
+      <AccesosPendientesPortal />
 
       {(error || accionError) && (
         <ErrorBanner message={error || accionError || ""} onRetry={error ? () => void recargar() : undefined} />

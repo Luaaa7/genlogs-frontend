@@ -10,7 +10,7 @@ describe("sesión del cliente (FE-A)", () => {
   it("abre la sesión del cliente con su propio token", () => {
     expect(iniciarSesionCliente("tok", "Minera Andina")).toBe(true)
     expect(localStorage.getItem("cliente_access_token")).toBe("tok")
-    expect(leerSesionCliente()).toEqual({ nombre: "Minera Andina", rol: "CLIENTE" })
+    expect(leerSesionCliente()).toEqual({ nombre: "Minera Andina", rol: "CLIENTE", perfilCompleto: true })
     expect(puedeEntrarAlPortal()).toBe(true)
   })
 
