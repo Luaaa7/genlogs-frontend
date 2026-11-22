@@ -4,7 +4,7 @@
 
 | Pieza | Archivo | Detalle |
 | --- | --- | --- |
-| Manifiesto | `public/manifest.webmanifest` | `name` «GenLogs - Sistema de Gestión», `short_name` «GenLogs», `display: standalone`, `start_url: /?source=pwa`, `scope: /`, `orientation: any`, `theme_color #1E3A5F`, `background_color #F9FAFB`, atajos a /login y /portal/ingreso |
+| Manifiesto | `public/manifest.json` (enlazado en `index.html`) y `public/manifest.webmanifest` (copia idéntica para `twa-manifest.json`) | `name` «GenLogs - Sistema de Gestión», `short_name` «GenLogs», `display: standalone`, `start_url: /?source=pwa`, `scope: /`, `orientation: any`, `theme_color #1E3A5F`, `background_color #F9FAFB`, atajos a /login y /portal/ingreso |
 | Íconos | `public/icons/` | 192 y 512 (`any`), 512 `maskable` (logo dentro de la zona segura) y `apple-touch-icon` 180, generados desde `public/LOGO.png` |
 | Service worker | `public/sw.js` | Ver la sección 2 |
 | Registro | `src/lib/registrarServiceWorker.ts` (llamado en `src/main.tsx`) | Solo en producción (`import.meta.env.PROD`), con `updateViaCache: "none"` |
@@ -23,7 +23,8 @@ No se usó `vite-plugin-pwa` porque todavía no declara compatibilidad con Vite 
 ## 3. Render
 
 - El sitio es un Static Site: los archivos de `public/` (incluidos `sw.js`, `manifest.webmanifest` y `.well-known/`) se sirven antes que la regla de reescritura de la SPA.
-- Recomendado (opcional): en Render → Headers, `Cache-Control: no-cache` para `/sw.js` y `/manifest.webmanifest`.
+- Render sirve `.webmanifest` como `binary/octet-stream` (comprobado el 22/11/2026) y `.json` como `application/json`; por eso `index.html` enlaza `/manifest.json`. Los dos archivos deben ser idénticos: lo comprueba `src/lib/manifiestoPwa.test.ts`.
+- Recomendado (opcional): en Render → Headers, `Cache-Control: no-cache` para `/sw.js` y `/manifest.json`, y `Content-Type: application/manifest+json` para `/manifest.webmanifest` (falta comprobar que Render aplique ese `Content-Type`).
 
 ## 4. APK para Android (Trusted Web Activity)
 

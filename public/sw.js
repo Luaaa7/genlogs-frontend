@@ -7,11 +7,11 @@
  * No toca: el API (otro dominio), Cloudinary, cualquier otro dominio, peticiones con
  * Authorization ni nada que no sea GET. Al cerrar sesión no queda ningún dato en caché.
  */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE_APP = `genlogs-app-${VERSION}`;
 const CACHE_ASSETS = `genlogs-assets-${VERSION}`;
 const MAX_ASSETS = 80;
-const PRECACHE = ['/offline.html', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'];
+const PRECACHE = ['/offline.html', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_APP).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting()));
@@ -76,7 +76,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(primeroCache(request));
     return;
   }
-  if (url.pathname.startsWith('/icons/') || url.pathname === '/manifest.webmanifest' || url.pathname === '/LOGO.png') {
+  if (url.pathname.startsWith('/icons/') || url.pathname === '/manifest.json' || url.pathname === '/manifest.webmanifest' || url.pathname === '/LOGO.png') {
     event.respondWith(cacheYActualiza(request));
   }
 });
