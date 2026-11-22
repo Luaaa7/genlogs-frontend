@@ -81,6 +81,10 @@ describe("ClienteRoute", () => {
     render(<MemoryRouter initialEntries={["/portal/pedidos"]}><Routes><Route element={<ClienteRoute />}><Route path="/portal/pedidos" element={<div>Pedidos privados</div>} /></Route></Routes></MemoryRouter>)
     expect(screen.queryByText("Pedidos privados")).toBeNull()
     expect(screen.getByText("Aún no tienes pedidos")).toBeTruthy()
+    expect(screen.getByText("Hola, Gina")).toBeTruthy()
+    // Se ve dentro del portal: con su barra, el logo y «Cerrar sesión».
+    expect(screen.getByRole("navigation", { name: "Portal del cliente" })).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Cerrar sesión" })).toBeTruthy()
     expect(screen.getByRole("link", { name: "Pedir mi primera cotización" }).getAttribute("href")).toBe("/portal/solicitud")
   })
 

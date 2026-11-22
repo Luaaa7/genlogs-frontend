@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { act, fireEvent, render, screen, within } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { CompletarEmpresaPage } from "./CompletarEmpresaPage"
@@ -114,5 +114,55 @@ describe("CompletarEmpresaPage", () => {
     fireEvent.change(screen.getByLabelText("RUC"), { target: { value: "20123456789" } })
     await vi.waitFor(() => expect(publicApi.consultarRazonSocial).toHaveBeenCalled())
     expect((screen.getByLabelText("Razón social") as HTMLInputElement).value).toBe("Escrita a mano")
+  })
+
+  it("muestra en qué paso va: la cuenta ya está hecha y ahora toca la empresa", () => {
+    renderPagina()
+    const pasos = screen.getByRole("list", { name: "Pasos para tu primera cotización" })
+    const items = within(pasos).getAllByRole("listitem")
+    expect(items.map((i) => i.textContent)).toEqual([
+      expect.stringContaining("Tu cuenta"),
+      expect.stringContaining("Tu empresa"),
+      expect.stringContaining("Tu solicitud"),
+    ])
+    expect(items[0].textContent).toContain("Listo")
+    expect(items[1].getAttribute("aria-current")).toBe("step")
+  })
+
+  it("el resumen de la empresa espera el RUC y luego muestra lo que trajo SUNAT", async () => {
+    vi.mocked(publicApi.consultarRazonSocial).mockResolvedValue({ tipo: "ok", razonSocial: "MINERA SOL S.A.C." })
+    renderPagina()
+    const resumen = screen.getByRole("complementary", { name: "Resumen de tu empresa" })
+    expect(within(resumen).getByText("Escribe tu RUC")).toBeTruthy()
+
+    fireEvent.change(screen.getByLabelText("RUC"), { target: { value: "20123456789" } })
+    expect(screen.getByText("Buscando…")).toBeTruthy()
+
+    expect(await screen.findByText("Encontrado en SUNAT")).toBeTruthy()
+    expect(within(resumen).getByText("MINERA SOL S.A.C.")).toBeTruthy()
+    expect(within(resumen).getByText("RUC 20123456789")).toBeTruthy()
+  })
+
+  it("si SUNAT no responde, avisa que la escriba a mano sin marcar el RUC como encontrado", async () => {
+    renderPagina()
+    fireEvent.change(screen.getByLabelText("RUC"), { target: { value: "20123456789" } })
+    expect(await screen.findByText(/escríbela a mano/)).toBeTruthy()
+    expect(screen.queryByText("Encontrado en SUNAT")).toBeNull()
+    expect(screen.queryByText("Buscando…")).toBeNull()
+  })
+
+  it("si guardar tarda (servidor activándose), avisa que espere sin cerrar la página", () => {
+    vi.mocked(completarEmpresa).mockReturnValue(new Promise(() => {}))
+    renderPagina()
+    llenar()
+    vi.useFakeTimers()
+    try {
+      fireEvent.click(screen.getByRole("button", { name: "Guardar y continuar" }))
+      expect(screen.queryByText("Esto está tardando más de lo normal")).toBeNull()
+      act(() => { vi.advanceTimersByTime(5000) })
+      expect(screen.getByText("Esto está tardando más de lo normal")).toBeTruthy()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

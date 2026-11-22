@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom"
 import logoGenlogs from "@/assets/GENLOGS.webp"
 import { vitrinaHabilitada } from "@/lib/interruptores"
@@ -10,8 +11,9 @@ const claseEnlace = ({ isActive }: { isActive: boolean }) =>
  * Barra del portal del cliente. Con sesión de cliente muestra el menú completo y
  * «Cerrar sesión». Sin sesión (por ejemplo en /portal/ingreso y /portal/registro)
  * solo muestra «Ingresar» y «Crear cuenta» (BPMN v3.4 de Mell, PS2/PS3).
+ * Con `children` los muestra en lugar de la ruta hija (portal de una cuenta sin empresa).
  */
-export function ClienteLayout() {
+export function ClienteLayout({ children }: { children?: ReactNode }) {
   const navigate = useNavigate()
   // Se vuelve a leer la sesión en cada cambio de ruta (al ingresar o al cerrar sesión).
   useLocation()
@@ -51,7 +53,7 @@ export function ClienteLayout() {
           )}
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8"><Outlet /></main>
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">{children ?? <Outlet />}</main>
     </div>
   )
 }
