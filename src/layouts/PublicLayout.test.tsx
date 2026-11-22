@@ -10,4 +10,11 @@ describe("Barra de la landing", () => {
     render(<MemoryRouter><PublicLayout /></MemoryRouter>)
     expect(screen.getByRole("link", { name: "Ingresar" }).getAttribute("href")).toBe("/portal/ingreso")
   })
+
+  it("la cabecera y el pie llevan a Ayuda y Contáctame (v3.4, K2)", () => {
+    render(<MemoryRouter><PublicLayout /></MemoryRouter>)
+    expect(screen.getByRole("link", { name: "Contacto" }).getAttribute("href")).toBe("/contacto")
+    expect(screen.getByRole("link", { name: "Contáctame" }).getAttribute("href")).toBe("/contacto")
+    expect(screen.getAllByRole("link", { name: "Ayuda" }).map((a) => a.getAttribute("href"))).toEqual(["/ayuda", "/ayuda"])
+  })
 })

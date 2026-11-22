@@ -42,9 +42,17 @@ const IngresoClientePage = perezosa(() => import('@/features/acceso-cliente/page
 const MisPedidosPage = perezosa(() => import('@/features/portal-cliente/pages/MisPedidosPage'), 'MisPedidosPage')
 const PedidoDetallePage = perezosa(() => import('@/features/portal-cliente/pages/PedidoDetallePage'), 'PedidoDetallePage')
 const NuevaSolicitudPage = perezosa(() => import('@/features/portal-cliente/pages/NuevaSolicitudPage'), 'NuevaSolicitudPage')
+// v3.4 (K2): Ayuda y Contáctame, públicas.
+const AyudaPage = perezosa(() => import('@/features/ayuda/pages/AyudaPage'), 'AyudaPage')
+const ContactoPage = perezosa(() => import('@/features/ayuda/pages/ContactoPage'), 'ContactoPage')
 
 export const router = createBrowserRouter([
-  { element: <PublicLayout />, children: [{ path: '/', element: <LandingPage /> }, ...RUTAS_BLOQUES.publicas] },
+  { element: <PublicLayout />, children: [
+    { path: '/', element: <LandingPage /> },
+    { path: '/ayuda', element: <AyudaPage /> },
+    { path: '/contacto', element: <ContactoPage /> },
+    ...RUTAS_BLOQUES.publicas,
+  ] },
   { element: <AuthLayout />, children: [
     { path: '/login', element: <LoginPage /> },
     { path: '/recuperar-password', element: <ForgotPasswordPage /> },
