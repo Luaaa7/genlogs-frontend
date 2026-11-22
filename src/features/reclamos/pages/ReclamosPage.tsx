@@ -8,12 +8,14 @@ import { ErrorBanner } from '@/components/ui/ErrorBanner'
 import { EstadoVacio } from '@/components/ui/EstadoVacio'
 import { EstadoBadge } from '@/components/ui/EstadoBadge'
 import { TableSkeletonRows } from '@/components/ui/TableSkeletonRows'
+import { AvisoServidorLento } from '@/components/ui/AvisoServidorLento'
 import { Paginacion, Tabla, TablaCard, Td, Th, filaClass } from '@/components/ui/tabla'
 import { usePermisos } from '@/lib/permisos'
+import { useTardaMucho } from '@/lib/useTardaMucho'
 import { ESTADOS_RECLAMO, PRIORIDADES_RECLAMO, TIPOS_RECLAMO, estadoDe } from '@/lib/formatters/estados'
 import { formatearFechaCorta } from '@/lib/formatters/fechaLocal'
 import type { EstadoReclamo, TipoReclamo } from '@/types/reclamo.types'
-import { useReclamos } from '../hooks/useReclamos'
+import { useConteosReclamos, useReclamos } from '../hooks/useReclamos'
 import { ReclamoFormPanel } from '../components/ReclamoFormPanel'
 
 const OPCIONES_TIPO = [
@@ -21,10 +23,7 @@ const OPCIONES_TIPO = [
   ...Object.entries(TIPOS_RECLAMO).map(([valor, label]) => ({ valor: valor as TipoReclamo, label: `${label}s` })),
 ]
 
-const OPCIONES_ESTADO = [
-  { label: 'Todos los estados' },
-  ...Object.entries(ESTADOS_RECLAMO).map(([valor, e]) => ({ valor: valor as EstadoReclamo, label: e.label })),
-]
+const ESTADOS = Object.keys(ESTADOS_RECLAMO) as EstadoReclamo[]
 
 export function ReclamosPage() {
   const navigate = useNavigate()
@@ -38,6 +37,12 @@ export function ReclamosPage() {
   const { data, isLoading, isError, error: errorCarga, refetch } = useReclamos({ tipo, estado, page: pagina, size: tamano })
   const reclamos = data?.content ?? []
   const hayFiltro = !!tipo || !!estado
+  const tardaMucho = useTardaMucho(isLoading)
+  const conteos = useConteosReclamos(ESTADOS, tipo)
+  const opcionesEstado = [
+    { label: 'Todos los estados', n: conteos.TODOS },
+    ...ESTADOS.map((valor) => ({ valor, label: ESTADOS_RECLAMO[valor].label, n: conteos[valor] })),
+  ]
 
   return (
     <div className="flex flex-col gap-6">
@@ -56,9 +61,10 @@ export function ReclamosPage() {
 
       <div className="flex flex-col gap-3">
         <FiltroChips etiqueta="Filtrar por tipo" opciones={OPCIONES_TIPO} valor={tipo} onChange={(v) => { setTipo(v); setPagina(0) }} />
-        <FiltroChips etiqueta="Filtrar por estado" opciones={OPCIONES_ESTADO} valor={estado} onChange={(v) => { setEstado(v); setPagina(0) }} />
+        <FiltroChips etiqueta="Filtrar por estado" opciones={opcionesEstado} valor={estado} onChange={(v) => { setEstado(v); setPagina(0) }} />
       </div>
 
+      {tardaMucho && <AvisoServidorLento />}
       {isError && <ErrorBanner message="No se pudieron cargar los reclamos." error={errorCarga} onRetry={() => refetch()} />}
 
       <TablaCard
