@@ -99,10 +99,18 @@ describe('tipo de cambio al crear', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Revisar y crear' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Confirmar y crear' }))
     await waitFor(() => expect(http.post).toHaveBeenCalled())
-    const cuerpo = http.post.mock.calls.find((llamada) => llamada[0] === '/cotizaciones')?.[1] as { moneda?: string; tipoCambio?: number; fechaTipoCambio?: string }
+    const cuerpo = http.post.mock.calls.find((llamada) => llamada[0] === '/cotizaciones')?.[1] as {
+      moneda?: string
+      tipoCambio?: number
+      fechaTipoCambio?: string
+      detalles?: { costoUnitario?: number | null; margenPorcentaje?: number | null; precioUnitario?: number }[]
+    }
     expect(cuerpo.moneda).toBe('USD')
     expect(cuerpo.tipoCambio).toBeUndefined()
     expect(cuerpo.fechaTipoCambio).toBeUndefined()
+    expect(cuerpo.detalles?.[0].precioUnitario).toBe(10)
+    expect(cuerpo.detalles?.[0].margenPorcentaje).toBe(20)
+    expect(cuerpo.detalles?.[0].costoUnitario).toBeNull()
   })
 
   it('en soles no envía tipo de cambio ni fecha', async () => {

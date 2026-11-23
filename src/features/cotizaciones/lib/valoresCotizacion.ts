@@ -2,14 +2,11 @@ import { calcularSubtotal } from '@/lib/formatters/codigoCotizacion'
 import type { CrearCotizacionFormData, CotizacionDetalleFormData } from '@/lib/validators/cotizacion.schema'
 import type { Cotizacion, CotizacionDetalle } from '@/types/cotizacion.types'
 
-/**
- * El backend no guarda costo ni margen por línea. El número queda en 0 solo
- * para cumplir el formulario; la edición no lo muestra como un margen real.
- */
+/** Precarga costo y margen tal como llegaron. null se queda vacío: no se inventa 0 %. */
 export function lineaAlFormulario(detalle: CotizacionDetalle): CotizacionDetalleFormData {
   const cantidad = Number(detalle.cantidad)
   const precioUnitario = Number(detalle.precioUnitario)
-  const margen = detalle.margen ?? detalle.margenPorcentaje
+  const margen = detalle.margenPorcentaje ?? detalle.margen
   return {
     idProducto: detalle.idProducto ?? undefined,
     idServicio: detalle.idServicio ?? undefined,
@@ -17,7 +14,8 @@ export function lineaAlFormulario(detalle: CotizacionDetalle): CotizacionDetalle
     cantidad,
     precioUnitario,
     idUnidadMedida: detalle.idUnidadMedida || undefined,
-    margenPorcentaje: margen == null ? 0 : Number(margen),
+    costoUnitario: detalle.costoUnitario == null ? undefined : Number(detalle.costoUnitario),
+    margenPorcentaje: margen == null ? undefined : Number(margen),
     subtotal: calcularSubtotal(cantidad, precioUnitario),
     tipoItem: detalle.idServicio ? 'servicio' : 'producto',
   }
