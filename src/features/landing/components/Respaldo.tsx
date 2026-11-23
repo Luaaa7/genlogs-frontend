@@ -2,7 +2,7 @@ import { BadgeCheck, Mountain, ShieldCheck } from "lucide-react"
 
 const puntos = [
   { icono: ShieldCheck, titulo: "Proveedores evaluados" },
-  { icono: BadgeCheck, titulo: "Certificaciones y calidad" },
+  { icono: BadgeCheck, titulo: "Trazabilidad de cada pedido" },
   { icono: Mountain, titulo: "Clientes del sector minero" },
 ]
 
