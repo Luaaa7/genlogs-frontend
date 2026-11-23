@@ -33,6 +33,25 @@ function errorHttp(status: number, message: string) {
 
 let cabecera: Record<string, unknown>
 let seguimientos: Record<string, unknown>[]
+let ordenes: Record<string, unknown>[]
+
+function ordenInterna(parcial: Record<string, unknown> = {}) {
+  return {
+    idOrdenCompra: 15,
+    idCotizacion: 1,
+    idEstadoOrdenCompra: 1,
+    idCondicionPago: 2,
+    numeroOrdenCompra: '0032-10',
+    estadoCodigo: 'RECIBIDA',
+    numeroOcCliente: null,
+    montoOcCliente: null,
+    fechaEmisionCliente: null,
+    fechaRecepcion: '2026-11-20',
+    total: 118,
+    moneda: 'PEN',
+    ...parcial,
+  }
+}
 
 function pintar(rol: string) {
   useAuthStore.setState({ nombreRol: rol })
@@ -81,6 +100,7 @@ describe('respuesta del cliente en el detalle', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     seguimientos = []
+    ordenes = []
     cabecera = {
       idCotizacion: 1, idCliente: 4, codigoCotizacion: 'COT-001', estado: 'ENVIADA',
       fechaCotizacion: '2026-11-10', fechaValidez: diaLima(10), condicionPago: 'CONTADO',
@@ -92,7 +112,7 @@ describe('respuesta del cliente en el detalle', () => {
       if (url.endsWith('/seguimiento')) return Promise.resolve({ data: seguimientos })
       if (url.endsWith('/lineas')) return Promise.resolve({ data: [] })
       if (url.includes('/desde-cotizacion/')) return Promise.resolve({ data: precarga })
-      if (url.startsWith('/ordenes-compra')) return Promise.resolve({ data: { content: [] } })
+      if (url.startsWith('/ordenes-compra')) return Promise.resolve({ data: { content: ordenes } })
       return Promise.resolve({ data: { content: [] } })
     })
     http.post.mockResolvedValue({ data: { cotizacion: cabecera } })
@@ -209,7 +229,7 @@ describe('respuesta del cliente en el detalle', () => {
     const etiqueta = screen.getByRole('heading', { name: 'COT-001' }).parentElement?.textContent ?? ''
     expect(etiqueta).toContain('Aceptada por el cliente')
     expect(etiqueta).not.toContain('Aprobada por el Jefe')
-    fireEvent.click(screen.getByRole('button', { name: 'Registrar orden de compra' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Registrar orden de compra' }))
     expect(await screen.findByText(/Filtro de aceite/)).toBeTruthy()
     expect(screen.getByText('Cotización de origen COT-001.')).toBeTruthy()
     expect(screen.getByText('PEN')).toBeTruthy()
@@ -391,6 +411,72 @@ describe('respuesta del cliente en el detalle', () => {
     expect(marco.tagName).toBe('IFRAME')
     expect(screen.getByRole('button', { name: 'Descargar' })).toBeTruthy()
     expect(screen.queryByRole('link', { name: 'Ver adjunto' })).toBeNull()
+  })
+
+  it('aceptada con orden ya creada muestra esa orden y, si falta, la OC del cliente', async () => {
+    cabecera = { ...cabecera, estado: 'ACEPTADA_CLIENTE' }
+    ordenes = [ordenInterna()]
+    pintar('ASISTENTE_LOGISTICO')
+    await cargar()
+    expect(await screen.findByRole('button', { name: 'Registrar OC del cliente' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Registrar orden de compra' })).toBeNull()
+    const consulta = http.get.mock.calls.find((llamada) => llamada[0] === '/ordenes-compra')
+    expect(consulta?.[1]).toEqual({ params: { idCotizacion: 1, size: 5 } })
+    const enlaces = screen.getAllByRole('link', { name: 'Orden 0032-10' })
+    expect(enlaces.length).toBeGreaterThan(0)
+    expect(enlaces.every((enlace) => enlace.getAttribute('href') === '/ordenes-compra?idCotizacion=1')).toBe(true)
+  })
+
+  it('registrar la OC del cliente confirma la orden que ya existe', async () => {
+    cabecera = { ...cabecera, estado: 'ACEPTADA_CLIENTE' }
+    ordenes = [ordenInterna()]
+    http.patch.mockResolvedValue({ data: ordenInterna({ numeroOcCliente: '0207-40' }) })
+    pintar('ASISTENTE_LOGISTICO')
+    fireEvent.click(await screen.findByRole('button', { name: 'Registrar OC del cliente' }))
+    expect(await screen.findByRole('heading', { name: 'OC de la minera' })).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('N.º de OC de la minera'), { target: { value: '0207-40' } })
+    fireEvent.change(screen.getByLabelText('Fecha de emisión'), { target: { value: '2026-11-20' } })
+    fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '118' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }))
+    await waitFor(() => expect(http.patch).toHaveBeenCalledWith('/ordenes-compra/15/confirmar-oc', {
+      numeroOcCliente: '0207-40',
+      fechaEmisionCliente: '2026-11-20',
+      montoOcCliente: 118,
+    }))
+    expect(http.post).not.toHaveBeenCalled()
+    expect(screen.queryByText('Esta cotización ya tiene una orden de compra registrada')).toBeNull()
+  })
+
+  it('si la orden ya trae el número del cliente, lo muestra y no ofrece un alta', async () => {
+    cabecera = { ...cabecera, estado: 'APROBADA' }
+    ordenes = [ordenInterna({ numeroOcCliente: '0207-40' })]
+    pintar('ASISTENTE_LOGISTICO')
+    await cargar()
+    expect(await screen.findByText('0207-40')).toBeTruthy()
+    expect(screen.getAllByRole('link', { name: 'Orden 0032-10' }).length).toBeGreaterThan(0)
+    expect(screen.queryByRole('button', { name: 'Registrar orden de compra' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Registrar OC del cliente' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Registrar orden de compra' })).toBeNull()
+  })
+
+  it('una orden anulada no cuenta y deja el alta manual', async () => {
+    cabecera = { ...cabecera, estado: 'ACEPTADA_CLIENTE' }
+    ordenes = [ordenInterna({ estadoCodigo: 'ANULADA', numeroOrdenCompra: '0032-9' })]
+    pintar('ASISTENTE_LOGISTICO')
+    expect(await screen.findByRole('button', { name: 'Registrar orden de compra' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Registrar OC del cliente' })).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Orden 0032-9' })).toBeNull()
+  })
+
+  it('en rechazada, vencida o anulada no salen los botones de la orden', async () => {
+    for (const estado of ['RECHAZADA', 'VENCIDA', 'ANULADA']) {
+      cabecera = { ...cabecera, estado }
+      const vista = pintar('ASISTENTE_LOGISTICO')
+      expect(await screen.findByText('COT-001')).toBeTruthy()
+      expect(screen.queryByRole('button', { name: 'Registrar orden de compra' })).toBeNull()
+      expect(screen.queryByRole('button', { name: 'Registrar OC del cliente' })).toBeNull()
+      vista.unmount()
+    }
   })
 
   it('pasar a negociación, sin medio ni fecha, no abre una versión ni dice que el cliente pidió cambios', async () => {

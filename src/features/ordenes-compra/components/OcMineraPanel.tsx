@@ -14,9 +14,10 @@ const REGLAS_PDF = {
   tamanioMaximoBytes: TAMANIO_MAXIMO_BYTES.documento,
 }
 
-/** Subida del PDF y datos leídos. Se abre desde la lista, sin ruta propia. */
-export function OcMineraPanel({ orden, onCerrar }: { orden: OrdenCompra; onCerrar: () => void }) {
-  const puedeEditar = usePermisos().puedeCrear('pedidosOc')
+/** Subida del PDF y datos leídos. Se abre desde la lista o desde el detalle de la cotización. */
+export function OcMineraPanel({ orden, onCerrar, puedeEditar: puedeEditarForzado }: { orden: OrdenCompra; onCerrar: () => void; puedeEditar?: boolean }) {
+  const puedeCrearOc = usePermisos().puedeCrear('pedidosOc')
+  const puedeEditar = puedeEditarForzado ?? puedeCrearOc
   const numero = orden.numeroOrdenCompra ?? orden.numero ?? ''
   const subir = useSubirArchivoOrdenCompra()
   const confirmar = useConfirmarOcMinera(orden.idOrdenCompra ?? orden.id ?? 0)

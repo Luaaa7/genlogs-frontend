@@ -9,8 +9,12 @@ export const ordenesCompraKeys = {
   detalle: (id: number) => ['ordenes-compra', id] as const,
 }
 
-export function useOrdenesCompra(filtros: OrdenCompraFiltros = {}) {
-  return useQuery({ queryKey: ordenesCompraKeys.lista(filtros), queryFn: () => ordenesCompraApi.listar(filtros) })
+export function useOrdenesCompra(filtros: OrdenCompraFiltros = {}, opciones: { enabled?: boolean } = {}) {
+  return useQuery({
+    queryKey: ordenesCompraKeys.lista(filtros),
+    queryFn: () => ordenesCompraApi.listar(filtros),
+    enabled: opciones.enabled ?? true,
+  })
 }
 
 export function useCrearOrdenCompra() {

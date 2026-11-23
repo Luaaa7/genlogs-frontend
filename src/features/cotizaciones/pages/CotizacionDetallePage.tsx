@@ -11,6 +11,7 @@ import { SeguimientoTimeline } from '../components/SeguimientoTimeline';
 import { AdjuntoCotizacionUploader } from '../components/AdjuntoCotizacionUploader';
 import { ConfirmacionEnvioModal } from '../components/ConfirmacionEnvioModal';
 import { RegistrarOrdenCompraModal } from '@/features/ordenes-compra/components/RegistrarOrdenCompraModal';
+import { OcMineraPanel } from '@/features/ordenes-compra/components/OcMineraPanel';
 import { RegistrarFacturaModal } from '@/features/facturacion/components/RegistrarFacturaModal';
 import { PipelineBreadcrumb, type PipelineStep } from '@/components/ui/PipelineBreadcrumb';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ import { EstadoBadge } from '@/components/ui/EstadoBadge';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EstadoCotizacion, type Cotizacion } from '@/types/cotizacion.types';
+import type { OrdenCompra } from '@/types/ordenCompra.types';
 import {
   formatearMoneda,
   mapearEstadoCotizacion,
@@ -71,6 +73,21 @@ const TRANSICIONES_ESTADOS: Record<EstadoCotizacion, EstadoCotizacion[]> = {
 };
 
 const MENU_ENTRADA = 'origin-top-right animate-in fade-in-0 zoom-in-95 duration-150 ease-out motion-reduce:animate-none';
+
+function ordenAnulada(orden: OrdenCompra): boolean {
+  const codigo = String(orden.estadoCodigo ?? '').trim().toUpperCase();
+  if (codigo === 'ANULADA') return true;
+  const nombre = String(orden.estado ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
+  return nombre === 'ANULADA';
+}
+
+/** La orden que crearAutomatica abrió para esta cotización. Una anulada no cuenta. */
+function ordenActivaDe(ordenes: OrdenCompra[] | undefined, idCotizacion: number): OrdenCompra | undefined {
+  return ordenes?.find((orden) => {
+    if (orden.idCotizacion != null && orden.idCotizacion !== idCotizacion) return false;
+    return !ordenAnulada(orden);
+  });
+}
 
 function vencimiento(c: Cotizacion): { texto: string; tono: 'warning' | 'destructive' } | null {
   if (!ESTADOS_ABIERTOS.has(c.estadoCodigo ?? c.estadoCotizacion)) return null;
@@ -127,16 +144,20 @@ const CotizacionDetalleContenido: React.FC = () => {
     cotizacion ? `${cotizacion.codigoCotizacion ?? cotizacion.codigo}.pdf` : undefined
   );
 
-  // Para el flujo "Cotización → Orden de compra → Factura": se busca si ya existe
-  // una orden generada a partir de esta cotización, y si esa orden ya tiene factura.
-  const { data: ordenesData } = useOrdenesCompra();
-  const ordenGenerada = ordenesData?.content?.find((o) => o.idCotizacion === cotizacionId);
+  // La orden automática no sale en la primera página de la lista general.
+  // Se pide la de esta cotización: GET /ordenes-compra?idCotizacion={id}&size=5.
+  const { data: ordenesData, isSuccess: ordenesListas } = useOrdenesCompra(
+    { idCotizacion: cotizacionId ?? undefined, size: 5 },
+    { enabled: cotizacionId != null },
+  );
+  const ordenGenerada = cotizacionId != null ? ordenActivaDe(ordenesData?.content, cotizacionId) : undefined;
   // S2: solo quien ve comprobantes consulta las facturas.
   const { data: facturasData } = useFacturas({}, { enabled: permisos.verComprobantes });
   const facturaGenerada = facturasData?.content?.find((f) => f.idOrdenCompra === ordenGenerada?.idOrdenCompra);
 
   const [showEnvioModal, setShowEnvioModal] = useState(false);
   const [showOrdenModal, setShowOrdenModal] = useState(false);
+  const [ocClienteAbierta, setOcClienteAbierta] = useState(false);
   const [anulando, setAnulando] = useState(false);
   // ?facturar=1 llega desde Órdenes de compra al marcar la orden como Atendida:
   // la cotización se abre con el formulario de la factura listo.
@@ -219,6 +240,9 @@ const CotizacionDetalleContenido: React.FC = () => {
   const opcionesMenu = TRANSICIONES_ESTADOS[estado] ?? [];
   const clienteAcepto = estado === EstadoCotizacion.ACEPTADA_CLIENTE || estado === EstadoCotizacion.APROBADA;
   const puedeRegistrarCliente = asistente && (estado === 'ENVIADA' || estado === 'EN_NEGOCIACION');
+  const numeroInterno = ordenGenerada?.numeroOrdenCompra ?? ordenGenerada?.numero ?? '';
+  const numeroOcCliente = ordenGenerada?.numeroOcCliente?.trim() ?? '';
+  const puedeCompletarOc = asistente || permisos.gestionarOrdenes;
 
   // Totales: los del servidor; si no vienen, se calculan de las líneas.
   const subtotal = cotizacion.subtotal ?? detalles.reduce((s, d) => s + (d.subtotal || 0), 0);
@@ -230,7 +254,7 @@ const CotizacionDetalleContenido: React.FC = () => {
   const pasos: PipelineStep[] = [
     { label: 'Cotización', status: 'current' },
     {
-      label: ordenGenerada ? `Orden ${ordenGenerada.numeroOrdenCompra}` : 'Orden de compra',
+      label: ordenGenerada ? `Orden ${numeroInterno}` : 'Orden de compra',
       status: ordenGenerada ? 'completed' : 'pending',
       href: ordenGenerada ? `/ordenes-compra?idCotizacion=${cotizacionId}` : undefined,
       pendiente: 'aún no hay',
@@ -249,23 +273,21 @@ const CotizacionDetalleContenido: React.FC = () => {
     accionPrincipal = (
       <AprobacionCotizacion id={cotizacionId} estado={estado} asistente={asistente} jefe={jefe} onEnviar={() => setShowEnvioModal(true)} />
     );
-  } else if (clienteAcepto && ordenGenerada && !facturaGenerada) {
-    accionPrincipal = (
-      <Button onClick={() => setShowFacturaModal(true)}>
-        <Receipt className="mr-2 h-4 w-4" aria-hidden="true" />
-        Registrar factura
-      </Button>
-    );
-  } else if (clienteAcepto && !ordenGenerada && asistente) {
+  } else if (clienteAcepto && ordenesListas && !ordenGenerada && asistente) {
     accionPrincipal = (
       <Button onClick={() => setShowOrdenModal(true)}>
         <ShoppingCart className="mr-2 h-4 w-4" aria-hidden="true" />
         Registrar orden de compra
       </Button>
     );
+  } else if (clienteAcepto && ordenGenerada && !facturaGenerada && permisos.emitirFactura) {
+    accionPrincipal = (
+      <Button onClick={() => setShowFacturaModal(true)}>
+        <Receipt className="mr-2 h-4 w-4" aria-hidden="true" />
+        Registrar factura
+      </Button>
+    );
   }
-
-  if (clienteAcepto && ordenGenerada && !facturaGenerada && !permisos.emitirFactura) accionPrincipal = null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -378,6 +400,17 @@ const CotizacionDetalleContenido: React.FC = () => {
               <Button variant="outline" onClick={() => setAccionRespuesta('pidio_cambios')}>Pidió cambios</Button>
               <Button variant="outline" onClick={() => setAccionRespuesta('rechazo')}>Rechazó</Button>
             </>
+          )}
+          {clienteAcepto && ordenGenerada && (
+            <Button variant="outline" asChild>
+              <Link to={`/ordenes-compra?idCotizacion=${cotizacionId}`}>Orden {numeroInterno}</Link>
+            </Button>
+          )}
+          {clienteAcepto && ordenGenerada && !numeroOcCliente && puedeCompletarOc && (
+            <Button onClick={() => setOcClienteAbierta(true)}>Registrar OC del cliente</Button>
+          )}
+          {clienteAcepto && ordenGenerada && numeroOcCliente && (
+            <span className="text-sm font-medium tabular-nums">{numeroOcCliente}</span>
           )}
           {accionPrincipal}
         </div>
@@ -507,13 +540,22 @@ const CotizacionDetalleContenido: React.FC = () => {
           detalles={detalles}
         />
       )}
-      <RegistrarOrdenCompraModal
-        isOpen={showOrdenModal}
-        onClose={() => setShowOrdenModal(false)}
-        idCotizacion={cotizacionId || 0}
-        idCondicionPago={cotizacion.idCondicionPago}
-        codigoCotizacion={cotizacion.codigoCotizacion ?? cotizacion.codigo}
-      />
+      {!ordenGenerada && (
+        <RegistrarOrdenCompraModal
+          isOpen={showOrdenModal}
+          onClose={() => setShowOrdenModal(false)}
+          idCotizacion={cotizacionId || 0}
+          idCondicionPago={cotizacion.idCondicionPago}
+          codigoCotizacion={cotizacion.codigoCotizacion ?? cotizacion.codigo}
+        />
+      )}
+      {ocClienteAbierta && ordenGenerada && !numeroOcCliente && (
+        <OcMineraPanel
+          orden={ordenGenerada}
+          puedeEditar={puedeCompletarOc}
+          onCerrar={() => setOcClienteAbierta(false)}
+        />
+      )}
       {anulando && (
         <AnularCotizacionModal
           ocupado={isChangingState}
