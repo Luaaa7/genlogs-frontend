@@ -122,10 +122,11 @@ describe('editar un borrador', () => {
     expect(dolares.disabled).toBe(true)
     expect(dolares.getAttribute('aria-describedby')).toContain('cot-moneda-ayuda')
     expect(screen.getByText(AYUDA_MONEDA).id).toBe('cot-moneda-ayuda')
-    expect(screen.getByText(/no se guardan en la cotización/)).toBeTruthy()
+    expect(screen.queryByText(/no se guardan en la cotización/)).toBeNull()
     expect(screen.getAllByText('—').length).toBeGreaterThan(0)
     expect(screen.getAllByText('No guardado').length).toBeGreaterThan(0)
     expect(screen.queryByRole('spinbutton', { name: 'Margen del ítem 1 en porcentaje' })).toBeNull()
+    expect(screen.queryByRole('spinbutton', { name: 'Costo unitario del ítem 1' })).toBeNull()
     expect(screen.queryByText(/Bajo el mínimo/)).toBeNull()
     const revisar = screen.getByRole('button', { name: 'Revisar y guardar' }) as HTMLButtonElement
     await waitFor(() => expect(revisar.disabled).toBe(false))
@@ -137,8 +138,9 @@ describe('editar un borrador', () => {
     expect(cuerpo.clienteId).toBe(4)
     expect(cuerpo.moneda).toBe('USD')
     expect(cuerpo.detalles[0].producto).toBe('Filtro CAT')
-    expect(cuerpo.detalles[0].margenPorcentaje).toBe(0)
-    expect(cuerpo.detalles[0].costoUnitario).toBeUndefined()
+    expect(cuerpo.detalles[0].precioUnitario).toBe(25)
+    expect(cuerpo.detalles[0].margenPorcentaje).toBeNull()
+    expect(cuerpo.detalles[0].costoUnitario).toBeNull()
     expect(cuerpo.tipoCambio).toBeUndefined()
     expect(cuerpo.fechaTipoCambio).toBeUndefined()
     expect(await screen.findByText('Cotización actualizada. Vuelve a solicitar la aprobación.')).toBeTruthy()
@@ -169,12 +171,38 @@ describe('editar un borrador', () => {
     expect(screen.queryByRole('spinbutton', { name: /Costo unitario del ítem 1/ })).toBeNull()
   })
 
-  it('un servicio agregado sin margen se ve como no guardado', async () => {
+  it('precarga el costo y el margen y el guardado envía los valores de pantalla', async () => {
+    lineas = [{ ...lineas[0], costoUnitario: 40, margenPorcentaje: 25 }]
+    pintar()
+    expect(await screen.findByDisplayValue('Filtro CAT')).toBeTruthy()
+    const costo = screen.getByRole('spinbutton', { name: 'Costo unitario del ítem 1' }) as HTMLInputElement
+    const margen = screen.getByRole('spinbutton', { name: 'Margen del ítem 1 en porcentaje' }) as HTMLInputElement
+    const precio = screen.getByRole('spinbutton', { name: 'Precio unitario del ítem 1' }) as HTMLInputElement
+    expect(costo.value).toBe('40')
+    expect(margen.value).toBe('25')
+    expect(precio.value).toBe('25')
+    expect(screen.queryByText('No guardado')).toBeNull()
+    expect(screen.queryByText(/no se guardan en la cotización/)).toBeNull()
+    fireEvent.change(precio, { target: { value: '50' } })
+    expect(margen.value).toBe('20')
+    const revisar = screen.getByRole('button', { name: 'Revisar y guardar' }) as HTMLButtonElement
+    await waitFor(() => expect(revisar.disabled).toBe(false))
+    fireEvent.click(revisar)
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar y guardar' }))
+    await waitFor(() => expect(http.put).toHaveBeenCalledTimes(1))
+    const cuerpo = http.put.mock.calls[0][1] as { detalles: { costoUnitario: number | null; margenPorcentaje: number | null; precioUnitario: number }[] }
+    expect(cuerpo.detalles[0].costoUnitario).toBe(40)
+    expect(cuerpo.detalles[0].margenPorcentaje).toBe(20)
+    expect(cuerpo.detalles[0].precioUnitario).toBe(50)
+  })
+
+  it('un servicio agregado sin margen muestra los inputs y la línea vieja sigue sin guardarse', async () => {
     pintar()
     expect(await screen.findByDisplayValue('Filtro CAT')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Agregar ítem' }))
     fireEvent.click(screen.getByRole('button', { name: 'Elegir servicio sin margen' }))
-    expect(screen.queryByRole('spinbutton', { name: 'Margen del ítem 2 en porcentaje' })).toBeNull()
+    expect(screen.getByRole('spinbutton', { name: 'Margen del ítem 2 en porcentaje' })).toBeTruthy()
+    expect(screen.getByRole('spinbutton', { name: 'Costo unitario del ítem 2' })).toBeTruthy()
     expect(screen.getAllByText('No guardado').length).toBeGreaterThan(0)
     expect(screen.queryByText('0 %')).toBeNull()
   })

@@ -73,7 +73,14 @@ export function FormularioCotizacion({ modo, valoresIniciales, monedaBloqueada =
   ].filter(Boolean) as string[]
 
   function cuerpoDe(data: CrearCotizacionFormData): UpdateCotizacionRequest {
-    const cuerpo: UpdateCotizacionRequest = { ...data }
+    const cuerpo: UpdateCotizacionRequest = {
+      ...data,
+      detalles: data.detalles.map((d) => ({
+        ...d,
+        costoUnitario: typeof d.costoUnitario === 'number' && Number.isFinite(d.costoUnitario) ? d.costoUnitario : null,
+        margenPorcentaje: typeof d.margenPorcentaje === 'number' && Number.isFinite(d.margenPorcentaje) ? d.margenPorcentaje : null,
+      })),
+    }
     delete cuerpo.tipoCambio
     delete cuerpo.fechaTipoCambio
     return cuerpo

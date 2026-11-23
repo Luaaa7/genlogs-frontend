@@ -15,13 +15,11 @@ import { AgregarItemModal } from './AgregarItemModal';
 
 interface CotizacionDetalleFormProps {
   moneda: string;
-  /** Borrador devuelto: las líneas que ya venían no traen costo ni margen. */
+  /** En edición, una línea que llegó sin costo ni margen se muestra como no guardada. */
   editando?: boolean;
   /** Soles por 1 dólar. null: no hay cambio y no se inventa uno. */
   tipoCambio?: number | null;
 }
-
-const NOTA_COSTO_MARGEN = 'El costo y el margen no se guardan en la cotización. Si cambias el precio de una línea, el margen no se recalcula.'
 
 function CeldaNoGuardada({ etiqueta, aviso }: { etiqueta: string; aviso: string }) {
   return (
@@ -51,7 +49,14 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
   const { verMargenes } = usePermisos()
   const { control, register, setValue, getValues, formState: { errors } } = useFormContext<CrearCotizacionFormData>();
   const { fields, append, remove } = useFieldArray({ control, name: 'detalles' });
-  const [idsPrecargados] = useState(() => new Set(editando ? fields.map((campo) => campo.id) : []))
+  const [idsSinGuardar] = useState(() => {
+    if (!editando) return new Set<string>()
+    const lineas = getValues('detalles') ?? []
+    return new Set(fields.flatMap((campo, index) => {
+      const linea = lineas[index]
+      return linea?.costoUnitario == null && linea?.margenPorcentaje == null ? [campo.id] : []
+    }))
+  })
   const detalles = useWatch({ control, name: 'detalles' });
   const columnas = verMargenes
     ? COLUMNAS
@@ -118,10 +123,6 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
         )}
       </div>
 
-      {editando && verMargenes && (
-        <p className="mx-5 mb-4 text-sm text-muted-foreground sm:mx-6">{NOTA_COSTO_MARGEN}</p>
-      )}
-
       {errorGeneral && (
         <p role="alert" className="mx-5 mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive sm:mx-6">
           {errorGeneral === 'Debe agregar al menos un detalle' ? 'Agrega al menos un ítem a la cotización.' : errorGeneral}
@@ -162,9 +163,8 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
               const costo = Number(d?.costoUnitario) || 0;
               const ganancia = d && costo > 0 ? ((d.precioUnitario || 0) - costo) * (d.cantidad || 0) : 0;
               const minimo = d?.margenMinimo;
-              const precargada = idsPrecargados.has(field.id)
-              const sinMargen = precargada || d?.margenPorcentaje == null
-              const bajoMinimo = !sinMargen && minimo !== undefined && Number(d?.margenPorcentaje) < minimo;
+              const sinGuardar = idsSinGuardar.has(field.id)
+              const bajoMinimo = !sinGuardar && minimo !== undefined && d?.margenPorcentaje != null && Number(d.margenPorcentaje) < minimo;
               const err = errors.detalles?.[index];
               const n = index + 1;
               return (
@@ -205,7 +205,7 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
                     {err?.cantidad && <p className="mt-1 text-xs text-destructive">{err.cantidad.message}</p>}
                   </div>
 
-                  {verMargenes && (precargada ? (
+                  {verMargenes && (sinGuardar ? (
                     <CeldaNoGuardada etiqueta="Costo unit." aviso={`Costo unitario del ítem ${n}, no guardado`} />
                   ) : (
                     <div>
@@ -232,7 +232,7 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
                     </div>
                   ))}
 
-                  {verMargenes && (sinMargen ? (
+                  {verMargenes && (sinGuardar ? (
                     <CeldaNoGuardada etiqueta="Margen %" aviso={`Margen del ítem ${n}, no guardado`} />
                   ) : (
                     <div>
@@ -243,7 +243,14 @@ export const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ mo
                         max={MARGEN_MAXIMO}
                         step="0.1"
                         inputMode="decimal"
-                        {...register(`detalles.${index}.margenPorcentaje`, { valueAsNumber: true, onChange: () => recalcularPrecio(index) })}
+                        {...register(`detalles.${index}.margenPorcentaje`, {
+                          setValueAs: (valor) => {
+                            if (valor === '' || valor == null) return undefined
+                            const numero = Number(valor)
+                            return Number.isNaN(numero) ? undefined : numero
+                          },
+                          onChange: () => recalcularPrecio(index),
+                        })}
                         aria-label={`Margen del ítem ${n} en porcentaje`}
                         aria-invalid={!!err?.margenPorcentaje || bajoMinimo}
                         className={cn(celdaInput, 'text-right tabular-nums')}

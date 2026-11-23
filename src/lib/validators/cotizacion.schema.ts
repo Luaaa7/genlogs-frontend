@@ -16,9 +16,9 @@ export const cotizacionDetalleSchema = z
     tipoItem: z.enum(['producto', 'servicio']).optional(),
     cantidad: z.number().min(1, 'La cantidad debe ser mayor a 0'),
     precioUnitario: z.number({ message: 'Ingresa el precio unitario' }).positive('El precio unitario debe ser mayor a 0'),
-    /** Costo unitario: con el margen da el precio de venta (no se guarda en el backend). */
+    /** Costo unitario en la moneda de la cotización. Se envía y se vuelve a guardar con la línea. */
     costoUnitario: z.number().min(0, 'El costo no puede ser negativo').optional(),
-    /** Vacío si el servicio no trae costo: no se inventa 0 %. */
+    /** Porcentaje de esa línea. Vacío solo si nunca se guardó: no se inventa 0 %. */
     margenPorcentaje: z.number().min(0, 'El margen no puede ser negativo').max(90, 'El margen debe estar entre 0 y 90 %').optional(),
     /** Margen mínimo de la escala para este ítem; solo para avisar si se cotiza por debajo. */
     margenMinimo: z.number().optional(),
