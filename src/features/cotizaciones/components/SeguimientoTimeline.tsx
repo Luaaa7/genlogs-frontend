@@ -1,9 +1,10 @@
 // src/features/cotizaciones/components/SeguimientoTimeline.tsx
 
-import React from 'react';
+import React, { useState } from 'react';
 import type { SeguimientoCotizacion } from '@/types/cotizacion.types';
 import { formatearFechaHora, mapearEstadoCotizacion } from '@/lib/formatters/codigoCotizacion';
 import { formatearFechaCorta } from '@/lib/formatters/fechaLocal';
+import { VistaPreviaPdf } from '@/components/ui/VistaPreviaPdf';
 import { Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils/utils';
 
@@ -20,7 +21,12 @@ interface SeguimientoTimelineProps {
 
 /** Historial de cambios de estado, del más reciente al más antiguo. El estado
  *  actual ya se ve en el encabezado de la página: aquí solo va el recorrido. */
+function tituloDe(s: SeguimientoCotizacion) {
+  return `${s.estadoAnterior ? `${mapearEstadoCotizacion(s.estadoAnterior)} → ` : ''}${mapearEstadoCotizacion(s.estadoNuevo)}`;
+}
+
 export const SeguimientoTimeline: React.FC<SeguimientoTimelineProps> = ({ seguimientos = [] }) => {
+  const [version, setVersion] = useState<{ url: string; titulo: string } | null>(null);
   const ordenados = [...seguimientos].sort(
     (a, b) => new Date(b.fecha ?? b.fechaEvento).getTime() - new Date(a.fecha ?? a.fechaEvento).getTime()
   );
@@ -55,8 +61,7 @@ export const SeguimientoTimeline: React.FC<SeguimientoTimelineProps> = ({ seguim
                 </div>
                 <div className={cn('min-w-0', !ultimo && 'pb-4')}>
                   <p className="text-sm font-medium text-foreground">
-                    {s.estadoAnterior ? `${mapearEstadoCotizacion(s.estadoAnterior)} → ` : ''}
-                    {mapearEstadoCotizacion(s.estadoNuevo)}
+                    {tituloDe(s)}
                   </p>
                   <p className="text-[13px] text-muted-foreground">
                     {formatearFechaHora(s.fecha ?? s.fechaEvento)}
@@ -67,14 +72,13 @@ export const SeguimientoTimeline: React.FC<SeguimientoTimelineProps> = ({ seguim
                   {clientePidioCambios && <p className="mt-1 text-[13px] font-medium text-warning-text">El cliente solicitó cambios</p>}
                   {nota && <p className="mt-1 text-[13px] text-foreground">{nota}</p>}
                   {s.rutaVersionPdf && (
-                    <a
-                      href={s.rutaVersionPdf}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => setVersion({ url: s.rutaVersionPdf!, titulo: tituloDe(s) })}
                       className="mt-1 inline-block text-[13px] text-accent hover:underline"
                     >
                       Abrir esta versión
-                    </a>
+                    </button>
                   )}
                   {s.rutaAdjunto && (
                     <a
@@ -91,6 +95,14 @@ export const SeguimientoTimeline: React.FC<SeguimientoTimelineProps> = ({ seguim
             );
           })}
         </ol>
+      )}
+      {version && (
+        <VistaPreviaPdf
+          titulo={version.titulo}
+          nombreArchivo={version.titulo}
+          urlDirecta={version.url}
+          onClose={() => setVersion(null)}
+        />
       )}
     </section>
   );

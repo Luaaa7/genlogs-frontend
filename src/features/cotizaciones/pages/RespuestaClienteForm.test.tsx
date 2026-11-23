@@ -367,7 +367,7 @@ describe('respuesta del cliente en el detalle', () => {
     const enlace = screen.getByRole('link', { name: 'Ver adjunto' })
     expect(enlace.getAttribute('href')).toBe('https://archivos.example/evidencia.pdf')
     expect(screen.queryByText('El cliente solicitó cambios')).toBeNull()
-    expect(screen.queryByRole('link', { name: 'Abrir esta versión' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Abrir esta versión' })).toBeNull()
   })
 
   it('la negociación del cliente abre esa versión y avisa el pedido de cambios', async () => {
@@ -385,10 +385,11 @@ describe('respuesta del cliente en el detalle', () => {
     await cargar()
     expect(screen.getByText('Enviada → En negociación')).toBeTruthy()
     expect(screen.getByText('El cliente solicitó cambios')).toBeTruthy()
-    const version = screen.getByRole('link', { name: 'Abrir esta versión' })
-    expect(version.getAttribute('href')).toBe('https://archivos.example/cot-v2.pdf')
-    expect(version.getAttribute('target')).toBe('_blank')
-    expect(version.getAttribute('rel')).toBe('noopener noreferrer')
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir esta versión' }))
+    const marco = screen.getByTitle('Enviada → En negociación')
+    expect(marco.getAttribute('src')).toBe('https://archivos.example/cot-v2.pdf')
+    expect(marco.tagName).toBe('IFRAME')
+    expect(screen.getByRole('button', { name: 'Descargar' })).toBeTruthy()
     expect(screen.queryByRole('link', { name: 'Ver adjunto' })).toBeNull()
   })
 
@@ -404,6 +405,6 @@ describe('respuesta del cliente en el detalle', () => {
     await cargar()
     expect(screen.getByText('Enviada → En negociación')).toBeTruthy()
     expect(screen.queryByText('El cliente solicitó cambios')).toBeNull()
-    expect(screen.queryByRole('link', { name: 'Abrir esta versión' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Abrir esta versión' })).toBeNull()
   })
 })
