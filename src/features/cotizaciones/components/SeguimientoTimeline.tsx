@@ -64,7 +64,7 @@ export const SeguimientoTimeline: React.FC<SeguimientoTimelineProps> = ({ seguim
                     {s.usuarioNombre ? ` · ${s.usuarioNombre}` : ''}
                     {medio ? ` · ${medio}` : ''}
                   </p>
-                  {clientePidioCambios && <p className="mt-1 text-[13px] text-foreground">El cliente solicitó cambios</p>}
+                  {clientePidioCambios && <p className="mt-1 text-[13px] font-medium text-warning-text">El cliente solicitó cambios</p>}
                   {nota && <p className="mt-1 text-[13px] text-foreground">{nota}</p>}
                   {s.rutaVersionPdf && (
                     <a
