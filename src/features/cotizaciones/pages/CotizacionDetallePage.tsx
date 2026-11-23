@@ -7,6 +7,7 @@ import { useCambiarEstado } from '../hooks/useCambiarEstado';
 import { useDescargarPDF } from '../hooks/useCotizacionesMutations';
 import { useOrdenesCompra } from '@/features/ordenes-compra/hooks/useOrdenesCompra';
 import { useFacturas } from '@/features/facturacion/hooks/useFacturacion';
+import { useCliente } from '@/features/clientes-proveedores/hooks/useClientes';
 import { SeguimientoTimeline } from '../components/SeguimientoTimeline';
 import { AdjuntoCotizacionUploader } from '../components/AdjuntoCotizacionUploader';
 import { ConfirmacionEnvioModal } from '../components/ConfirmacionEnvioModal';
@@ -21,6 +22,7 @@ import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EstadoCotizacion, type Cotizacion } from '@/types/cotizacion.types';
 import type { OrdenCompra } from '@/types/ordenCompra.types';
+import { codigoTipoDocumento } from '@/types/tercero.types';
 import {
   formatearMoneda,
   mapearEstadoCotizacion,
@@ -135,6 +137,9 @@ const CotizacionDetalleContenido: React.FC = () => {
   const cotizacionId = id ? Number(id) : null;
 
   const { data: cotizacion, isLoading, isError, refetch } = useCotizacion(cotizacionId);
+  // Una persona natural (DNI, pasaporte, CE) no emite una OC como una minera: no se le pide ese dato.
+  const { data: clienteDetalle } = useCliente(cotizacion?.idCliente ?? 0);
+  const clienteNatural = !!clienteDetalle?.tipoDocumento && codigoTipoDocumento(clienteDetalle.tipoDocumento) !== 'RUC';
   const { mutate: cambiarEstado, isPending: isChangingState } = useCambiarEstado(cotizacionId || 0);
   const envioMarcado = useMarcarEnviada(cotizacionId || 0);
   const respuestaFlujo = useRegistrarRespuestaFlujo(cotizacionId || 0);
@@ -406,7 +411,7 @@ const CotizacionDetalleContenido: React.FC = () => {
               <Link to={`/ordenes-compra?idCotizacion=${cotizacionId}`}>Orden {numeroInterno}</Link>
             </Button>
           )}
-          {clienteAcepto && ordenGenerada && !numeroOcCliente && puedeCompletarOc && (
+          {clienteAcepto && ordenGenerada && !numeroOcCliente && puedeCompletarOc && !clienteNatural && (
             <Button onClick={() => setOcClienteAbierta(true)}>Registrar OC del cliente</Button>
           )}
           {clienteAcepto && ordenGenerada && numeroOcCliente && (

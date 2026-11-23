@@ -34,6 +34,7 @@ function errorHttp(status: number, message: string) {
 let cabecera: Record<string, unknown>
 let seguimientos: Record<string, unknown>[]
 let ordenes: Record<string, unknown>[]
+let tipoDocCliente: string
 
 function ordenInterna(parcial: Record<string, unknown> = {}) {
   return {
@@ -101,12 +102,14 @@ describe('respuesta del cliente en el detalle', () => {
     vi.clearAllMocks()
     seguimientos = []
     ordenes = []
+    tipoDocCliente = 'RUC'
     cabecera = {
       idCotizacion: 1, idCliente: 4, codigoCotizacion: 'COT-001', estado: 'ENVIADA',
       fechaCotizacion: '2026-11-10', fechaValidez: diaLima(10), condicionPago: 'CONTADO',
       moneda: 'PEN', clienteRazonSocial: 'Minera Sur', subtotal: 100, igv: 18, total: 118,
     }
     http.get.mockImplementation((url: string) => {
+      if (url === '/clientes/4') return Promise.resolve({ data: { idCliente: 4, tipoDocumento: tipoDocCliente, numeroDocumento: '10456789', razonSocial: 'Minera Sur', situacion: 'ACTIVO', esTambienProveedor: false } })
       if (url === '/cotizaciones/1') return Promise.resolve({ data: cabecera })
       if (url.endsWith('/adjuntos')) return Promise.resolve({ data: [] })
       if (url.endsWith('/seguimiento')) return Promise.resolve({ data: seguimientos })
@@ -492,5 +495,16 @@ describe('respuesta del cliente en el detalle', () => {
     expect(screen.getByText('Enviada → En negociación')).toBeTruthy()
     expect(screen.queryByText('El cliente solicitó cambios')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Abrir esta versión' })).toBeNull()
+  })
+
+  it('si el cliente es persona natural (DNI), no pide la OC del cliente pero sí muestra la orden', async () => {
+    tipoDocCliente = 'DNI'
+    cabecera = { ...cabecera, estado: 'ACEPTADA_CLIENTE' }
+    ordenes = [ordenInterna()]
+    pintar('ASISTENTE_LOGISTICO')
+    await cargar()
+    expect((await screen.findAllByRole('link', { name: 'Orden 0032-10' })).length).toBeGreaterThan(0)
+    expect(screen.queryByRole('button', { name: 'Registrar OC del cliente' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Registrar orden de compra' })).toBeNull()
   })
 })
