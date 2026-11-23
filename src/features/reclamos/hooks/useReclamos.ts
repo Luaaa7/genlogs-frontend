@@ -1,6 +1,6 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { reclamosApi } from '@/api/reclamosApi'
-import type { EstadoReclamo, ReclamoFiltros, ReclamoInput } from '@/types/reclamo.types'
+import type { EstadoReclamo, ReclamoFiltros, ReclamoInput, TipoReclamo } from '@/types/reclamo.types'
 
 export const reclamosKeys = {
   all: ['reclamos'] as const,
@@ -15,6 +15,26 @@ export function useReclamos(filtros: ReclamoFiltros = {}) {
     queryFn: () => reclamosApi.listar(filtros),
     placeholderData: keepPreviousData,
   })
+}
+
+/**
+ * Cuántos reclamos hay de cada estado (y en total) con el tipo elegido. Pide una página de
+ * un solo registro por estado y lee el total: no trae los reclamos.
+ */
+export function useConteosReclamos(estados: EstadoReclamo[], tipo?: TipoReclamo) {
+  const claves: (EstadoReclamo | undefined)[] = [undefined, ...estados]
+  const consultas = useQueries({
+    queries: claves.map((estado) => {
+      const filtros: ReclamoFiltros = { tipo, estado, page: 0, size: 1 }
+      return { queryKey: [...reclamosKeys.all, 'conteo', filtros] as const, queryFn: () => reclamosApi.listar(filtros) }
+    }),
+  })
+  const conteos: Partial<Record<EstadoReclamo | 'TODOS', number>> = {}
+  claves.forEach((estado, i) => {
+    const total = consultas[i].data?.totalElements
+    if (total !== undefined) conteos[estado ?? 'TODOS'] = total
+  })
+  return conteos
 }
 
 export function useReclamo(id: number) {
