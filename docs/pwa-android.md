@@ -60,7 +60,7 @@ bubblewrap build
 
 Si la app se publica en Play Store con «firma de apps de Google Play», se agrega también la huella SHA-256 que muestra Play Console.
 
-> **Estado actual (22/11/2026): huella de DEPURACIÓN, temporal.** `public/.well-known/assetlinks.json` tiene `com.genlogs.app` y la huella SHA-256 del certificado *Android Debug* del APK de prueba instalado en el Samsung A12 de Nicole (`ED:9A:21:…:49:60`). Sirve solo para probar la pantalla completa con ese APK. Cuando se defina la llave de lanzamiento (release), hay que **agregar su huella SHA-256 a la lista** (y la de Play Console, si se usa) y, cuando ya no se use el APK de depuración, **quitar la de depuración**. La llave y sus contraseñas nunca van al repo. `src/lib/assetlinks.test.ts` comprueba que el archivo siga bien escrito.
+> **Estado actual (22/11/2026): dos huellas.** `public/.well-known/assetlinks.json` tiene `com.genlogs.app` con la huella SHA-256 de **release** (`42:B9:2D:…:75:75`) y la del certificado *Android Debug* del APK de prueba instalado en el Samsung A12 de Nicole (`ED:9A:21:…:49:60`). La de depuración es temporal: se **quita cuando se pruebe el APK firmado** (release) en el teléfono. Si se usa «firma de apps de Google Play», se agrega también la huella de Play Console. La llave y sus contraseñas nunca van al repo. `src/lib/assetlinks.test.ts` comprueba que el archivo siga bien escrito y que estén las dos huellas.
 
 ## 5. Prueba en el teléfono
 
