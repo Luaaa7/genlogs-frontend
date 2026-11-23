@@ -72,9 +72,23 @@ export function CotizacionPortalDetallePage() {
             </tbody>
           </table>
         )}
-        <div className="mt-6 flex items-baseline justify-end gap-3 border-t border-border pt-4">
-          <span className="text-muted-foreground">Total</span>
-          <span className="text-3xl font-bold tabular-nums">{formatCurrency(Number(c.total ?? 0), moneda)}</span>
+        <div className="mt-6 space-y-2 border-t border-border pt-4 text-right">
+          {c.subtotal != null && (
+            <div className="flex items-baseline justify-end gap-3">
+              <span className="text-muted-foreground">Subtotal</span>
+              <span className="tabular-nums">{formatCurrency(Number(c.subtotal), moneda)}</span>
+            </div>
+          )}
+          {c.igv != null && (
+            <div className="flex items-baseline justify-end gap-3">
+              <span className="text-muted-foreground">IGV</span>
+              <span className="tabular-nums">{formatCurrency(Number(c.igv), moneda)}</span>
+            </div>
+          )}
+          <div className="flex items-baseline justify-end gap-3">
+            <span className="text-muted-foreground">Total</span>
+            <span className="text-3xl font-bold tabular-nums">{formatCurrency(Number(c.total ?? 0), moneda)}</span>
+          </div>
         </div>
 
         {abierta && (
