@@ -11,7 +11,7 @@ export function PublicLayout() {
       <header className="sticky top-0 z-20 border-b border-border/80 bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
           <Link to="/" className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <img src={logoGenlogs} alt="GenLogs S.A.C." width={150} height={62} className="-my-2 h-16 w-auto object-contain dark:brightness-0 dark:invert" />
+            <img src={logoGenlogs} alt="GenLogs S.A.C." width={192} height={80} className="-my-3 h-20 w-auto object-contain dark:brightness-0 dark:invert" />
           </Link>
           <nav aria-label="Navegación principal" className="flex items-center gap-2">
             <a href="#contacto" className="hidden rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground sm:inline-flex">Contacto</a>
