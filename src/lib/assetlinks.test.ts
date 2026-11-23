@@ -29,10 +29,9 @@ describe("assetlinks.json", () => {
     for (const huella of huellas) expect(huella).toMatch(HUELLA)
   })
 
-  it("incluye la huella de depuración y la de release", () => {
+  it("incluye solo la huella de release (sin la de depuración)", () => {
     const [enlace] = leer() as { target: { sha256_cert_fingerprints: string[] } }[]
     expect(enlace.target.sha256_cert_fingerprints).toEqual([
-      "ED:9A:21:09:0F:67:D3:03:FA:BB:C9:89:74:8E:12:A3:C8:D3:B9:79:8D:DD:55:6F:E5:6D:B6:D7:87:35:49:60",
       "42:B9:2D:04:20:91:5E:24:AA:33:3D:01:E1:87:FE:57:F5:C7:99:87:55:C1:64:62:0D:7E:5F:F3:A2:D9:75:75",
     ])
   })
