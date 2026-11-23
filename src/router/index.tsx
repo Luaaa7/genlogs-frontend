@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom'
 import { AuthLayout } from '@/layouts/AuthLayout'
 import { AppLayout } from '@/layouts/AppLayout'
 import { PublicLayout } from '@/layouts/PublicLayout'
+import { AyudaLayout } from '@/layouts/AyudaLayout'
 import { ClienteLayout } from '@/layouts/ClienteLayout'
 import { ProtectedRoute } from '@/router/ProtectedRoute'
 import { ClienteRoute } from '@/router/ClienteRoute'
@@ -50,9 +51,12 @@ const ContactoPage = perezosa(() => import('@/features/ayuda/pages/ContactoPage'
 export const router = createBrowserRouter([
   { element: <PublicLayout />, children: [
     { path: '/', element: <LandingPage /> },
+    ...RUTAS_BLOQUES.publicas,
+  ] },
+  // Ayuda y Contáctame: públicas, pero con sesión se ven dentro del sistema (AyudaLayout elige el marco).
+  { element: <AyudaLayout />, children: [
     { path: '/ayuda', element: <AyudaPage /> },
     { path: '/contacto', element: <ContactoPage /> },
-    ...RUTAS_BLOQUES.publicas,
   ] },
   { element: <AuthLayout />, children: [
     { path: '/login', element: <LoginPage /> },

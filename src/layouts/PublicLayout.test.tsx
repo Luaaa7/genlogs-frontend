@@ -11,11 +11,11 @@ describe("Cabecera pública", () => {
     expect(screen.getByRole("link", { name: "Portal de clientes" }).getAttribute("href")).toBe("/portal/ingreso")
   })
 
-  it("tiene «Pedir cotización», Catálogo y Contacto", () => {
+  it("tiene «Pedir cotización», Catálogo y Contáctame", () => {
     render(<MemoryRouter><PublicLayout /></MemoryRouter>)
     expect(screen.getByRole("link", { name: /Pedir cotización/ }).getAttribute("href")).toContain("#solicitud")
     expect(screen.getByRole("link", { name: "Catálogo" }).getAttribute("href")).toContain("#catalogo")
-    expect(screen.getByRole("link", { name: "Contacto" })).toBeTruthy()
+    expect(screen.getAllByRole("link", { name: "Contáctame" }).length).toBeGreaterThan(0)
   })
 
   it("fuera de la landing los enlaces apuntan a /#catalogo y /#solicitud", () => {
@@ -33,8 +33,9 @@ describe("Cabecera pública", () => {
 
   it("la cabecera y el pie llevan a Ayuda y Contáctame (v3.4, K2)", () => {
     render(<MemoryRouter><PublicLayout /></MemoryRouter>)
-    expect(screen.getByRole("link", { name: "Contacto" }).getAttribute("href")).toBe("/contacto")
-    expect(screen.getByRole("link", { name: "Contáctame" }).getAttribute("href")).toBe("/contacto")
+    // El mismo nombre en la cabecera y en el pie (portal y menú interno también dicen «Contáctame»).
+    expect(screen.getAllByRole("link", { name: "Contáctame" }).map((a) => a.getAttribute("href"))).toEqual(["/contacto", "/contacto"])
+    expect(screen.queryByRole("link", { name: "Contacto" })).toBeNull()
     expect(screen.getAllByRole("link", { name: "Ayuda" }).map((a) => a.getAttribute("href"))).toEqual(["/ayuda", "/ayuda"])
   })
 
