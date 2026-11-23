@@ -27,6 +27,8 @@ export interface CotizacionPortal {
   codigoEstado?: string
   /** Opcional: el backend dice si todavía se puede aprobar o rechazar. */
   puedeDecidir?: boolean
+  subtotal?: number
+  igv?: number
   total: number
   moneda?: string
   /** N.º de la OC de la minera, si la cotización ya tiene una. */

@@ -24,7 +24,7 @@ const vigente = new Date(Date.now() + 5 * 86_400_000).toISOString().slice(0, 10)
 
 const enviada: CotizacionPortal = {
   id: 7, codigo: "COT-2026-7", fechaCotizacion: "2026-11-10", fechaValidez: vigente, estado: "Enviada",
-  total: 1250.5, moneda: "USD",
+  subtotal: 1059.75, igv: 190.75, total: 1250.5, moneda: "USD",
   lineas: [{ descripcion: "Filtro de aceite 1R-0750", cantidad: 2, unidad: "UND", precioUnitario: 625.25, importe: 1250.5 }],
 }
 const aprobada: CotizacionPortal = { ...enviada, id: 8, codigo: "COT-2026-8", estado: "Aprobada", numeroOcCliente: "OC-4500123" }
@@ -59,10 +59,27 @@ describe("Detalle de cotización: revisar y aprobar en 2 clics", () => {
     renderEn("/portal/cotizaciones/7")
 
     expect(await screen.findByText("Filtro de aceite 1R-0750")).toBeTruthy()
+    expect(screen.getByText("Subtotal")).toBeTruthy()
+    expect(screen.getByText("IGV")).toBeTruthy()
+    expect(screen.getByText("Total")).toBeTruthy()
+    expect(screen.getByText(/1,?059\.75|1\.059,75/)).toBeTruthy()
+    expect(screen.getByText(/190\.75|190,75/)).toBeTruthy()
+    expect(screen.getAllByText(/1,250\.50|1 250,50|1\.250,50/).length).toBeGreaterThan(0)
     fireEvent.click(screen.getByRole("button", { name: "Aprobar cotización" }))
     fireEvent.click(await screen.findByRole("button", { name: "Sí, aprobar" }))
 
     await waitFor(() => expect(aprobar).toHaveBeenCalledWith(7, undefined))
+  })
+
+  it("si no vienen subtotal ni igv, muestra el total y no inventa cifras", async () => {
+    const { subtotal: _subtotal, igv: _igv, ...sinDesglose } = enviada
+    vi.spyOn(portalCotizacionesApi, "detalle").mockResolvedValue(sinDesglose)
+    renderEn("/portal/cotizaciones/7")
+
+    expect(await screen.findByText("Total")).toBeTruthy()
+    expect(screen.getAllByText(/1,250\.50|1 250,50|1\.250,50/).length).toBeGreaterThan(0)
+    expect(screen.queryByText("Subtotal")).toBeNull()
+    expect(screen.queryByText("IGV")).toBeNull()
   })
 
   it("rechaza enviando el motivo que escribió el cliente", async () => {
