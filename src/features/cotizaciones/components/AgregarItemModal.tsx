@@ -11,7 +11,7 @@ import { HistorialItemPanel } from './HistorialItemPanel'
 import { RepuestoRapidoModal } from './RepuestoRapidoModal'
 import { usePermisos } from '@/lib/permisos'
 import { useEscalaMargenes } from '@/features/configuracion/hooks/useMargenes'
-import { normalizarMoneda } from '@/lib/formatters/currency'
+import { normalizarMoneda, simboloMoneda } from '@/lib/formatters/currency'
 import { MARGEN_MAXIMO, margenDesdePrecio, precioDesdeCosto, reglaProducto, reglaServicio, textoPorcentaje } from '@/lib/margenes'
 
 export interface ItemNuevo {
@@ -393,8 +393,8 @@ export function AgregarItemModal({ moneda, tipoCambio = null, onAgregar, onCerra
               <select value={monedaCosto} onChange={(e) => alCambiarMontoRef(montoRef, e.target.value as '' | 'PEN' | 'USD')}
                 className={`${inputFormClass} mt-1`}>
                 <option value="">Elige</option>
-                <option value="PEN">PEN</option>
-                <option value="USD">USD</option>
+                <option value="PEN">{simboloMoneda('PEN')}</option>
+                <option value="USD">{simboloMoneda('USD')}</option>
               </select>
             </label>
           </div>
@@ -416,8 +416,8 @@ export function AgregarItemModal({ moneda, tipoCambio = null, onAgregar, onCerra
             <label className="block text-sm font-medium text-foreground">
               Moneda del costo<MarcaObligatorio />
               <select value={monedaDelCosto} onChange={(e) => alCambiarMonedaProducto(e.target.value as 'PEN' | 'USD')} className={`${inputFormClass} mt-1`}>
-                <option value="PEN">PEN</option>
-                <option value="USD">USD</option>
+                <option value="PEN">{simboloMoneda('PEN')}</option>
+                <option value="USD">{simboloMoneda('USD')}</option>
               </select>
             </label>
           )}
