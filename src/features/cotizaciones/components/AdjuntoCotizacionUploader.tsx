@@ -4,7 +4,8 @@ import React, { useState, useRef } from 'react';
 import type { AdjuntoCotizacion } from '@/types/cotizacion.types';
 import { formatearTamanioArchivo, formatearFecha } from '@/lib/formatters/codigoCotizacion';
 import { useCargarAdjunto, useEliminarAdjunto } from '../hooks/useCotizacionesMutations';
-import { Upload, X, File, Download, Loader2 } from 'lucide-react';
+import { VistaPreviaPdf } from '@/components/ui/VistaPreviaPdf';
+import { Upload, X, File, Download, Eye, Loader2 } from 'lucide-react';
 
 interface AdjuntoCotizacionUploaderProps {
   cotizacionId: number;
@@ -24,6 +25,21 @@ const TIPOS_PERMITIDOS = [
 
 const TAMANIO_MAXIMO = 10 * 1024 * 1024; // 10 MB
 
+function esPdf(adjunto: AdjuntoCotizacion) {
+  const tipo = adjunto.tipoArchivo.toLowerCase();
+  return tipo.includes('pdf') || adjunto.nombreArchivo.toLowerCase().endsWith('.pdf');
+}
+
+function esImagen(adjunto: AdjuntoCotizacion) {
+  const tipo = adjunto.tipoArchivo.toLowerCase();
+  const nombre = adjunto.nombreArchivo.toLowerCase();
+  return tipo.includes('image') || ['png', 'jpg', 'jpeg', 'webp'].includes(tipo) || /\.(png|jpe?g|webp)$/.test(nombre);
+}
+
+function sePuedeVer(adjunto: AdjuntoCotizacion) {
+  return Boolean(adjunto.urlCloudinary || adjunto.urlArchivo) && (esPdf(adjunto) || esImagen(adjunto));
+}
+
 export const AdjuntoCotizacionUploader: React.FC<AdjuntoCotizacionUploaderProps> = ({
   cotizacionId,
   adjuntos,
@@ -36,6 +52,7 @@ export const AdjuntoCotizacionUploader: React.FC<AdjuntoCotizacionUploaderProps>
   const { mutate: eliminarAdjunto, isPending: isEliminarPending } =
     useEliminarAdjunto(cotizacionId);
   const [error, setError] = useState<string | null>(null);
+  const [viendo, setViendo] = useState<AdjuntoCotizacion | null>(null);
 
   const validarArchivo = (archivo: File): string | null => {
     if (!TIPOS_PERMITIDOS.includes(archivo.type)) {
@@ -208,12 +225,24 @@ export const AdjuntoCotizacionUploader: React.FC<AdjuntoCotizacionUploaderProps>
                 </div>
 
                 <div className="flex items-center gap-2 ml-4">
+                  {sePuedeVer(adjunto) && (
+                    <button
+                      type="button"
+                      onClick={() => setViendo(adjunto)}
+                      className="inline-flex p-2 text-accent hover:bg-accent/10 rounded-lg transition"
+                      title="Ver"
+                      aria-label={`Ver ${adjunto.nombreArchivo}`}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                  )}
                   <a
                     href={adjunto.urlCloudinary}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex p-2 text-accent hover:bg-accent/10 rounded-lg transition"
                     title="Descargar"
+                    aria-label={`Descargar ${adjunto.nombreArchivo}`}
                   >
                     <Download className="w-4 h-4" />
                   </a>
@@ -252,6 +281,16 @@ export const AdjuntoCotizacionUploader: React.FC<AdjuntoCotizacionUploaderProps>
       <p className="mt-4 text-[13px] text-muted-foreground">
         Los adjuntos quedan disponibles al compartir la cotización.
       </p>
+
+      {viendo && (
+        <VistaPreviaPdf
+          titulo={viendo.nombreArchivo}
+          nombreArchivo={viendo.nombreArchivo.replace(/\.pdf$/i, '')}
+          urlDirecta={viendo.urlCloudinary || viendo.urlArchivo}
+          esImagen={esImagen(viendo)}
+          onClose={() => setViendo(null)}
+        />
+      )}
     </section>
   );
 };
