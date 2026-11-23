@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { iniciarSesionCliente } from "@/lib/sesiones"
 import { ingresarCliente, mensajeErrorAcceso } from "../api/ingresoClienteApi"
+import { IngresoConGoogle } from "../components/IngresoConGoogle"
+import { SeparadorO } from "../components/SeparadorO"
 
 /**
  * Ingreso del cliente al portal (FE-A). Separado del login del personal: usa su
@@ -53,6 +55,8 @@ export function IngresoClientePage() {
         <p className="mt-2 text-muted-foreground">Consulta tus pedidos y envía nuevas solicitudes.</p>
       </div>
       <form onSubmit={enviar} className="space-y-5 rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
+        <IngresoConGoogle />
+        <SeparadorO texto="o con tu correo" />
         <div>
           <Label htmlFor="ingreso-correo">Correo</Label>
           <Input id="ingreso-correo" name="correo" type="email" autoComplete="email" className="mt-2" required />

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import { Link } from "react-router-dom"
+import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils/utils"
 
 interface KpiColorCardProps {
@@ -10,13 +11,15 @@ interface KpiColorCardProps {
   /** Serie para la línea de tendencia del fondo; sin serie no se dibuja. */
   serie?: number[]
   href: string
+  /** Ícono junto al título (lucide-react). */
+  icono?: LucideIcon
   tono: "navy" | "blue"
   className?: string
 }
 
 /** Indicador destacado sobre color de marca (blanco sobre azul: 11:1 y 5.5:1).
  *  Toda la tarjeta es un enlace al listado correspondiente. */
-export function KpiColorCard({ titulo, valor, detalle, serie, href, tono, className }: KpiColorCardProps) {
+export function KpiColorCard({ titulo, valor, detalle, serie, href, icono: Icono, tono, className }: KpiColorCardProps) {
   return (
     <Link
       to={href}
@@ -27,7 +30,14 @@ export function KpiColorCard({ titulo, valor, detalle, serie, href, tono, classN
       )}
     >
       {serie && serie.length > 1 && <Tendencia serie={serie} />}
-      <span className="relative text-[15px] font-semibold">{titulo}</span>
+      <span className="relative flex items-center gap-2.5 text-[15px] font-semibold">
+        {Icono && (
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/15" aria-hidden="true">
+            <Icono className="h-4 w-4" />
+          </span>
+        )}
+        {titulo}
+      </span>
       <span className="relative flex items-baseline gap-3">
         <span className="text-4xl font-bold tracking-tight tabular-nums">{valor}</span>
         {detalle && <span className="text-xs text-white/90">{detalle}</span>}

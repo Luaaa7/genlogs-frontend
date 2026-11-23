@@ -20,7 +20,7 @@ const LARGO_MAXIMO = 1000
 // LOGIN guarda dónde están las casillas y el botón de la página de ingreso, nunca la clave en sí
 // (esa sigue cifrada en «Cuenta de búsqueda»). El backend rechaza mezclar campos entre páginas.
 const PAGINAS: { pagina: PaginaSelector; titulo: string; campos: CampoSelector[] }[] = [
-  { pagina: 'LOGIN', titulo: 'Página de inicio de sesión', campos: ['USUARIO', 'CLAVE', 'ENVIAR', 'EXITO'] },
+  { pagina: 'LOGIN', titulo: 'Página de inicio de sesión', campos: ['USUARIO', 'CONTINUAR', 'CLAVE', 'ENVIAR', 'EXITO'] },
   { pagina: 'BUSQUEDA', titulo: 'Página de búsqueda', campos: ['ITEM', 'NOMBRE', 'DESCRIPCION', 'PRECIO', 'MONEDA', 'IMAGEN', 'ENLACE'] },
   { pagina: 'FICHA', titulo: 'Ficha del producto', campos: ['NOMBRE', 'DESCRIPCION', 'PRECIO', 'MONEDA', 'IMAGEN', 'ENLACE'] },
 ]
@@ -34,6 +34,7 @@ const ETIQUETAS: Record<CampoSelector, string> = {
   IMAGEN: 'Imagen',
   ENLACE: 'Enlace',
   USUARIO: 'Casilla del usuario o correo',
+  CONTINUAR: 'Botón para pasar a la clave (opcional)',
   CLAVE: 'Casilla de la clave',
   ENVIAR: 'Botón para ingresar',
   EXITO: 'Señal de sesión iniciada',

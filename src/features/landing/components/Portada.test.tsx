@@ -1,48 +1,88 @@
-import { render, screen } from "@testing-library/react"
-import { MemoryRouter } from "react-router-dom"
-import { describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
+import { fireEvent, render, screen } from "@testing-library/react"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { MemoryRouter, Route, Routes } from "react-router-dom"
+
+const api = vi.hoisted(() => ({ listarCategoriasVitrina: vi.fn() }))
+vi.mock("@/api/publicApi", () => ({ publicApi: api }))
+vi.mock("@/hooks/useTheme", () => ({ useTheme: () => ({ tema: "light", alternarTema: () => {} }) }))
+
+import { PublicLayout } from "@/layouts/PublicLayout"
 import { Portada } from "./Portada"
-import { CIFRAS, cifrasConValor, type Cifra } from "../lib/cifras"
 
-const cifra = (id: string, valor: string | null, etiqueta: string): Cifra => ({
-  id, valor, etiqueta, fuente: "Supabase (Ale)", fecha: "21/11/2026",
-})
-
-function pintar(cifras?: Cifra[]) {
-  return render(<MemoryRouter><Portada cifras={cifras} /></MemoryRouter>)
+function pintar() {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return render(
+    <QueryClientProvider client={qc}>
+      <MemoryRouter>
+        <Routes>
+          <Route element={<PublicLayout />}>
+            <Route index element={<><Portada /><section id="solicitud"><input id="sr-marca" aria-label="Marca" /></section></>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  )
 }
 
-describe("Portada (v3.4, K1)", () => {
-  it("«Ingresar» va al ingreso del portal y «Solicitar cotización» a la Solicitud rápida", () => {
+describe("Portada", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    api.listarCategoriasVitrina.mockResolvedValue([
+      { idCategoria: 1, nombre: "Válvulas", cantidad: 4 },
+      { idCategoria: 2, nombre: "Filtros", cantidad: 5 },
+      { idCategoria: 3, nombre: "Engranajes", cantidad: 1 },
+    ])
+  })
+
+  it("el h1 tiene el texto fijo para lectores de pantalla y la parte animada va oculta", () => {
     pintar()
-    expect(screen.getByRole("link", { name: "Ingresar" }).getAttribute("href")).toBe("/portal/ingreso")
-    expect(screen.getByRole("link", { name: /Solicitar cotización/ }).getAttribute("href")).toBe("#solicitud")
+    const h1 = screen.getByRole("heading", { level: 1 })
+    expect(h1.textContent).toContain("Repuestos, servicios y fabricaciones que llegan a tu operación")
+    expect(h1.querySelector(".sr-only")?.textContent).toBe("Repuestos, servicios y fabricaciones que llegan a tu operación")
+    expect(h1.querySelector('[aria-hidden="true"]')?.textContent).toContain("Fabricaciones")
   })
 
-  it("solo muestra las cifras que tienen valor, con su fecha", () => {
-    pintar([cifra("repuestos", "120", "repuestos en catálogo"), cifra("clientes", null, "empresas cliente")])
-    expect(screen.getByText("120")).toBeTruthy()
-    expect(screen.getByText("repuestos en catálogo")).toBeTruthy()
-    expect(screen.queryByText("empresas cliente")).toBeNull()
-    expect(screen.getByText("Cifras al 21/11/2026.")).toBeTruthy()
+  it("la escena del camión es aria-hidden", () => {
+    const { container } = pintar()
+    const escena = container.querySelector("[data-escena-camion]")
+    expect(escena).not.toBeNull()
+    expect(escena?.getAttribute("aria-hidden")).toBe("true")
+    expect(escena?.getAttribute("class")?.split(" ")).toEqual(expect.arrayContaining(["hidden", "md:block"]))
   })
 
-  it("sin ninguna cifra comprobada no muestra la fila de cifras", () => {
-    pintar([cifra("repuestos", null, "repuestos en catálogo"), cifra("clientes", "  ", "empresas cliente")])
-    expect(screen.queryByText(/Cifras al/)).toBeNull()
-  })
-
-  it("ya no muestra las cifras sin dato «360°» y «24/7»", () => {
+  it("«Pedir cotización» del hero apunta a la solicitud y le da el foco al primer campo", () => {
     pintar()
-    expect(screen.queryByText("360°")).toBeNull()
-    expect(screen.queryByText("24/7")).toBeNull()
+    const boton = screen.getAllByRole("link", { name: /Pedir cotización/ }).find((a) => a.hasAttribute("data-hero-cta"))!
+    expect(boton.getAttribute("href")).toContain("#solicitud")
+    fireEvent.click(boton)
+    expect(document.activeElement?.id).toBe("sr-marca")
   })
 
-  it("todas las cifras guardan su fuente y su fecha", () => {
-    for (const c of CIFRAS) {
-      expect(c.fuente).not.toBe("")
-      expect(c.fecha).toMatch(/^\d{2}\/\d{2}\/\d{4}$/)
-    }
-    expect(cifrasConValor(CIFRAS).every((c) => c.valor !== null)).toBe(true)
+  it("«Ver catálogo →» baja al catálogo y se lee «Sin compromiso · Precio y plazo confirmados»", () => {
+    const { container } = pintar()
+    expect(screen.getByRole("link", { name: /Ver catálogo/ }).getAttribute("href")).toContain("#catalogo")
+    expect(container.textContent).toContain("Sin compromiso · Precio y plazo confirmados")
+  })
+
+  it("la franja muestra las categorías y sus cantidades de los datos", async () => {
+    pintar()
+    expect((await screen.findAllByText("Válvulas")).length).toBeGreaterThan(0)
+    expect(screen.getAllByText("Filtros").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("5").length).toBeGreaterThan(0)
+  })
+
+  it("si fallan los datos la franja no aparece", async () => {
+    api.listarCategoriasVitrina.mockRejectedValue(new Error("x"))
+    pintar()
+    await new Promise((r) => setTimeout(r, 20))
+    expect(screen.queryByLabelText("Categorías del catálogo")).toBeNull()
+  })
+
+  it("no aparecen «24/7» ni «360°»", async () => {
+    const { container } = pintar()
+    await screen.findAllByText("Válvulas")
+    expect(container.textContent).not.toContain("24/7")
+    expect(container.textContent).not.toContain("360°")
   })
 })

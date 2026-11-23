@@ -59,6 +59,19 @@ describe("MetaPlazoCard", () => {
     expect(screen.queryByText(/dentro de la meta/)).toBeNull()
   })
 
+  it("la barra del avance va en verde si cumple y en rojo si no cumple", async () => {
+    http.get.mockResolvedValue({ data: meta() })
+    const { container, unmount } = pintar()
+    await screen.findByText(/El mes va dentro de la meta/)
+    expect(container.querySelector("[data-barra-meta]")?.getAttribute("data-barra-meta")).toBe("cumple")
+    unmount()
+
+    http.get.mockResolvedValue({ data: meta({ porcentaje: 80, cumple: false, cotizacionesEnPlazo: 8 }) })
+    const segundo = pintar()
+    await screen.findByText(/Quedó por debajo de la meta/)
+    expect(segundo.container.querySelector("[data-barra-meta]")?.getAttribute("data-barra-meta")).toBe("no-cumple")
+  })
+
   it("con porcentaje null muestra el guion y no el aviso de incumplimiento", async () => {
     http.get.mockResolvedValue({
       data: meta({ porcentaje: null, cumple: null, cotizacionesEnPlazo: 0, cotizacionesConsideradas: 0 }),
@@ -68,6 +81,7 @@ describe("MetaPlazoCard", () => {
     expect(screen.getByText("0 de 0 cotizaciones en el plazo")).toBeTruthy()
     expect(screen.queryByText(/por debajo/)).toBeNull()
     expect(screen.queryByText(/dentro de la meta/)).toBeNull()
+    expect(document.querySelector("[data-barra-meta]")).toBeNull()
   })
 
   it("un error de la lectura no rompe el componente", async () => {
