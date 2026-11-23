@@ -38,6 +38,7 @@ export const SeguimientoTimeline: React.FC<SeguimientoTimelineProps> = ({ seguim
             const ultimo = i === ordenados.length - 1;
             const nota = s.observaciones || s.comentario;
             const medio = s.medio ? (MEDIOS[s.medio] ?? s.medio) : null;
+            const clientePidioCambios = s.estadoNuevo === 'EN_NEGOCIACION' && Boolean(s.medio || s.fechaRespuesta);
             return (
               <li key={s.idSeguimiento ?? s.id ?? i} className="grid grid-cols-[20px_1fr] gap-3">
                 <div className="flex flex-col items-center">
@@ -63,7 +64,18 @@ export const SeguimientoTimeline: React.FC<SeguimientoTimelineProps> = ({ seguim
                     {s.usuarioNombre ? ` · ${s.usuarioNombre}` : ''}
                     {medio ? ` · ${medio}` : ''}
                   </p>
+                  {clientePidioCambios && <p className="mt-1 text-[13px] text-foreground">El cliente solicitó cambios</p>}
                   {nota && <p className="mt-1 text-[13px] text-foreground">{nota}</p>}
+                  {s.rutaVersionPdf && (
+                    <a
+                      href={s.rutaVersionPdf}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1 inline-block text-[13px] text-accent hover:underline"
+                    >
+                      Abrir esta versión
+                    </a>
+                  )}
                   {s.rutaAdjunto && (
                     <a
                       href={s.rutaAdjunto}

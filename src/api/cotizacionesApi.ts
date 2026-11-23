@@ -106,6 +106,7 @@ export const cotizacionesApi = {
       observaciones: s.observaciones ?? s.comentario ?? '',
       medio: s.medio ?? null,
       rutaAdjunto: s.rutaAdjunto ?? null,
+      rutaVersionPdf: s.rutaVersionPdf ?? null,
       fechaRespuesta: s.fechaRespuesta ?? null,
     }))
     const adjuntosMap = (adjuntos.data as any[]).map((a) => ({

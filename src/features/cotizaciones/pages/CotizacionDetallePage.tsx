@@ -294,7 +294,7 @@ const CotizacionDetalleContenido: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {estado === EstadoCotizacion.BORRADOR && asistente && (
+          {asistente && cotizacion.puedeEditar && (
             <Button variant="outline" asChild>
               <Link to={`/cotizaciones/${cotizacionId}/editar`}>Editar</Link>
             </Button>
