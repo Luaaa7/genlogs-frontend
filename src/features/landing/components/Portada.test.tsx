@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 
 const api = vi.hoisted(() => ({ listarCategoriasVitrina: vi.fn() }))
 vi.mock("@/api/publicApi", () => ({ publicApi: api }))
+vi.mock("@/hooks/useTheme", () => ({ useTheme: () => ({ tema: "light", alternarTema: () => {} }) }))
 
 import { PublicLayout } from "@/layouts/PublicLayout"
 import { Portada } from "./Portada"
@@ -14,7 +15,11 @@ function pintar() {
   return render(
     <QueryClientProvider client={qc}>
       <MemoryRouter>
-        <Routes><Route element={<PublicLayout />}><Route index element={<Portada />} /></Route></Routes>
+        <Routes>
+          <Route element={<PublicLayout />}>
+            <Route index element={<><Portada /><section id="solicitud"><input id="sr-marca" aria-label="Marca" /></section></>} />
+          </Route>
+        </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
   )
@@ -24,59 +29,60 @@ describe("Portada", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     api.listarCategoriasVitrina.mockResolvedValue([
-      { idCategoria: 1, nombre: "A", cantidad: 4 },
-      { idCategoria: 2, nombre: "B", cantidad: 5 },
-      { idCategoria: 3, nombre: "C", cantidad: 1 },
+      { idCategoria: 1, nombre: "Válvulas", cantidad: 4 },
+      { idCategoria: 2, nombre: "Filtros", cantidad: 5 },
+      { idCategoria: 3, nombre: "Engranajes", cantidad: 1 },
     ])
   })
 
-  it("el botón que va a /portal/registro dice «Crear cuenta»", () => {
+  it("el h1 tiene el texto fijo para lectores de pantalla y la parte animada va oculta", () => {
     pintar()
-    const botones = screen.getAllByRole("link").filter((a) => a.getAttribute("href") === "/portal/registro")
-    expect(botones).toHaveLength(1)
-    expect(botones[0].textContent).toBe("Crear cuenta")
+    const h1 = screen.getByRole("heading", { level: 1 })
+    expect(h1.textContent).toContain("Repuestos, servicios y fabricaciones que llegan a tu operación")
+    expect(h1.querySelector(".sr-only")?.textContent).toBe("Repuestos, servicios y fabricaciones que llegan a tu operación")
+    expect(h1.querySelector('[aria-hidden="true"]')?.textContent).toContain("Fabricaciones")
   })
 
-  it("el único «Ingresar» va a /portal/ingreso", () => {
-    pintar()
-    const ingresar = screen.getAllByRole("link", { name: "Ingresar" })
-    expect(ingresar).toHaveLength(1)
-    expect(ingresar[0].getAttribute("href")).toBe("/portal/ingreso")
-  })
-
-  it("ya no muestra «24/7» ni «360°»", () => {
+  it("la escena del camión es aria-hidden", () => {
     const { container } = pintar()
+    const escena = container.querySelector("[data-escena-camion]")
+    expect(escena).not.toBeNull()
+    expect(escena?.getAttribute("aria-hidden")).toBe("true")
+    expect(escena?.getAttribute("class")?.split(" ")).toEqual(expect.arrayContaining(["hidden", "md:block"]))
+  })
+
+  it("«Pedir cotización» del hero apunta a la solicitud y le da el foco al primer campo", () => {
+    pintar()
+    const boton = screen.getAllByRole("link", { name: /Pedir cotización/ }).find((a) => a.hasAttribute("data-hero-cta"))!
+    expect(boton.getAttribute("href")).toContain("#solicitud")
+    fireEvent.click(boton)
+    expect(document.activeElement?.id).toBe("sr-marca")
+  })
+
+  it("«Ver catálogo →» baja al catálogo y se lee «Sin compromiso · Precio y plazo confirmados»", () => {
+    const { container } = pintar()
+    expect(screen.getByRole("link", { name: /Ver catálogo/ }).getAttribute("href")).toContain("#catalogo")
+    expect(container.textContent).toContain("Sin compromiso · Precio y plazo confirmados")
+  })
+
+  it("la franja muestra las categorías y sus cantidades de los datos", async () => {
+    pintar()
+    expect((await screen.findAllByText("Válvulas")).length).toBeGreaterThan(0)
+    expect(screen.getAllByText("Filtros").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("5").length).toBeGreaterThan(0)
+  })
+
+  it("si fallan los datos la franja no aparece", async () => {
+    api.listarCategoriasVitrina.mockRejectedValue(new Error("x"))
+    pintar()
+    await new Promise((r) => setTimeout(r, 20))
+    expect(screen.queryByLabelText("Categorías del catálogo")).toBeNull()
+  })
+
+  it("no aparecen «24/7» ni «360°»", async () => {
+    const { container } = pintar()
+    await screen.findAllByText("Válvulas")
     expect(container.textContent).not.toContain("24/7")
     expect(container.textContent).not.toContain("360°")
-  })
-
-  it("la vista previa «Así verás tu pedido» es aria-hidden y marca «Cotizada» como paso actual", () => {
-    const { container } = pintar()
-    const vista = container.querySelector("[data-vista-previa]")
-    expect(vista).not.toBeNull()
-    expect(vista?.getAttribute("aria-hidden")).toBe("true")
-    expect(vista?.textContent).toContain("Así verás tu pedido")
-    for (const paso of ["Recibida", "En búsqueda", "Cotizada", "En camino"]) expect(vista?.textContent).toContain(paso)
-    expect(vista?.querySelector('[aria-current="step"]')?.textContent).toContain("Cotizada")
-  })
-
-  it("el número de repuestos sale de los datos (3 categorías que suman 10)", async () => {
-    pintar()
-    expect(await screen.findByText("10 repuestos en catálogo")).toBeTruthy()
-  })
-
-  it("sin datos de categorías no inventa el número de repuestos", async () => {
-    api.listarCategoriasVitrina.mockRejectedValue(new Error("x"))
-    const { container } = pintar()
-    await screen.findByText("Sigue tu pedido en el portal")
-    expect(container.textContent).not.toContain("repuestos en catálogo")
-  })
-
-  it("se ven los tres datos y no aparece la palabra «día»", async () => {
-    const { container } = pintar()
-    await screen.findByText("10 repuestos en catálogo")
-    expect(screen.getByText("Precio y plazo confirmados en cada cotización")).toBeTruthy()
-    expect(screen.getByText("Sigue tu pedido en el portal")).toBeTruthy()
-    expect(container.textContent?.toLowerCase()).not.toMatch(/\bd[ií]as?\b/)
   })
 })

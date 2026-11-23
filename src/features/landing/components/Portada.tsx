@@ -1,66 +1,80 @@
+import { useEffect } from "react"
+import { Link, useLocation } from "react-router-dom"
 import { ArrowRight, Check } from "lucide-react"
-import { Link } from "react-router-dom"
-import { LineasTopograficas } from "@/features/acceso-cliente/components/LineasTopograficas"
 import { useCategoriasVitrina } from "../hooks/useVitrinaPublica"
+import { EscenaCamion } from "./EscenaCamion"
 
-const ETAPAS_EJEMPLO = ["Recibida", "En búsqueda", "Cotizada", "En camino"]
-const ACTUAL = 2
+const TEXTO_FIJO = "Repuestos, servicios y fabricaciones que llegan a tu operación"
+const REPETICIONES_MIN = 8
+
+/** Al llegar con #solicitud o #catalogo baja a esa sección; en la solicitud deja el foco en su primer campo. */
+function useBajarAlAncla() {
+  const { hash, key } = useLocation()
+  useEffect(() => {
+    if (!hash) return
+    document.getElementById(hash.slice(1))?.scrollIntoView?.()
+    if (hash === "#solicitud") document.getElementById("sr-marca")?.focus({ preventScroll: true })
+  }, [hash, key])
+}
 
 export function Portada() {
-  const categorias = useCategoriasVitrina()
-  const total = categorias.data?.reduce((suma, c) => suma + c.cantidad, 0) ?? 0
-  const datos = [
-    ...(total > 0 ? [`${total} repuestos en catálogo`] : []),
-    "Precio y plazo confirmados en cada cotización",
-    "Sigue tu pedido en el portal",
-  ]
-
+  useBajarAlAncla()
   return (
-    <section className="relative overflow-hidden border-b border-border bg-muted/40 text-accent/80">
-      <LineasTopograficas />
-      <div className="relative mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1.15fr_.85fr] md:items-center md:py-12 lg:px-8">
-        <div>
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-accent">Logística que mueve operaciones</p>
-          <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-foreground sm:text-5xl">Repuestos y servicios confiables para la minería.</h1>
-          <p className="mt-4 max-w-2xl text-lg leading-8 text-slate-700 dark:text-slate-300">Centralizamos tu abastecimiento para que cada operación avance con rapidez, trazabilidad y respaldo técnico.</p>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Link to="/portal/solicitud" className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Solicitar cotización <ArrowRight className="h-4 w-4" /></Link>
-            <Link to="/portal/registro" className="inline-flex items-center justify-center rounded-md border border-border bg-card px-5 py-3 font-semibold hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Crear cuenta</Link>
+    <>
+      <section className="relative overflow-hidden bg-[#eef4fb] text-foreground dark:bg-[#1e3a5f]">
+        <EscenaCamion />
+        <div className="relative z-10 max-w-3xl px-4 pb-24 pt-12 sm:px-8 md:pb-40 md:pt-16 lg:px-14">
+          <p className="gl-up inline-flex items-center gap-2 text-[13px] font-bold uppercase tracking-[0.14em] text-dorado dark:text-amarillo">
+            <span className="h-[3px] w-[22px] rounded-sm bg-dorado dark:bg-amarillo" aria-hidden="true" />Logística para la minería
+          </p>
+          <h1 className="gl-up gl-d1 mt-[18px] text-5xl font-black leading-[1.02] tracking-[-0.045em] sm:text-7xl lg:text-[84px]">
+            <span className="sr-only">{TEXTO_FIJO}</span>
+            <span aria-hidden="true">
+              <span className="gl-words text-dorado dark:text-amarillo"><span><b>Repuestos</b><b>Servicios</b><b>Fabricaciones</b></span></span>
+              <br />que llegan<br />a tu operación.
+            </span>
+          </h1>
+          <p className="gl-up gl-d2 mt-[22px] max-w-[520px] text-[19px] leading-[1.55] text-foreground/80">Cotización con precio y plazo confirmados. Sigue cada pedido hasta el despacho.</p>
+          <div className="mt-[34px] flex flex-wrap items-center gap-x-[26px] gap-y-4">
+            <Link
+              to={{ pathname: "/", hash: "#solicitud" }}
+              data-hero-cta
+              className="gl-cta group flex h-[66px] items-center gap-[18px] rounded-[18px] border-2 border-primary bg-amarillo pl-[30px] pr-2.5 text-[19px] font-extrabold text-[#0f2440] shadow-[0_16px_38px_rgb(8_20_40/0.38)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:border-transparent"
+            >
+              Pedir cotización
+              <span className="flex h-[46px] w-[46px] items-center justify-center rounded-xl bg-[#0f2440] text-amarillo transition-transform group-hover:translate-x-1 motion-reduce:transition-none"><ArrowRight className="h-5 w-5" strokeWidth={2.6} aria-hidden="true" /></span>
+            </Link>
+            <Link to={{ pathname: "/", hash: "#catalogo" }} className="gl-up gl-d3 group flex items-center gap-1.5 text-base font-semibold text-primary hover:underline hover:underline-offset-[5px] dark:text-foreground">
+              Ver catálogo <span aria-hidden="true" className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transition-none">→</span>
+            </Link>
           </div>
-          <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-700 dark:text-slate-300">
-            {datos.map((item) => <li key={item} className="inline-flex items-center gap-2"><Check className="h-4 w-4 text-green-800 dark:text-green-400" aria-hidden="true" />{item}</li>)}
-          </ul>
+          <p className="gl-up gl-d3 mt-4 flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Check className="h-[15px] w-[15px] text-green-700 dark:text-[#6ee7b7]" strokeWidth={3} aria-hidden="true" />Sin compromiso · Precio y plazo confirmados
+          </p>
         </div>
-        <VistaPreviaPedido />
-      </div>
-    </section>
+      </section>
+      <FranjaCategorias />
+    </>
   )
 }
 
-/** Tarjeta de ejemplo con datos inventados: muestra cómo se verá un pedido. Solo decorativa. */
-function VistaPreviaPedido() {
+/** Franja amarilla que se desplaza con las categorías reales. Se pausa con el mouse; sin datos no se muestra. */
+function FranjaCategorias() {
+  const { data } = useCategoriasVitrina()
+  if (!data?.length) return null
+  // Dos mitades iguales para que el desplazamiento de -50% cierre sin saltos.
+  const mitad = Array.from({ length: Math.ceil(REPETICIONES_MIN / data.length) }, () => data).flat()
+  const pintar = (copia: number) =>
+    mitad.map((c, i) => (
+      <span key={`${copia}-${i}`} aria-hidden={copia === 1 || i >= data.length ? true : undefined} className="inline-flex items-center gap-2.5 whitespace-nowrap px-[30px]">
+        <span className="font-semibold">{c.nombre}</span>
+        <span className="rounded-full bg-[#0f2440] px-[9px] py-0.5 text-[13px] font-extrabold text-amarillo">{c.cantidad}</span>
+        <span aria-hidden="true">◆</span>
+      </span>
+    ))
   return (
-    <div data-vista-previa aria-hidden="true" className="mx-auto hidden w-full max-w-md space-y-4 rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm md:block">
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <p className="text-xs text-slate-600 dark:text-slate-400">Así verás tu pedido</p>
-          <p className="text-base font-bold">Pedido de ejemplo</p>
-        </div>
-        <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">En curso</span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-        <span className="block h-full w-[62%] rounded-full bg-accent" />
-      </div>
-      <ol className="space-y-3">
-        {ETAPAS_EJEMPLO.map((titulo, i) => (
-          <li key={titulo} aria-current={i === ACTUAL ? "step" : undefined} className="flex items-center gap-3">
-            {i < ACTUAL && <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-800 text-white"><Check className="h-3.5 w-3.5" strokeWidth={3} /></span>}
-            {i === ACTUAL && <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent"><span className="h-2 w-2 rounded-full bg-white" /></span>}
-            {i > ACTUAL && <span className="h-6 w-6 shrink-0 rounded-full border-2 border-slate-300 dark:border-slate-600" />}
-            <span className={i === ACTUAL ? "font-semibold text-accent" : i > ACTUAL ? "text-slate-600 dark:text-slate-400" : "font-medium"}>{titulo}</span>
-          </li>
-        ))}
-      </ol>
-    </div>
+    <section aria-label="Categorías del catálogo" className="flex h-16 items-center overflow-hidden bg-amarillo text-base text-[#0f2440]">
+      <div className="gl-mq">{pintar(0)}{pintar(1)}</div>
+    </section>
   )
 }

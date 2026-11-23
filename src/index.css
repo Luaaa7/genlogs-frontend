@@ -90,6 +90,8 @@
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
+  --color-amarillo: #F4C430;
+  --color-dorado: #A16207; /* texto sobre fondo claro */
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -280,3 +282,47 @@
 @keyframes portal-indeterminada { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
 .portal-indeterminada { animation: portal-indeterminada 1.3s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .portal-indeterminada { animation: none; } }
+/* Landing: hero con camión (referencia landing-referencia-*.html). Todo se apaga con movimiento reducido. */
+@keyframes gl-up { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+@keyframes gl-in { from { transform: translateX(-900px); } to { transform: translateX(0); } }
+@keyframes gl-spin { to { transform: rotate(360deg); } }
+@keyframes gl-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes gl-road { to { stroke-dashoffset: -96; } }
+@keyframes gl-p1 { from { transform: translateX(0); } to { transform: translateX(-40px); } }
+@keyframes gl-p2 { from { transform: translateX(0); } to { transform: translateX(-80px); } }
+@keyframes gl-dust { 0% { opacity: 0; transform: translate(0, 0) scale(0.6); } 20% { opacity: 0.55; } 100% { opacity: 0; transform: translate(-120px, -30px) scale(1.8); } }
+@keyframes gl-word { 0% { opacity: 0; } 5%, 33% { opacity: 1; } 38%, 100% { opacity: 0; } }
+@keyframes gl-mq { to { transform: translateX(-50%); } }
+@keyframes gl-ring { 0% { box-shadow: 0 16px 38px rgb(8 20 40 / 0.38), 0 0 0 0 var(--gl-anillo); } 70%, 100% { box-shadow: 0 16px 38px rgb(8 20 40 / 0.38), 0 0 0 18px rgb(0 0 0 / 0); } }
+.gl-up { animation: gl-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.gl-d1 { animation-delay: 0.12s; }
+.gl-d2 { animation-delay: 0.26s; }
+.gl-d3 { animation-delay: 0.4s; }
+.gl-truck { animation: gl-in 2.2s 0.3s cubic-bezier(0.16, 0.8, 0.24, 1) both; }
+.gl-wheel { animation: gl-spin 0.9s linear infinite; }
+.gl-bob { animation: gl-bob 0.45s ease-in-out infinite; }
+.gl-road { animation: gl-road 0.6s linear infinite; }
+.gl-par1 { animation: gl-p1 14s linear infinite alternate; }
+.gl-par2 { animation: gl-p2 10s linear infinite alternate; }
+.gl-dust { animation: gl-dust 1.4s ease-out infinite; }
+.gl-dd1 { animation-delay: 0.35s; }
+.gl-dd2 { animation-delay: 0.7s; }
+.gl-dd3 { animation-delay: 1.05s; }
+.gl-words { display: inline-grid; vertical-align: bottom; }
+.gl-words > span { display: contents; }
+.gl-words b { grid-area: 1 / 1; font-weight: 900; opacity: 0; animation: gl-word 7.5s cubic-bezier(0.2, 0.7, 0.2, 1) infinite; }
+.gl-words b:nth-child(2) { animation-delay: 2.5s; }
+.gl-words b:nth-child(3) { animation-delay: 5s; }
+.gl-mq { display: inline-flex; animation: gl-mq 30s linear infinite; }
+.gl-mq:hover { animation-play-state: paused; }
+.gl-cta { --gl-anillo: color-mix(in srgb, var(--primary) 45%, transparent); animation: gl-up 0.7s 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both, gl-ring 2.6s 2s ease-out infinite; }
+.dark .gl-cta { --gl-anillo: color-mix(in srgb, var(--foreground) 55%, transparent); }
+.gl-cta:hover { background: #fde68a; box-shadow: 0 16px 40px rgb(244 196 48 / 0.35); transform: translateY(-3px); }
+.gl-nl::after { content: ""; position: absolute; left: 14px; right: 14px; bottom: 4px; height: 2px; background: var(--primary); border-radius: 2px; transform: scaleX(0); transform-origin: left; transition: transform 0.2s ease-out; }
+.dark .gl-nl::after { background: var(--color-amarillo, #f4c430); }
+.gl-nl:hover::after { transform: scaleX(1); }
+@media (prefers-reduced-motion: reduce) {
+  .gl-up, .gl-truck, .gl-wheel, .gl-bob, .gl-road, .gl-par1, .gl-par2, .gl-dust, .gl-words b, .gl-mq, .gl-cta { animation: none; }
+  .gl-nl::after, .gl-cta:hover { transition: none; transform: none; }
+  .gl-words b:first-child { opacity: 1; }
+}
