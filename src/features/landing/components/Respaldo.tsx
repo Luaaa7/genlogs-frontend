@@ -1,9 +1,9 @@
 import { BadgeCheck, Mountain, ShieldCheck } from "lucide-react"
 
 const puntos = [
-  { icono: ShieldCheck, titulo: "Proveedores evaluados", texto: "Trabajamos con proveedores que revisamos antes de cotizar." },
-  { icono: BadgeCheck, titulo: "Certificaciones y calidad", texto: "Cuidamos la documentación y la calidad de cada repuesto." },
-  { icono: Mountain, titulo: "Clientes del sector minero", texto: "Conocemos las exigencias de una operación minera." },
+  { icono: ShieldCheck, titulo: "Proveedores evaluados" },
+  { icono: BadgeCheck, titulo: "Certificaciones y calidad" },
+  { icono: Mountain, titulo: "Clientes del sector minero" },
 ]
 
 export function Respaldo() {
@@ -16,13 +16,12 @@ export function Respaldo() {
           Acompañamos a equipos que necesitan consistencia, cumplimiento y una respuesta que no se detiene.
         </p>
         <div className="mt-10 grid gap-4 text-left sm:grid-cols-3">
-          {puntos.map(({ icono: Icono, titulo, texto }) => (
+          {puntos.map(({ icono: Icono, titulo }) => (
             <article key={titulo} className="rounded-xl border border-border bg-muted/40 p-5">
               <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent">
                 <Icono className="h-5 w-5" aria-hidden="true" />
               </span>
               <h3 className="mt-4 font-semibold">{titulo}</h3>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">{texto}</p>
             </article>
           ))}
         </div>
