@@ -37,4 +37,9 @@ describe("Cabecera pública", () => {
     expect(screen.getByRole("link", { name: "Contáctame" }).getAttribute("href")).toBe("/contacto")
     expect(screen.getAllByRole("link", { name: "Ayuda" }).map((a) => a.getAttribute("href"))).toEqual(["/ayuda", "/ayuda"])
   })
+
+  it("el pie lleva al ingreso del personal (/login) para quien usa la app o la web", () => {
+    render(<MemoryRouter><PublicLayout /></MemoryRouter>)
+    expect(screen.getByRole("link", { name: "Ingreso del personal" }).getAttribute("href")).toBe("/login")
+  })
 })

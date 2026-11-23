@@ -42,6 +42,7 @@ export function PublicLayout() {
           <nav aria-label="Enlaces del pie" className="flex gap-4">
             <Link to="/ayuda" className="hover:text-foreground hover:underline">Ayuda</Link>
             <Link to="/contacto" className="hover:text-foreground hover:underline">Contáctame</Link>
+            <Link to="/login" className="hover:text-foreground hover:underline">Ingreso del personal</Link>
           </nav>
         </div>
       </footer>
