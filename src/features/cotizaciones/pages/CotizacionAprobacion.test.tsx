@@ -223,9 +223,10 @@ describe('aprobación de la cotización', () => {
     expect(within(menuEnviada).getByRole('menuitemradio', { name: 'Anulada' })).toBeTruthy()
     expect(within(menuEnviada).queryByRole('menuitemradio', { name: 'Aprobada' })).toBeNull()
     expect(within(menuEnviada).queryByRole('menuitemradio', { name: 'Rechazada' })).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Pasar a negociación' }))
-    await waitFor(() => expect(http.patch).toHaveBeenCalledWith('/cotizaciones/1/estado', { codigoEstado: 'EN_NEGOCIACION', comentario: '' }))
-    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Pasar a negociación' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Cliente aceptó' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Pidió cambios' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Rechazó' })).toBeTruthy()
     enviada.unmount()
 
     cabecera = { ...cabecera, estado: 'EN_NEGOCIACION' }

@@ -249,12 +249,6 @@ const CotizacionDetalleContenido: React.FC = () => {
     accionPrincipal = (
       <AprobacionCotizacion id={cotizacionId} estado={estado} asistente={asistente} jefe={jefe} onEnviar={() => setShowEnvioModal(true)} />
     );
-  } else if (estado === 'ENVIADA' && jefe) {
-    accionPrincipal = (
-      <Button onClick={() => handleCambiarEstado(EstadoCotizacion.EN_NEGOCIACION)} disabled={isChangingState}>
-        Pasar a negociación
-      </Button>
-    );
   } else if (clienteAcepto && ordenGenerada && !facturaGenerada) {
     accionPrincipal = (
       <Button onClick={() => setShowFacturaModal(true)}>
