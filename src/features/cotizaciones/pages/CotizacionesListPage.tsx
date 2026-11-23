@@ -87,7 +87,8 @@ export const CotizacionesListPage: React.FC = () => {
   const [filtros, setFiltros] = useState<CotizacionesFilterParams>({
     page: 0,
     size: 10,
-    sortBy: 'fechaCotizacion',
+    // dateCreate trae la hora. fechaCreacion el backend lo traduce a fechaCotizacion (solo el día).
+    sortBy: 'dateCreate',
     sortDir: 'DESC',
   });
   const [descargando, setDescargando] = useState<number | null>(null);
