@@ -16,11 +16,27 @@ import type {
   AdjuntoCotizacion,
 } from "@/types/cotizacion.types"
 
-/** POST /cotizaciones/{id}/respuesta-cliente. idAdjunto es un adjunto que la cotización ya tiene. */
+/** Lo que se escribe. APROBADA solo se lee: una aceptación nueva es ACEPTADA_CLIENTE. */
+export type CodigoRespuestaCliente = "ACEPTADA_CLIENTE" | "EN_NEGOCIACION" | "RECHAZADA"
+/** Clave interna del modal. No se manda: el POST lleva el código de estado. */
+export type AccionRespuestaCliente = "acepto" | "pidio_cambios" | "rechazo"
+export type MedioRespuestaCliente = "correo" | "whatsapp" | "llamada" | "otro"
+
+/**
+ * POST /cotizaciones/{id}/respuesta-cliente.
+ * El DTO declara codigoEstado, comentario, idAdjunto, fechaRespuesta y medio.
+ */
 export interface RespuestaClienteRequest {
-  codigoEstado: "APROBADA" | "RECHAZADA"
+  codigoEstado: CodigoRespuestaCliente
   comentario: string
-  idAdjunto: number
+  idAdjunto?: number
+  fechaRespuesta: string
+  medio: MedioRespuestaCliente
+}
+
+/** Respuesta que registra el vendedor o el jefe. El archivo se sube aparte. */
+export interface RespuestaFlujoCliente extends RespuestaClienteRequest {
+  adjunto?: File | null
 }
 
 export const cotizacionesApi = {
@@ -81,13 +97,16 @@ export const cotizacionesApi = {
     const seguimientos = (seguimiento.data as any[]).map((s) => ({
       idSeguimiento: s.idSeguimiento,
       idEstadoCotizacion: 0,
-      estadoNuevo: s.codigoEstado ?? s.estado,
-      estadoAnterior: undefined,
+      estadoNuevo: s.estadoNuevo ?? s.codigoEstado ?? s.estado,
+      estadoAnterior: s.estadoAnterior ?? undefined,
       fechaEvento: s.fechaEvento,
       fecha: s.fechaEvento,
-      usuarioNombre: s.usuario ?? undefined,
+      usuarioNombre: s.usuarioNombre ?? s.usuario ?? undefined,
       comentario: s.comentario ?? undefined,
-      observaciones: '',
+      observaciones: s.observaciones ?? s.comentario ?? '',
+      medio: s.medio ?? null,
+      rutaAdjunto: s.rutaAdjunto ?? null,
+      fechaRespuesta: s.fechaRespuesta ?? null,
     }))
     const adjuntosMap = (adjuntos.data as any[]).map((a) => ({
       idAdjunto: a.idAdjunto,
@@ -190,6 +209,33 @@ export const cotizacionesApi = {
   /** El Jefe registra la respuesta que el cliente dio fuera del portal. La orden, si aprueba, la crea el backend. */
   async registrarRespuestaCliente(id: number, body: RespuestaClienteRequest): Promise<Cotizacion> {
     const { data } = await axiosClient.post<Cotizacion>(`/cotizaciones/${id}/respuesta-cliente`, body)
+    return data
+  },
+
+  /** Aprobada por el Jefe → envía el correo y, si sale, deja la cotización en Enviada. */
+  async marcarEnviada(id: number): Promise<Cotizacion> {
+    const { data } = await axiosClient.post<Cotizacion>(`/cotizaciones/${id}/marcar-enviada`)
+    return data
+  },
+
+  /**
+   * Registra la respuesta. El archivo entra antes por /adjuntos; aquí solo va su id.
+   * fechaRespuesta y medio van en el cuerpo porque el DTO ya los declara.
+   */
+  async registrarRespuestaFlujo(id: number, body: RespuestaFlujoCliente): Promise<Cotizacion> {
+    let idAdjunto = body.idAdjunto
+    if (body.adjunto) {
+      const subido = await this.cargarAdjunto(id, body.adjunto)
+      idAdjunto = subido.idAdjunto ?? subido.id
+    }
+    const solicitud: RespuestaClienteRequest = {
+      codigoEstado: body.codigoEstado,
+      comentario: body.comentario.trim(),
+      fechaRespuesta: body.fechaRespuesta,
+      medio: body.medio,
+      ...(idAdjunto != null ? { idAdjunto } : {}),
+    }
+    const { data } = await axiosClient.post<Cotizacion>(`/cotizaciones/${id}/respuesta-cliente`, solicitud)
     return data
   },
 

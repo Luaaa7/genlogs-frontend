@@ -34,7 +34,7 @@ const PESTANAS: { estado?: EstadoCotizacion; label: string }[] = [
   { estado: EstadoCotizacion.BORRADOR, label: 'Borrador' },
   { estado: EstadoCotizacion.ENVIADA, label: 'Enviadas' },
   { estado: EstadoCotizacion.EN_NEGOCIACION, label: 'En negociación' },
-  { estado: EstadoCotizacion.APROBADA, label: 'Aprobadas' },
+  { estado: EstadoCotizacion.ACEPTADA_CLIENTE, label: 'Aceptadas' },
   { estado: EstadoCotizacion.RECHAZADA, label: 'Rechazadas' },
   { estado: EstadoCotizacion.VENCIDA, label: 'Vencidas' },
   { estado: EstadoCotizacion.ANULADA, label: 'Anuladas' },

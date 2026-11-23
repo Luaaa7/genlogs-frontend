@@ -8,6 +8,31 @@ import type { OrdenCompra, OrdenCompraFiltros, OrdenCompraInput, EstadoOrdenComp
  */
 const usarMock = false
 
+export interface PrecargaOrdenItem {
+  idCotizacionDetalle?: number
+  descripcion: string
+  cantidad: number
+  unidad?: string | null
+  precioUnitario: number
+  importe: number
+}
+
+/** Datos que el backend deja listos, siempre en soles, para crear la orden. */
+export interface PrecargaOrdenCompra {
+  idCotizacion: number
+  codigoCotizacion: string
+  idCliente: number | null
+  cliente: string | null
+  moneda: string
+  monedaCotizacion?: string | null
+  tipoCambio?: number | null
+  idCondicionPago?: number | null
+  subtotal: number
+  igv: number
+  total: number
+  items: PrecargaOrdenItem[]
+}
+
 function ordenDeEjemplo(parcial: Partial<OrdenCompra> & Pick<OrdenCompra, 'idOrdenCompra' | 'numeroOrdenCompra' | 'total'>): OrdenCompra {
   return {
     id: parcial.idOrdenCompra,
@@ -89,6 +114,9 @@ export const ordenesCompraApi = {
     return axiosClient.get<OrdenCompra>(`/ordenes-compra/${id}`).then((r) => r.data)
   },
   crear: (data: OrdenCompraInput) => axiosClient.post<OrdenCompra>('/ordenes-compra', data).then((r) => r.data),
+  /** Cliente, ítems y montos en soles, listos para registrar la orden de una cotización aceptada. */
+  precargarDesdeCotizacion: (idCotizacion: number) =>
+    axiosClient.get<PrecargaOrdenCompra>(`/ordenes-compra/desde-cotizacion/${idCotizacion}`).then((r) => r.data),
   cambiarEstado: (id: number, estado: EstadoOrdenCompra) =>
     axiosClient.patch<OrdenCompra>(`/ordenes-compra/${id}/estado`, { codigoEstado: estado }).then((r) => r.data),
   subirArchivo: (id: number, archivo: File, onProgress?: (porcentaje: number) => void) => {
