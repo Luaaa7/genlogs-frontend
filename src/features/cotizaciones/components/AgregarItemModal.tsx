@@ -323,7 +323,7 @@ export function AgregarItemModal({ moneda, tipoCambio = null, onAgregar, onCerra
           <Button type="button" variant="ghost" onClick={onCerrar}>{agregados > 0 ? 'Listo' : 'Cancelar'}</Button>
           <Button type="button" variant="outline" onClick={() => agregar(true)}>
             <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-            Agregar y añadir otro
+            Añadir otro
           </Button>
           <Button type="button" onClick={() => agregar(false)}>Agregar ítem</Button>
         </>

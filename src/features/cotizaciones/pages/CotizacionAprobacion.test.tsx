@@ -178,6 +178,7 @@ describe('aprobación de la cotización', () => {
   })
 
   it('en borrador el Jefe y el asistente logístico ven Editar; el administrativo y otros estados no', async () => {
+    cabecera = { ...cabecera, puedeEditar: true }
     const jefe = pintarDetalle('JEFE_ADMINISTRATIVO')
     const editar = await screen.findByRole('link', { name: 'Editar' })
     expect(editar.getAttribute('href')).toBe('/cotizaciones/1/editar')
@@ -192,10 +193,23 @@ describe('aprobación de la cotización', () => {
     expect(screen.queryByRole('link', { name: 'Editar' })).toBeNull()
     administrativo.unmount()
 
-    cabecera = { ...cabecera, estado: 'ENVIADA' }
+    cabecera = { ...cabecera, estado: 'ENVIADA', puedeEditar: false }
     pintarDetalle('JEFE_ADMINISTRATIVO')
     expect(await screen.findByText('COT-001')).toBeTruthy()
     expect(screen.queryByRole('link', { name: 'Editar' })).toBeNull()
+  })
+
+  it('en negociación Editar sigue a puedeEditar, no al nombre del estado', async () => {
+    cabecera = { ...cabecera, estado: 'EN_NEGOCIACION', puedeEditar: true }
+    const abierto = pintarDetalle('ASISTENTE_LOGISTICO')
+    expect((await screen.findByRole('link', { name: 'Editar' })).getAttribute('href')).toBe('/cotizaciones/1/editar')
+    abierto.unmount()
+
+    cabecera = { ...cabecera, puedeEditar: false }
+    pintarDetalle('ASISTENTE_LOGISTICO')
+    expect(await screen.findByText('COT-001')).toBeTruthy()
+    expect(screen.queryByRole('link', { name: 'Editar' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Revisar y guardar' })).toBeNull()
   })
 
   it('el menú ya no ofrece aprobar ni rechazar, y anular pide un motivo de al menos 5 caracteres', async () => {

@@ -366,5 +366,44 @@ describe('respuesta del cliente en el detalle', () => {
     expect(screen.getByText(/18\/11\/2026/)).toBeTruthy()
     const enlace = screen.getByRole('link', { name: 'Ver adjunto' })
     expect(enlace.getAttribute('href')).toBe('https://archivos.example/evidencia.pdf')
+    expect(screen.queryByText('El cliente solicitó cambios')).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Abrir esta versión' })).toBeNull()
+  })
+
+  it('la negociación del cliente abre esa versión y avisa el pedido de cambios', async () => {
+    seguimientos = [{
+      idSeguimiento: 4,
+      estadoAnterior: 'ENVIADA',
+      estadoNuevo: 'EN_NEGOCIACION',
+      fechaEvento: '2026-11-19T10:00:00',
+      fechaRespuesta: '2026-11-19',
+      medio: 'whatsapp',
+      comentario: 'Pidió otro plazo',
+      rutaVersionPdf: 'https://archivos.example/cot-v2.pdf',
+    }]
+    pintar('ASISTENTE_LOGISTICO')
+    await cargar()
+    expect(screen.getByText('Enviada → En negociación')).toBeTruthy()
+    expect(screen.getByText('El cliente solicitó cambios')).toBeTruthy()
+    const version = screen.getByRole('link', { name: 'Abrir esta versión' })
+    expect(version.getAttribute('href')).toBe('https://archivos.example/cot-v2.pdf')
+    expect(version.getAttribute('target')).toBe('_blank')
+    expect(version.getAttribute('rel')).toBe('noopener noreferrer')
+    expect(screen.queryByRole('link', { name: 'Ver adjunto' })).toBeNull()
+  })
+
+  it('pasar a negociación, sin medio ni fecha, no abre una versión ni dice que el cliente pidió cambios', async () => {
+    seguimientos = [{
+      idSeguimiento: 5,
+      estadoAnterior: 'ENVIADA',
+      estadoNuevo: 'EN_NEGOCIACION',
+      fechaEvento: '2026-11-19T11:00:00',
+      usuario: 'Jefe',
+    }]
+    pintar('JEFE_ADMINISTRATIVO')
+    await cargar()
+    expect(screen.getByText('Enviada → En negociación')).toBeTruthy()
+    expect(screen.queryByText('El cliente solicitó cambios')).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Abrir esta versión' })).toBeNull()
   })
 })

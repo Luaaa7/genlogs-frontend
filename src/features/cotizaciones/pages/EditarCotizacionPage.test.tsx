@@ -92,7 +92,7 @@ describe('editar un borrador', () => {
       idCotizacion: 7, idCliente: 4, codigoCotizacion: 'COT-007', estado: 'BORRADOR',
       fechaCotizacion: '2026-11-10', fechaValidez: '2026-12-10', condicionPago: 'CONTADO',
       moneda: 'USD', observaciones: 'Entrega en mina', clienteRazonSocial: 'Minera Sur',
-      subtotal: 100, igv: 18, total: 118, tipoCambioUsado: 3.75,
+      subtotal: 100, igv: 18, total: 118, tipoCambioUsado: 3.75, puedeEditar: true,
     }
     lineas = [{
       idCotizacionDetalle: 3, idProducto: 9, productoNombre: 'Filtro CAT', idUnidadMedida: 2,
@@ -190,12 +190,20 @@ describe('editar un borrador', () => {
     expect(screen.queryByText(/Bajo el mínimo/)).toBeNull()
   })
 
-  it('en un estado distinto de borrador avisa y no llama al PUT', async () => {
-    cabecera = { ...cabecera, estado: 'ENVIADA' }
+  it('con puedeEditar en negociación sigue mostrando el formulario', async () => {
+    cabecera = { ...cabecera, estado: 'EN_NEGOCIACION', puedeEditar: true }
     pintar()
-    expect((await screen.findByRole('alert')).textContent).toContain('Solo se puede editar un borrador')
+    expect(await screen.findByDisplayValue('Filtro CAT')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Revisar y guardar' })).toBeTruthy()
+  })
+
+  it('sin puedeEditar avisa y no muestra el formulario', async () => {
+    cabecera = { ...cabecera, estado: 'EN_NEGOCIACION', puedeEditar: false }
+    pintar()
+    expect((await screen.findByRole('alert')).textContent).toContain('Solo se edita un borrador o una cotización cuando el cliente quiere cambios.')
     expect(screen.getByRole('link', { name: 'Volver al detalle' }).getAttribute('href')).toBe('/cotizaciones/7')
     expect(screen.queryByRole('button', { name: 'Revisar y guardar' })).toBeNull()
+    expect(screen.queryByDisplayValue('Filtro CAT')).toBeNull()
     expect(http.put).not.toHaveBeenCalled()
   })
 })
