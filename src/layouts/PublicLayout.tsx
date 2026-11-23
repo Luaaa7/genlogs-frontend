@@ -20,7 +20,8 @@ export function PublicLayout() {
           </Link>
           <nav aria-label="Navegación principal" className="flex items-center gap-1">
             <a href={`${prefijo}#catalogo`} className={`${enlaceNav} ${foco}`}>Catálogo</a>
-            <a href="#contacto" className={`${enlaceNav} ${foco}`}>Contacto</a>
+            <Link to="/ayuda" className={`${enlaceNav} ${foco}`}>Ayuda</Link>
+            <Link to="/contacto" className={`${enlaceNav} ${foco}`}>Contacto</Link>
             <span aria-hidden="true" className="mx-2.5 hidden h-[26px] w-px bg-border dark:bg-foreground/25 sm:block" />
             <button type="button" onClick={alternarTema} aria-label={tema === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"} className={`rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground ${foco}`}>
               {tema === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -38,7 +39,10 @@ export function PublicLayout() {
       <footer id="contacto" className="border-t border-border bg-muted/40">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-8 text-sm text-muted-foreground sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
           <p>© {new Date().getFullYear()} GenLogs S.A.C. Soluciones para minería.</p>
-          <p>Atención comercial y soporte especializado.</p>
+          <nav aria-label="Enlaces del pie" className="flex gap-4">
+            <Link to="/ayuda" className="hover:text-foreground hover:underline">Ayuda</Link>
+            <Link to="/contacto" className="hover:text-foreground hover:underline">Contáctame</Link>
+          </nav>
         </div>
       </footer>
     </div>

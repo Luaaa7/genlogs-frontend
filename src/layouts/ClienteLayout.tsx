@@ -34,6 +34,8 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
               {vitrinaHabilitada && <NavLink to="/portal/repuestos" className={claseEnlace}>Repuestos</NavLink>}
               <NavLink to="/portal/reclamos" className={claseEnlace}>Reclamos</NavLink>
               <NavLink to="/portal/solicitud" className={claseEnlace}>Nueva solicitud</NavLink>
+              <NavLink to="/ayuda" className={claseEnlace}>Ayuda</NavLink>
+              <NavLink to="/contacto" className={claseEnlace}>Contáctame</NavLink>
               <button
                 type="button"
                 onClick={() => {
@@ -49,6 +51,8 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
             <nav aria-label="Portal del cliente" className="flex items-center gap-1 text-sm">
               <NavLink to="/portal/ingreso" className={claseEnlace}>Ingresar</NavLink>
               <NavLink to="/portal/registro" className={claseEnlace}>Crear cuenta</NavLink>
+              <NavLink to="/ayuda" className={claseEnlace}>Ayuda</NavLink>
+              <NavLink to="/contacto" className={claseEnlace}>Contáctame</NavLink>
             </nav>
           )}
         </div>

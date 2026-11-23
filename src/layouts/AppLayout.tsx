@@ -20,6 +20,8 @@ import {
   Moon,
   Search,
   MessageSquareWarning,
+  LifeBuoy,
+  Mail,
 } from 'lucide-react';
 import logoGenlogs from '../assets/GENLOGS.webp';
 import { useAuthStore } from '@/features/auth/store/authStore';
@@ -388,6 +390,25 @@ export function AppLayout() {
                     <p className="truncate text-sm font-medium text-foreground">{nombreUsuario ?? 'Usuario'}</p>
                     <p className="truncate text-xs text-muted-foreground">{nombreRolLegible(nombreRol)}</p>
                   </div>
+                  {/* v3.4 (K2): Ayuda y Contáctame */}
+                  <Link
+                    to="/ayuda"
+                    role="menuitem"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <LifeBuoy className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    Ayuda
+                  </Link>
+                  <Link
+                    to="/contacto"
+                    role="menuitem"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="flex w-full items-center gap-2.5 border-b border-border px-3 py-2.5 text-sm text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <Mail className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    Contáctame
+                  </Link>
                   <button
                     type="button"
                     role="menuitem"
