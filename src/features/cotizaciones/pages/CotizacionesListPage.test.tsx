@@ -72,9 +72,9 @@ describe('orden del listado de cotizaciones', () => {
 
   it('pide la hora de creación y pone primero la última del mismo día', async () => {
     pintar()
-    const primera = await screen.findByRole('link', { name: '20261123-04ADM' })
+    await screen.findByRole('link', { name: '20261123-04ADM' })
     const filas = screen.getAllByRole('row')
-    expect(filas[1]).toContainElement(primera)
+    expect(filas[1].textContent).toContain('20261123-04ADM')
     expect(filas[2].textContent).toContain('20261123-01ADM')
     expect(screen.getAllByText('23/11/2026')).toHaveLength(2)
 
