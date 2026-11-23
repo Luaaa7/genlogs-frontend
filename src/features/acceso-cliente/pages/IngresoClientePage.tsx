@@ -68,6 +68,7 @@ export function IngresoClientePage() {
           <div>
             <Label htmlFor="ingreso-password">Contraseña</Label>
             <Input id="ingreso-password" name="password" type="password" autoComplete="current-password" className="mt-2" required />
+            <Link to="/recuperar-password?origen=portal" className="mt-2 inline-block text-sm font-medium text-accent hover:underline">¿Olvidaste tu contraseña?</Link>
           </div>
           {error && <ErrorBanner message={error} />}
           <Button className="w-full" disabled={cargando}>{cargando ? "Ingresando..." : "Ingresar"}</Button>
