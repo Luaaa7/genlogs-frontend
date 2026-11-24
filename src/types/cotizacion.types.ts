@@ -29,7 +29,7 @@ export interface CotizacionDetalle {
   descripcion?: string
 }
 export interface AdjuntoCotizacion { idAdjunto?: number; id?: number; idCotizacion?: number; nombreArchivo: string; urlArchivo: string; urlCloudinary: string; tipoArchivo: string; tamanio: number; fechaSubida?: string; subidoPor: string }
-export interface SeguimientoCotizacion { idSeguimiento?: number; id?: number; idCotizacion?: number; idEstadoCotizacion: number; estadoCodigo?: EstadoCotizacion; estadoAnterior?: string; estadoNuevo: string; fechaEvento: string; fecha: string; idUsuario?: number; usuarioNombre?: string; comentario?: string; observaciones: string; medio?: string | null; rutaAdjunto?: string | null; rutaVersionPdf?: string | null; fechaRespuesta?: string | null }
+export interface SeguimientoCotizacion { idSeguimiento?: number; id?: number; idCotizacion?: number; idEstadoCotizacion: number; estadoCodigo?: EstadoCotizacion; estadoAnterior?: string; estadoNuevo: string; fechaEvento: string; fecha: string; idUsuario?: number; usuarioNombre?: string; comentario?: string; observaciones: string; medio?: string | null; medioDetalle?: string | null; rutaAdjunto?: string | null; rutaVersionPdf?: string | null; fechaRespuesta?: string | null }
 
 /** Modelo canónico de cotizacion; los campos de presentación provienen de las vistas V8. */
 export interface Cotizacion {

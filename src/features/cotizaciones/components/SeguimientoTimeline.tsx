@@ -43,7 +43,11 @@ export const SeguimientoTimeline: React.FC<SeguimientoTimelineProps> = ({ seguim
             const negativo = s.estadoNuevo === 'RECHAZADA' || s.estadoNuevo === 'ANULADA';
             const ultimo = i === ordenados.length - 1;
             const nota = s.observaciones || s.comentario;
-            const medio = s.medio ? (MEDIOS[s.medio] ?? s.medio) : null;
+            const medio = s.medio
+              ? s.medio === 'otro' && s.medioDetalle
+                ? `Otro: ${s.medioDetalle}`
+                : (MEDIOS[s.medio] ?? s.medio)
+              : null;
             const clientePidioCambios = s.estadoNuevo === 'EN_NEGOCIACION' && Boolean(s.medio || s.fechaRespuesta);
             return (
               <li key={s.idSeguimiento ?? s.id ?? i} className="grid grid-cols-[20px_1fr] gap-3">

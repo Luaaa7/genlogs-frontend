@@ -17,6 +17,8 @@ interface Props {
   moneda: string
   isLoading?: boolean
   error?: string | null
+  /** 'total' (por defecto) propone el saldo completo; 'parcial' deja el monto en blanco. */
+  sugerido?: 'total' | 'parcial'
   onConfirm: (pago: RegistrarPagoInput) => void
   onCancel: () => void
 }
@@ -25,14 +27,14 @@ interface Props {
 export function RegistrarPagoDialog(props: Props) {
   if (!props.open) return null
   // key: cada vez que se abre para otro comprobante, el formulario se reinicia con su saldo
-  return <Contenido key={`${props.comprobante}-${props.saldo}`} {...props} />
+  return <Contenido key={`${props.comprobante}-${props.saldo}-${props.sugerido ?? 'total'}`} {...props} />
 }
 
 /** Solo números con hasta 2 decimales (acepta coma o punto). */
 const FORMATO_MONTO = /^\d+([.,]\d{1,2})?$/
 
-function Contenido({ comprobante, saldo, moneda, isLoading = false, error, onConfirm, onCancel }: Props) {
-  const [monto, setMonto] = useState(saldo.toFixed(2))
+function Contenido({ comprobante, saldo, moneda, isLoading = false, error, sugerido = 'total', onConfirm, onCancel }: Props) {
+  const [monto, setMonto] = useState(sugerido === 'parcial' ? '' : saldo.toFixed(2))
   const [fecha, setFecha] = useState(hoyISO())
   const [medio, setMedio] = useState('')
   const [operacion, setOperacion] = useState('')
