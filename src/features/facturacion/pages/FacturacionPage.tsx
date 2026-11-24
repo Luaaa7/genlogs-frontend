@@ -233,7 +233,7 @@ export function FacturacionPage() {
                           numero={codigoDe(f)}
                           puedeAnular={puedeAnular}
                           puedePagar={puedePagar}
-                          motivoSinPago={!permisos.registrarPago ? 'Solo el Contador registra pagos' : 'Sin saldo pendiente'}
+                          motivoSinPago={!permisos.registrarPago ? 'Tu rol no puede registrar pagos' : 'Sin saldo pendiente'}
                           onAnular={() => setAnulando(f)}
                           onPagar={(s) => { setSugeridoPago(s); setPagando(f) }}
                           onError={setErrorAccion}

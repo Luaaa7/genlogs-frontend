@@ -145,7 +145,7 @@ export function permisosDe(nombreRol: string | null | undefined) {
     gestionarReclamos: esInterno && (puedeCrear('reclamos') || puedeAprobar('reclamos')),
     eliminarReclamos: es('JEFE_ADMINISTRATIVO'),
     emitirFactura: puedeCrear('comprobantes'),
-    registrarPago: puedeCrear('comprobantes'),
+    registrarPago: puedeCrear('comprobantes') || es('JEFE_ADMINISTRATIVO'),
     /** BE-A: la anulacion pasa de ADMINISTRADOR a JEFE_ADMINISTRATIVO. */
     anularFactura: es('JEFE_ADMINISTRATIVO'),
     enviarFactura: es('CONTADOR_GENERAL', 'JEFE_ADMINISTRATIVO'),
