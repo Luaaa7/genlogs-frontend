@@ -71,7 +71,8 @@ describe("Detalle de cotización: revisar y aprobar en 2 clics", () => {
     await waitFor(() => expect(aprobar).toHaveBeenCalledWith(7, undefined))
   })
 
-  it("si no vienen subtotal ni igv, muestra el total y no inventa cifras", async () => {
+    it("si no vienen subtotal ni igv, muestra el total y no inventa cifras", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { subtotal: _subtotal, igv: _igv, ...sinDesglose } = enviada
     vi.spyOn(portalCotizacionesApi, "detalle").mockResolvedValue(sinDesglose)
     renderEn("/portal/cotizaciones/7")
