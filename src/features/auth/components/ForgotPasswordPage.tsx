@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react"
-import { Link } from "react-router-dom"
+import { Link, useSearchParams } from "react-router-dom"
 import { Mail, MailCheck } from "lucide-react"
 import { solicitarRecuperacion } from "@/api/authApi"
 import { IconInput } from "@/components/ui/IconInput"
@@ -9,6 +9,8 @@ export function ForgotPasswordPage() {
   const [enviado, setEnviado] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [params] = useSearchParams()
+  const rutaLogin = params.get("origen") === "portal" ? "/portal/ingreso" : "/login"
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -76,7 +78,7 @@ export function ForgotPasswordPage() {
       )}
 
       <Link
-        to="/login"
+        to={rutaLogin}
         className="block text-center text-sm font-medium text-accent hover:text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
       >
         Volver al inicio de sesión
