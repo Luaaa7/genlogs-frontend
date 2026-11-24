@@ -37,6 +37,8 @@ interface Props {
   puedeAnular: boolean
   /** Si se puede registrar un pago (permiso, no anulada/pagada y con saldo). */
   puedePagar: boolean
+  /** Por qué no se puede registrar pago (se muestra bajo Pago parcial / Pagada). */
+  motivoSinPago?: string
   /** Anular pasa por la confirmación de la página. */
   onAnular: () => void
   /** Pago parcial / Pagada abren el diálogo "Registrar pago". */
@@ -49,7 +51,7 @@ interface Props {
  * Emitida y Vencida se eligen a mano; Anulada pide confirmación; Pago parcial y Pagada
  * abren "Registrar pago" (el estado lo pone el backend) para que el saldo siempre cuadre.
  */
-export function EstadoFacturaSelect({ idFactura, estadoActual, numero, puedeAnular, puedePagar, onAnular, onPagar, onError }: Props) {
+export function EstadoFacturaSelect({ idFactura, estadoActual, numero, puedeAnular, puedePagar, motivoSinPago = 'No se puede registrar pago', onAnular, onPagar, onError }: Props) {
   const { mutate, isPending } = useCambiarEstadoFactura(idFactura)
   const actual = estadoDe(ESTADOS_FACTURA, estadoActual)
 
@@ -163,7 +165,7 @@ export function EstadoFacturaSelect({ idFactura, estadoActual, numero, puedeAnul
               const porPago = POR_PAGO.has(codigo)
               // Pago parcial / Pagada solo se bloquean si no se puede registrar un pago.
               const bloqueado = (porPago && !puedePagar) || (codigo === 'ANULADA' && !puedeAnular)
-              const motivo = porPago ? 'No se puede registrar pago' : 'Tiene pagos'
+              const motivo = porPago ? motivoSinPago : 'Tiene pagos'
               return (
                 <button
                   key={codigo}
