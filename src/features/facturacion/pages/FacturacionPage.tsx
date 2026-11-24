@@ -92,6 +92,7 @@ export function FacturacionPage() {
   const facturas = useMemo(() => data?.content ?? [], [data?.content])
 
   const [pagando, setPagando] = useState<Factura | null>(null)
+  const [sugeridoPago, setSugeridoPago] = useState<'total' | 'parcial'>('total')
   const [anulando, setAnulando] = useState<Factura | null>(null)
   const [enviando, setEnviando] = useState<Factura | null>(null)
   const [viendo, setViendo] = useState<Factura | null>(null)
@@ -231,7 +232,9 @@ export function FacturacionPage() {
                           estadoActual={real}
                           numero={codigoDe(f)}
                           puedeAnular={puedeAnular}
+                          puedePagar={puedePagar}
                           onAnular={() => setAnulando(f)}
+                          onPagar={(s) => { setSugeridoPago(s); setPagando(f) }}
                           onError={setErrorAccion}
                         /> : <EstadoBadge tono={estadoDe(ESTADOS_FACTURA, real).tono}>{estadoDe(ESTADOS_FACTURA, real).label}</EstadoBadge>}
                       </Td>
@@ -286,7 +289,7 @@ export function FacturacionPage() {
                           puedePagar={puedePagar}
                           puedeAnular={puedeAnular}
                           onSubir={(archivo) => subirDocumento(f, archivo)}
-                          onPagar={() => setPagando(f)}
+                          onPagar={() => { setSugeridoPago('total'); setPagando(f) }}
                           onAnular={() => setAnulando(f)}
                         />}
                         </div>
@@ -304,6 +307,7 @@ export function FacturacionPage() {
         open={!!pagando}
         comprobante={pagando ? codigoDe(pagando) : ''}
         saldo={pagando ? saldoDe(pagando) : 0}
+        sugerido={sugeridoPago}
         moneda={pagando?.moneda ?? 'PEN'}
         isLoading={registrarPago.isPending}
         error={registrarPago.isError ? `No se pudo registrar el pago. ${mensajeError(registrarPago.error)}`.trim() : null}

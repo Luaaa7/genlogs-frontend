@@ -10,8 +10,11 @@ import { mensajeError } from '@/lib/errores'
 
 /** Pagada y Anulada ya no cambian (el backend también lo bloquea). */
 const ESTADOS_FINALES = new Set<string>(['PAGADA', 'ANULADA'])
-/** Estos se ponen solos al registrar pagos: en el menú salen deshabilitados con la explicación. */
+/** Estos se ponen solos al registrar pagos: al elegirlos se abre "Registrar pago". */
 const POR_PAGO = new Set<string>(['PARCIAL', 'PAGADA'])
+
+/** Qué pago sugiere el diálogo: Pagada = saldo completo, Pago parcial = monto en blanco. */
+export type PagoSugerido = 'total' | 'parcial'
 
 /** Punto de color de cada opción, del mismo tono que su etiqueta. */
 const PUNTO: Record<EstadoBadgeTono, string> = {
@@ -32,17 +35,21 @@ interface Props {
   numero: string
   /** Si tiene pagos no se puede anular. */
   puedeAnular: boolean
+  /** Si se puede registrar un pago (permiso, no anulada/pagada y con saldo). */
+  puedePagar: boolean
   /** Anular pasa por la confirmación de la página. */
   onAnular: () => void
+  /** Pago parcial / Pagada abren el diálogo "Registrar pago". */
+  onPagar: (sugerido: PagoSugerido) => void
   onError: (mensaje: string) => void
 }
 
 /**
  * Etiqueta del estado de la factura + botón "Cambiar" (mismo menú que en Órdenes de compra).
  * Emitida y Vencida se eligen a mano; Anulada pide confirmación; Pago parcial y Pagada
- * salen de "Registrar pago" para que el saldo siempre cuadre.
+ * abren "Registrar pago" (el estado lo pone el backend) para que el saldo siempre cuadre.
  */
-export function EstadoFacturaSelect({ idFactura, estadoActual, numero, puedeAnular, onAnular, onError }: Props) {
+export function EstadoFacturaSelect({ idFactura, estadoActual, numero, puedeAnular, puedePagar, onAnular, onPagar, onError }: Props) {
   const { mutate, isPending } = useCambiarEstadoFactura(idFactura)
   const actual = estadoDe(ESTADOS_FACTURA, estadoActual)
 
@@ -104,6 +111,8 @@ export function EstadoFacturaSelect({ idFactura, estadoActual, numero, puedeAnul
   function elegir(nuevo: EstadoFacturacion) {
     setAbierto(false)
     if (nuevo === 'ANULADA') return onAnular()
+    if (nuevo === 'PAGADA') return onPagar('total')
+    if (nuevo === 'PARCIAL') return onPagar('parcial')
     mutate(nuevo, {
       onError: (err) =>
         onError(`No se pudo cambiar el estado de ${numero}. ${mensajeError(err, '')}`.trim()),
@@ -151,8 +160,10 @@ export function EstadoFacturaSelect({ idFactura, estadoActual, numero, puedeAnul
             <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Cambiar estado</p>
             {opciones.map(([codigo, e]) => {
               const esActual = codigo === estadoActual
-              const bloqueado = POR_PAGO.has(codigo) || (codigo === 'ANULADA' && !puedeAnular)
-              const motivo = POR_PAGO.has(codigo) ? 'Con “Registrar pago”' : 'Tiene pagos'
+              const porPago = POR_PAGO.has(codigo)
+              // Pago parcial / Pagada solo se bloquean si no se puede registrar un pago.
+              const bloqueado = (porPago && !puedePagar) || (codigo === 'ANULADA' && !puedeAnular)
+              const motivo = porPago ? 'No se puede registrar pago' : 'Tiene pagos'
               return (
                 <button
                   key={codigo}
@@ -170,6 +181,7 @@ export function EstadoFacturaSelect({ idFactura, estadoActual, numero, puedeAnul
                   <span className="flex-1">
                     {e.label}
                     {bloqueado && !esActual && <span className="block text-[11px]">{motivo}</span>}
+                    {porPago && !bloqueado && !esActual && <span className="block text-[11px] text-muted-foreground">Abre “Registrar pago”</span>}
                   </span>
                   {esActual && <Check className="h-4 w-4 text-accent" aria-label="Estado actual" />}
                 </button>
