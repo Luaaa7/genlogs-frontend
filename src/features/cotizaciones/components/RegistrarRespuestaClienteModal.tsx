@@ -87,13 +87,12 @@ export function RegistrarRespuestaClienteModal({ accion, ocupado, error, onCerra
       return
     }
     setAviso(null)
-    // El backend solo guarda correo/whatsapp/llamada/otro: el detalle de "Otro" va al inicio del comentario.
-    const detalleMedio = medio === "otro" ? medioOtro.trim() : ""
     onGuardar({
       codigoEstado: CODIGO_RESPUESTA[accion],
       fechaRespuesta: fecha,
       medio: medio as MedioRespuestaCliente,
-      comentario: detalleMedio ? `Medio: ${detalleMedio}.${nota.trim() ? ` ${nota.trim()}` : ""}` : nota.trim(),
+      ...(medio === "otro" && medioOtro.trim() ? { medioDetalle: medioOtro.trim() } : {}),
+      comentario: nota.trim(),
       adjunto: archivo,
     })
   }

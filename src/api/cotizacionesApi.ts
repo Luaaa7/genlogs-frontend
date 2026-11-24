@@ -32,6 +32,8 @@ export interface RespuestaClienteRequest {
   idAdjunto?: number
   fechaRespuesta: string
   medio: MedioRespuestaCliente
+  /** Solo si medio es "otro": cuál fue (máx. 60). */
+  medioDetalle?: string
 }
 
 /** Respuesta que registra el vendedor o el jefe. El archivo se sube aparte. */
@@ -106,6 +108,7 @@ export const cotizacionesApi = {
       comentario: s.comentario ?? undefined,
       observaciones: s.observaciones ?? s.comentario ?? '',
       medio: s.medio ?? null,
+      medioDetalle: s.medioDetalle ?? null,
       rutaAdjunto: s.rutaAdjunto ?? null,
       rutaVersionPdf: s.rutaVersionPdf ?? null,
       fechaRespuesta: s.fechaRespuesta ?? null,
@@ -235,6 +238,7 @@ export const cotizacionesApi = {
       comentario: body.comentario.trim(),
       fechaRespuesta: body.fechaRespuesta,
       medio: body.medio,
+      ...(body.medio === 'otro' && body.medioDetalle?.trim() ? { medioDetalle: body.medioDetalle.trim() } : {}),
       ...(idAdjunto != null ? { idAdjunto } : {}),
     }
     const { data } = await axiosClient.post<Cotizacion>(`/cotizaciones/${id}/respuesta-cliente`, solicitud)
