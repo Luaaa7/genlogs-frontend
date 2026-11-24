@@ -1,6 +1,6 @@
 import { axiosClient } from './axiosClient'
 import type { PageResponse } from '@/types/common.types'
-import type { OrdenCompra, OrdenCompraFiltros, OrdenCompraInput, EstadoOrdenCompra, ConfirmarOcCliente } from '@/types/ordenCompra.types'
+import type { OrdenCompra, OrdenCompraFiltros, OrdenCompraInput, EstadoOrdenCompra, ConfirmarOcCliente, SeguimientoOrdenCompra } from '@/types/ordenCompra.types'
 
 /**
  * Mientras el confirmar-oc no está en la rama, la lista muestra tres órdenes de ejemplo.
@@ -139,4 +139,6 @@ export const ordenesCompraApi = {
     if (usarMock) return Promise.resolve(reemplazar(id, { ...body, ocConfirmadaPor: 1 }))
     return axiosClient.patch<OrdenCompra>(`/ordenes-compra/${id}/confirmar-oc`, body).then((r) => r.data)
   },
+    seguimiento: (id: number) =>
+    axiosClient.get<SeguimientoOrdenCompra[]>(`/ordenes-compra/${id}/seguimiento`).then((r) => r.data),
 }
