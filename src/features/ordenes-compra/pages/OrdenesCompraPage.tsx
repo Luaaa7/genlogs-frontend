@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Eye, ShoppingCart } from 'lucide-react'
+import { Eye, FileText, History, ShoppingCart } from 'lucide-react'
 import { VistaPreviaPdf } from '@/components/ui/VistaPreviaPdf'
 import { useOrdenesCompra } from '../hooks/useOrdenesCompra'
 import { EstadoOrdenSelect } from '../components/EstadoOrdenSelect'
@@ -17,6 +17,10 @@ import { ESTADOS_ORDEN } from '@/lib/formatters/estados'
 import { formatearMoneda } from '@/lib/formatters/codigoCotizacion'
 import { formatearFechaCorta } from '@/lib/formatters/fechaLocal'
 import type { EstadoOrdenCompra } from '@/types/ordenCompra.types'
+
+/** Acciones de cada fila: botón chico con ícono, gris y azul al pasar el mouse (colores del tema). */
+const ACCION_FILA =
+  'inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 text-[13px] font-medium text-foreground transition-colors hover:border-accent/40 hover:bg-accent/10 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 const OPCIONES = [
   { label: 'Todas' },
@@ -109,34 +113,38 @@ export function OrdenesCompraPage() {
                       </Td>
                       <Td alinear="derecha" className="whitespace-nowrap font-medium">{formatearMoneda(o.total ?? 0, o.moneda ?? 'PEN')}</Td>
                       <Td className="whitespace-nowrap text-right">
-                        {o.urlArchivo && (
+                        <div className="flex items-center justify-end gap-2">
+                          {o.urlArchivo && (
+                            <button
+                              type="button"
+                              onClick={() => setViendoOrden({ url: o.urlArchivo as string, numero: o.numeroOrdenCompra ?? o.numero ?? '' })}
+                              aria-label={`Ver el documento de la orden ${o.numeroOrdenCompra ?? o.numero}`}
+                              title="Ver el documento que envió el cliente"
+                              className={ACCION_FILA}
+                            >
+                              <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+                              Ver
+                            </button>
+                          )}
+                          <RegistrarDespachoButton idOrdenCompra={o.idOrdenCompra ?? o.id ?? 0} />
                           <button
                             type="button"
-                            onClick={() => setViendoOrden({ url: o.urlArchivo as string, numero: o.numeroOrdenCompra ?? o.numero ?? '' })}
-                            aria-label={`Ver el documento de la orden ${o.numeroOrdenCompra ?? o.numero}`}
-                            title="Ver el documento que envió el cliente"
-                            className="mr-3 inline-flex items-center gap-1 rounded text-[13px] font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            onClick={() => setSeguimientoOrden({ id: o.idOrdenCompra ?? o.id ?? 0, numero: o.numeroOrdenCompra ?? o.numero ?? '' })}
+                            aria-label={`Ver el seguimiento de la orden ${o.numeroOrdenCompra ?? o.numero}`}
+                            className={ACCION_FILA}
                           >
-                            <Eye className="h-3.5 w-3.5" aria-hidden="true" />
-                            Ver
+                            <History className="h-3.5 w-3.5" aria-hidden="true" />
+                            Seguimiento
                           </button>
-                        )}
-                        <RegistrarDespachoButton idOrdenCompra={o.idOrdenCompra ?? o.id ?? 0} />
-                        <button
-                          type="button"
-                          onClick={() => setSeguimientoOrden({ id: o.idOrdenCompra ?? o.id ?? 0, numero: o.numeroOrdenCompra ?? o.numero ?? '' })}
-                          aria-label={`Ver el seguimiento de la orden ${o.numeroOrdenCompra ?? o.numero}`}
-                          className="ml-3 rounded text-[13px] font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                          Seguimiento
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setPanelId(o.idOrdenCompra ?? o.id ?? 0)}
-                          className="ml-3 rounded text-[13px] font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                          OC de la minera
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => setPanelId(o.idOrdenCompra ?? o.id ?? 0)}
+                            className={ACCION_FILA}
+                          >
+                            <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+                            OC de la minera
+                          </button>
+                        </div>
                       </Td>
                     </tr>
                   )
