@@ -407,8 +407,15 @@ const CotizacionDetalleContenido: React.FC = () => {
             </>
           )}
           {clienteAcepto && ordenGenerada && (
-            <Button variant="outline" asChild>
-              <Link to={`/ordenes-compra?idCotizacion=${cotizacionId}`}>Orden {numeroInterno}</Link>
+            <Button
+              variant="outline"
+              asChild
+              className="border-accent/40 bg-accent/10 text-accent hover:bg-accent/15 hover:text-accent"
+            >
+              <Link to={`/ordenes-compra?idCotizacion=${cotizacionId}`}>
+                <ShoppingCart className="mr-2 h-4 w-4" aria-hidden="true" />
+                Orden {numeroInterno}
+              </Link>
             </Button>
           )}
           {clienteAcepto && ordenGenerada && !numeroOcCliente && puedeCompletarOc && !clienteNatural && (
