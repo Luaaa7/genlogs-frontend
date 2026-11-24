@@ -73,6 +73,7 @@ interface Props {
 export function RegistrarRespuestaClienteModal({ accion, ocupado, error, onCerrar, onGuardar }: Props) {
   const [fecha, setFecha] = useState(hoyLima)
   const [medio, setMedio] = useState<MedioRespuestaCliente | "">("")
+  const [medioOtro, setMedioOtro] = useState("")
   const [nota, setNota] = useState("")
   const [archivo, setArchivo] = useState<File | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
@@ -86,11 +87,13 @@ export function RegistrarRespuestaClienteModal({ accion, ocupado, error, onCerra
       return
     }
     setAviso(null)
+    // El backend solo guarda correo/whatsapp/llamada/otro: el detalle de "Otro" va al inicio del comentario.
+    const detalleMedio = medio === "otro" ? medioOtro.trim() : ""
     onGuardar({
       codigoEstado: CODIGO_RESPUESTA[accion],
       fechaRespuesta: fecha,
       medio: medio as MedioRespuestaCliente,
-      comentario: nota.trim(),
+      comentario: detalleMedio ? `Medio: ${detalleMedio}.${nota.trim() ? ` ${nota.trim()}` : ""}` : nota.trim(),
       adjunto: archivo,
     })
   }
@@ -138,6 +141,21 @@ export function RegistrarRespuestaClienteModal({ accion, ocupado, error, onCerra
             ))}
           </select>
         </label>
+        {medio === "otro" && (
+          <label className="block text-sm text-foreground" htmlFor="medio-otro-respuesta">
+            ¿Cuál? <span className="text-muted-foreground">(opcional)</span>
+            <input
+              id="medio-otro-respuesta"
+              type="text"
+              maxLength={60}
+              className={`${inputFormClass} mt-1`}
+              value={medioOtro}
+              onChange={(e) => setMedioOtro(e.target.value)}
+              disabled={ocupado}
+              placeholder="Ej. Reunión presencial, Teams, SMS"
+            />
+          </label>
+        )}
         <label className="block text-sm text-foreground" htmlFor="nota-respuesta">
           Nota {notaObligatoria ? <span className="text-destructive">*</span> : <span className="text-muted-foreground">(o un adjunto)</span>}
           <textarea
