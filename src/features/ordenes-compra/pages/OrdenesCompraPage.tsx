@@ -6,6 +6,7 @@ import { useOrdenesCompra } from '../hooks/useOrdenesCompra'
 import { EstadoOrdenSelect } from '../components/EstadoOrdenSelect'
 import { RegistrarDespachoButton } from '@/features/despacho/components/RegistrarDespachoButton'
 import { OcMineraPanel } from '../components/OcMineraPanel'
+import { SeguimientoOrdenPanel } from '../components/SeguimientoOrdenPanel'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
 import { TableSkeletonRows } from '@/components/ui/TableSkeletonRows'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -30,6 +31,7 @@ export function OrdenesCompraPage() {
   const ordenes = data?.content ?? []
   const [errorEstado, setErrorEstado] = useState<string | null>(null)
   const [panelId, setPanelId] = useState<number | null>(null)
+  const [seguimientoOrden, setSeguimientoOrden] = useState<{ id: number; numero: string } | null>(null)
   // Orden del cliente (PDF o imagen) que se está viendo en la ventana
   const [viendoOrden, setViendoOrden] = useState<{ url: string; numero: string } | null>(null)
   const panel = ordenes.find((o) => (o.idOrdenCompra ?? o.id) === panelId) ?? null
@@ -122,6 +124,14 @@ export function OrdenesCompraPage() {
                         <RegistrarDespachoButton idOrdenCompra={o.idOrdenCompra ?? o.id ?? 0} />
                         <button
                           type="button"
+                          onClick={() => setSeguimientoOrden({ id: o.idOrdenCompra ?? o.id ?? 0, numero: o.numeroOrdenCompra ?? o.numero ?? '' })}
+                          aria-label={`Ver el seguimiento de la orden ${o.numeroOrdenCompra ?? o.numero}`}
+                          className="ml-3 rounded text-[13px] font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          Seguimiento
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => setPanelId(o.idOrdenCompra ?? o.id ?? 0)}
                           className="ml-3 rounded text-[13px] font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
@@ -138,6 +148,10 @@ export function OrdenesCompraPage() {
       </TablaCard>
 
       {panel && <OcMineraPanel orden={panel} onCerrar={() => setPanelId(null)} />}
+
+      {seguimientoOrden && (
+        <SeguimientoOrdenPanel idOrden={seguimientoOrden.id} numero={seguimientoOrden.numero} onCerrar={() => setSeguimientoOrden(null)} />
+      )}
 
       {viendoOrden && (
         <VistaPreviaPdf

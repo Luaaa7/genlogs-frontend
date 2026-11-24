@@ -43,4 +43,14 @@ export interface ConfirmarOcCliente {
   fechaEmisionCliente: string
   montoOcCliente: number
 }
+export interface SeguimientoOrdenCompra {
+  idSeguimiento: number
+  /** ORDEN_CREADA, CAMBIO_ESTADO, ARCHIVO_OC u OC_CLIENTE. */
+  tipoEvento: string
+  estadoAnterior?: string | null
+  estadoNuevo: string
+  usuario?: string | null
+  fechaEvento: string
+  comentario?: string | null
+}
 export type OrdenesCompraPage = PageResponse<OrdenCompra>

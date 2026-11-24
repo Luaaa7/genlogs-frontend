@@ -17,6 +17,15 @@ export function useOrdenesCompra(filtros: OrdenCompraFiltros = {}, opciones: { e
   })
 }
 
+/** Historial de la orden. Cualquier cambio en las órdenes lo recarga. */
+export function useSeguimientoOrdenCompra(id: number) {
+  return useQuery({
+    queryKey: [...ordenesCompraKeys.detalle(id), 'seguimiento'] as const,
+    queryFn: () => ordenesCompraApi.seguimiento(id),
+    enabled: id > 0,
+  })
+}
+
 export function useCrearOrdenCompra() {
   const queryClient = useQueryClient()
   return useMutation({
