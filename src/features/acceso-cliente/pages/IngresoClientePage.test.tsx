@@ -77,3 +77,81 @@ describe("IngresoClientePage", () => {
     expect(lista.textContent).toMatch(/Despachos/)
   })
 })
+
+describe("IngresoClientePage: usabilidad", () => {
+  beforeEach(() => {
+    localStorage.clear()
+    sessionStorage.clear()
+    vi.mocked(ingresarCliente).mockReset()
+  })
+
+  it("los campos piden el autocompletado correcto del navegador", () => {
+    renderIngreso()
+    expect(screen.getByLabelText("Correo").getAttribute("autocomplete")).toBe("email")
+    expect(screen.getByLabelText("Contraseña").getAttribute("autocomplete")).toBe("current-password")
+  })
+
+  it("el ojito muestra y oculta la contraseña y se alcanza con el teclado", () => {
+    renderIngreso()
+    const password = screen.getByLabelText("Contraseña") as HTMLInputElement
+    const ojo = screen.getByRole("button", { name: "Mostrar contraseña" })
+    expect(password.type).toBe("password")
+    expect(ojo.getAttribute("tabindex")).toBeNull()
+    ojo.focus()
+    expect(document.activeElement).toBe(ojo)
+
+    fireEvent.click(ojo)
+    expect(password.type).toBe("text")
+
+    fireEvent.click(screen.getByRole("button", { name: "Ocultar contraseña" }))
+    expect(password.type).toBe("password")
+  })
+
+  it("avisa cuando Bloq Mayús está activo y deja de avisar al apagarlo", () => {
+    renderIngreso()
+    const password = screen.getByLabelText("Contraseña")
+    expect(screen.queryByText("Bloq Mayús está activado")).toBeNull()
+
+    fireEvent.keyDown(password, { key: "A", modifierCapsLock: true })
+    expect(screen.getByText("Bloq Mayús está activado")).toBeTruthy()
+
+    fireEvent.keyUp(password, { key: "CapsLock", modifierCapsLock: false })
+    expect(screen.queryByText("Bloq Mayús está activado")).toBeNull()
+  })
+
+  it("«¿Olvidaste tu contraseña?» lleva a la recuperación, junto a la etiqueta de la contraseña", () => {
+    renderIngreso()
+
+    const enlace = screen.getByRole("link", { name: "¿Olvidaste tu contraseña?" })
+
+    expect(enlace.getAttribute("href")).toBe("/recuperar-password")
+    expect(enlace.parentElement?.contains(screen.getByText("Contraseña"))).toBe(true)
+  })
+
+  it("ya no pide contactar al administrador: el cliente se recupera solo", () => {
+    renderIngreso()
+    expect(screen.queryByText(/administrador de tu empresa/)).toBeNull()
+    expect(screen.queryByRole("button", { name: "¿Olvidaste tu contraseña?" })).toBeNull()
+  })
+
+  it("mientras ingresa muestra «Ingresando...», deshabilita el botón y no envía dos veces", async () => {
+    vi.mocked(ingresarCliente).mockReturnValue(new Promise(() => {}))
+    renderIngreso()
+    llenarYEnviar()
+
+    const boton = (await screen.findByRole("button", { name: "Ingresando..." })) as HTMLButtonElement
+    expect(boton.disabled).toBe(true)
+    fireEvent.submit(boton.closest("form") as HTMLFormElement)
+
+    expect(ingresarCliente).toHaveBeenCalledTimes(1)
+  })
+
+  it("si el ingreso falla, el botón vuelve a quedar disponible", async () => {
+    vi.mocked(ingresarCliente).mockRejectedValue({ response: { status: 401, data: { message: "Correo o contraseña incorrectos." } } })
+    renderIngreso()
+    llenarYEnviar()
+
+    await screen.findByText("Correo o contraseña incorrectos.")
+    expect((screen.getByRole("button", { name: "Ingresar" }) as HTMLButtonElement).disabled).toBe(false)
+  })
+})

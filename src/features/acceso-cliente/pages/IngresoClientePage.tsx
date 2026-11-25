@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { ClipboardList, FileText, Truck } from "lucide-react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { leerVolver, rutaRegistro, PARAMETRO_VOLVER } from "@/api/contratos/registro"
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { iniciarSesionCliente } from "@/lib/sesiones"
 import { ingresarCliente, mensajeErrorAcceso } from "../api/ingresoClienteApi"
+import { CampoPassword } from "../components/CampoPassword"
 import { IngresoConGoogle } from "../components/IngresoConGoogle"
 import { SeparadorO } from "../components/SeparadorO"
 
@@ -26,15 +27,19 @@ export function IngresoClientePage() {
   const location = useLocation()
   const [error, setError] = useState("")
   const [cargando, setCargando] = useState(false)
+  // Evita un segundo envío (Enter repetido) antes de que el botón alcance a deshabilitarse.
+  const enviando = useRef(false)
 
   const volverCrudo = new URLSearchParams(location.search).get(PARAMETRO_VOLVER) ?? undefined
 
   async function enviar(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (enviando.current) return
     setError("")
     const form = new FormData(event.currentTarget)
     const correo = String(form.get("correo") ?? "").trim()
     const password = String(form.get("password") ?? "")
+    enviando.current = true
     setCargando(true)
     try {
       const respuesta = await ingresarCliente({ correo, password })
@@ -50,6 +55,7 @@ export function IngresoClientePage() {
     } catch (cause) {
       setError(mensajeErrorAcceso(cause, "Correo o contraseña incorrectos."))
     } finally {
+      enviando.current = false
       setCargando(false)
     }
   }
@@ -78,8 +84,16 @@ export function IngresoClientePage() {
             <Input id="ingreso-correo" name="correo" type="email" autoComplete="email" className="mt-2" required />
           </div>
           <div>
-            <Label htmlFor="ingreso-password">Contraseña</Label>
-            <Input id="ingreso-password" name="password" type="password" autoComplete="current-password" className="mt-2" required />
+            <div className="flex items-center justify-between gap-3">
+              <Label htmlFor="ingreso-password">Contraseña</Label>
+              <Link
+                to="/recuperar-password"
+                className="rounded-sm text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
+            <CampoPassword id="ingreso-password" name="password" autoComplete="current-password" required />
           </div>
           {error && <ErrorBanner message={error} />}
           <Button className="w-full" disabled={cargando}>{cargando ? "Ingresando..." : "Ingresar"}</Button>
