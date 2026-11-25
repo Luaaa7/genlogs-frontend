@@ -119,29 +119,19 @@ describe("IngresoClientePage: usabilidad", () => {
     expect(screen.queryByText("Bloq Mayús está activado")).toBeNull()
   })
 
-  it("«¿Olvidaste tu contraseña?» despliega cómo restablecer el acceso debajo del formulario", () => {
+  it("«¿Olvidaste tu contraseña?» lleva a la recuperación, junto a la etiqueta de la contraseña", () => {
     renderIngreso()
-    const ayuda = screen.getByRole("button", { name: "¿Olvidaste tu contraseña?" })
-    expect(ayuda.getAttribute("aria-expanded")).toBe("false")
-    expect(ayuda.getAttribute("aria-controls")).toBeNull() // el aviso aún no existe
+
+    const enlace = screen.getByRole("link", { name: "¿Olvidaste tu contraseña?" })
+
+    expect(enlace.getAttribute("href")).toBe("/recuperar-password")
+    expect(enlace.parentElement?.contains(screen.getByText("Contraseña"))).toBe(true)
+  })
+
+  it("ya no pide contactar al administrador: el cliente se recupera solo", () => {
+    renderIngreso()
     expect(screen.queryByText(/administrador de tu empresa/)).toBeNull()
-
-    fireEvent.click(ayuda)
-
-    expect(ayuda.getAttribute("aria-expanded")).toBe("true")
-    expect(document.getElementById(ayuda.getAttribute("aria-controls") ?? "")).toBe(
-      screen.getByText(/administrador de tu empresa/),
-    )
-    const aviso = screen.getByText(/administrador de tu empresa/)
-    expect(aviso.textContent).toMatch(/Para restablecer tu acceso/)
-    expect(aviso.textContent).toMatch(/ventas1@genlogsac\.com/)
-    expect(screen.getByRole("link", { name: "Ir a Contáctame" }).getAttribute("href")).toBe("/contacto")
-    const entrar = screen.getByRole("button", { name: "Ingresar" })
-    expect(entrar.compareDocumentPosition(aviso) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(screen.getByTestId("tarjeta-ingreso").contains(aviso)).toBe(true)
-
-    fireEvent.click(ayuda)
-    expect(screen.queryByText(/administrador de tu empresa/)).toBeNull()
+    expect(screen.queryByRole("button", { name: "¿Olvidaste tu contraseña?" })).toBeNull()
   })
 
   it("mientras ingresa muestra «Ingresando...», deshabilita el botón y no envía dos veces", async () => {

@@ -6,7 +6,6 @@ import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { datosConValor } from "@/features/ayuda/lib/datosGenlogs"
 import { iniciarSesionCliente } from "@/lib/sesiones"
 import { ingresarCliente, mensajeErrorAcceso } from "../api/ingresoClienteApi"
 import { CampoPassword } from "../components/CampoPassword"
@@ -28,11 +27,8 @@ export function IngresoClientePage() {
   const location = useLocation()
   const [error, setError] = useState("")
   const [cargando, setCargando] = useState(false)
-  const [ayudaAbierta, setAyudaAbierta] = useState(false)
   // Evita un segundo envío (Enter repetido) antes de que el botón alcance a deshabilitarse.
   const enviando = useRef(false)
-
-  const correoVentas = datosConValor().find((dato) => dato.id === "correo")?.valor
 
   const volverCrudo = new URLSearchParams(location.search).get(PARAMETRO_VOLVER) ?? undefined
 
@@ -90,15 +86,12 @@ export function IngresoClientePage() {
           <div>
             <div className="flex items-center justify-between gap-3">
               <Label htmlFor="ingreso-password">Contraseña</Label>
-              <button
-                type="button"
-                aria-expanded={ayudaAbierta}
-                aria-controls={ayudaAbierta ? "ingreso-ayuda-password" : undefined}
-                onClick={() => setAyudaAbierta((abierta) => !abierta)}
+              <Link
+                to="/recuperar-password"
                 className="rounded-sm text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 ¿Olvidaste tu contraseña?
-              </button>
+              </Link>
             </div>
             <CampoPassword id="ingreso-password" name="password" autoComplete="current-password" required />
           </div>
@@ -109,13 +102,6 @@ export function IngresoClientePage() {
             <Link to={rutaRegistro(volverCrudo)} className="font-medium text-accent hover:underline">Regístrate</Link>
           </p>
         </form>
-        {ayudaAbierta && (
-          <p id="ingreso-ayuda-password" role="status" className="mt-5 rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
-            Para restablecer tu acceso, comunícate con el administrador de tu empresa
-            {correoVentas ? ` o escríbenos a ${correoVentas}` : ""}.{" "}
-            <Link to="/contacto" className="font-medium text-accent hover:underline">Ir a Contáctame</Link>
-          </p>
-        )}
       </div>
     </div>
   )
