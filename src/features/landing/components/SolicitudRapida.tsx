@@ -17,6 +17,7 @@ import {
   tokenCliente,
 } from "../lib/pedidoPendiente"
 import { enviarSolicitudLanding } from "../lib/enviarSolicitudLanding"
+import { usePrecargaSolicitud } from "../lib/precargaSolicitud"
 
 const esquema = z
   .object({
@@ -56,12 +57,13 @@ function mensajeEnvio(error: unknown): string {
  * POST /api/solicitudes (canal LANDING). Con sesión de cliente, lo envía directo.
  */
 export function SolicitudRapida() {
+  const precarga = usePrecargaSolicitud()
   const navigate = useNavigate()
   // Pedido guardado antes de ir al registro (se lee una sola vez, al abrir la landing).
   const [pendiente] = useState(() => leerPedidoPendiente())
   const autoEnviado = useRef(false)
 
-  const { register, handleSubmit, formState: { errors } } = useForm<Valores>({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<Valores>({
     resolver: zodResolver(esquema),
     defaultValues: pendiente
       ? { marca: pendiente.marca, numeroParte: pendiente.numeroParte, descripcion: pendiente.descripcion, cantidad: String(pendiente.cantidad) }
@@ -80,6 +82,15 @@ export function SolicitudRapida() {
     const token = tokenCliente()
     if (token) envio.mutate({ pedido: pendiente, token })
   }, [pendiente, envio])
+
+  // v3.4: al pulsar «Pedir cotización» en un producto del catálogo, el formulario recibe ese repuesto.
+  // La cantidad que el visitante ya escribió se respeta.
+  useEffect(() => {
+    if (!precarga) return
+    setValue("descripcion", precarga.descripcion, { shouldValidate: false })
+    setValue("marca", precarga.marca ?? "", { shouldValidate: false })
+    setValue("numeroParte", precarga.numeroParte ?? "", { shouldValidate: false })
+  }, [precarga, setValue])
 
   const alEnviar = handleSubmit((v) => {
     const pedido = { marca: v.marca, numeroParte: v.numeroParte, descripcion: v.descripcion, cantidad: Number(v.cantidad) }
@@ -129,6 +140,11 @@ export function SolicitudRapida() {
           </div>
         ) : (
           <form onSubmit={alEnviar} noValidate className="grid gap-4 rounded-2xl bg-card p-6 text-card-foreground shadow-lg sm:grid-cols-2 sm:p-8">
+            {precarga && (
+              <p role="status" className="text-sm text-muted-foreground sm:col-span-2">
+                Cargamos «{precarga.descripcion}» desde el catálogo. Completa la marca y el N.º de parte si los tienes.
+              </p>
+            )}
             <Campo id="sr-marca" label="Marca" opcional error={errors.marca?.message}>
               <input
                 id="sr-marca"
