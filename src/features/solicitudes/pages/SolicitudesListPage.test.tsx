@@ -103,10 +103,10 @@ describe('lista de solicitudes', () => {
     }
   })
 
-  it('ordena el mock por vencimiento, con null al final, y la fila aguanta sin semáforo ni fecha', async () => {
+  it('ordena el mock por hora de recepción (la última primero), y la fila aguanta sin semáforo ni fecha', async () => {
     const lista = await solicitudesInternasApi.listar({ page: 0, size: 10 })
-    expect(lista.content.map((fila) => fila.codigoSolicitud)).toEqual(['SOL-002', 'SOL-001', 'SOL-004', 'SOL-003', 'SOL-005'])
-    expect(lista.content[0]?.semaforo).toBe('VERDE')
+    expect(lista.content.map((fila) => fila.codigoSolicitud)).toEqual(['SOL-001', 'SOL-002', 'SOL-003', 'SOL-004', 'SOL-005'])
+    expect(lista.content[0]?.semaforo).toBe('AMARILLO')
     expect(lista.content.find((fila) => fila.codigoSolicitud === 'SOL-003')?.semaforo).toBe('ROJO')
     expect(lista.content[4]?.fechaLimiteInterna).toBeNull()
     expect(lista.content[4]?.semaforo).toBeNull()
