@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest"
 import { ContactoPage } from "./ContactoPage"
 import { DATOS_GENLOGS, datosConValor } from "../lib/datosGenlogs"
 
-describe("Contáctame (v3.4, K2)", () => {
+describe("Contacto (v3.4, K2)", () => {
   it("muestra el correo de ventas y el enlace a la Solicitud rápida", () => {
     render(<MemoryRouter><ContactoPage /></MemoryRouter>)
     expect(screen.getByRole("link", { name: "ventas1@genlogsac.com" }).getAttribute("href")).toBe("mailto:ventas1@genlogsac.com")

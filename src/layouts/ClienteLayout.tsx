@@ -8,9 +8,9 @@ const claseEnlace = ({ isActive }: { isActive: boolean }) =>
   `shrink-0 whitespace-nowrap rounded-md px-3 py-2 ${isActive ? "bg-muted font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`
 
 /**
- * Barra del portal del cliente. Con sesión de cliente muestra el menú completo y
- * «Cerrar sesión». Sin sesión (por ejemplo en /portal/ingreso y /portal/registro)
- * solo muestra «Ingresar» y «Crear cuenta» (BPMN v3.4 de Mell, PS2/PS3).
+ * Barra del portal del cliente. Con sesión de cliente muestra el menú completo; «Nueva solicitud»
+ * (enlace sutil) y «Cerrar sesión» van separados a la derecha (v3.4). Sin sesión (por ejemplo en
+ * /portal/ingreso y /portal/registro) solo muestra «Ingresar» y «Crear cuenta» (BPMN v3.4 de Mell, PS2/PS3).
  * Con `children` los muestra en lugar de la ruta hija (portal de una cuenta sin empresa).
  */
 export function ClienteLayout({ children }: { children?: ReactNode }) {
@@ -33,16 +33,24 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
               <NavLink to="/portal/despachos" className={claseEnlace}>Mis despachos</NavLink>
               {vitrinaHabilitada && <NavLink to="/portal/repuestos" className={claseEnlace}>Repuestos</NavLink>}
               <NavLink to="/portal/reclamos" className={claseEnlace}>Reclamos</NavLink>
-              <NavLink to="/portal/solicitud" className={claseEnlace}>Nueva solicitud</NavLink>
               <NavLink to="/ayuda" className={claseEnlace}>Ayuda</NavLink>
-              <NavLink to="/contacto" className={claseEnlace}>Contáctame</NavLink>
+              <NavLink to="/contacto" className={claseEnlace}>Contacto</NavLink>
+              <span aria-hidden="true" className="mx-1 hidden h-5 w-px shrink-0 bg-border sm:block" />
+              <NavLink
+                to="/portal/solicitud"
+                className={({ isActive }) =>
+                  `shrink-0 whitespace-nowrap rounded-md border px-3 py-2 font-medium ${isActive ? "border-primary bg-muted" : "border-border text-foreground hover:bg-muted"}`
+                }
+              >
+                Nueva solicitud
+              </NavLink>
               <button
                 type="button"
                 onClick={() => {
                   cerrarSesionCliente()
                   navigate("/portal/ingreso", { replace: true })
                 }}
-                className="ml-1 shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Cerrar sesión
               </button>
@@ -52,7 +60,7 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
               <NavLink to="/portal/ingreso" className={claseEnlace}>Ingresar</NavLink>
               <NavLink to="/portal/registro" className={claseEnlace}>Crear cuenta</NavLink>
               <NavLink to="/ayuda" className={claseEnlace}>Ayuda</NavLink>
-              <NavLink to="/contacto" className={claseEnlace}>Contáctame</NavLink>
+              <NavLink to="/contacto" className={claseEnlace}>Contacto</NavLink>
             </nav>
           )}
         </div>

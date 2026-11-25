@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom'
 import { AuthLayout } from '@/layouts/AuthLayout'
 import { AppLayout } from '@/layouts/AppLayout'
 import { PublicLayout } from '@/layouts/PublicLayout'
+import { AyudaLayout } from '@/layouts/AyudaLayout'
 import { ClienteLayout } from '@/layouts/ClienteLayout'
 import { ProtectedRoute } from '@/router/ProtectedRoute'
 import { ClienteRoute } from '@/router/ClienteRoute'
@@ -43,16 +44,19 @@ const CompletarEmpresaPage = perezosa(() => import('@/features/acceso-cliente/pa
 const MisPedidosPage = perezosa(() => import('@/features/portal-cliente/pages/MisPedidosPage'), 'MisPedidosPage')
 const PedidoDetallePage = perezosa(() => import('@/features/portal-cliente/pages/PedidoDetallePage'), 'PedidoDetallePage')
 const NuevaSolicitudPage = perezosa(() => import('@/features/portal-cliente/pages/NuevaSolicitudPage'), 'NuevaSolicitudPage')
-// v3.4 (K2): Ayuda y Contáctame, públicas.
+// v3.4 (K2): Ayuda y Contacto, públicas.
 const AyudaPage = perezosa(() => import('@/features/ayuda/pages/AyudaPage'), 'AyudaPage')
 const ContactoPage = perezosa(() => import('@/features/ayuda/pages/ContactoPage'), 'ContactoPage')
 
 export const router = createBrowserRouter([
   { element: <PublicLayout />, children: [
     { path: '/', element: <LandingPage /> },
+    ...RUTAS_BLOQUES.publicas,
+  ] },
+  // Ayuda y Contacto: públicas, pero con sesión se ven dentro del sistema (AyudaLayout elige el marco).
+  { element: <AyudaLayout />, children: [
     { path: '/ayuda', element: <AyudaPage /> },
     { path: '/contacto', element: <ContactoPage /> },
-    ...RUTAS_BLOQUES.publicas,
   ] },
   { element: <AuthLayout />, children: [
     { path: '/login', element: <LoginPage /> },

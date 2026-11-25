@@ -11,7 +11,6 @@ vi.mock("./components/VitrinaLanding", () => ({ VitrinaLanding: () => <section d
 vi.mock("./components/CoberturaMinera", () => ({ CoberturaMinera: () => null }))
 vi.mock("./components/Respaldo", () => ({ Respaldo: () => null }))
 vi.mock("./components/SolicitudRapida", () => ({ SolicitudRapida: () => null }))
-vi.mock("./components/Pie", () => ({ Pie: () => null }))
 
 import { LandingPage } from "./LandingPage"
 
@@ -23,5 +22,11 @@ describe("LandingPage", () => {
     const destino = container.querySelector("#catalogo")
     expect(destino).not.toBeNull()
     expect(destino?.querySelector('[data-testid="catalogo-interno"]')).not.toBeNull()
+  })
+
+  it("no muestra la franja «¿Listo para simplificar tu abastecimiento?» antes del pie (v3.4)", () => {
+    const qc = new QueryClient()
+    render(<QueryClientProvider client={qc}><MemoryRouter><LandingPage /></MemoryRouter></QueryClientProvider>)
+    expect(screen.queryByText(/Listo para simplificar/)).toBeNull()
   })
 })

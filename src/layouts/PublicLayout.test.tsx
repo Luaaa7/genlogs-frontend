@@ -15,7 +15,7 @@ describe("Cabecera pública", () => {
     render(<MemoryRouter><PublicLayout /></MemoryRouter>)
     expect(screen.getByRole("link", { name: /Pedir cotización/ }).getAttribute("href")).toContain("#solicitud")
     expect(screen.getByRole("link", { name: "Catálogo" }).getAttribute("href")).toContain("#catalogo")
-    expect(screen.getByRole("link", { name: "Contacto" })).toBeTruthy()
+    expect(screen.getAllByRole("link", { name: "Contacto" }).length).toBeGreaterThan(0)
   })
 
   it("fuera de la landing los enlaces apuntan a /#catalogo y /#solicitud", () => {
@@ -31,10 +31,10 @@ describe("Cabecera pública", () => {
     expect(clases).toContain("sm:flex")
   })
 
-  it("la cabecera y el pie llevan a Ayuda y Contáctame (v3.4, K2)", () => {
+  it("la cabecera y el pie llevan a Ayuda y Contacto (v3.4, K2)", () => {
     render(<MemoryRouter><PublicLayout /></MemoryRouter>)
-    expect(screen.getByRole("link", { name: "Contacto" }).getAttribute("href")).toBe("/contacto")
-    expect(screen.getByRole("link", { name: "Contáctame" }).getAttribute("href")).toBe("/contacto")
+    // El mismo nombre en la cabecera y en el pie (portal y menú interno también dicen «Contacto»).
+    expect(screen.getAllByRole("link", { name: "Contacto" }).map((a) => a.getAttribute("href"))).toEqual(["/contacto", "/contacto"])
     expect(screen.getAllByRole("link", { name: "Ayuda" }).map((a) => a.getAttribute("href"))).toEqual(["/ayuda", "/ayuda"])
   })
 

@@ -5,11 +5,10 @@ import { CatalogoReferencia } from "./components/CatalogoReferencia"
 import { CoberturaMinera } from "./components/CoberturaMinera"
 import { Respaldo } from "./components/Respaldo"
 import { SolicitudRapida } from "./components/SolicitudRapida"
-import { Pie } from "./components/Pie"
 import { VitrinaLanding } from "./components/VitrinaLanding"
 import { vitrinaHabilitada } from "@/lib/interruptores"
 
 /** Con la vitrina apagada (por defecto) se mantiene el catálogo de referencia actual. */
 export function LandingPage() {
-  return <div><Portada /><PorQue /><ComoFunciona /><div id="catalogo">{vitrinaHabilitada ? <VitrinaLanding /> : <CatalogoReferencia />}</div><CoberturaMinera /><Respaldo /><SolicitudRapida /><Pie /></div>
+  return <div><Portada /><PorQue /><ComoFunciona /><div id="catalogo">{vitrinaHabilitada ? <VitrinaLanding /> : <CatalogoReferencia />}</div><CoberturaMinera /><Respaldo /><SolicitudRapida /></div>
 }

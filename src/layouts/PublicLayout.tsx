@@ -36,12 +36,12 @@ export function PublicLayout() {
         </div>
       </header>
       <main><Outlet /></main>
-      <footer id="contacto" className="border-t border-border bg-muted/40">
+      <footer className="border-t border-border bg-muted/40">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-8 text-sm text-muted-foreground sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
           <p>© {new Date().getFullYear()} GenLogs S.A.C. Soluciones para minería.</p>
           <nav aria-label="Enlaces del pie" className="flex gap-4">
             <Link to="/ayuda" className="hover:text-foreground hover:underline">Ayuda</Link>
-            <Link to="/contacto" className="hover:text-foreground hover:underline">Contáctame</Link>
+            <Link to="/contacto" className="hover:text-foreground hover:underline">Contacto</Link>
             <Link to="/login" className="hover:text-foreground hover:underline">Ingreso del personal</Link>
           </nav>
         </div>

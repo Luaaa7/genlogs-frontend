@@ -24,7 +24,12 @@ describe("Menú del portal del cliente", () => {
     await renderLayout(false, true)
     expect(screen.getByRole("link", { name: "Mis pedidos" })).toBeTruthy()
     expect(screen.getByRole("link", { name: "Mis cotizaciones" })).toBeTruthy()
-    expect(screen.getByRole("link", { name: "Nueva solicitud" })).toBeTruthy()
+    const nueva = screen.getByRole("link", { name: "Nueva solicitud" })
+    expect(nueva.getAttribute("href")).toBe("/portal/solicitud")
+    // v3.4: «Nueva solicitud» va justo antes de «Cerrar sesión», a la derecha de los demás enlaces.
+    const cerrar = screen.getByRole("button", { name: "Cerrar sesión" })
+    expect(nueva.compareDocumentPosition(cerrar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByRole("link", { name: "Contacto" }).compareDocumentPosition(nueva) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(screen.getByRole("link", { name: "Reclamos" }).getAttribute("href")).toBe("/portal/reclamos")
     expect(screen.getByRole("button", { name: "Cerrar sesión" })).toBeTruthy()
   })
@@ -49,9 +54,9 @@ describe("Menú del portal del cliente", () => {
     expect(enlace.getAttribute("href")).toBe("/portal/repuestos")
   })
 
-  it.each([[true], [false]])("con sesión = %s muestra Ayuda y Contáctame (v3.4, K2)", async (conSesion) => {
+  it.each([[true], [false]])("con sesión = %s muestra Ayuda y Contacto (v3.4, K2)", async (conSesion) => {
     await renderLayout(false, conSesion)
     expect(screen.getByRole("link", { name: "Ayuda" }).getAttribute("href")).toBe("/ayuda")
-    expect(screen.getByRole("link", { name: "Contáctame" }).getAttribute("href")).toBe("/contacto")
+    expect(screen.getByRole("link", { name: "Contacto" }).getAttribute("href")).toBe("/contacto")
   })
 })
