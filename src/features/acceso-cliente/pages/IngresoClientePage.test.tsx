@@ -77,3 +77,85 @@ describe("IngresoClientePage", () => {
     expect(lista.textContent).toMatch(/Despachos/)
   })
 })
+
+describe("IngresoClientePage: usabilidad", () => {
+  beforeEach(() => {
+    localStorage.clear()
+    sessionStorage.clear()
+    vi.mocked(ingresarCliente).mockReset()
+  })
+
+  it("los campos piden el autocompletado correcto del navegador", () => {
+    renderIngreso()
+    expect(screen.getByLabelText("Correo").getAttribute("autocomplete")).toBe("email")
+    expect(screen.getByLabelText("Contraseña").getAttribute("autocomplete")).toBe("current-password")
+  })
+
+  it("el ojito muestra y oculta la contraseña sin entrar en el orden del Tab", () => {
+    renderIngreso()
+    const password = screen.getByLabelText("Contraseña") as HTMLInputElement
+    const ojo = screen.getByRole("button", { name: "Mostrar contraseña" })
+    expect(password.type).toBe("password")
+    expect(ojo.getAttribute("tabindex")).toBe("-1")
+
+    fireEvent.click(ojo)
+    expect(password.type).toBe("text")
+
+    fireEvent.click(screen.getByRole("button", { name: "Ocultar contraseña" }))
+    expect(password.type).toBe("password")
+  })
+
+  it("avisa cuando Bloq Mayús está activo y deja de avisar al apagarlo", () => {
+    renderIngreso()
+    const password = screen.getByLabelText("Contraseña")
+    expect(screen.queryByText("Bloq Mayús está activado")).toBeNull()
+
+    fireEvent.keyDown(password, { key: "A", modifierCapsLock: true })
+    expect(screen.getByText("Bloq Mayús está activado")).toBeTruthy()
+
+    fireEvent.keyUp(password, { key: "CapsLock", modifierCapsLock: false })
+    expect(screen.queryByText("Bloq Mayús está activado")).toBeNull()
+  })
+
+  it("«¿Olvidaste tu contraseña?» despliega cómo restablecer el acceso debajo del formulario", () => {
+    renderIngreso()
+    const ayuda = screen.getByRole("button", { name: "¿Olvidaste tu contraseña?" })
+    expect(ayuda.getAttribute("aria-expanded")).toBe("false")
+    expect(screen.queryByText(/administrador de tu empresa/)).toBeNull()
+
+    fireEvent.click(ayuda)
+
+    expect(ayuda.getAttribute("aria-expanded")).toBe("true")
+    const aviso = screen.getByText(/administrador de tu empresa/)
+    expect(aviso.textContent).toMatch(/Para restablecer tu acceso/)
+    expect(aviso.textContent).toMatch(/ventas1@genlogsac\.com/)
+    expect(screen.getByRole("link", { name: "Ir a Contáctame" }).getAttribute("href")).toBe("/contacto")
+    const entrar = screen.getByRole("button", { name: "Ingresar" })
+    expect(entrar.compareDocumentPosition(aviso) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByTestId("tarjeta-ingreso").contains(aviso)).toBe(true)
+
+    fireEvent.click(ayuda)
+    expect(screen.queryByText(/administrador de tu empresa/)).toBeNull()
+  })
+
+  it("mientras ingresa muestra «Ingresando...», deshabilita el botón y no envía dos veces", async () => {
+    vi.mocked(ingresarCliente).mockReturnValue(new Promise(() => {}))
+    renderIngreso()
+    llenarYEnviar()
+
+    const boton = (await screen.findByRole("button", { name: "Ingresando..." })) as HTMLButtonElement
+    expect(boton.disabled).toBe(true)
+    fireEvent.submit(boton.closest("form") as HTMLFormElement)
+
+    expect(ingresarCliente).toHaveBeenCalledTimes(1)
+  })
+
+  it("si el ingreso falla, el botón vuelve a quedar disponible", async () => {
+    vi.mocked(ingresarCliente).mockRejectedValue({ response: { status: 401, data: { message: "Correo o contraseña incorrectos." } } })
+    renderIngreso()
+    llenarYEnviar()
+
+    await screen.findByText("Correo o contraseña incorrectos.")
+    expect((screen.getByRole("button", { name: "Ingresar" }) as HTMLButtonElement).disabled).toBe(false)
+  })
+})

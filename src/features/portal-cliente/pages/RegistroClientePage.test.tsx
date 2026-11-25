@@ -126,3 +126,62 @@ describe("RegistroClientePage: tarjeta unificada con el ingreso (v3.4)", () => {
     expect(screen.getByRole("link", { name: "Ingresar al portal" }).getAttribute("href")).toContain("/portal/ingreso")
   })
 })
+
+function llenarFormularioValido() {
+  fireEvent.change(screen.getByLabelText("RUC / documento"), { target: { value: "2012345" } })
+  fireEvent.change(screen.getByLabelText("Razón social"), { target: { value: "Minera" } })
+  fireEvent.change(screen.getByLabelText("Persona de contacto"), { target: { value: "Ana" } })
+  fireEvent.change(screen.getByLabelText("Correo"), { target: { value: "ana@portal.pe" } })
+  llenarPassword("Clave1234")
+}
+
+describe("RegistroClientePage: usabilidad", () => {
+  it("los campos piden el autocompletado correcto del navegador", () => {
+    renderizar()
+    expect(campo("Correo").getAttribute("autocomplete")).toBe("email")
+    expect(campo("Contraseña").getAttribute("autocomplete")).toBe("new-password")
+    expect(campo("Confirmar contraseña").getAttribute("autocomplete")).toBe("new-password")
+  })
+
+  it("los dos ojitos no entran en el orden del Tab y cada uno mueve solo su campo", () => {
+    renderizar()
+    const ojoPassword = screen.getByRole("button", { name: "Mostrar contraseña" })
+    const ojoConfirmacion = screen.getByRole("button", { name: "Mostrar confirmación" })
+    expect(ojoPassword.getAttribute("tabindex")).toBe("-1")
+    expect(ojoConfirmacion.getAttribute("tabindex")).toBe("-1")
+
+    fireEvent.click(ojoConfirmacion)
+
+    expect(campo("Confirmar contraseña").type).toBe("text")
+    expect(campo("Contraseña").type).toBe("password")
+    expect(screen.getByRole("button", { name: "Ocultar confirmación" })).toBeTruthy()
+  })
+
+  it("avisa de Bloq Mayús en el campo donde se escribe y lo quita al salir", () => {
+    renderizar()
+    expect(screen.queryByText("Bloq Mayús está activado")).toBeNull()
+
+    fireEvent.keyDown(campo("Contraseña"), { key: "A", modifierCapsLock: true })
+    expect(screen.getAllByText("Bloq Mayús está activado")).toHaveLength(1)
+
+    fireEvent.blur(campo("Contraseña"))
+    fireEvent.keyDown(campo("Confirmar contraseña"), { key: "A", modifierCapsLock: true })
+    expect(screen.getAllByText("Bloq Mayús está activado")).toHaveLength(1)
+
+    fireEvent.keyUp(campo("Confirmar contraseña"), { key: "CapsLock", modifierCapsLock: false })
+    expect(screen.queryByText("Bloq Mayús está activado")).toBeNull()
+  })
+
+  it("mientras registra muestra «Registrando...», deshabilita el botón y no envía dos veces", async () => {
+    const registrar = vi.spyOn(portalApi, "registrarCliente").mockReturnValue(new Promise(() => {}))
+    renderizar()
+    llenarFormularioValido()
+
+    fireEvent.click(botonCrear())
+
+    const boton = (await screen.findByRole("button", { name: "Registrando..." })) as HTMLButtonElement
+    expect(boton.disabled).toBe(true)
+    fireEvent.submit(boton.closest("form") as HTMLFormElement)
+    expect(registrar).toHaveBeenCalledTimes(1)
+  })
+})
