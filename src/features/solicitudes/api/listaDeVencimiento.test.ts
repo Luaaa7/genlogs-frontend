@@ -15,11 +15,23 @@ function fila(id: number, extra: Partial<SolicitudInternaResponse> = {}, semafor
 }
 
 describe('Lista de solicitudes desde GET /solicitudes/vencimiento', () => {
-  it('muestra la solicitud real con su semáforo y conserva el orden que manda el backend', () => {
+  it('muestra la solicitud real con su semáforo', () => {
     const lista = listaDeVencimiento([fila(2, {}, 'ROJO'), fila(1, {}, 'AMARILLO')], { page: 0, size: 10 })
     expect(lista.content.map((f) => f.codigoSolicitud)).toEqual(['SOL-002', 'SOL-001'])
     expect(lista.content.map((f) => f.semaforo)).toEqual(['ROJO', 'AMARILLO'])
     expect(lista.totalElements).toBe(2)
+  })
+
+  it('ordena por hora de recepción: la que llegó última sale primero, aunque sea el mismo día', () => {
+    const lista = listaDeVencimiento(
+      [
+        fila(1, { fechaRecepcion: '2026-11-25T08:00:00' }),
+        fila(3, { fechaRecepcion: '2026-11-25T16:45:00' }),
+        fila(2, { fechaRecepcion: '2026-11-25T12:10:00' }),
+      ],
+      { page: 0, size: 10 },
+    )
+    expect(lista.content.map((f) => f.idSolicitud)).toEqual([3, 2, 1])
   })
 
   it('una pausada no inventa color', () => {
@@ -38,7 +50,7 @@ describe('Lista de solicitudes desde GET /solicitudes/vencimiento', () => {
     expect(listaDeVencimiento(filas, { page: 0, size: 10, tipoPlazo: 'IMPORTADO' }).content.map((f) => f.idSolicitud)).toEqual([2])
     expect(listaDeVencimiento(filas, { page: 0, size: 10, idAsistente: 7 }).content.map((f) => f.idSolicitud)).toEqual([1])
     const pagina2 = listaDeVencimiento(filas, { page: 1, size: 2 })
-    expect(pagina2.content.map((f) => f.idSolicitud)).toEqual([3])
+    expect(pagina2.content.map((f) => f.idSolicitud)).toEqual([1])
     expect(pagina2.totalPages).toBe(2)
   })
 

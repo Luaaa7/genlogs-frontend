@@ -34,10 +34,11 @@ export interface FilaVencimiento {
   porcentajePlazo?: number | null
 }
 
-/** Filtra y pagina en el cliente lo que trae /vencimiento. Ya viene ordenado por vencimiento. */
+/** Filtra y pagina en el cliente lo que trae /vencimiento. Se muestra lo último que llegó primero (por hora). */
 export function listaDeVencimiento(filas: FilaVencimiento[], filtros: FiltrosSolicitudes): ListaSolicitudesResponse {
   const q = filtros.q?.trim().toLowerCase()
-  const filtradas = filas
+  const filtradas = [...filas]
+    .sort((a, b) => masRecientePrimero(a.solicitud, b.solicitud))
     .filter(({ solicitud: s }) => !q || `${s.codigoSolicitud} ${s.asunto} ${s.cliente ?? ''}`.toLowerCase().includes(q))
     .filter(({ solicitud: s }) => !filtros.estado || s.estado === filtros.estado)
     .filter(({ solicitud: s }) => !filtros.tipoPlazo || s.tipoPlazo === filtros.tipoPlazo)
@@ -116,10 +117,10 @@ export function solicitudDeRuta(id: number, fila?: SolicitudInternaResponse | nu
   return leer(id)
 }
 
-function porVencimiento(a: SolicitudInternaResponse, b: SolicitudInternaResponse): number {
-  if (a.fechaLimiteInterna == null) return 1
-  if (b.fechaLimiteInterna == null) return -1
-  return a.fechaLimiteInterna < b.fechaLimiteInterna ? -1 : a.fechaLimiteInterna > b.fechaLimiteInterna ? 1 : 0
+/** Más reciente primero: fecha y hora de recepción; si coinciden, el id más alto. */
+function masRecientePrimero(a: SolicitudInternaResponse, b: SolicitudInternaResponse): number {
+  const porHora = b.fechaRecepcion.localeCompare(a.fechaRecepcion)
+  return porHora !== 0 ? porHora : b.idSolicitud - a.idSolicitud
 }
 
 function filaDe(s: SolicitudInternaResponse): SolicitudInternaFila {
@@ -143,7 +144,7 @@ function listarMock(filtros: FiltrosSolicitudes): ListaSolicitudesResponse {
     .filter((s) => !filtros.estado || s.estado === filtros.estado)
     .filter((s) => !filtros.tipoPlazo || s.tipoPlazo === filtros.tipoPlazo)
     .filter((s) => filtros.idAsistente == null || s.asignado?.idUsuario === filtros.idAsistente)
-    .sort(porVencimiento)
+    .sort(masRecientePrimero)
     .map(filaDe)
   const size = filtros.size
   const page = filtros.page
