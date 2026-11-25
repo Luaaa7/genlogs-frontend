@@ -107,9 +107,12 @@ export const router = createBrowserRouter([
     { path: '*', element: <NoEncontradaPage /> },
   ] }] },
   // Registro e ingreso del cliente (FE-A): sin sesión, con el layout del portal.
+  // Ingreso del cliente (v3.4): con la misma cabecera pública que el resto del sitio.
+  { element: <PublicLayout />, children: [
+    { path: '/portal/ingreso', element: <IngresoClientePage /> },
+  ] },
   { element: <ClienteLayout />, children: [
     { path: '/portal/registro', element: <RegistroClientePage /> },
-    { path: '/portal/ingreso', element: <IngresoClientePage /> },
   ] },
   { element: <ClienteRoute />, children: [{ element: <ClienteLayout />, children: [
     { path: '/portal/pedidos', element: <MisPedidosPage /> },
