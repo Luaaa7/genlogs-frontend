@@ -20,10 +20,11 @@ describe("Menú del portal del cliente", () => {
   })
   afterEach(() => vi.doUnmock("@/lib/interruptores"))
 
-  it("con sesión muestra Mis pedidos, Mis cotizaciones, Nueva solicitud, Reclamos y Cerrar sesión", async () => {
+  it("con sesión muestra Mis pedidos, Mis cotizaciones, Mis comprobantes, Nueva solicitud, Reclamos y Cerrar sesión", async () => {
     await renderLayout(false, true)
     expect(screen.getByRole("link", { name: "Mis pedidos" })).toBeTruthy()
     expect(screen.getByRole("link", { name: "Mis cotizaciones" })).toBeTruthy()
+    expect(screen.getByRole("link", { name: "Mis comprobantes" }).getAttribute("href")).toBe("/portal/comprobantes")
     expect(screen.getByRole("link", { name: "Nueva solicitud" })).toBeTruthy()
     expect(screen.getByRole("link", { name: "Reclamos" }).getAttribute("href")).toBe("/portal/reclamos")
     expect(screen.getByRole("button", { name: "Cerrar sesión" })).toBeTruthy()
@@ -34,6 +35,7 @@ describe("Menú del portal del cliente", () => {
     expect(screen.getByRole("link", { name: "Ingresar" }).getAttribute("href")).toBe("/portal/ingreso")
     expect(screen.getByRole("link", { name: "Crear cuenta" }).getAttribute("href")).toBe("/portal/registro")
     expect(screen.queryByRole("link", { name: "Mis pedidos" })).toBeNull()
+    expect(screen.queryByRole("link", { name: "Mis comprobantes" })).toBeNull()
     expect(screen.queryByRole("link", { name: "Repuestos" })).toBeNull()
     expect(screen.queryByRole("button", { name: "Cerrar sesión" })).toBeNull()
   })
