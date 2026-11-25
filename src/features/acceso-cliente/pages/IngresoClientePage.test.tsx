@@ -91,12 +91,14 @@ describe("IngresoClientePage: usabilidad", () => {
     expect(screen.getByLabelText("Contraseña").getAttribute("autocomplete")).toBe("current-password")
   })
 
-  it("el ojito muestra y oculta la contraseña sin entrar en el orden del Tab", () => {
+  it("el ojito muestra y oculta la contraseña y se alcanza con el teclado", () => {
     renderIngreso()
     const password = screen.getByLabelText("Contraseña") as HTMLInputElement
     const ojo = screen.getByRole("button", { name: "Mostrar contraseña" })
     expect(password.type).toBe("password")
-    expect(ojo.getAttribute("tabindex")).toBe("-1")
+    expect(ojo.getAttribute("tabindex")).toBeNull()
+    ojo.focus()
+    expect(document.activeElement).toBe(ojo)
 
     fireEvent.click(ojo)
     expect(password.type).toBe("text")
@@ -121,11 +123,15 @@ describe("IngresoClientePage: usabilidad", () => {
     renderIngreso()
     const ayuda = screen.getByRole("button", { name: "¿Olvidaste tu contraseña?" })
     expect(ayuda.getAttribute("aria-expanded")).toBe("false")
+    expect(ayuda.getAttribute("aria-controls")).toBeNull() // el aviso aún no existe
     expect(screen.queryByText(/administrador de tu empresa/)).toBeNull()
 
     fireEvent.click(ayuda)
 
     expect(ayuda.getAttribute("aria-expanded")).toBe("true")
+    expect(document.getElementById(ayuda.getAttribute("aria-controls") ?? "")).toBe(
+      screen.getByText(/administrador de tu empresa/),
+    )
     const aviso = screen.getByText(/administrador de tu empresa/)
     expect(aviso.textContent).toMatch(/Para restablecer tu acceso/)
     expect(aviso.textContent).toMatch(/ventas1@genlogsac\.com/)

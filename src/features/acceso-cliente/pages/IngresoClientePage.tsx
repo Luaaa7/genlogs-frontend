@@ -93,7 +93,7 @@ export function IngresoClientePage() {
               <button
                 type="button"
                 aria-expanded={ayudaAbierta}
-                aria-controls="ingreso-ayuda-password"
+                aria-controls={ayudaAbierta ? "ingreso-ayuda-password" : undefined}
                 onClick={() => setAyudaAbierta((abierta) => !abierta)}
                 className="rounded-sm text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >

@@ -11,7 +11,7 @@ interface CampoPasswordProps extends Omit<InputProps, "type"> {
 /**
  * Campo de contraseña del acceso del cliente (ingreso y registro): el mismo <Input> de siempre con el
  * «ojito» para mostrar u ocultar lo escrito y un aviso discreto cuando Bloq Mayús está activo.
- * El ojito queda fuera del orden del Tab (tabIndex -1) para no interrumpir el paso entre campos.
+ * El ojito se alcanza con Tab (accesibilidad por teclado) y no envía el formulario (type="button").
  * Sirve con campo controlado o sin controlar, y entrega su ref al input.
  */
 export const CampoPassword = forwardRef<HTMLInputElement, CampoPasswordProps>(function CampoPassword(
@@ -49,7 +49,6 @@ export const CampoPassword = forwardRef<HTMLInputElement, CampoPasswordProps>(fu
         />
         <button
           type="button"
-          tabIndex={-1}
           onClick={() => setVisible((v) => !v)}
           aria-label={`${visible ? "Ocultar" : "Mostrar"} ${etiquetaVer}`}
           className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

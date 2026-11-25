@@ -143,12 +143,14 @@ describe("RegistroClientePage: usabilidad", () => {
     expect(campo("Confirmar contraseña").getAttribute("autocomplete")).toBe("new-password")
   })
 
-  it("los dos ojitos no entran en el orden del Tab y cada uno mueve solo su campo", () => {
+  it("los dos ojitos se alcanzan con el teclado y cada uno mueve solo su campo", () => {
     renderizar()
     const ojoPassword = screen.getByRole("button", { name: "Mostrar contraseña" })
     const ojoConfirmacion = screen.getByRole("button", { name: "Mostrar confirmación" })
-    expect(ojoPassword.getAttribute("tabindex")).toBe("-1")
-    expect(ojoConfirmacion.getAttribute("tabindex")).toBe("-1")
+    expect(ojoPassword.getAttribute("tabindex")).toBeNull()
+    expect(ojoConfirmacion.getAttribute("tabindex")).toBeNull()
+    ojoConfirmacion.focus()
+    expect(document.activeElement).toBe(ojoConfirmacion)
 
     fireEvent.click(ojoConfirmacion)
 

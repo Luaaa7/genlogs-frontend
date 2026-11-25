@@ -35,10 +35,12 @@ describe("CampoPassword", () => {
       expect(campo().type).toBe("password")
     })
 
-    it("no entra en el orden del Tab y no envía el formulario", () => {
+    it("se alcanza con el teclado (Tab) y no envía el formulario", () => {
       renderCampo()
       const ojo = screen.getByRole("button", { name: "Mostrar contraseña" })
-      expect(ojo.getAttribute("tabindex")).toBe("-1")
+      expect(ojo.getAttribute("tabindex")).toBeNull()
+      ojo.focus()
+      expect(document.activeElement).toBe(ojo)
       expect(ojo.getAttribute("type")).toBe("button")
     })
 
