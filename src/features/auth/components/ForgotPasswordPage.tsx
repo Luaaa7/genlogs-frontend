@@ -1,14 +1,22 @@
-import { useState, type FormEvent } from "react"
-import { Link } from "react-router-dom"
+import { useEffect, useState, type FormEvent } from "react"
+import { Link, useSearchParams } from "react-router-dom"
 import { Mail, MailCheck } from "lucide-react"
 import { solicitarRecuperacion } from "@/api/authApi"
 import { IconInput } from "@/components/ui/IconInput"
+import { guardarOrigen, rutaIngreso } from "../lib/origenRecuperacion"
 
 export function ForgotPasswordPage() {
+  const [searchParams] = useSearchParams()
+  const origen = searchParams.get("origen") === "portal" ? "portal" : null
   const [correo, setCorreo] = useState("")
   const [enviado, setEnviado] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  // El correo abrirá la pantalla de nueva contraseña: ahí se necesita saber de dónde vino la persona.
+  useEffect(() => {
+    guardarOrigen(origen)
+  }, [origen])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -76,10 +84,10 @@ export function ForgotPasswordPage() {
       )}
 
       <Link
-        to="/login"
+        to={rutaIngreso(origen)}
         className="block text-center text-sm font-medium text-accent hover:text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
       >
-        Volver al inicio de sesión
+        {origen === "portal" ? "Volver a ingresar" : "Volver al inicio de sesión"}
       </Link>
     </form>
   )

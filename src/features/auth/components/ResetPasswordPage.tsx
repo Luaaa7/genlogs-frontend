@@ -4,6 +4,7 @@ import axios from "axios"
 import { Lock, CheckCircle2, Clock, AlertTriangle, Loader2 } from "lucide-react"
 import { restablecerPassword, validarTokenReset } from "@/api/authApi"
 import { PasswordInput } from "@/components/ui/PasswordInput"
+import { leerOrigen, limpiarOrigen, rutaIngreso } from "../lib/origenRecuperacion"
 
 type Estado = "validando" | "valido" | "invalido" | "completado"
 
@@ -35,6 +36,10 @@ function mensajeDeError(error: unknown): { mensaje: string; enlaceInvalido: bool
 export function ResetPasswordPage() {
   const [searchParams] = useSearchParams()
   const token = searchParams.get("token") ?? ""
+  // Cliente del portal o personal: decide solo a qué pantalla de ingreso se vuelve.
+  const origen = searchParams.get("origen") === "portal" ? "portal" : leerOrigen()
+  const rutaVolver = rutaIngreso(origen)
+  const textoVolver = origen === "portal" ? "Volver a ingresar" : "Volver al inicio de sesión"
 
   const [estado, setEstado] = useState<Estado>(token ? "validando" : "invalido")
   const [segundos, setSegundos] = useState(0)
@@ -130,11 +135,11 @@ export function ResetPasswordPage() {
             Este enlace venció o ya fue utilizado. Los enlaces duran 30 minutos y solo sirven una vez.
           </p>
         </div>
-        <Link to="/recuperar-password" className={botonClass}>
+        <Link to={origen === "portal" ? "/recuperar-password?origen=portal" : "/recuperar-password"} className={botonClass}>
           Solicitar un enlace nuevo
         </Link>
-        <Link to="/login" className={linkClass}>
-          Volver al inicio de sesión
+        <Link to={rutaVolver} className={linkClass}>
+          {textoVolver}
         </Link>
       </div>
     )
@@ -149,8 +154,8 @@ export function ResetPasswordPage() {
         <p role="status" className="text-sm text-muted-foreground">
           Contraseña actualizada. Ya puedes iniciar sesión con tu nueva contraseña.
         </p>
-        <Link to="/login" className={botonClass}>
-          Ir al login
+        <Link to={rutaVolver} onClick={limpiarOrigen} className={botonClass}>
+          {origen === "portal" ? "Ir a ingresar" : "Ir al login"}
         </Link>
       </div>
     )

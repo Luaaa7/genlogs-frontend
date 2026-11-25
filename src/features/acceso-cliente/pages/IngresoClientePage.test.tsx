@@ -124,7 +124,7 @@ describe("IngresoClientePage: usabilidad", () => {
 
     const enlace = screen.getByRole("link", { name: "¿Olvidaste tu contraseña?" })
 
-    expect(enlace.getAttribute("href")).toBe("/recuperar-password")
+    expect(enlace.getAttribute("href")).toBe("/recuperar-password?origen=portal")
     expect(enlace.parentElement?.contains(screen.getByText("Contraseña"))).toBe(true)
   })
 
