@@ -44,14 +44,10 @@ const CompletarEmpresaPage = perezosa(() => import('@/features/acceso-cliente/pa
 const MisPedidosPage = perezosa(() => import('@/features/portal-cliente/pages/MisPedidosPage'), 'MisPedidosPage')
 const PedidoDetallePage = perezosa(() => import('@/features/portal-cliente/pages/PedidoDetallePage'), 'PedidoDetallePage')
 const NuevaSolicitudPage = perezosa(() => import('@/features/portal-cliente/pages/NuevaSolicitudPage'), 'NuevaSolicitudPage')
-<<<<<<< HEAD
 // v3.4 (BPMN 4.1): comprobantes del cliente y pago en línea con Mercado Pago.
 const MisComprobantesPage = perezosa(() => import('@/features/portal-cliente/pages/MisComprobantesPage'), 'MisComprobantesPage')
 const PagoResultadoPage = perezosa(() => import('@/features/portal-cliente/pages/PagoResultadoPage'), 'PagoResultadoPage')
-// v3.4 (K2): Ayuda y Contáctame, públicas.
-=======
 // v3.4 (K2): Ayuda y Contacto, públicas.
->>>>>>> origin/release/v3.3
 const AyudaPage = perezosa(() => import('@/features/ayuda/pages/AyudaPage'), 'AyudaPage')
 const ContactoPage = perezosa(() => import('@/features/ayuda/pages/ContactoPage'), 'ContactoPage')
 
