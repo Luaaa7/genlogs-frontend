@@ -28,6 +28,15 @@ describe("borrador en sessionStorage", () => {
     expect(leerBorrador()).toEqual(borrador)
   })
 
+  it("conserva el modo «servicio» del repuesto y cualquier otro valor cae en «parte»", () => {
+    const items = [
+      { ...borrador.items[0], modo: "servicio" },
+      { ...borrador.items[0], modo: "otra-cosa" },
+    ]
+    sessionStorage.setItem(CLAVE_BORRADOR, JSON.stringify({ ...borrador, items }))
+    expect(leerBorrador()?.items.map((i) => i.modo)).toEqual(["servicio", "parte"])
+  })
+
   it("limpiarBorrador borra la clave", () => {
     guardarBorrador(borrador)
     limpiarBorrador()

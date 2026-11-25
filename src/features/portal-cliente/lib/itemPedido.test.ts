@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest"
-import { asuntoAutomatico, esGtinValido, itemVacio, validarItem, type ItemPedidoForm } from "./itemPedido"
+import {
+  asuntoAutomatico,
+  esGtinValido,
+  itemVacio,
+  pesoEnMb,
+  validarArchivo,
+  validarItem,
+  type ItemPedidoForm,
+} from "./itemPedido"
 
 const base: ItemPedidoForm = {
   id: "item-prueba",
@@ -77,6 +85,45 @@ describe("validarItem en modo «Tengo una foto»", () => {
 
   it("una foto ya subida (por ejemplo, desde el carrito) cuenta como foto", () => {
     expect(validarItem({ ...modoFoto, urlFoto: "https://res.cloudinary.com/x/pieza.jpg" })).toEqual({})
+  })
+})
+
+describe("validarItem en modo «Es un servicio / fabricación»", () => {
+  const servicio: ItemPedidoForm = { ...base, modo: "servicio", unidad: "SERV", numeroParte: "", marca: "" }
+
+  it("solo exige la descripción: sin marca, N.º de parte ni foto", () => {
+    expect(validarItem(servicio)).toEqual({})
+    expect(validarItem({ ...servicio, descripcion: " " }).descripcion).toBeTruthy()
+  })
+
+  it("el plano es opcional, pero si lo adjunta debe ser válido", () => {
+    expect(validarItem({ ...servicio, foto })).toEqual({})
+    const exe = new File(["x"], "virus.exe", { type: "application/x-msdownload" })
+    expect(validarItem({ ...servicio, foto: exe }).foto).toMatch(/JPG, PNG, WEBP o PDF/)
+  })
+})
+
+describe("validarArchivo", () => {
+  it("acepta JPG, PNG, WEBP y PDF de hasta 10 MB", () => {
+    for (const tipo of ["image/jpeg", "image/png", "image/webp", "application/pdf"]) {
+      expect(validarArchivo(new File(["x"], "a", { type: tipo }))).toBeUndefined()
+    }
+    const justo = new File([new Uint8Array(10 * 1024 * 1024)], "a.pdf", { type: "application/pdf" })
+    expect(validarArchivo(justo)).toBeUndefined()
+  })
+
+  it("rechaza otro formato o más de 10 MB", () => {
+    expect(validarArchivo(new File(["x"], "a.gif", { type: "image/gif" }))).toMatch(/JPG, PNG, WEBP o PDF/)
+    const grande = new File([new Uint8Array(10 * 1024 * 1024 + 1)], "a.pdf", { type: "application/pdf" })
+    expect(validarArchivo(grande)).toMatch(/10 MB/)
+  })
+})
+
+describe("pesoEnMb", () => {
+  it("da el peso con un decimal y nunca menos de 0.1 MB", () => {
+    expect(pesoEnMb(1.5 * 1024 * 1024)).toBe("1.5 MB")
+    expect(pesoEnMb(10 * 1024 * 1024)).toBe("10.0 MB")
+    expect(pesoEnMb(1)).toBe("0.1 MB")
   })
 })
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { ChevronDown, Info, Plus, Trash2, X } from "lucide-react"
+import { ChevronDown, Copy, FileText, Info, Plus, Trash2, X } from "lucide-react"
 import { useCrearSolicitud } from "../hooks/useCrearSolicitud"
 import {
   guardarBorrador,
@@ -11,8 +11,11 @@ import {
 } from "../lib/borradorSolicitud"
 import {
   MAX_ASUNTO,
+  UNIDADES_SUGERIDAS,
   asuntoAutomatico,
   itemVacio,
+  pesoEnMb,
+  validarArchivo,
   validarItem,
   type ErroresItem,
   type ItemPedidoForm,
@@ -33,6 +36,9 @@ const textoOpcional = (valor: string) => valor.trim() || undefined
 
 /** Máximo del detalle en el backend (SolicitudRequest). */
 const MAX_DETALLE = 4000
+
+/** Máximo de ítems por solicitud en el backend. */
+const MAX_ITEMS = 50
 
 const enlaceDiscreto =
   "text-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
@@ -77,8 +83,8 @@ function estadoInicial(claveNavegacion: string, estado: unknown): EstadoInicial 
 }
 
 /**
- * Pedido del cliente (D-01): por cada repuesto, el cliente elige si tiene el N.º de parte (con marca) o
- * una foto/plano. GTIN opcional. El asunto se sugiere solo, el detalle es una nota opcional y el
+ * Pedido del cliente (D-01): por cada ítem (repuesto, fabricación o servicio), el cliente elige si tiene el
+ * N.º de parte (con marca), una foto/plano, o si es un servicio. GTIN opcional. El asunto se sugiere solo, el detalle es una nota opcional y el
  * formulario se guarda como borrador en sessionStorage mientras se escribe.
  */
 export function NuevaSolicitudPage() {
@@ -129,17 +135,47 @@ export function NuevaSolicitudPage() {
     // Si cambia la foto, la URL subida antes ya no sirve.
     const ajustes = "foto" in cambios ? { ...cambios, urlFoto: null } : cambios
     setItems((actuales) => actuales.map((item, i) => (i === indice ? { ...item, ...ajustes } : item)))
+    // Un archivo recién elegido se valida al instante (formato y peso), sin esperar al envío.
+    if ("foto" in cambios) {
+      const errorArchivo = cambios.foto ? validarArchivo(cambios.foto) : undefined
+      setErroresItems((actuales) =>
+        items.map((_, i) => {
+          const errores = { ...actuales[i] }
+          if (i === indice) {
+            if (errorArchivo) errores.foto = errorArchivo
+            else delete errores.foto
+          }
+          return errores
+        }),
+      )
+    }
   }
 
   function cambiarModo(indice: number, modo: ModoItem) {
-    cambiarItem(indice, { modo })
-    // Los errores del modo anterior ya no aplican a este repuesto.
-    setErroresItems((actuales) => actuales.map((errores, i) => (i === indice ? {} : errores)))
+    const actual = items[indice]
+    // «Servicio» sugiere la unidad SERV (si seguía en UND); al salir de servicio, SERV vuelve a UND.
+    let unidad = actual.unidad
+    if (modo === "servicio" && unidad.trim() === "UND") unidad = "SERV"
+    else if (modo !== "servicio" && actual.modo === "servicio" && unidad.trim() === "SERV") unidad = "UND"
+    cambiarItem(indice, { modo, unidad })
+    // Los errores del modo anterior ya no aplican a este ítem.
+    setErroresItems((actuales) => items.map((_, i) => (i === indice ? {} : (actuales[i] ?? {}))))
   }
 
   function quitarItem(indice: number) {
     setItems((actuales) => actuales.filter((_, i) => i !== indice))
     setErroresItems((actuales) => actuales.filter((_, i) => i !== indice))
+  }
+
+  function duplicarItem(indice: number) {
+    if (items.length >= MAX_ITEMS) return
+    // Copia todo (modo, textos, archivo) con un id propio, justo debajo del original.
+    const copia: ItemPedidoForm = { ...items[indice], id: itemVacio().id }
+    setItems((actuales) => [...actuales.slice(0, indice + 1), copia, ...actuales.slice(indice + 1)])
+    setErroresItems((actuales) => {
+      const alineados = items.map((_, i) => actuales[i] ?? {})
+      return [...alineados.slice(0, indice + 1), {}, ...alineados.slice(indice + 1)]
+    })
   }
 
   async function enviar(event: React.FormEvent<HTMLFormElement>) {
@@ -150,7 +186,7 @@ export function NuevaSolicitudPage() {
     setErroresItems(errores)
     const primerConError = errores.findIndex((e) => Object.keys(e).length > 0)
     if (primerConError >= 0) {
-      setError("Revisa los datos de los repuestos marcados.")
+      setError("Revisa los datos de los ítems marcados.")
       tarjetas.current.get(items[primerConError].id)?.scrollIntoView({ behavior: "smooth", block: "center" })
       return
     }
@@ -175,8 +211,9 @@ export function NuevaSolicitudPage() {
           descripcion: item.descripcion.trim(),
           cantidad: Number(item.cantidad),
           unidad: textoOpcional(item.unidad),
-          marcaTexto: textoOpcional(item.marca),
-          // En modo «foto» el N.º de parte no se ve: aunque haya quedado escrito, no se manda.
+          // En modo «servicio» la marca y el N.º de parte no se ven: no se mandan aunque hayan quedado escritos.
+          marcaTexto: item.modo === "servicio" ? undefined : textoOpcional(item.marca),
+          // En modo «foto» el N.º de parte tampoco se ve.
           numeroParte: item.modo === "parte" ? textoOpcional(item.numeroParte) : undefined,
           gtin: textoOpcional(item.gtin),
           urlFoto: urlFoto ?? undefined,
@@ -210,7 +247,8 @@ export function NuevaSolicitudPage() {
         <p className="text-sm font-semibold uppercase tracking-wide text-accent">Portal del cliente</p>
         <h1 className="mt-2 text-3xl font-bold">Nueva solicitud</h1>
         <p className="mt-2 text-muted-foreground">
-          Por cada repuesto, indica la marca y el N.º de parte si los tienes. Si no, adjunta una foto o plano.
+          Agrega los repuestos, fabricaciones o servicios que necesitas cotizar. Indica la marca y el N.º de parte si los
+          tienes; si no, adjunta una foto o plano.
         </p>
       </div>
 
@@ -289,8 +327,8 @@ export function NuevaSolicitudPage() {
           </button>
         )}
 
-        <fieldset className="space-y-4">
-          <legend className="text-lg font-semibold">Repuestos</legend>
+        <fieldset className="min-w-0 space-y-4">
+          <legend className="text-lg font-semibold">Ítems a cotizar</legend>
           {items.map((item, i) => (
             <ItemRepuesto
               key={item.id}
@@ -298,6 +336,7 @@ export function NuevaSolicitudPage() {
               item={item}
               errores={erroresItems[i] ?? {}}
               puedeQuitar={items.length > 1}
+              puedeDuplicar={items.length < MAX_ITEMS}
               registrar={(elemento) => {
                 if (elemento) tarjetas.current.set(item.id, elemento)
                 else tarjetas.current.delete(item.id)
@@ -305,11 +344,17 @@ export function NuevaSolicitudPage() {
               onCambiar={(cambios) => cambiarItem(i, cambios)}
               onCambiarModo={(modo) => cambiarModo(i, modo)}
               onQuitar={() => quitarItem(i)}
+              onDuplicar={() => duplicarItem(i)}
             />
           ))}
-          <Button type="button" variant="outline" onClick={() => setItems((actuales) => [...actuales, itemVacio()])}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={items.length >= MAX_ITEMS}
+            onClick={() => setItems((actuales) => [...actuales, itemVacio()])}
+          >
             <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-            Agregar otro repuesto
+            Agregar otro ítem
           </Button>
         </fieldset>
 
@@ -328,6 +373,7 @@ export function NuevaSolicitudPage() {
 const OPCIONES_MODO: { valor: ModoItem; texto: string }[] = [
   { valor: "parte", texto: "Tengo el N.º de parte" },
   { valor: "foto", texto: "Tengo una foto" },
+  { valor: "servicio", texto: "Es un servicio / fabricación" },
 ]
 
 interface ItemRepuestoProps {
@@ -335,19 +381,78 @@ interface ItemRepuestoProps {
   item: ItemPedidoForm
   errores: ErroresItem
   puedeQuitar: boolean
+  puedeDuplicar: boolean
   /** Entrega la tarjeta al formulario para llevar la vista hasta el primer repuesto con error. */
   registrar: (elemento: HTMLElement | null) => void
   onCambiar: (cambios: Partial<ItemPedidoForm>) => void
   onCambiarModo: (modo: ModoItem) => void
   onQuitar: () => void
+  onDuplicar: () => void
 }
 
-function ItemRepuesto({ numero, item, errores, puedeQuitar, registrar, onCambiar, onCambiarModo, onQuitar }: ItemRepuestoProps) {
+/** Archivo elegido: nombre, peso y miniatura (imagen) o icono de documento (PDF), con «Quitar». */
+function TarjetaArchivo({
+  archivo,
+  numero,
+  botonQuitarRef,
+  onQuitar,
+}: {
+  archivo: File
+  numero: number
+  botonQuitarRef: React.Ref<HTMLButtonElement>
+  onQuitar: () => void
+}) {
+  const esImagen = archivo.type.startsWith("image/")
+  const [vista, setVista] = useState<string | null>(null)
+
+  // La vista previa se crea al elegir el archivo y se revoca al quitarlo, reemplazarlo o salir de la página.
+  useEffect(() => {
+    if (!esImagen || typeof URL.createObjectURL !== "function") return
+    const url = URL.createObjectURL(archivo)
+    // El objeto URL es un recurso externo: se crea aquí y se revoca en la limpieza, por eso va en el efecto.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setVista(url)
+    return () => {
+      URL.revokeObjectURL(url)
+      setVista(null)
+    }
+  }, [archivo, esImagen])
+
+  return (
+    <div className="flex min-w-0 items-center gap-3 rounded-md border border-border bg-muted/40 p-2">
+      {esImagen && vista ? (
+        <img src={vista} alt={`Vista previa de ${archivo.name}`} className="h-14 w-14 shrink-0 rounded-md border border-border object-cover" />
+      ) : (
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md border border-border bg-card text-muted-foreground">
+          <FileText className="h-6 w-6" data-testid="icono-documento" aria-hidden="true" />
+        </span>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{archivo.name}</p>
+        <p className="text-sm text-muted-foreground">{pesoEnMb(archivo.size)}</p>
+      </div>
+      <Button ref={botonQuitarRef} type="button" variant="ghost" size="sm" aria-label={`Quitar archivo del ítem ${numero}`} onClick={onQuitar}>
+        Quitar
+      </Button>
+    </div>
+  )
+}
+
+function ItemRepuesto({ numero, item, errores, puedeQuitar, puedeDuplicar, registrar, onCambiar, onCambiarModo, onQuitar, onDuplicar }: ItemRepuestoProps) {
   const [adjuntoAbierto, setAdjuntoAbierto] = useState(false)
   // «Más datos» arranca abierto solo si el repuesto ya trae un GTIN (borrador o precarga).
   const [masDatosAbierto, setMasDatosAbierto] = useState(() => item.gtin.trim() !== "")
+  // Al pasar del input a la tarjeta (o al revés) el elemento con foco desaparece: el foco se entrega al nuevo.
+  const foco = useRef<"quitar" | "entrada" | null>(null)
+  const botonQuitarRef = useRef<HTMLButtonElement>(null)
+  const entradaRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (foco.current === "quitar") botonQuitarRef.current?.focus()
+    else if (foco.current === "entrada") entradaRef.current?.focus()
+    foco.current = null
+  }, [item.foto])
   const id = (campo: string) => `${item.id}-${campo}`
-  const nombre = (campo: string) => `Repuesto ${numero}: ${campo}`
+  const nombre = (campo: string) => `Ítem ${numero}: ${campo}`
   const aria = (campo: keyof ItemPedidoForm, ayuda?: string) => ({
     "aria-invalid": errores[campo] ? true : undefined,
     "aria-describedby": describedBy(id(campo), { error: errores[campo], ayuda }),
@@ -355,6 +460,7 @@ function ItemRepuesto({ numero, item, errores, puedeQuitar, registrar, onCambiar
   const AYUDA_FOTO = "JPG, PNG, WEBP o PDF, hasta 10 MB."
 
   const esParte = item.modo === "parte"
+  const esServicio = item.modo === "servicio"
   // Un adjunto ya elegido nunca queda escondido: lo que se ve es lo que se envía.
   const adjuntoVisible = adjuntoAbierto || Boolean(item.foto) || Boolean(item.urlFoto)
   // Un GTIN con error se muestra aunque el cliente haya cerrado «Más datos».
@@ -366,34 +472,58 @@ function ItemRepuesto({ numero, item, errores, puedeQuitar, registrar, onCambiar
       className="sm:col-span-6"
       id={id("foto")}
       label="Foto o plano"
-      obligatorio={!esParte}
-      opcional={esParte}
+      obligatorio={item.modo === "foto"}
+      opcional={item.modo !== "foto"}
       ayuda={item.urlFoto && !item.foto ? "Ya hay una foto o plano cargado. Puedes reemplazarlo." : AYUDA_FOTO}
       error={errores.foto}
     >
-      <Input
-        id={id("foto")}
-        aria-label={nombre("foto o plano")}
-        {...aria("foto", AYUDA_FOTO)}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,application/pdf"
-        onChange={(e) => onCambiar({ foto: e.target.files?.[0] ?? null })}
-      />
+      {item.foto ? (
+        <TarjetaArchivo
+          archivo={item.foto}
+          numero={numero}
+          botonQuitarRef={botonQuitarRef}
+          onQuitar={() => {
+            foco.current = "entrada"
+            onCambiar({ foto: null })
+          }}
+        />
+      ) : (
+        <Input
+          ref={entradaRef}
+          id={id("foto")}
+          aria-label={nombre("foto o plano")}
+          {...aria("foto", AYUDA_FOTO)}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,application/pdf"
+          onChange={(e) => {
+            const elegido = e.target.files?.[0] ?? null
+            if (elegido) foco.current = "quitar"
+            onCambiar({ foto: elegido })
+          }}
+        />
+      )}
     </Campo>
   )
 
   return (
-    <div ref={registrar} role="group" aria-label={`Repuesto ${numero}`} className="rounded-lg border border-border p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-semibold">Repuesto {numero}</h3>
-        {puedeQuitar && (
-          <Button type="button" variant="ghost" size="sm" aria-label={`Quitar repuesto ${numero}`} onClick={onQuitar}>
-            <Trash2 className="h-4 w-4" aria-hidden="true" />
+    <div ref={registrar} role="group" aria-label={`Ítem ${numero}`} className="min-w-0 rounded-lg border border-border p-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h3 className="font-semibold">Ítem {numero}</h3>
+        <div className="flex items-center gap-1">
+          <Button type="button" variant="ghost" size="sm" aria-label={`Duplicar ítem ${numero}`} disabled={!puedeDuplicar} onClick={onDuplicar}>
+            <Copy className="mr-1.5 h-4 w-4" aria-hidden="true" />
+            Duplicar
           </Button>
-        )}
+          {puedeQuitar && (
+            <Button type="button" variant="ghost" size="sm" aria-label={`Eliminar ítem ${numero}`} onClick={onQuitar}>
+              <Trash2 className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              Eliminar
+            </Button>
+          )}
+        </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-6 [&>*]:min-w-0">
         <Campo className="sm:col-span-4" id={id("descripcion")} label="Descripción" error={errores.descripcion}>
           <Input
             id={id("descripcion")}
@@ -401,7 +531,7 @@ function ItemRepuesto({ numero, item, errores, puedeQuitar, registrar, onCambiar
             {...aria("descripcion")}
             value={item.descripcion}
             onChange={(e) => onCambiar({ descripcion: e.target.value })}
-            placeholder="Ej. Filtro de aceite del motor"
+            placeholder={esServicio ? "Ej. Fabricación de chute en acero" : "Ej. Filtro de aceite del motor"}
           />
         </Campo>
         <Campo className="sm:col-span-1" id={id("cantidad")} label="Cantidad" error={errores.cantidad}>
@@ -420,15 +550,21 @@ function ItemRepuesto({ numero, item, errores, puedeQuitar, registrar, onCambiar
           <Input
             id={id("unidad")}
             aria-label={nombre("unidad")}
+            list={id("unidades")}
             value={item.unidad}
             onChange={(e) => onCambiar({ unidad: e.target.value })}
           />
+          <datalist id={id("unidades")}>
+            {UNIDADES_SUGERIDAS.map((unidad) => (
+              <option key={unidad} value={unidad} />
+            ))}
+          </datalist>
         </Campo>
 
         <div
           role="radiogroup"
-          aria-label={nombre("cómo identificas el repuesto")}
-          className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1 sm:col-span-6"
+          aria-label={nombre("cómo identificas el ítem")}
+          className="grid grid-cols-1 gap-1 sm:grid-cols-3 rounded-lg bg-muted p-1 sm:col-span-6"
         >
           {OPCIONES_MODO.map(({ valor, texto }) => (
             <label
@@ -484,6 +620,8 @@ function ItemRepuesto({ numero, item, errores, puedeQuitar, registrar, onCambiar
               </div>
             )}
           </>
+        ) : esServicio ? (
+          campoFoto
         ) : (
           <>
             <Campo key="marca" className="sm:col-span-6" id={id("marca")} label="Marca" opcional error={errores.marca}>
