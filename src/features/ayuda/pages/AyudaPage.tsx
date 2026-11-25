@@ -1,6 +1,7 @@
 import { Building2, ChevronDown, ClipboardList, FileText, PackageSearch, Search, ShieldCheck, Truck, UserPlus } from "lucide-react"
 import { useState, type KeyboardEvent } from "react"
 import { Link } from "react-router-dom"
+import { puedeEntrarAlPortal } from "@/lib/sesiones"
 import { useEsPersonalConSesion } from "../lib/sesionAyuda"
 
 const PARA_CLIENTES = [
@@ -48,16 +49,19 @@ const PESTANAS: { id: Guia; texto: string }[] = [
   { id: "personal", texto: "Para el personal de GENLOGS" },
 ]
 
-function GuiaClientes() {
+/** Con sesión de cliente ya no se ofrece «Ingresar al portal»: ya está dentro. */
+function GuiaClientes({ conSesionCliente = false }: { conSesionCliente?: boolean }) {
   return (
     <section aria-labelledby="ayuda-clientes">
       <h2 id="ayuda-clientes" className="flex items-center gap-2 text-xl font-semibold">
         <PackageSearch className="h-5 w-5 text-accent" aria-hidden="true" /> Para clientes
       </h2>
       <Tarjetas items={PARA_CLIENTES} />
-      <p className="mt-4 text-sm text-muted-foreground">
-        <Link to="/portal/ingreso" className="font-semibold text-accent hover:underline">Ingresar al portal</Link>
-      </p>
+      {!conSesionCliente && (
+        <p className="mt-4 text-sm text-muted-foreground">
+          <Link to="/portal/ingreso" className="font-semibold text-accent hover:underline">Ingresar al portal</Link>
+        </p>
+      )}
     </section>
   )
 }
@@ -124,6 +128,7 @@ function GuiasEnPestanas() {
  */
 export function AyudaPage() {
   const esPersonal = useEsPersonalConSesion()
+  const conSesionCliente = !esPersonal && puedeEntrarAlPortal()
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
@@ -139,7 +144,7 @@ export function AyudaPage() {
         <GuiasEnPestanas />
       ) : (
         <div className="mt-12">
-          <GuiaClientes />
+          <GuiaClientes conSesionCliente={conSesionCliente} />
         </div>
       )}
 

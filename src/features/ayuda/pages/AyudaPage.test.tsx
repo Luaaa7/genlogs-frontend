@@ -44,6 +44,8 @@ describe("Ayuda (v3.4, K2)", () => {
     expect(screen.getByRole("heading", { name: /Para clientes/ })).toBeTruthy()
     expect(screen.queryByRole("heading", { name: /Para el personal de GENLOGS/ })).toBeNull()
     expect(screen.queryByRole("tablist")).toBeNull()
+    // Ya está dentro del portal: no se le ofrece «Ingresar al portal».
+    expect(screen.queryByRole("link", { name: "Ingresar al portal" })).toBeNull()
   })
 
   it("restos de una sesión del personal sin token en memoria no muestran la guía interna", () => {
