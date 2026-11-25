@@ -116,3 +116,13 @@ describe("RegistroClientePage: contraseña (7.2)", () => {
     expect(campo("Razón social").value).toBe("Minera")
   })
 })
+
+describe("RegistroClientePage: tarjeta unificada con el ingreso (v3.4)", () => {
+  it("el título va dentro de la misma tarjeta que los campos", () => {
+    renderizar()
+    const tarjeta = screen.getByTestId("tarjeta-registro")
+    expect(tarjeta.contains(screen.getByRole("heading", { name: "Crea tu acceso" }))).toBe(true)
+    expect(tarjeta.contains(screen.getByLabelText("RUC / documento"))).toBe(true)
+    expect(screen.getByRole("link", { name: "Ingresar al portal" }).getAttribute("href")).toContain("/portal/ingreso")
+  })
+})
