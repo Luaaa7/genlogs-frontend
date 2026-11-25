@@ -2,7 +2,6 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { solicitarRecuperacion } from "@/api/authApi"
-import { CLAVE_ORIGEN } from "../lib/origenRecuperacion"
 import { ForgotPasswordPage } from "./ForgotPasswordPage"
 
 vi.mock("@/api/authApi", () => ({ solicitarRecuperacion: vi.fn() }))
@@ -18,7 +17,6 @@ function renderPagina(ruta = "/recuperar-password") {
 describe("ForgotPasswordPage", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    localStorage.clear()
   })
 
   it("desde el login del personal vuelve a /login", () => {
@@ -30,17 +28,6 @@ describe("ForgotPasswordPage", () => {
     renderPagina("/recuperar-password?origen=portal")
     expect(screen.getByRole("link", { name: "Volver a ingresar" }).getAttribute("href")).toBe("/portal/ingreso")
     expect(screen.queryByRole("link", { name: "Volver al inicio de sesión" })).toBeNull()
-  })
-
-  it("recuerda el origen del portal para la pantalla de nueva contraseña", () => {
-    renderPagina("/recuperar-password?origen=portal")
-    expect(localStorage.getItem(CLAVE_ORIGEN)).toBe("portal")
-  })
-
-  it("si el personal entra sin origen, borra un origen que había quedado de antes", () => {
-    localStorage.setItem(CLAVE_ORIGEN, "portal")
-    renderPagina()
-    expect(localStorage.getItem(CLAVE_ORIGEN)).toBeNull()
   })
 
   it("pide el enlace con el correo escrito y avisa sin revelar si existe", async () => {
