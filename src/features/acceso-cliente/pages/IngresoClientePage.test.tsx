@@ -64,4 +64,16 @@ describe("IngresoClientePage", () => {
     llenarYEnviar()
     expect(await screen.findByText("Correo o contraseña incorrectos.")).toBeTruthy()
   })
+
+  it("el título y el resumen van dentro de la misma tarjeta que los campos (v3.4)", () => {
+    renderIngreso()
+    const tarjeta = screen.getByTestId("tarjeta-ingreso")
+    expect(tarjeta.contains(screen.getByRole("heading", { name: "Ingresa a tu cuenta" }))).toBe(true)
+    expect(tarjeta.contains(screen.getByLabelText("Correo"))).toBe(true)
+    const lista = screen.getByRole("list", { name: "Lo que puedes gestionar en el portal" })
+    expect(tarjeta.contains(lista)).toBe(true)
+    expect(lista.textContent).toMatch(/Cotizaciones/)
+    expect(lista.textContent).toMatch(/Órdenes/)
+    expect(lista.textContent).toMatch(/Despachos/)
+  })
 })

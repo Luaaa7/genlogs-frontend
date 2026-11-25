@@ -110,10 +110,11 @@ export const router = createBrowserRouter([
     // Cualquier otra ruta: página 404 dentro del layout (sin sesión, ProtectedRoute manda al login).
     { path: '*', element: <NoEncontradaPage /> },
   ] }] },
-  // Registro e ingreso del cliente (FE-A): sin sesión, con el layout del portal.
-  { element: <ClienteLayout />, children: [
-    { path: '/portal/registro', element: <RegistroClientePage /> },
+  // Registro e ingreso del cliente (FE-A): sin sesión. Desde la v3.4 llevan la misma cabecera
+  // pública que el resto del sitio, para que al pasar de Ingresar a Crear cuenta la barra no cambie.
+  { element: <PublicLayout />, children: [
     { path: '/portal/ingreso', element: <IngresoClientePage /> },
+    { path: '/portal/registro', element: <RegistroClientePage /> },
   ] },
   { element: <ClienteRoute />, children: [{ element: <ClienteLayout />, children: [
     { path: '/portal/pedidos', element: <MisPedidosPage /> },

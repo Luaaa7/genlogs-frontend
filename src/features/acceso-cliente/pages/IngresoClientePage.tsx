@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { ClipboardList, FileText, Truck } from "lucide-react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { leerVolver, rutaRegistro, PARAMETRO_VOLVER } from "@/api/contratos/registro"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
@@ -9,6 +10,12 @@ import { iniciarSesionCliente } from "@/lib/sesiones"
 import { ingresarCliente, mensajeErrorAcceso } from "../api/ingresoClienteApi"
 import { IngresoConGoogle } from "../components/IngresoConGoogle"
 import { SeparadorO } from "../components/SeparadorO"
+
+const RESUMEN_PORTAL = [
+  { Icono: FileText, titulo: "Cotizaciones:", texto: "revísalas y apruébalas o recházalas." },
+  { Icono: ClipboardList, titulo: "Órdenes:", texto: "sigue tus pedidos en curso." },
+  { Icono: Truck, titulo: "Despachos:", texto: "mira en qué etapa está cada entrega." },
+]
 
 /**
  * Ingreso del cliente al portal (FE-A). Separado del login del personal: usa su
@@ -48,30 +55,40 @@ export function IngresoClientePage() {
   }
 
   return (
-    <div className="mx-auto max-w-md">
-      <div className="mb-8">
+    <div className="mx-auto max-w-md px-4 py-16">
+      <div data-testid="tarjeta-ingreso" className="rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
         <p className="text-sm font-semibold uppercase tracking-wide text-accent">Portal del cliente</p>
         <h1 className="mt-2 text-3xl font-bold">Ingresa a tu cuenta</h1>
         <p className="mt-2 text-muted-foreground">Consulta tus pedidos y envía nuevas solicitudes.</p>
+        <ul aria-label="Lo que puedes gestionar en el portal" className="mt-5 space-y-2.5 text-sm">
+          {RESUMEN_PORTAL.map(({ Icono, titulo, texto }) => (
+            <li key={titulo} className="flex items-start gap-3">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                <Icono className="h-4 w-4" aria-hidden="true" />
+              </span>
+              <span><span className="font-semibold">{titulo}</span> <span className="text-muted-foreground">{texto}</span></span>
+            </li>
+          ))}
+        </ul>
+        <form onSubmit={enviar} className="mt-6 space-y-5">
+          <IngresoConGoogle />
+          <SeparadorO texto="o con tu correo" />
+          <div>
+            <Label htmlFor="ingreso-correo">Correo</Label>
+            <Input id="ingreso-correo" name="correo" type="email" autoComplete="email" className="mt-2" required />
+          </div>
+          <div>
+            <Label htmlFor="ingreso-password">Contraseña</Label>
+            <Input id="ingreso-password" name="password" type="password" autoComplete="current-password" className="mt-2" required />
+          </div>
+          {error && <ErrorBanner message={error} />}
+          <Button className="w-full" disabled={cargando}>{cargando ? "Ingresando..." : "Ingresar"}</Button>
+          <p className="text-center text-sm text-muted-foreground">
+            ¿Aún no tienes cuenta?{" "}
+            <Link to={rutaRegistro(volverCrudo)} className="font-medium text-accent hover:underline">Regístrate</Link>
+          </p>
+        </form>
       </div>
-      <form onSubmit={enviar} className="space-y-5 rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
-        <IngresoConGoogle />
-        <SeparadorO texto="o con tu correo" />
-        <div>
-          <Label htmlFor="ingreso-correo">Correo</Label>
-          <Input id="ingreso-correo" name="correo" type="email" autoComplete="email" className="mt-2" required />
-        </div>
-        <div>
-          <Label htmlFor="ingreso-password">Contraseña</Label>
-          <Input id="ingreso-password" name="password" type="password" autoComplete="current-password" className="mt-2" required />
-        </div>
-        {error && <ErrorBanner message={error} />}
-        <Button className="w-full" disabled={cargando}>{cargando ? "Ingresando..." : "Ingresar"}</Button>
-        <p className="text-center text-sm text-muted-foreground">
-          ¿Aún no tienes cuenta?{" "}
-          <Link to={rutaRegistro(volverCrudo)} className="font-medium text-accent hover:underline">Regístrate</Link>
-        </p>
-      </form>
     </div>
   )
 }

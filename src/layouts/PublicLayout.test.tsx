@@ -42,4 +42,12 @@ describe("Cabecera pública", () => {
     render(<MemoryRouter><PublicLayout /></MemoryRouter>)
     expect(screen.getByRole("link", { name: "Ingreso del personal" }).getAttribute("href")).toBe("/login")
   })
+
+  it("«Portal de clientes» se ve marcado en el ingreso del portal y no en la landing (v3.4)", () => {
+    const { unmount } = render(<MemoryRouter initialEntries={["/portal/ingreso"]}><PublicLayout /></MemoryRouter>)
+    expect(screen.getByRole("link", { name: "Portal de clientes" }).getAttribute("aria-current")).toBe("page")
+    unmount()
+    render(<MemoryRouter><PublicLayout /></MemoryRouter>)
+    expect(screen.getByRole("link", { name: "Portal de clientes" }).getAttribute("aria-current")).toBeNull()
+  })
 })

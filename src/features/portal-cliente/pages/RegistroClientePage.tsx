@@ -178,13 +178,12 @@ export function RegistroClientePage() {
   const mensajeRuc = estadoRuc ? MENSAJE_RUC[estadoRuc] : ""
 
   return (
-    <div className="mx-auto max-w-xl">
-      <div className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-wide text-accent">Portal del cliente</p>
-        <h1 className="mt-2 text-3xl font-bold">Crea tu acceso</h1>
-        <p className="mt-2 text-muted-foreground">Registra tu empresa para consultar pedidos y enviar solicitudes.</p>
-      </div>
-      <form onSubmit={enviar} className="space-y-5 rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
+    <div className="mx-auto max-w-xl px-4 py-16">
+      <div data-testid="tarjeta-registro" className="rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
+      <p className="text-sm font-semibold uppercase tracking-wide text-accent">Portal del cliente</p>
+      <h1 className="mt-2 text-3xl font-bold">Crea tu acceso</h1>
+      <p className="mt-2 text-muted-foreground">Registra tu empresa para consultar pedidos y enviar solicitudes.</p>
+      <form onSubmit={enviar} className="mt-6 space-y-5">
         <IngresoConGoogle texto="signup_with" />
         <SeparadorO texto="o regístrate con tu RUC" />
         <div className="grid gap-5 sm:grid-cols-2">
@@ -330,6 +329,7 @@ export function RegistroClientePage() {
           </Link>
         </p>
       </form>
+      </div>
     </div>
   )
 }
