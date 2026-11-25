@@ -1,9 +1,10 @@
 import { useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { leerVolver } from "@/api/contratos/registro"
+import { destinoTrasAcceso } from "@/lib/carritoPublico"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { iniciarSesionCliente } from "@/lib/sesiones"
 import { BotonGoogle } from "./BotonGoogle"
+import { EnlaceIngresoPersonal } from "./EnlaceIngresoPersonal"
 import { ingresarConGoogle } from "../api/ingresoGoogleApi"
 import { mensajeErrorAcceso } from "../api/ingresoClienteApi"
 
@@ -20,11 +21,13 @@ export function IngresoConGoogle({ texto = "continue_with" }: Props) {
   const location = useLocation()
   const [error, setError] = useState("")
   const [aviso, setAviso] = useState("")
+  const [esPersonal, setEsPersonal] = useState(false)
   const [cargando, setCargando] = useState(false)
 
   async function conCredencial(credential: string) {
     setError("")
     setAviso("")
+    setEsPersonal(false)
     setCargando(true)
     try {
       const respuesta = await ingresarConGoogle(credential)
@@ -34,6 +37,7 @@ export function IngresoConGoogle({ texto = "continue_with" }: Props) {
       }
       if ((respuesta.nombreRol ?? "").toUpperCase() !== "CLIENTE") {
         setError("Esta cuenta no es del portal de clientes. El personal de GENLOGS ingresa por el acceso interno.")
+        setEsPersonal(true)
         return
       }
       const nombre = respuesta.nombre ?? respuesta.nombreUsuario ?? ""
@@ -42,7 +46,7 @@ export function IngresoConGoogle({ texto = "continue_with" }: Props) {
         return
       }
       // Sin empresa también entra: los datos se piden recién al pedir una cotización (ClienteRoute).
-      navigate(leerVolver(location.search), { replace: true })
+      navigate(destinoTrasAcceso(location.search), { replace: true })
     } catch (cause) {
       setError(mensajeErrorAcceso(cause, "No pudimos ingresar con Google. Inténtalo de nuevo."))
     } finally {
@@ -60,6 +64,7 @@ export function IngresoConGoogle({ texto = "continue_with" }: Props) {
         </p>
       )}
       {error && <ErrorBanner message={error} />}
+      {error && esPersonal && <EnlaceIngresoPersonal />}
     </div>
   )
 }

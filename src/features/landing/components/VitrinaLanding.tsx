@@ -1,41 +1,32 @@
 import { useMemo, useRef, useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { useMutation } from "@tanstack/react-query"
 import { PackageSearch, Search } from "lucide-react"
 import { EstadoVacio } from "@/components/ui/EstadoVacio"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { FiltroChips } from "@/components/ui/FiltroChips"
 import CargandoSpinner from "@/components/ui/CargandoSpinner"
 import { inputFormClass } from "@/components/ui/campoEstilos"
-import { rutaRegistro } from "@/api/contratos/registro"
 import type { RepuestoPublico } from "@/api/publicApi"
-import { mensajeError } from "@/lib/errores"
+import { useCotizacionCart } from "@/hooks/useCotizacionCart"
 import { cn } from "@/lib/utils/utils"
 import { useCategoriasVitrina, useRepuestosPublicos } from "../hooks/useVitrinaPublica"
-import { guardarPedidoPendiente, tokenCliente } from "../lib/pedidoPendiente"
-import { enviarSolicitudLanding } from "../lib/enviarSolicitudLanding"
 import { TarjetaRepuesto } from "./TarjetaRepuesto"
 import { SelectorMarca } from "./SelectorMarca"
 import { Paginacion } from "./Paginacion"
-
-/** Al volver del registro, la solicitud rápida envía el pedido guardado (D-30). */
-const VOLVER = "/#solicitud"
 
 /** Repuestos por página (3 filas de 4 en escritorio). */
 const POR_PAGINA = 12
 
 /**
  * Vitrina de la landing (Fase 3, RF-82): destacados, categorías con conteo, marcas en
- * texto y buscador, SIN precio. "Cotizar" crea una solicitud (canal VITRINA); sin
- * cuenta pide registro con RUC y vuelve aquí (D-16, D-30).
+ * texto y buscador, SIN precio. "Cotizar" agrega el repuesto al carrito de cotización
+ * (genlogs_public_cart); la solicitud se envía desde el portal, con el RUC de la empresa (D-16, D-30).
  */
 export function VitrinaLanding() {
-  const navigate = useNavigate()
+  const carrito = useCotizacionCart()
   const [texto, setTexto] = useState("")
   const [busqueda, setBusqueda] = useState("")
   const [categoria, setCategoria] = useState<string>()
   const [marca, setMarca] = useState<string>()
-  const [cotizados, setCotizados] = useState<number[]>([])
   const inicioLista = useRef<HTMLParagraphElement>(null)
 
   const filtro = { q: busqueda || undefined, idCategoria: categoria ? Number(categoria) : undefined, marca }
@@ -63,21 +54,6 @@ export function VitrinaLanding() {
     inicioLista.current?.scrollIntoView?.({ behavior: "smooth", block: "start" })
   }
 
-  const cotizar = useMutation({
-    mutationFn: ({ r, token }: { r: RepuestoPublico; token: string }) => enviarSolicitudLanding(pedidoDe(r), token),
-    onSuccess: (_, { r }) => setCotizados((ids) => [...ids, r.idProducto]),
-  })
-
-  function alCotizar(r: RepuestoPublico) {
-    const token = tokenCliente()
-    if (token) {
-      cotizar.mutate({ r, token })
-      return
-    }
-    guardarPedidoPendiente(pedidoDe(r))
-    navigate(rutaRegistro(VOLVER))
-  }
-
   const opcionesCategoria = [
     { label: "Todas" },
     ...(categorias.data ?? []).map((c) => ({ valor: String(c.idCategoria), label: c.nombre, n: c.cantidad })),
@@ -91,7 +67,7 @@ export function VitrinaLanding() {
           <h2 id="vitrina-titulo" className="mt-2 text-3xl font-bold tracking-tight">Encuentra tu repuesto.</h2>
         </div>
         <p className="max-w-md text-sm leading-6 text-muted-foreground">
-          Pide la cotización y te confirmamos precio y plazo. Para cotizar te pediremos crear tu acceso con el RUC de tu empresa.
+          Agrega los repuestos que necesitas y pide la cotización de todos juntos. Para cotizar te pediremos crear tu acceso con el RUC de tu empresa.
         </p>
       </div>
 
@@ -135,12 +111,6 @@ export function VitrinaLanding() {
         )}
       </div>
 
-      {cotizar.isError && (
-        <div className="mt-6">
-          <ErrorBanner message={mensajeError(cotizar.error, "No se pudo enviar tu pedido. Intenta otra vez.")} />
-        </div>
-      )}
-
       <div className="mt-8">
         {repuestos.isPending ? (
           <CargandoSpinner texto="Cargando repuestos..." />
@@ -164,9 +134,10 @@ export function VitrinaLanding() {
                 <TarjetaRepuesto
                   key={r.idProducto}
                   repuesto={r}
-                  cotizando={cotizar.isPending && cotizar.variables?.r.idProducto === r.idProducto}
-                  cotizado={cotizados.includes(r.idProducto)}
-                  onCotizar={() => alCotizar(r)}
+                  enCotizacion={carrito.cantidadDe(r.idProducto)}
+                  onAgregar={() => carrito.agregar(itemDe(r))}
+                  onSumar={() => carrito.sumar(r.idProducto)}
+                  onRestar={() => carrito.restar(r.idProducto)}
                 />
               ))}
             </div>
@@ -182,12 +153,6 @@ export function VitrinaLanding() {
   )
 }
 
-function pedidoDe(r: RepuestoPublico) {
-  return {
-    marca: r.marca ?? "",
-    numeroParte: r.numeroParte ?? "",
-    descripcion: r.nombre,
-    cantidad: 1,
-    idProducto: r.idProducto,
-  }
+function itemDe(r: RepuestoPublico) {
+  return { id: r.idProducto, nombre: r.nombre, marca: r.marca ?? "", numeroParte: r.numeroParte ?? "" }
 }

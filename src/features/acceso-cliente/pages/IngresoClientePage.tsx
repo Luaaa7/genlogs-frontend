@@ -1,14 +1,17 @@
 import { useRef, useState } from "react"
 import { ClipboardList, FileText, Truck } from "lucide-react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
-import { leerVolver, rutaRegistro, PARAMETRO_VOLVER } from "@/api/contratos/registro"
+import { rutaRegistro, PARAMETRO_VOLVER } from "@/api/contratos/registro"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { destinoTrasAcceso } from "@/lib/carritoPublico"
 import { iniciarSesionCliente } from "@/lib/sesiones"
 import { ingresarCliente, mensajeErrorAcceso } from "../api/ingresoClienteApi"
+import { AvisoCarritoPublico } from "../components/AvisoCarritoPublico"
 import { CampoPassword } from "../components/CampoPassword"
+import { EnlaceIngresoPersonal } from "../components/EnlaceIngresoPersonal"
 import { IngresoConGoogle } from "../components/IngresoConGoogle"
 import { SeparadorO } from "../components/SeparadorO"
 
@@ -20,13 +23,15 @@ const RESUMEN_PORTAL = [
 
 /**
  * Ingreso del cliente al portal (FE-A). Separado del login del personal: usa su
- * propia sesión (lib/sesiones.ts) y, al terminar, vuelve a ?volver= (D-30).
+ * propia sesión (lib/sesiones.ts) y, al terminar, vuelve a ?volver= (D-30) o, si eligió repuestos en la landing, va a enviarlos.
  */
 export function IngresoClientePage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [error, setError] = useState("")
   const [cargando, setCargando] = useState(false)
+  // La cuenta es del personal: solo cambia el aviso (con un enlace a /login), no la autenticación.
+  const [esPersonal, setEsPersonal] = useState(false)
   // Evita un segundo envío (Enter repetido) antes de que el botón alcance a deshabilitarse.
   const enviando = useRef(false)
 
@@ -36,6 +41,7 @@ export function IngresoClientePage() {
     event.preventDefault()
     if (enviando.current) return
     setError("")
+    setEsPersonal(false)
     const form = new FormData(event.currentTarget)
     const correo = String(form.get("correo") ?? "").trim()
     const password = String(form.get("password") ?? "")
@@ -45,13 +51,14 @@ export function IngresoClientePage() {
       const respuesta = await ingresarCliente({ correo, password })
       if (!respuesta.token || (respuesta.nombreRol ?? "").toUpperCase() !== "CLIENTE") {
         setError("Esta cuenta no es del portal de clientes. El personal de GENLOGS ingresa por el acceso interno.")
+        setEsPersonal(true)
         return
       }
       if (!iniciarSesionCliente(respuesta.token, respuesta.nombre ?? respuesta.nombreUsuario ?? "")) {
         setError("Tu navegador no permite guardar la sesión. Revisa que no esté en modo privado o con el almacenamiento bloqueado.")
         return
       }
-      navigate(leerVolver(location.search), { replace: true })
+      navigate(destinoTrasAcceso(location.search), { replace: true })
     } catch (cause) {
       setError(mensajeErrorAcceso(cause, "Correo o contraseña incorrectos."))
     } finally {
@@ -76,6 +83,7 @@ export function IngresoClientePage() {
             </li>
           ))}
         </ul>
+        <AvisoCarritoPublico className="mt-5" />
         <form onSubmit={enviar} className="mt-6 space-y-5">
           <IngresoConGoogle />
           <SeparadorO texto="o con tu correo" />
@@ -96,6 +104,7 @@ export function IngresoClientePage() {
             <CampoPassword id="ingreso-password" name="password" autoComplete="current-password" required />
           </div>
           {error && <ErrorBanner message={error} />}
+          {error && esPersonal && <EnlaceIngresoPersonal />}
           <Button className="w-full" disabled={cargando}>{cargando ? "Ingresando..." : "Ingresar"}</Button>
           <p className="text-center text-sm text-muted-foreground">
             ¿Aún no tienes cuenta?{" "}

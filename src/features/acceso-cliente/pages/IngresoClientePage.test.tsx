@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { IngresoClientePage } from "./IngresoClientePage"
 import { ingresarCliente } from "../api/ingresoClienteApi"
+import { agregarAlCarrito, leerCarrito } from "@/lib/carritoPublico"
 
 vi.mock("../api/ingresoClienteApi", async (importOriginal) => {
   const original = await importOriginal<typeof import("../api/ingresoClienteApi")>()
@@ -16,6 +17,7 @@ function renderIngreso(ruta = "/portal/ingreso?volver=%2F") {
         <Route path="/portal/ingreso" element={<IngresoClientePage />} />
         <Route path="/" element={<div>Landing</div>} />
         <Route path="/portal/pedidos" element={<div>Mis pedidos</div>} />
+        <Route path="/portal/solicitud" element={<div>Nueva solicitud</div>} />
       </Routes>
     </MemoryRouter>,
   )
@@ -56,6 +58,26 @@ describe("IngresoClientePage", () => {
     llenarYEnviar()
     expect(await screen.findByText(/no es del portal de clientes/)).toBeTruthy()
     expect(localStorage.getItem("cliente_access_token")).toBeNull()
+  })
+
+  it("a una cuenta del personal le ofrece un enlace al ingreso del personal (/login)", async () => {
+    vi.mocked(ingresarCliente).mockResolvedValue({ token: "tok", nombreRol: "JEFE_ADMINISTRATIVO" })
+    renderIngreso()
+    expect(screen.queryByRole("link", { name: "Ir al ingreso del personal" })).toBeNull()
+
+    llenarYEnviar()
+
+    await screen.findByText(/no es del portal de clientes/)
+    expect(screen.getByRole("link", { name: "Ir al ingreso del personal" }).getAttribute("href")).toBe("/login")
+  })
+
+  it("con una contraseña incorrecta no aparece el enlace al ingreso del personal", async () => {
+    vi.mocked(ingresarCliente).mockRejectedValue({ response: { status: 401, data: { message: "Correo o contraseña incorrectos." } } })
+    renderIngreso()
+    llenarYEnviar()
+
+    await screen.findByText("Correo o contraseña incorrectos.")
+    expect(screen.queryByRole("link", { name: "Ir al ingreso del personal" })).toBeNull()
   })
 
   it("muestra el mensaje del backend si la contraseña es incorrecta", async () => {
@@ -153,5 +175,71 @@ describe("IngresoClientePage: usabilidad", () => {
 
     await screen.findByText("Correo o contraseña incorrectos.")
     expect((screen.getByRole("button", { name: "Ingresar" }) as HTMLButtonElement).disabled).toBe(false)
+  })
+})
+
+describe("IngresoClientePage: carrito de cotización de la landing", () => {
+  const filtro = { id: 1, nombre: "Filtro de combustible", marca: "Caterpillar", numeroParte: "1R-0750" }
+  const rodamiento = { id: 2, nombre: "Rodamiento 6205", marca: "SKF", numeroParte: "6205-2RS" }
+
+  beforeEach(() => {
+    localStorage.clear()
+    sessionStorage.clear()
+    vi.mocked(ingresarCliente).mockReset()
+  })
+
+  it("sin repuestos elegidos no muestra el aviso", () => {
+    renderIngreso("/portal/ingreso")
+    expect(screen.queryByText(/para enviar/i)).toBeNull()
+  })
+
+  it("con repuestos elegidos avisa cuántos se enviarán, encima del formulario", () => {
+    agregarAlCarrito(filtro)
+    agregarAlCarrito(rodamiento)
+    renderIngreso("/portal/ingreso")
+
+    const aviso = screen.getByText("Inicia sesión o regístrate con tu RUC para enviar los 2 repuestos seleccionados.")
+    const formulario = screen.getByLabelText("Correo").closest("form") as HTMLFormElement
+    expect(aviso.compareDocumentPosition(formulario) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByTestId("tarjeta-ingreso").contains(aviso)).toBe(true)
+  })
+
+  it("al ingresar como cliente, sin ?volver=, va directo a /portal/solicitud", async () => {
+    agregarAlCarrito(filtro)
+    vi.mocked(ingresarCliente).mockResolvedValue({ token: "tok", nombre: "Minera", nombreRol: "CLIENTE" })
+    renderIngreso("/portal/ingreso")
+    llenarYEnviar()
+
+    expect(await screen.findByText("Nueva solicitud")).toBeTruthy()
+    expect(leerCarrito()).toHaveLength(1) // el carrito se limpia recién al enviar la solicitud
+  })
+
+  it("un ?volver= explícito manda sobre el carrito", async () => {
+    agregarAlCarrito(filtro)
+    vi.mocked(ingresarCliente).mockResolvedValue({ token: "tok", nombreRol: "CLIENTE" })
+    renderIngreso("/portal/ingreso?volver=%2F")
+    llenarYEnviar()
+
+    expect(await screen.findByText("Landing")).toBeTruthy()
+  })
+
+  it("si entra alguien del personal, ignora el carrito: no abre sesión de cliente ni lo toca", async () => {
+    agregarAlCarrito(filtro)
+    vi.mocked(ingresarCliente).mockResolvedValue({ token: "tok", nombreRol: "JEFE_ADMINISTRATIVO" })
+    renderIngreso("/portal/ingreso")
+    llenarYEnviar()
+
+    expect(await screen.findByText(/no es del portal de clientes/)).toBeTruthy()
+    expect(screen.queryByText("Nueva solicitud")).toBeNull()
+    expect(localStorage.getItem("cliente_access_token")).toBeNull()
+    expect(leerCarrito()).toHaveLength(1)
+  })
+
+  it("el enlace a Regístrate conserva el regreso", () => {
+    agregarAlCarrito(filtro)
+    renderIngreso("/portal/ingreso?volver=%2Fportal%2Fsolicitud")
+    expect(screen.getByRole("link", { name: "Regístrate" }).getAttribute("href")).toBe(
+      "/portal/registro?volver=%2Fportal%2Fsolicitud",
+    )
   })
 })

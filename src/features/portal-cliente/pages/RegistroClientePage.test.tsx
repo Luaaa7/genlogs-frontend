@@ -1,9 +1,10 @@
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
-import { MemoryRouter } from "react-router-dom"
+import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { publicApi } from "@/api/publicApi"
 import { portalApi } from "@/api/portalApi"
 import { RegistroClientePage } from "./RegistroClientePage"
+import { agregarAlCarrito } from "@/lib/carritoPublico"
 
 function renderizar() {
   return render(
@@ -185,5 +186,63 @@ describe("RegistroClientePage: usabilidad", () => {
     expect(boton.disabled).toBe(true)
     fireEvent.submit(boton.closest("form") as HTMLFormElement)
     expect(registrar).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe("RegistroClientePage: carrito de cotización de la landing", () => {
+  const filtro = { id: 1, nombre: "Filtro de combustible", marca: "Caterpillar", numeroParte: "1R-0750" }
+  const rodamiento = { id: 2, nombre: "Rodamiento 6205", marca: "SKF", numeroParte: "6205-2RS" }
+
+  function renderConRutas(ruta = "/portal/registro") {
+    return render(
+      <MemoryRouter initialEntries={[ruta]}>
+        <Routes>
+          <Route path="/portal/registro" element={<RegistroClientePage />} />
+          <Route path="/portal/solicitud" element={<div>Nueva solicitud</div>} />
+          <Route path="/portal/pedidos" element={<div>Mis pedidos</div>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+  }
+
+  beforeEach(() => {
+    localStorage.clear()
+    sessionStorage.clear()
+  })
+
+  it("sin repuestos elegidos no muestra el aviso", () => {
+    renderConRutas()
+    expect(screen.queryByText(/para enviar/i)).toBeNull()
+  })
+
+  it("con repuestos elegidos avisa cuántos se enviarán, encima del formulario", () => {
+    agregarAlCarrito(filtro)
+    agregarAlCarrito(rodamiento)
+    renderConRutas()
+
+    const aviso = screen.getByText("Inicia sesión o regístrate con tu RUC para enviar los 2 repuestos seleccionados.")
+    const formulario = screen.getByLabelText("Correo").closest("form") as HTMLFormElement
+    expect(aviso.compareDocumentPosition(formulario) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it("al registrarse con éxito y sin ?volver=, va directo a /portal/solicitud", async () => {
+    agregarAlCarrito(filtro)
+    vi.spyOn(portalApi, "registrarCliente").mockResolvedValue({ token: "tok", nombre: "Minera" } as never)
+    renderConRutas()
+    llenarFormularioValido()
+
+    fireEvent.click(botonCrear())
+
+    expect(await screen.findByText("Nueva solicitud")).toBeTruthy()
+  })
+
+  it("sin carrito y sin ?volver= sigue yendo a Mis pedidos", async () => {
+    vi.spyOn(portalApi, "registrarCliente").mockResolvedValue({ token: "tok", nombre: "Minera" } as never)
+    renderConRutas()
+    llenarFormularioValido()
+
+    fireEvent.click(botonCrear())
+
+    expect(await screen.findByText("Mis pedidos")).toBeTruthy()
   })
 })

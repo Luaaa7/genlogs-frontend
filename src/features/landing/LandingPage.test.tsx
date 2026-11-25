@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import { render, screen } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { MemoryRouter } from "react-router-dom"
@@ -13,8 +13,24 @@ vi.mock("./components/Respaldo", () => ({ Respaldo: () => null }))
 vi.mock("./components/SolicitudRapida", () => ({ SolicitudRapida: () => null }))
 
 import { LandingPage } from "./LandingPage"
+import { agregarAlCarrito } from "@/lib/carritoPublico"
 
 describe("LandingPage", () => {
+  beforeEach(() => localStorage.clear())
+
+  it("no muestra el carrito flotante mientras no haya repuestos elegidos", () => {
+    const qc = new QueryClient()
+    render(<QueryClientProvider client={qc}><MemoryRouter><LandingPage /></MemoryRouter></QueryClientProvider>)
+    expect(screen.queryByRole("button", { name: /tu cotización/i })).toBeNull()
+  })
+
+  it("muestra el carrito flotante cuando hay repuestos elegidos", () => {
+    agregarAlCarrito({ id: 1, nombre: "Filtro de combustible", marca: "Caterpillar", numeroParte: "1R-0750" })
+    const qc = new QueryClient()
+    render(<QueryClientProvider client={qc}><MemoryRouter><LandingPage /></MemoryRouter></QueryClientProvider>)
+    expect(screen.getByRole("button", { name: /tu cotización/i })).toBeTruthy()
+  })
+
   it("«Ver catálogo» apunta a #catalogo y ese id envuelve el catálogo", () => {
     const qc = new QueryClient()
     const { container } = render(<QueryClientProvider client={qc}><MemoryRouter><LandingPage /></MemoryRouter></QueryClientProvider>)

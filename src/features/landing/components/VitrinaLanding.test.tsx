@@ -10,7 +10,7 @@ const enviar = vi.hoisted(() => vi.fn())
 vi.mock("../lib/enviarSolicitudLanding", () => ({ enviarSolicitudLanding: enviar }))
 
 import { VitrinaLanding } from "./VitrinaLanding"
-import { leerPedidoPendiente } from "../lib/pedidoPendiente"
+import { cerrarCarrito, leerCarrito } from "@/lib/carritoPublico"
 
 const filtro: RepuestoPublico = {
   idProducto: 1, nombre: "Filtro de combustible", descripcion: null, marca: "Caterpillar", numeroParte: "1R-0750",
@@ -21,9 +21,9 @@ const rodamiento: RepuestoPublico = {
   categoria: "Rodamientos", tipoRepuesto: "ALTERNATIVO", plazoEntrega: "24 a 48 horas", urlImagen: "https://res.cloudinary.com/x/6205.jpg",
 }
 
-function Registro() {
-  const { search } = useLocation()
-  return <p>registro{search}</p>
+function Ruta() {
+  const { pathname } = useLocation()
+  return <p>ruta {pathname}</p>
 }
 
 function pintar() {
@@ -33,7 +33,7 @@ function pintar() {
       <MemoryRouter initialEntries={["/"]}>
         <Routes>
           <Route path="/" element={<VitrinaLanding />} />
-          <Route path="/portal/registro" element={<Registro />} />
+          <Route path="*" element={<Ruta />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -44,6 +44,7 @@ describe("VitrinaLanding (RF-82, D-16, D-30)", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     localStorage.clear()
+    cerrarCarrito()
     api.listarRepuestos.mockResolvedValue([filtro, rodamiento])
     api.listarCategoriasVitrina.mockResolvedValue([
       { idCategoria: 3, nombre: "Filtros", cantidad: 1 },
@@ -72,23 +73,68 @@ describe("VitrinaLanding (RF-82, D-16, D-30)", () => {
     await waitFor(() => expect(api.listarRepuestos).toHaveBeenLastCalledWith(expect.objectContaining({ q: "1R-0750" })))
   })
 
-  it("sin cuenta, Cotizar guarda el producto y manda al registro", async () => {
+  it("el texto superior invita a agregar repuestos y a crear el acceso con el RUC", async () => {
     pintar()
-    fireEvent.click(await screen.findByRole("button", { name: /cotizar filtro de combustible/i }))
-
-    expect(await screen.findByText("registro?volver=%2F%23solicitud")).toBeTruthy()
-    expect(leerPedidoPendiente()).toMatchObject({ idProducto: 1, numeroParte: "1R-0750", cantidad: 1 })
-    expect(enviar).not.toHaveBeenCalled()
+    await screen.findAllByRole("article")
+    expect(
+      screen.getByText(
+        "Agrega los repuestos que necesitas y pide la cotización de todos juntos. Para cotizar te pediremos crear tu acceso con el RUC de tu empresa.",
+      ),
+    ).toBeTruthy()
   })
 
-  it("con sesión de cliente, Cotizar envía la solicitud y marca la tarjeta", async () => {
-    localStorage.setItem("cliente_access_token", "tok")
-    enviar.mockResolvedValue({ idSolicitud: 9, codigoSolicitud: "SOL-9", estado: "PENDIENTE" })
+  it("Cotizar agrega el repuesto al carrito, sin enviar nada ni cambiar de página", async () => {
+    localStorage.setItem("cliente_access_token", "tok") // aun con sesión de cliente no hay envío directo (canal VITRINA)
+    pintar()
+    fireEvent.click(await screen.findByRole("button", { name: /cotizar filtro de combustible/i }))
+    expect(enviar).not.toHaveBeenCalled()
+
+    expect(leerCarrito()).toEqual([
+      { id: 1, nombre: "Filtro de combustible", marca: "Caterpillar", numeroParte: "1R-0750", cantidad: 1 },
+    ])
+    expect(screen.queryByText(/^ruta /)).toBeNull()
+    expect(screen.getAllByRole("article")).toHaveLength(2)
+  })
+
+  it("la tarjeta muestra «En cotización (N)» y los controles - y + suben o bajan la cantidad", async () => {
+    pintar()
+    fireEvent.click(await screen.findByRole("button", { name: /cotizar rodamiento 6205/i }))
+    const tarjeta = screen.getAllByRole("article")[0]
+    expect(within(tarjeta).getByText("En cotización (1)")).toBeTruthy()
+
+    fireEvent.click(within(tarjeta).getByRole("button", { name: /aumentar cantidad de rodamiento 6205/i }))
+    expect(within(tarjeta).getByText("En cotización (2)")).toBeTruthy()
+    expect(leerCarrito()[0].cantidad).toBe(2)
+
+    fireEvent.click(within(tarjeta).getByRole("button", { name: /disminuir cantidad de rodamiento 6205/i }))
+    expect(within(tarjeta).getByText("En cotización (1)")).toBeTruthy()
+  })
+
+  it("restar con una sola unidad saca el repuesto del carrito y vuelve «Cotizar»", async () => {
     pintar()
     fireEvent.click(await screen.findByRole("button", { name: /cotizar rodamiento 6205/i }))
 
-    expect(await screen.findByText(/pedido enviado/i)).toBeTruthy()
-    expect(enviar).toHaveBeenCalledWith(expect.objectContaining({ idProducto: 2, cantidad: 1 }), "tok")
+    fireEvent.click(screen.getByRole("button", { name: /disminuir cantidad de rodamiento 6205/i }))
+
+    expect(leerCarrito()).toEqual([])
+    expect(screen.getByRole("button", { name: /cotizar rodamiento 6205/i })).toBeTruthy()
+  })
+
+  it("se puede cotizar más de un repuesto a la vez", async () => {
+    pintar()
+    fireEvent.click(await screen.findByRole("button", { name: /cotizar rodamiento 6205/i }))
+    fireEvent.click(screen.getByRole("button", { name: /cotizar filtro de combustible/i }))
+
+    expect(leerCarrito().map((i) => i.id)).toEqual([2, 1])
+  })
+
+  it("al volver a la página, las tarjetas recuerdan lo que ya estaba en el carrito", async () => {
+    localStorage.setItem(
+      "genlogs_public_cart",
+      JSON.stringify([{ id: 1, nombre: "Filtro de combustible", marca: "Caterpillar", numeroParte: "1R-0750", cantidad: 4 }]),
+    )
+    pintar()
+    expect(await screen.findByText("En cotización (4)")).toBeTruthy()
   })
 
   it("sin resultados ofrece pedirlo en la solicitud rápida", async () => {

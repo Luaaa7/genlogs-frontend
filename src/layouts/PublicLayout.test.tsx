@@ -1,11 +1,17 @@
-import { render, screen } from "@testing-library/react"
-import { MemoryRouter } from "react-router-dom"
-import { describe, expect, it, vi } from "vitest"
+import { fireEvent, render, screen } from "@testing-library/react"
+import { MemoryRouter, Route, Routes } from "react-router-dom"
+import { beforeEach, describe, expect, it, vi } from "vitest"
+import { agregarAlCarrito, carritoAbierto, cerrarCarrito } from "@/lib/carritoPublico"
 import { PublicLayout } from "./PublicLayout"
 
 vi.mock("@/hooks/useTheme", () => ({ useTheme: () => ({ tema: "light", alternarTema: () => {} }) }))
 
 describe("Cabecera pública", () => {
+  beforeEach(() => {
+    localStorage.clear()
+    cerrarCarrito()
+  })
+
   it("«Portal de clientes» lleva al ingreso del cliente, no al registro (PS4)", () => {
     render(<MemoryRouter><PublicLayout /></MemoryRouter>)
     expect(screen.getByRole("link", { name: "Portal de clientes" }).getAttribute("href")).toBe("/portal/ingreso")
@@ -49,5 +55,73 @@ describe("Cabecera pública", () => {
     unmount()
     render(<MemoryRouter><PublicLayout /></MemoryRouter>)
     expect(screen.getByRole("link", { name: "Portal de clientes" }).getAttribute("aria-current")).toBeNull()
+  })
+
+  describe("con repuestos en el carrito de cotización", () => {
+    const filtro = { id: 1, nombre: "Filtro de combustible", marca: "Caterpillar", numeroParte: "1R-0750" }
+    const rodamiento = { id: 2, nombre: "Rodamiento 6205", marca: "SKF", numeroParte: "6205-2RS" }
+
+    function pintarEn(ruta: string) {
+      return render(
+        <MemoryRouter initialEntries={[ruta]}>
+          <Routes>
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<p>Landing</p>} />
+              <Route path="/portal/ingreso" element={<p>Ingreso</p>} />
+            </Route>
+          </Routes>
+        </MemoryRouter>,
+      )
+    }
+
+    it("«Pedir cotización» muestra el contador de repuestos y deja de ser un enlace a #solicitud", () => {
+      agregarAlCarrito(filtro)
+      agregarAlCarrito(rodamiento)
+      pintarEn("/")
+
+      const boton = screen.getByRole("button", { name: /pedir cotización/i })
+      expect(boton.textContent).toContain("2")
+      expect(screen.queryByRole("link", { name: /pedir cotización/i })).toBeNull()
+    })
+
+    it("el contador cuenta repuestos distintos, no unidades", () => {
+      agregarAlCarrito({ ...filtro, cantidad: 10 })
+      pintarEn("/")
+      expect(screen.getByRole("button", { name: /pedir cotización/i }).textContent).toContain("1")
+    })
+
+    it("al pulsarlo abre el carrito", () => {
+      agregarAlCarrito(filtro)
+      pintarEn("/")
+
+      fireEvent.click(screen.getByRole("button", { name: /pedir cotización/i }))
+
+      expect(carritoAbierto()).toBe(true)
+    })
+
+    it("desde otra página abre el carrito y lleva a la landing, donde está", () => {
+      agregarAlCarrito(filtro)
+      pintarEn("/portal/ingreso")
+
+      fireEvent.click(screen.getByRole("button", { name: /pedir cotización/i }))
+
+      expect(screen.getByText("Landing")).toBeTruthy()
+      expect(carritoAbierto()).toBe(true)
+    })
+
+    it("sin repuestos sigue siendo el enlace de siempre, sin contador", () => {
+      pintarEn("/")
+      const enlace = screen.getByRole("link", { name: /pedir cotización/i })
+      expect(enlace.getAttribute("href")).toContain("#solicitud")
+      expect(enlace.textContent).not.toMatch(/\d/)
+    })
+
+    it("en celular sigue escondido, como el enlace original", () => {
+      agregarAlCarrito(filtro)
+      pintarEn("/")
+      const clases = screen.getByRole("button", { name: /pedir cotización/i }).className.split(" ")
+      expect(clases).toContain("hidden")
+      expect(clases).toContain("sm:flex")
+    })
   })
 })

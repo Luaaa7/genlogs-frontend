@@ -90,7 +90,8 @@ export function validarItem(item: ItemPedidoForm): ErroresItem {
   if (item.modo === "parte") {
     if (!item.numeroParte.trim()) errores.numeroParte = "Indica el N.º de parte, o elige «Tengo una foto»"
     if (!item.marca.trim()) errores.marca = "Indica la marca del N.º de parte"
-  } else if (item.modo === "foto" && !item.foto && !item.urlFoto) {
+  } else if (item.modo === "foto" && !item.foto && !item.urlFoto && item.idProducto === undefined) {
+    // Un repuesto de la vitrina (con idProducto) ya viene identificado: no necesita foto.
     errores.foto = "Adjunta una foto o plano del ítem"
   }
 

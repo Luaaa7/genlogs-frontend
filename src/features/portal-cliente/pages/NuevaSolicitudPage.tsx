@@ -22,6 +22,7 @@ import {
   type ModoItem,
 } from "../lib/itemPedido"
 import { portalApi } from "@/api/portalApi"
+import { carritoAPrecargados, vaciarCarrito } from "@/lib/carritoPublico"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -55,7 +56,8 @@ interface EstadoInicial {
 
 /**
  * Con qué arranca el formulario. Prioridad:
- *  1. Repuestos que llegan en location.state (carrito de /portal/repuestos) en una navegación NUEVA.
+ *  1. Repuestos que llegan en location.state (carrito de /portal/repuestos) o, si no hay, los del carrito
+ *     de cotización de la landing (genlogs_public_cart), en una navegación NUEVA.
  *  2. El borrador de sessionStorage (recarga de la página, o la misma navegación ya editada).
  *  3. Un repuesto vacío.
  * location.key no cambia al recargar, pero sí en cada navegación nueva: así se distingue una recarga
@@ -63,7 +65,8 @@ interface EstadoInicial {
  */
 function estadoInicial(claveNavegacion: string, estado: unknown): EstadoInicial {
   const borrador = leerBorrador()
-  const precargados = itemsDesdePrecargados((estado as { repuestos?: unknown } | null)?.repuestos)
+  let precargados = itemsDesdePrecargados((estado as { repuestos?: unknown } | null)?.repuestos)
+  if (precargados.length === 0) precargados = itemsDesdePrecargados(carritoAPrecargados())
 
   if (precargados.length > 0 && borrador?.claveNavegacion !== claveNavegacion) {
     return { asunto: "", asuntoEditado: false, detalle: "", notaAbierta: false, items: precargados, precargados: precargados.length, avisoArchivos: false }
@@ -233,6 +236,8 @@ export function NuevaSolicitudPage() {
         onSuccess: () => {
           enviado.current = true
           limpiarBorrador()
+          // El carrito de la landing se vacía solo cuando la solicitud ya se envió.
+          vaciarCarrito()
           navigate("/portal/pedidos")
         },
       },
@@ -472,8 +477,8 @@ function ItemRepuesto({ numero, item, errores, puedeQuitar, puedeDuplicar, regis
       className="sm:col-span-6"
       id={id("foto")}
       label="Foto o plano"
-      obligatorio={item.modo === "foto"}
-      opcional={item.modo !== "foto"}
+      obligatorio={item.modo === "foto" && item.idProducto === undefined}
+      opcional={item.modo !== "foto" || item.idProducto !== undefined}
       ayuda={item.urlFoto && !item.foto ? "Ya hay una foto o plano cargado. Puedes reemplazarlo." : AYUDA_FOTO}
       error={errores.foto}
     >
