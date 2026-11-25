@@ -61,7 +61,7 @@ function itemDeBorrador(crudo: unknown): ItemBorrador | null {
   const r = crudo as Record<string, unknown>
   if (typeof r.descripcion !== "string") return null
   return {
-    modo: r.modo === "foto" ? "foto" : "parte",
+    modo: r.modo === "foto" || r.modo === "servicio" ? r.modo : "parte",
     descripcion: r.descripcion,
     cantidad: texto(r.cantidad) || itemVacio().cantidad,
     unidad: typeof r.unidad === "string" ? r.unidad : itemVacio().unidad,
