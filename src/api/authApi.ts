@@ -3,7 +3,12 @@ import type { LoginRequest, LoginResponse } from "@/types/auth"
 
 export interface TokenResetInfo {
   segundosRestantes: number
+  /** v3.4: true si la cuenta es de un cliente; «Ir al login» lleva entonces a /portal/ingreso. */
+  portal?: boolean
 }
+
+/** Minutos que dura el enlace del correo (igual que PasswordResetService.DURACION_MINUTOS del backend). */
+export const DURACION_ENLACE_MINUTOS = 15
 
 export async function login(data: LoginRequest): Promise<LoginResponse> {
   // Margen amplio: con el plan gratuito de Render el backend tarda ~50 s en despertar.

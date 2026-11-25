@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from "react"
 import { Link, useSearchParams } from "react-router-dom"
 import axios from "axios"
 import { Lock, CheckCircle2, Clock, AlertTriangle, Loader2 } from "lucide-react"
-import { restablecerPassword, validarTokenReset } from "@/api/authApi"
+import { DURACION_ENLACE_MINUTOS, restablecerPassword, validarTokenReset } from "@/api/authApi"
 import { PasswordInput } from "@/components/ui/PasswordInput"
 
 type Estado = "validando" | "valido" | "invalido" | "completado"
@@ -38,6 +38,9 @@ export function ResetPasswordPage() {
 
   const [estado, setEstado] = useState<Estado>(token ? "validando" : "invalido")
   const [segundos, setSegundos] = useState(0)
+  // v3.4: una cuenta de cliente vuelve al portal, no al login del personal.
+  const [esCliente, setEsCliente] = useState(false)
+  const rutaLogin = esCliente ? "/portal/ingreso" : "/login"
 
   const [nuevaPassword, setNuevaPassword] = useState("")
   const [confirmacion, setConfirmacion] = useState("")
@@ -53,6 +56,7 @@ export function ResetPasswordPage() {
       .then((info) => {
         if (cancelado) return
         setSegundos(info.segundosRestantes)
+        setEsCliente(info.portal === true)
         setEstado(info.segundosRestantes > 0 ? "valido" : "invalido")
       })
       .catch(() => {
@@ -127,14 +131,18 @@ export function ResetPasswordPage() {
         <div className="space-y-1">
           <h1 className="text-xl font-bold text-foreground">Enlace no disponible</h1>
           <p className="text-sm text-muted-foreground">
-            Este enlace venció o ya fue utilizado. Los enlaces duran 30 minutos y solo sirven una vez.
+            Este enlace venció o ya fue utilizado. Los enlaces duran {DURACION_ENLACE_MINUTOS} minutos y solo sirven una vez.
           </p>
         </div>
         <Link to="/recuperar-password" className={botonClass}>
           Solicitar un enlace nuevo
         </Link>
+        {/* Con el enlace vencido no se sabe de quién es la cuenta: se ofrecen los dos ingresos. */}
         <Link to="/login" className={linkClass}>
           Volver al inicio de sesión
+        </Link>
+        <Link to="/portal/ingreso" className={linkClass}>
+          ¿Eres cliente? Ingresa al portal
         </Link>
       </div>
     )
@@ -149,7 +157,7 @@ export function ResetPasswordPage() {
         <p role="status" className="text-sm text-muted-foreground">
           Contraseña actualizada. Ya puedes iniciar sesión con tu nueva contraseña.
         </p>
-        <Link to="/login" className={botonClass}>
+        <Link to={rutaLogin} className={botonClass}>
           Ir al login
         </Link>
       </div>
