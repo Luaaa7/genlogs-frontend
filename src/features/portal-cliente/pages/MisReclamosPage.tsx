@@ -5,6 +5,7 @@ import CargandoSpinner from "@/components/ui/CargandoSpinner"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { EstadoBadge } from "@/components/ui/EstadoBadge"
 import { mensajeError } from "@/lib/errores"
+import { BotonNuevaSolicitud } from "../components/BotonNuevaSolicitud"
 import { useCrearReclamo, useReclamosPortal } from "../hooks/useReclamosPortal"
 import { etiquetaEstadoReclamo, fechaCorta, tonoEstadoReclamo } from "../lib/reclamoPortal"
 
@@ -33,7 +34,7 @@ function NuevoReclamo({ onCreado }: { onCreado: (codigo: string) => void }) {
   }
 
   return (
-    <form onSubmit={enviar} noValidate className="mt-6 rounded-xl border border-border bg-card p-6 shadow-sm">
+    <form onSubmit={enviar} noValidate className="mt-6 rounded-xl border border-slate-200 bg-white shadow-sm dark:border-border dark:bg-card p-6 shadow-sm">
       <h2 className="text-lg font-semibold">Nuevo reclamo</h2>
       <div className="mt-4">
         <label htmlFor="reclamo-asunto" className="text-sm font-medium">Asunto</label>
@@ -75,11 +76,14 @@ export function MisReclamosPage() {
           <h1 className="text-3xl font-bold">Reclamos</h1>
           <p className="mt-2 text-muted-foreground">Cuéntanos si algo salió mal con un pedido. Te avisaremos cuando lo resolvamos.</p>
         </div>
-        {!formAbierto && (
-          <button type="button" onClick={() => { setFormAbierto(true); setCreado(null) }} className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <Plus className="h-4 w-4" aria-hidden="true" />Nuevo reclamo
-          </button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+            {!formAbierto && (
+              <button type="button" onClick={() => { setFormAbierto(true); setCreado(null) }} className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <Plus className="h-4 w-4" aria-hidden="true" />Nuevo reclamo
+              </button>
+            )}
+          <BotonNuevaSolicitud />
+        </div>
       </div>
 
       {creado && (
@@ -90,9 +94,9 @@ export function MisReclamosPage() {
       {formAbierto && <NuevoReclamo onCreado={(codigo) => { setCreado(codigo); setFormAbierto(false) }} />}
 
       {reclamos.length === 0 ? (
-        !formAbierto && <p className="mt-8 rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">No tienes reclamos registrados.</p>
+        !formAbierto && <p className="mt-8 rounded-xl border border-slate-200 bg-white shadow-sm dark:border-border dark:bg-card p-8 text-center text-muted-foreground">No tienes reclamos registrados.</p>
       ) : (
-        <ul className="mt-8 divide-y divide-border rounded-xl border border-border bg-card">
+        <ul className="mt-8 divide-y divide-slate-200 dark:divide-border rounded-xl border border-slate-200 bg-white shadow-sm dark:border-border dark:bg-card">
           {reclamos.map((r) => (
             <li key={r.idReclamo}>
               <Link to={`/portal/reclamos/${r.idReclamo}`} className="flex flex-wrap items-center justify-between gap-4 p-4 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-5">

@@ -3,6 +3,7 @@ import { ErrorBanner } from '@/components/ui/ErrorBanner'
 import { EstadoVacio } from '@/components/ui/EstadoVacio'
 import { textoPlazo } from '@/features/despacho/api/despachoTipos'
 import { useDespachosPortal } from '@/features/despacho/hooks/useDespachos'
+import { BotonNuevaSolicitud } from '../components/BotonNuevaSolicitud'
 
 /** Despachos del cliente: etapa, plazo y número de orden. */
 export function MisDespachosPage() {
@@ -11,10 +12,13 @@ export function MisDespachosPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <p className="text-sm font-semibold uppercase tracking-wide text-accent">Portal del cliente</p>
-        <h1 className="mt-2 text-3xl font-bold">Mis despachos</h1>
-        <p className="mt-2 text-muted-foreground">Etapa y plazo de las órdenes en camino.</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-accent">Portal del cliente</p>
+          <h1 className="mt-2 text-3xl font-bold">Mis despachos</h1>
+          <p className="mt-2 text-muted-foreground">Etapa y plazo de las órdenes en camino.</p>
+        </div>
+        <BotonNuevaSolicitud />
       </div>
       {isError && <ErrorBanner message="No se pudieron cargar los despachos." error={error} onRetry={() => refetch()} />}
       {isLoading ? (
@@ -24,7 +28,7 @@ export function MisDespachosPage() {
       ) : (
         <ul className="flex flex-col gap-3">
           {despachos.map((despacho) => (
-            <li key={despacho.id} className="rounded-xl border border-border bg-card p-5">
+            <li key={despacho.id} className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-border dark:bg-card p-5">
               <p className="text-sm text-muted-foreground">Orden {despacho.numeroOrdenCompra}</p>
               <p className="mt-1 font-medium">{despacho.etapaNombre}</p>
               <p className="mt-2 text-sm tabular-nums text-muted-foreground">{textoPlazo(despacho.plazoDesde, despacho.plazoHasta)}</p>
