@@ -83,6 +83,10 @@ describe("validarItem en modo «Tengo una foto»", () => {
     expect(errores).toEqual({})
   })
 
+  it("un repuesto que viene de la vitrina (con idProducto) ya está identificado: no pide foto", () => {
+    expect(validarItem({ ...modoFoto, idProducto: 7 })).toEqual({})
+  })
+
   it("una foto ya subida (por ejemplo, desde el carrito) cuenta como foto", () => {
     expect(validarItem({ ...modoFoto, urlFoto: "https://res.cloudinary.com/x/pieza.jpg" })).toEqual({})
   })

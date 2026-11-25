@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { IngresoConGoogle } from "./IngresoConGoogle"
 import { ingresarConGoogle } from "../api/ingresoGoogleApi"
 import { leerSesionCliente } from "@/lib/sesiones"
+import { agregarAlCarrito } from "@/lib/carritoPublico"
 
 vi.mock("../api/ingresoGoogleApi", async (importOriginal) => {
   const original = await importOriginal<typeof import("../api/ingresoGoogleApi")>()
@@ -81,5 +82,39 @@ describe("IngresoConGoogle", () => {
 
     expect(await screen.findByText("Este correo pertenece al personal de GENLOGS.")).toBeTruthy()
     expect(localStorage.getItem("cliente_access_token")).toBeNull()
+  })
+
+  it("con repuestos en el carrito de la landing y sin ?volver=, va a /portal/solicitud", async () => {
+    agregarAlCarrito({ id: 1, nombre: "Filtro de combustible", marca: "Caterpillar", numeroParte: "1R-0750" })
+    vi.mocked(ingresarConGoogle).mockResolvedValue({
+      token: "tok", nombre: "Titular", nombreRol: "CLIENTE", perfilCompleto: true, pendiente: false,
+    })
+    renderGoogle("/portal/ingreso")
+    fireEvent.click(screen.getByRole("button", { name: "Continuar con Google" }))
+
+    expect(await screen.findByText("Nueva solicitud")).toBeTruthy()
+  })
+
+  it("una cuenta del personal con Google ve el enlace al ingreso del personal (/login)", async () => {
+    vi.mocked(ingresarConGoogle).mockResolvedValue({
+      token: "tok", nombre: "Jefe", nombreRol: "JEFE_ADMINISTRATIVO", perfilCompleto: true, pendiente: false,
+    })
+    renderGoogle("/portal/ingreso")
+    fireEvent.click(screen.getByRole("button", { name: "Continuar con Google" }))
+
+    await screen.findByText(/no es del portal de clientes/)
+    expect(screen.getByRole("link", { name: "Ir al ingreso del personal" }).getAttribute("href")).toBe("/login")
+  })
+
+  it("una cuenta del personal con Google ignora el carrito", async () => {
+    agregarAlCarrito({ id: 1, nombre: "Filtro de combustible", marca: "Caterpillar", numeroParte: "1R-0750" })
+    vi.mocked(ingresarConGoogle).mockResolvedValue({
+      token: "tok", nombre: "Jefe", nombreRol: "JEFE_ADMINISTRATIVO", perfilCompleto: true, pendiente: false,
+    })
+    renderGoogle("/portal/ingreso")
+    fireEvent.click(screen.getByRole("button", { name: "Continuar con Google" }))
+
+    expect(await screen.findByText(/no es del portal de clientes/)).toBeTruthy()
+    expect(screen.queryByText("Nueva solicitud")).toBeNull()
   })
 })

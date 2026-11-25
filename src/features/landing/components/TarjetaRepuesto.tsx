@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { CheckCircle2, Clock, Loader2 } from "lucide-react"
+import { CheckCircle2, Clock, Minus, Plus } from "lucide-react"
 import type { RepuestoPublico } from "@/api/publicApi"
 import { visualCategoria } from "../lib/visualCategoria"
 import { cn } from "@/lib/utils/utils"
@@ -12,16 +12,18 @@ const TIPO: Record<RepuestoPublico["tipoRepuesto"], string> = {
 
 interface Props {
   repuesto: RepuestoPublico
-  cotizando: boolean
-  cotizado: boolean
-  onCotizar: () => void
+  /** Unidades de este repuesto que ya están en el carrito de cotización (0 si no está). */
+  enCotizacion: number
+  onAgregar: () => void
+  onSumar: () => void
+  onRestar: () => void
 }
 
 /**
  * Tarjeta de la vitrina pública: sin precio (RF-82). Solo fotos propias; si no hay,
  * o si la foto falla al cargar (IC10, BPMN v3.4 de Mell), la ilustración de su categoría.
  */
-export function TarjetaRepuesto({ repuesto: r, cotizando, cotizado, onCotizar }: Props) {
+export function TarjetaRepuesto({ repuesto: r, enCotizacion, onAgregar, onSumar, onRestar }: Props) {
   const { Icono, tono } = visualCategoria(r.categoria, r.nombre)
   // Se guarda la URL que falló: si el repuesto cambia de foto, se vuelve a intentar.
   const [urlFallida, setUrlFallida] = useState<string | null>(null)
@@ -74,20 +76,38 @@ export function TarjetaRepuesto({ repuesto: r, cotizando, cotizado, onCotizar }:
         <p className="mt-1 text-xs text-muted-foreground">Disponible a pedido · sujeto a confirmación</p>
 
         <div className="mt-auto pt-4">
-          {cotizado ? (
-            <p role="status" className="inline-flex items-center gap-1.5 text-sm font-medium text-success">
-              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-              Pedido enviado
-            </p>
+          {enCotizacion > 0 ? (
+            <div className="flex items-center justify-between gap-2">
+              <p role="status" className="inline-flex items-center gap-1.5 text-sm font-medium text-success">
+                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                En cotización ({enCotizacion})
+              </p>
+              <div className="inline-flex items-center overflow-hidden rounded-md border border-border">
+                <button
+                  type="button"
+                  onClick={onRestar}
+                  aria-label={`Disminuir cantidad de ${r.nombre}`}
+                  className="p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                >
+                  <Minus className="h-4 w-4" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={onSumar}
+                  aria-label={`Aumentar cantidad de ${r.nombre}`}
+                  className="border-l border-border p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                >
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
           ) : (
             <button
               type="button"
-              onClick={onCotizar}
-              disabled={cotizando}
+              onClick={onAgregar}
               aria-label={`Cotizar ${r.nombre}`}
-              className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
             >
-              {cotizando && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden="true" />}
               Cotizar
             </button>
           )}

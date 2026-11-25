@@ -3,12 +3,14 @@ import { Link, useLocation, useNavigate } from "react-router-dom"
 import { Check, Loader2, X } from "lucide-react"
 import { portalApi } from "@/api/portalApi"
 import { publicApi } from "@/api/publicApi"
-import { leerVolver, PARAMETRO_VOLVER } from "@/api/contratos/registro"
+import { PARAMETRO_VOLVER } from "@/api/contratos/registro"
+import { destinoTrasAcceso } from "@/lib/carritoPublico"
 import { rutaIngresoCliente } from "@/api/contratos/ingresoCliente"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { AvisoCarritoPublico } from "@/features/acceso-cliente/components/AvisoCarritoPublico"
 import { CampoPassword } from "@/features/acceso-cliente/components/CampoPassword"
 import { IngresoConGoogle } from "@/features/acceso-cliente/components/IngresoConGoogle"
 import { SeparadorO } from "@/features/acceso-cliente/components/SeparadorO"
@@ -158,7 +160,7 @@ export function RegistroClientePage() {
       })
       if (respuesta.token && iniciarSesionCliente(respuesta.token, respuesta.nombre ?? respuesta.nombreUsuario ?? "")) {
         // Acceso inmediato (D-10): vuelve a donde estaba, por ejemplo la landing con su pedido guardado (D-30).
-        navigate(leerVolver(location.search), { replace: true })
+        navigate(destinoTrasAcceso(location.search), { replace: true })
       } else {
         setMensaje(respuesta.mensaje ?? "Cuenta creada. Ingresa con tu correo y contraseña.")
       }
@@ -186,6 +188,7 @@ export function RegistroClientePage() {
       <p className="text-sm font-semibold uppercase tracking-wide text-accent">Portal del cliente</p>
       <h1 className="mt-2 text-3xl font-bold">Crea tu acceso</h1>
       <p className="mt-2 text-muted-foreground">Registra tu empresa para consultar pedidos y enviar solicitudes.</p>
+      <AvisoCarritoPublico className="mt-5" />
       <form onSubmit={enviar} className="mt-6 space-y-5">
         <IngresoConGoogle texto="signup_with" />
         <SeparadorO texto="o regístrate con tu RUC" />

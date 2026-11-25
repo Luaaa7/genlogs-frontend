@@ -1,13 +1,18 @@
-import { Link, Outlet, useLocation } from "react-router-dom"
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
 import { ArrowRight, Moon, Sun, User } from "lucide-react"
 import logoGenlogs from "@/assets/GENLOGS.webp"
+import { useCotizacionCart } from "@/hooks/useCotizacionCart"
 import { useTheme } from "@/hooks/useTheme"
 
 const enlaceNav = "gl-nl relative hidden px-3.5 py-2.5 text-[15px] font-medium text-primary dark:text-foreground sm:inline-flex"
 const foco = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+const botonPedir =
+  "group ml-2 hidden h-11 sm:flex items-center gap-2 rounded-xl border-2 border-primary bg-amarillo px-4 text-[15px] font-extrabold text-[#0f2440] shadow-[0_8px_20px_rgb(8_20_40/0.28)] transition hover:-translate-y-0.5 motion-reduce:transition-none dark:border-transparent"
 
 export function PublicLayout() {
   const { tema, alternarTema } = useTheme()
+  const navigate = useNavigate()
+  const carrito = useCotizacionCart()
   // En la landing el enlace es solo «#…»; en otras páginas vuelve a la landing con el ancla.
   const { pathname } = useLocation()
   const prefijo = pathname === "/" ? "" : "/"
@@ -32,9 +37,26 @@ export function PublicLayout() {
             <Link to="/portal/ingreso" aria-current={enPortal ? "page" : undefined} className={`flex h-11 items-center gap-2 rounded-xl border px-4 text-[15px] font-semibold text-primary hover:bg-primary/[0.06] dark:text-foreground dark:hover:bg-foreground/10 ${enPortal ? "border-primary bg-primary/[0.08] dark:border-foreground dark:bg-foreground/10" : "border-border dark:border-foreground/45"} ${foco}`}>
               <User className="h-[17px] w-[17px]" aria-hidden="true" /><span className="sr-only sm:not-sr-only">Portal de clientes</span>
             </Link>
-            <a href={`${prefijo}#solicitud`} className={`group ml-2 hidden h-11 sm:flex items-center gap-2 rounded-xl border-2 border-primary bg-amarillo px-4 text-[15px] font-extrabold text-[#0f2440] shadow-[0_8px_20px_rgb(8_20_40/0.28)] transition hover:-translate-y-0.5 motion-reduce:transition-none dark:border-transparent ${foco}`}>
-              Pedir cotización <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 motion-reduce:transition-none" aria-hidden="true" />
-            </a>
+            {carrito.total > 0 ? (
+              <button
+                type="button"
+                aria-label={`Pedir cotización, ${carrito.total} ${carrito.total === 1 ? "repuesto" : "repuestos"} en tu carrito`}
+                onClick={() => {
+                  // El carrito vive en la landing: se abre ahí.
+                  carrito.abrir()
+                  if (pathname !== "/") navigate("/")
+                }}
+                className={`${botonPedir} ${foco}`}
+              >
+                Pedir cotización
+                <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">{carrito.total}</span>
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 motion-reduce:transition-none" aria-hidden="true" />
+              </button>
+            ) : (
+              <a href={`${prefijo}#solicitud`} className={`${botonPedir} ${foco}`}>
+                Pedir cotización <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 motion-reduce:transition-none" aria-hidden="true" />
+              </a>
+            )}
           </nav>
         </div>
       </header>

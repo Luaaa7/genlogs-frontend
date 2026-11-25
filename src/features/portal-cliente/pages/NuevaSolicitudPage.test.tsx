@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { portalApi } from "@/api/portalApi"
 import { CLAVE_BORRADOR } from "../lib/borradorSolicitud"
+import { CLAVE_CARRITO, agregarAlCarrito, leerCarrito } from "@/lib/carritoPublico"
 import { NuevaSolicitudPage } from "./NuevaSolicitudPage"
 
 type Entrada = string | { pathname: string; state?: unknown; key?: string }
@@ -87,6 +88,7 @@ describe("NuevaSolicitudPage (D-01)", () => {
     vi.restoreAllMocks()
     sessionStorage.clear()
     desplazados = []
+    localStorage.clear()
     // jsdom no trae createObjectURL ni revokeObjectURL (vista previa del archivo).
     URL.createObjectURL = vi.fn(() => "blob:vista-previa")
     URL.revokeObjectURL = vi.fn()
@@ -1062,6 +1064,131 @@ describe("NuevaSolicitudPage (D-01)", () => {
 
       expect(tarjeta(1).className).toContain("min-w-0")
       expect(within(tarjeta(1)).getByText(/un-nombre-de-archivo/).className).toContain("truncate")
+    })
+  })
+
+  describe("carrito de cotización de la landing (genlogs_public_cart)", () => {
+    const filtro = { id: 1, nombre: "Filtro de combustible", marca: "Caterpillar", numeroParte: "1R-0750" }
+    const rodamiento = { id: 2, nombre: "Rodamiento 6205", marca: "SKF", numeroParte: "6205-2RS" }
+    const conCarrito = () => {
+      agregarAlCarrito({ ...filtro, cantidad: 3 })
+      agregarAlCarrito(rodamiento)
+    }
+
+    it("carga los repuestos del carrito en los ítems, con sus cantidades", () => {
+      conCarrito()
+      renderPagina()
+
+      expect(screen.getByText(/se precargaron 2 repuestos/i)).toBeTruthy()
+      expect(valorDe("Ítem 1: descripción")).toBe("Filtro de combustible")
+      expect(valorDe("Ítem 1: cantidad")).toBe("3")
+      expect(valorDe("Ítem 1: marca")).toBe("Caterpillar")
+      expect(valorDe("Ítem 1: N.º de parte")).toBe("1R-0750")
+      expect(valorDe("Ítem 2: descripción")).toBe("Rodamiento 6205")
+      expect(valorDe("Ítem 2: cantidad")).toBe("1")
+      expect(valorDe("Asunto")).toBe("Filtro de combustible (+1 repuesto)")
+    })
+
+    it("sin carrito arranca con un ítem vacío y sin aviso", () => {
+      renderPagina()
+      expect(screen.queryByText(/se precargaron|se precargó/i)).toBeNull()
+      expect(valorDe("Ítem 1: descripción")).toBe("")
+    })
+
+    it("envía los repuestos del carrito con su producto y sin pedir foto", async () => {
+      conCarrito()
+      const subir = vi.spyOn(portalApi, "subirFotoSolicitud")
+      const crear = vi.spyOn(portalApi, "crearSolicitud").mockResolvedValue(CREADA)
+      renderPagina()
+
+      enviar()
+
+      await waitFor(() => expect(crear).toHaveBeenCalled())
+      expect(subir).not.toHaveBeenCalled()
+      expect(crear.mock.calls[0][0].items).toEqual([
+        { descripcion: "Filtro de combustible", cantidad: 3, unidad: "UND", marcaTexto: "Caterpillar", numeroParte: "1R-0750", idProducto: 1 },
+        { descripcion: "Rodamiento 6205", cantidad: 1, unidad: "UND", marcaTexto: "SKF", numeroParte: "6205-2RS", idProducto: 2 },
+      ])
+    })
+
+    it("un repuesto del carrito sin N.º de parte tampoco pide foto, porque ya viene identificado", async () => {
+      agregarAlCarrito({ id: 7, nombre: "Pieza sin código", marca: "", numeroParte: "" })
+      const crear = vi.spyOn(portalApi, "crearSolicitud").mockResolvedValue(CREADA)
+      renderPagina()
+
+      enviar()
+
+      await waitFor(() => expect(crear).toHaveBeenCalled())
+      expect(crear.mock.calls[0][0].items).toEqual([{ descripcion: "Pieza sin código", cantidad: 1, unidad: "UND", idProducto: 7 }])
+    })
+
+    it("el carrito se conserva mientras la solicitud no se envíe", async () => {
+      conCarrito()
+      vi.spyOn(portalApi, "crearSolicitud").mockRejectedValue(new Error("500"))
+      renderPagina()
+
+      enviar()
+
+      await screen.findByText(/no se pudo enviar la solicitud/i)
+      expect(leerCarrito()).toHaveLength(2)
+    })
+
+    it("sin pasar la validación tampoco se toca el carrito", () => {
+      conCarrito()
+      renderPagina()
+      fireEvent.change(screen.getByLabelText("Asunto"), { target: { value: " " } })
+
+      enviar()
+
+      expect(leerCarrito()).toHaveLength(2)
+    })
+
+    it("solo cuando el envío es exitoso se limpia el carrito", async () => {
+      conCarrito()
+      vi.spyOn(portalApi, "crearSolicitud").mockResolvedValue(CREADA)
+      renderPagina()
+
+      enviar()
+
+      await waitFor(() => expect(screen.getByText("Mis pedidos")).toBeTruthy())
+      expect(localStorage.getItem(CLAVE_CARRITO)).toBeNull()
+    })
+
+    it("al recargar la misma navegación gana el borrador, con lo que el cliente ya editó", () => {
+      conCarrito()
+      const primera = renderPagina({ pathname: "/portal/solicitud", key: "k1" })
+      llenarRepuesto(1, { descripcion: "Filtro editado" })
+      primera.unmount()
+
+      renderPagina({ pathname: "/portal/solicitud", key: "k1" })
+
+      expect(valorDe("Ítem 1: descripción")).toBe("Filtro editado")
+      expect(leerCarrito()).toHaveLength(2)
+    })
+
+    it("una navegación nueva con el carrito gana sobre un borrador viejo", () => {
+      const primera = renderPagina({ pathname: "/portal/solicitud", key: "k1" })
+      llenarRepuesto(1, { descripcion: "Algo que escribí antes" })
+      primera.unmount()
+      conCarrito()
+
+      renderPagina({ pathname: "/portal/solicitud", key: "k2" })
+
+      expect(valorDe("Ítem 1: descripción")).toBe("Filtro de combustible")
+    })
+
+    it("los repuestos que llegan por navegación (location.state) ganan sobre el carrito", () => {
+      conCarrito()
+      renderPagina({ pathname: "/portal/solicitud", state: { repuestos: [{ descripcion: "Del portal", cantidad: 2 }] }, key: "k1" })
+
+      expect(valorDe("Ítem 1: descripción")).toBe("Del portal")
+      expect(screen.queryByLabelText("Ítem 2: descripción")).toBeNull()
+    })
+
+    it("un carrito con datos dañados no rompe la página", () => {
+      localStorage.setItem(CLAVE_CARRITO, "no es json")
+      renderPagina()
+      expect(valorDe("Ítem 1: descripción")).toBe("")
     })
   })
 })
