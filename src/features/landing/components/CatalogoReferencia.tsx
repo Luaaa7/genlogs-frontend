@@ -8,6 +8,7 @@ import { EstadoVacio } from "@/components/ui/EstadoVacio"
 import { cn } from "@/lib/utils/utils"
 import type { ProductoPublico } from "@/types/portal.types"
 import { imagenCloudinary } from "@/lib/imagenCloudinary"
+import { publicarPrecarga } from "../lib/precargaSolicitud"
 
 /** Foto del producto (Cloudinary, imagenUrl); si no hay o no carga, la ilustración de su categoría. */
 function MediaProducto({ producto }: { producto: ProductoPublico }) {
@@ -89,6 +90,8 @@ export function CatalogoReferencia() {
                   )}
                   <a
                     href="#solicitud"
+                    // v3.4: la Solicitud rápida recibe este producto ya escrito; el ancla sigue llevando al formulario.
+                    onClick={() => publicarPrecarga({ descripcion: producto.nombre })}
                     className="mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold text-accent hover:underline"
                   >
                     Pedir cotización
