@@ -1,10 +1,14 @@
 import { useState, type FormEvent } from "react"
-import { Link } from "react-router-dom"
+import { Link, useSearchParams } from "react-router-dom"
 import { Mail, MailCheck } from "lucide-react"
 import { solicitarRecuperacion } from "@/api/authApi"
 import { IconInput } from "@/components/ui/IconInput"
 
 export function ForgotPasswordPage() {
+  const [searchParams] = useSearchParams()
+  // Solo para el botón de volver de esta pantalla. Al terminar, la pantalla de nueva contraseña
+  // sabe si la cuenta es de un cliente porque el servidor se lo dice.
+  const desdePortal = searchParams.get("origen") === "portal"
   const [correo, setCorreo] = useState("")
   const [enviado, setEnviado] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -76,10 +80,10 @@ export function ForgotPasswordPage() {
       )}
 
       <Link
-        to="/login"
+        to={desdePortal ? "/portal/ingreso" : "/login"}
         className="block text-center text-sm font-medium text-accent hover:text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
       >
-        Volver al inicio de sesión
+        {desdePortal ? "Volver a ingresar" : "Volver al inicio de sesión"}
       </Link>
     </form>
   )

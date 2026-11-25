@@ -38,6 +38,11 @@ export function ResetPasswordPage() {
 
   const [estado, setEstado] = useState<Estado>(token ? "validando" : "invalido")
   const [segundos, setSegundos] = useState(0)
+  // El servidor dice si la cuenta es de un cliente del portal: decide a qué ingreso se vuelve.
+  // Mientras no lo sepa (enlace inválido o vencido) se vuelve al login del personal.
+  const [portal, setPortal] = useState(false)
+  const rutaVolver = portal ? "/portal/ingreso" : "/login"
+  const textoVolver = portal ? "Volver a ingresar" : "Volver al inicio de sesión"
 
   const [nuevaPassword, setNuevaPassword] = useState("")
   const [confirmacion, setConfirmacion] = useState("")
@@ -53,6 +58,7 @@ export function ResetPasswordPage() {
       .then((info) => {
         if (cancelado) return
         setSegundos(info.segundosRestantes)
+        setPortal(info.portal === true)
         setEstado(info.segundosRestantes > 0 ? "valido" : "invalido")
       })
       .catch(() => {
@@ -130,11 +136,11 @@ export function ResetPasswordPage() {
             Este enlace venció o ya fue utilizado. Los enlaces duran 30 minutos y solo sirven una vez.
           </p>
         </div>
-        <Link to="/recuperar-password" className={botonClass}>
+        <Link to={portal ? "/recuperar-password?origen=portal" : "/recuperar-password"} className={botonClass}>
           Solicitar un enlace nuevo
         </Link>
-        <Link to="/login" className={linkClass}>
-          Volver al inicio de sesión
+        <Link to={rutaVolver} className={linkClass}>
+          {textoVolver}
         </Link>
       </div>
     )
@@ -149,8 +155,8 @@ export function ResetPasswordPage() {
         <p role="status" className="text-sm text-muted-foreground">
           Contraseña actualizada. Ya puedes iniciar sesión con tu nueva contraseña.
         </p>
-        <Link to="/login" className={botonClass}>
-          Ir al login
+        <Link to={rutaVolver} className={botonClass}>
+          {portal ? "Ir a ingresar" : "Ir al login"}
         </Link>
       </div>
     )

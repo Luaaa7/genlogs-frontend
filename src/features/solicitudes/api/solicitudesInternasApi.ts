@@ -18,8 +18,41 @@ import {
   type ListaSolicitudesResponse,
 } from '@/api/contratos/solicitudes'
 
-let usarMock = false
-usarMock = true // borra esta línea para la API real
+/**
+ * Datos reales por defecto. El mock (SOL-001 a SOL-005) solo se enciende en las pruebas
+ * (vitest pone MODE = "test") o a mano con VITE_SOLICITUDES_MOCK=true.
+ */
+const usarMock = import.meta.env.MODE === 'test' || import.meta.env.VITE_SOLICITUDES_MOCK === 'true'
+
+/** GET real que existe en el backend: abiertas por vencimiento, con semáforo (sin paginar ni filtrar). */
+const RUTA_VENCIMIENTO = `${RUTA_SOLICITUDES}/vencimiento`
+
+/** Fila que devuelve GET /solicitudes/vencimiento. PAUSADA no es un color de la lista: se ve por el estado. */
+export interface FilaVencimiento {
+  solicitud: SolicitudInternaResponse
+  semaforo: 'VERDE' | 'AMARILLO' | 'ROJO' | 'PAUSADA' | null
+  porcentajePlazo?: number | null
+}
+
+/** Filtra y pagina en el cliente lo que trae /vencimiento. Ya viene ordenado por vencimiento. */
+export function listaDeVencimiento(filas: FilaVencimiento[], filtros: FiltrosSolicitudes): ListaSolicitudesResponse {
+  const q = filtros.q?.trim().toLowerCase()
+  const filtradas = filas
+    .filter(({ solicitud: s }) => !q || `${s.codigoSolicitud} ${s.asunto} ${s.cliente ?? ''}`.toLowerCase().includes(q))
+    .filter(({ solicitud: s }) => !filtros.estado || s.estado === filtros.estado)
+    .filter(({ solicitud: s }) => !filtros.tipoPlazo || s.tipoPlazo === filtros.tipoPlazo)
+    .filter(({ solicitud: s }) => filtros.idAsistente == null || s.asignado?.idUsuario === filtros.idAsistente)
+    .map(({ solicitud, semaforo }): SolicitudInternaFila => ({
+      ...solicitud,
+      semaforo: semaforo === 'PAUSADA' ? null : semaforo,
+    }))
+  const inicio = filtros.page * filtros.size
+  return {
+    content: filtradas.slice(inicio, inicio + filtros.size),
+    totalElements: filtradas.length,
+    totalPages: Math.ceil(filtradas.length / filtros.size),
+  }
+}
 
 const ANA = { idUsuario: 7, nombreUsuario: 'alopez', nombres: 'Ana López' }
 
@@ -177,7 +210,7 @@ export const solicitudesInternasApi = {
   },
   async listar(filtros: FiltrosSolicitudes): Promise<ListaSolicitudesResponse> {
     if (usarMock) return listarMock(filtros)
-    const { data } = await axiosClient.get<ListaSolicitudesResponse>(RUTA_SOLICITUDES, { params: parametrosDeLista(filtros) })
-    return data
+    const { data } = await axiosClient.get<FilaVencimiento[]>(RUTA_VENCIMIENTO)
+    return listaDeVencimiento(data, filtros)
   },
 }

@@ -3,6 +3,8 @@ import type { LoginRequest, LoginResponse } from "@/types/auth"
 
 export interface TokenResetInfo {
   segundosRestantes: number
+  /** true si la cuenta del enlace es de un cliente del portal: decide a dónde vuelve al terminar. */
+  portal: boolean
 }
 
 export async function login(data: LoginRequest): Promise<LoginResponse> {

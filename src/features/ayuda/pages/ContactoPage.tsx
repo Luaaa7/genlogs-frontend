@@ -3,7 +3,7 @@ import { Link } from "react-router-dom"
 import { datosConValor } from "../lib/datosGenlogs"
 
 /**
- * Contáctame (v3.4, K2). Sin formulario ni correo, por decisión de Luana (21/11):
+ * Contacto (v3.4, K2). Sin formulario ni correo, por decisión de Luana (21/11):
  * solo los datos de GENLOGS y el enlace a la Solicitud rápida de la landing.
  */
 export function ContactoPage() {
@@ -11,7 +11,7 @@ export function ContactoPage() {
 
   return (
     <section aria-labelledby="contacto-titulo" className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-      <p className="text-sm font-semibold uppercase tracking-wide text-accent">Contáctame</p>
+      <p className="text-sm font-semibold uppercase tracking-wide text-accent">Contacto</p>
       <h1 id="contacto-titulo" className="mt-2 text-3xl font-bold tracking-tight">Conversemos sobre tu próxima necesidad.</h1>
       <p className="mt-4 max-w-2xl leading-7 text-muted-foreground">
         Escríbenos para consultas comerciales. Si ya sabes qué repuesto necesitas, pide tu cotización directamente.

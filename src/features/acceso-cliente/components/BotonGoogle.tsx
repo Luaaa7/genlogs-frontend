@@ -81,7 +81,8 @@ export function BotonGoogle({ onCredential, texto = "continue_with" }: Props) {
           shape: "rectangular",
           text: texto,
           locale: "es",
-          width: 320,
+          // Google admite entre 200 y 400 px: se usa el ancho de los campos del formulario (320 si no se puede medir).
+          width: Math.min(400, Math.max(200, Math.round(contenedor.current.clientWidth) || 320)),
         })
       })
       .catch(() => {
@@ -93,5 +94,5 @@ export function BotonGoogle({ onCredential, texto = "continue_with" }: Props) {
   }, [clientId, texto])
 
   if (!clientId) return null
-  return <div ref={contenedor} data-testid="boton-google" className="flex min-h-10 justify-center" />
+  return <div ref={contenedor} data-testid="boton-google" className="flex min-h-10 w-full justify-center" />
 }

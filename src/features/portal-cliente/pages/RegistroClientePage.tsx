@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
-import { Check, Eye, EyeOff, Loader2, X } from "lucide-react"
+import { Check, Loader2, X } from "lucide-react"
 import { portalApi } from "@/api/portalApi"
 import { publicApi } from "@/api/publicApi"
 import { leerVolver, PARAMETRO_VOLVER } from "@/api/contratos/registro"
@@ -9,6 +9,7 @@ import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { CampoPassword } from "@/features/acceso-cliente/components/CampoPassword"
 import { IngresoConGoogle } from "@/features/acceso-cliente/components/IngresoConGoogle"
 import { SeparadorO } from "@/features/acceso-cliente/components/SeparadorO"
 import { iniciarSesionCliente } from "@/lib/sesiones"
@@ -47,14 +48,14 @@ export function RegistroClientePage() {
   const [correo, setCorreo] = useState("")
   const [password, setPassword] = useState("")
   const [confirmacion, setConfirmacion] = useState("")
-  const [verPassword, setVerPassword] = useState(false)
-  const [verConfirmacion, setVerConfirmacion] = useState(false)
 
   const ultimoRuc = useRef("")
   const consulta = useRef<AbortController | null>(null)
   const razonActual = useRef("")
   const razonAutomatica = useRef(false)
   const passwordRef = useRef<HTMLInputElement>(null)
+  // Evita un segundo envío antes de que el botón alcance a deshabilitarse.
+  const enviando = useRef(false)
 
   const volverCrudo = new URLSearchParams(location.search).get(PARAMETRO_VOLVER) ?? undefined
   const rutaIngreso = rutaIngresoCliente(volverCrudo)
@@ -140,10 +141,11 @@ export function RegistroClientePage() {
 
   async function enviar(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!puedeEnviar) return
+    if (!puedeEnviar || enviando.current) return
     setError("")
     setMensaje("")
     const form = new FormData(event.currentTarget)
+    enviando.current = true
     setCargando(true)
     try {
       const respuesta = await portalApi.registrarCliente({
@@ -171,6 +173,7 @@ export function RegistroClientePage() {
         passwordRef.current?.focus()
       }
     } finally {
+      enviando.current = false
       setCargando(false)
     }
   }
@@ -178,13 +181,12 @@ export function RegistroClientePage() {
   const mensajeRuc = estadoRuc ? MENSAJE_RUC[estadoRuc] : ""
 
   return (
-    <div className="mx-auto max-w-xl">
-      <div className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-wide text-accent">Portal del cliente</p>
-        <h1 className="mt-2 text-3xl font-bold">Crea tu acceso</h1>
-        <p className="mt-2 text-muted-foreground">Registra tu empresa para consultar pedidos y enviar solicitudes.</p>
-      </div>
-      <form onSubmit={enviar} className="space-y-5 rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
+    <div className="mx-auto max-w-xl px-4 py-16">
+      <div data-testid="tarjeta-registro" className="rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
+      <p className="text-sm font-semibold uppercase tracking-wide text-accent">Portal del cliente</p>
+      <h1 className="mt-2 text-3xl font-bold">Crea tu acceso</h1>
+      <p className="mt-2 text-muted-foreground">Registra tu empresa para consultar pedidos y enviar solicitudes.</p>
+      <form onSubmit={enviar} className="mt-6 space-y-5">
         <IngresoConGoogle texto="signup_with" />
         <SeparadorO texto="o regístrate con tu RUC" />
         <div className="grid gap-5 sm:grid-cols-2">
@@ -250,21 +252,16 @@ export function RegistroClientePage() {
           </div>
           <div className="sm:col-span-2">
             <Label htmlFor="registro-password">Contraseña</Label>
-            <div className="relative mt-2">
-              <Input
-                ref={passwordRef}
-                id="registro-password"
-                name="password"
-                type={verPassword ? "text" : "password"}
-                autoComplete="new-password"
-                className="pr-10"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                aria-describedby="registro-password-reglas"
-                required
-              />
-              <BotonVer visible={verPassword} onClick={() => setVerPassword((v) => !v)} etiqueta="contraseña" />
-            </div>
+            <CampoPassword
+              ref={passwordRef}
+              id="registro-password"
+              name="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              aria-describedby="registro-password-reglas"
+              required
+            />
             <div id="registro-password-reglas" aria-live="polite" className="mt-2">
               <ul className="grid gap-1 text-sm sm:grid-cols-2">
                 {reglas.map((regla) => (
@@ -288,24 +285,16 @@ export function RegistroClientePage() {
           </div>
           <div className="sm:col-span-2">
             <Label htmlFor="registro-confirmacion">Confirmar contraseña</Label>
-            <div className="relative mt-2">
-              <Input
-                id="registro-confirmacion"
-                name="confirmacion"
-                type={verConfirmacion ? "text" : "password"}
-                autoComplete="new-password"
-                className="pr-10"
-                value={confirmacion}
-                onChange={(e) => setConfirmacion(e.target.value)}
-                aria-invalid={(confirmacion.length > 0 && !coincide) || undefined}
-                required
-              />
-              <BotonVer
-                visible={verConfirmacion}
-                onClick={() => setVerConfirmacion((v) => !v)}
-                etiqueta="confirmación"
-              />
-            </div>
+            <CampoPassword
+              id="registro-confirmacion"
+              name="confirmacion"
+              etiquetaVer="confirmación"
+              autoComplete="new-password"
+              value={confirmacion}
+              onChange={(e) => setConfirmacion(e.target.value)}
+              aria-invalid={(confirmacion.length > 0 && !coincide) || undefined}
+              required
+            />
             {confirmacion.length > 0 && !coincide && (
               <p role="status" className="mt-1.5 flex items-center gap-1.5 text-sm text-destructive">
                 <X className="size-3.5 shrink-0" aria-hidden="true" />
@@ -330,20 +319,7 @@ export function RegistroClientePage() {
           </Link>
         </p>
       </form>
+      </div>
     </div>
-  )
-}
-
-function BotonVer({ visible, onClick, etiqueta }: { visible: boolean; onClick: () => void; etiqueta: string }) {
-  const Icono = visible ? EyeOff : Eye
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={`${visible ? "Ocultar" : "Mostrar"} ${etiqueta}`}
-      className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      <Icono className="size-4" aria-hidden="true" />
-    </button>
   )
 }

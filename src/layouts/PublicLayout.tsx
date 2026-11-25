@@ -9,7 +9,10 @@ const foco = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring
 export function PublicLayout() {
   const { tema, alternarTema } = useTheme()
   // En la landing el enlace es solo «#…»; en otras páginas vuelve a la landing con el ancla.
-  const prefijo = useLocation().pathname === "/" ? "" : "/"
+  const { pathname } = useLocation()
+  const prefijo = pathname === "/" ? "" : "/"
+  // En el ingreso y el registro del portal, el botón «Portal de clientes» se ve marcado.
+  const enPortal = pathname.startsWith("/portal")
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -26,7 +29,7 @@ export function PublicLayout() {
             <button type="button" onClick={alternarTema} aria-label={tema === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"} className={`rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground ${foco}`}>
               {tema === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
-            <Link to="/portal/ingreso" className={`flex h-11 items-center gap-2 rounded-xl border border-border px-4 text-[15px] font-semibold text-primary hover:bg-primary/[0.06] dark:border-foreground/45 dark:text-foreground dark:hover:bg-foreground/10 ${foco}`}>
+            <Link to="/portal/ingreso" aria-current={enPortal ? "page" : undefined} className={`flex h-11 items-center gap-2 rounded-xl border px-4 text-[15px] font-semibold text-primary hover:bg-primary/[0.06] dark:text-foreground dark:hover:bg-foreground/10 ${enPortal ? "border-primary bg-primary/[0.08] dark:border-foreground dark:bg-foreground/10" : "border-border dark:border-foreground/45"} ${foco}`}>
               <User className="h-[17px] w-[17px]" aria-hidden="true" /><span className="sr-only sm:not-sr-only">Portal de clientes</span>
             </Link>
             <a href={`${prefijo}#solicitud`} className={`group ml-2 hidden h-11 sm:flex items-center gap-2 rounded-xl border-2 border-primary bg-amarillo px-4 text-[15px] font-extrabold text-[#0f2440] shadow-[0_8px_20px_rgb(8_20_40/0.28)] transition hover:-translate-y-0.5 motion-reduce:transition-none dark:border-transparent ${foco}`}>
@@ -36,12 +39,12 @@ export function PublicLayout() {
         </div>
       </header>
       <main><Outlet /></main>
-      <footer id="contacto" className="border-t border-border bg-muted/40">
+      <footer className="border-t border-border bg-muted/40">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-8 text-sm text-muted-foreground sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
           <p>© {new Date().getFullYear()} GenLogs S.A.C. Soluciones para minería.</p>
           <nav aria-label="Enlaces del pie" className="flex gap-4">
             <Link to="/ayuda" className="hover:text-foreground hover:underline">Ayuda</Link>
-            <Link to="/contacto" className="hover:text-foreground hover:underline">Contáctame</Link>
+            <Link to="/contacto" className="hover:text-foreground hover:underline">Contacto</Link>
             <Link to="/login" className="hover:text-foreground hover:underline">Ingreso del personal</Link>
           </nav>
         </div>

@@ -10,7 +10,7 @@ export interface DatoContacto {
 }
 
 /**
- * Datos públicos de GENLOGS para Contáctame (v3.4, K2). Solo se muestran los que
+ * Datos públicos de GENLOGS para Contacto (v3.4, K2). Solo se muestran los que
  * tienen valor; el resto se completa cuando Luana los confirme con GENLOGS.
  */
 export const DATOS_GENLOGS: DatoContacto[] = [

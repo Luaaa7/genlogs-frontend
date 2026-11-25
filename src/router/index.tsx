@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom'
 import { AuthLayout } from '@/layouts/AuthLayout'
 import { AppLayout } from '@/layouts/AppLayout'
 import { PublicLayout } from '@/layouts/PublicLayout'
+import { AyudaLayout } from '@/layouts/AyudaLayout'
 import { ClienteLayout } from '@/layouts/ClienteLayout'
 import { ProtectedRoute } from '@/router/ProtectedRoute'
 import { ClienteRoute } from '@/router/ClienteRoute'
@@ -43,19 +44,26 @@ const CompletarEmpresaPage = perezosa(() => import('@/features/acceso-cliente/pa
 const MisPedidosPage = perezosa(() => import('@/features/portal-cliente/pages/MisPedidosPage'), 'MisPedidosPage')
 const PedidoDetallePage = perezosa(() => import('@/features/portal-cliente/pages/PedidoDetallePage'), 'PedidoDetallePage')
 const NuevaSolicitudPage = perezosa(() => import('@/features/portal-cliente/pages/NuevaSolicitudPage'), 'NuevaSolicitudPage')
+<<<<<<< HEAD
 // v3.4 (BPMN 4.1): comprobantes del cliente y pago en línea con Mercado Pago.
 const MisComprobantesPage = perezosa(() => import('@/features/portal-cliente/pages/MisComprobantesPage'), 'MisComprobantesPage')
 const PagoResultadoPage = perezosa(() => import('@/features/portal-cliente/pages/PagoResultadoPage'), 'PagoResultadoPage')
 // v3.4 (K2): Ayuda y Contáctame, públicas.
+=======
+// v3.4 (K2): Ayuda y Contacto, públicas.
+>>>>>>> origin/release/v3.3
 const AyudaPage = perezosa(() => import('@/features/ayuda/pages/AyudaPage'), 'AyudaPage')
 const ContactoPage = perezosa(() => import('@/features/ayuda/pages/ContactoPage'), 'ContactoPage')
 
 export const router = createBrowserRouter([
   { element: <PublicLayout />, children: [
     { path: '/', element: <LandingPage /> },
+    ...RUTAS_BLOQUES.publicas,
+  ] },
+  // Ayuda y Contacto: públicas, pero con sesión se ven dentro del sistema (AyudaLayout elige el marco).
+  { element: <AyudaLayout />, children: [
     { path: '/ayuda', element: <AyudaPage /> },
     { path: '/contacto', element: <ContactoPage /> },
-    ...RUTAS_BLOQUES.publicas,
   ] },
   { element: <AuthLayout />, children: [
     { path: '/login', element: <LoginPage /> },
@@ -109,10 +117,11 @@ export const router = createBrowserRouter([
     // Cualquier otra ruta: página 404 dentro del layout (sin sesión, ProtectedRoute manda al login).
     { path: '*', element: <NoEncontradaPage /> },
   ] }] },
-  // Registro e ingreso del cliente (FE-A): sin sesión, con el layout del portal.
-  { element: <ClienteLayout />, children: [
-    { path: '/portal/registro', element: <RegistroClientePage /> },
+  // Registro e ingreso del cliente (FE-A): sin sesión. Desde la v3.4 llevan la misma cabecera
+  // pública que el resto del sitio, para que al pasar de Ingresar a Crear cuenta la barra no cambie.
+  { element: <PublicLayout />, children: [
     { path: '/portal/ingreso', element: <IngresoClientePage /> },
+    { path: '/portal/registro', element: <RegistroClientePage /> },
   ] },
   { element: <ClienteRoute />, children: [{ element: <ClienteLayout />, children: [
     { path: '/portal/pedidos', element: <MisPedidosPage /> },
