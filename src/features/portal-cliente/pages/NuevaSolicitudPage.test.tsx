@@ -668,12 +668,53 @@ describe("NuevaSolicitudPage (D-01)", () => {
       expect(URL.createObjectURL).not.toHaveBeenCalled()
     })
 
+    it("el botón «Quitar archivo» dice a qué ítem pertenece", () => {
+      renderPagina()
+      modoFoto(1)
+      adjuntar(1, archivo("uno.jpg"))
+      agregarRepuesto()
+      modoFoto(2)
+      adjuntar(2, archivo("dos.jpg"))
+
+      expect(within(tarjeta(1)).getByRole("button", { name: "Quitar archivo del ítem 1" })).toBeTruthy()
+      expect(within(tarjeta(2)).getByRole("button", { name: "Quitar archivo del ítem 2" })).toBeTruthy()
+      expect(screen.queryByRole("button", { name: "Quitar archivo" })).toBeNull()
+    })
+
+    it("al elegir un archivo el foco pasa al botón «Quitar», para no perderlo con teclado o lector de pantalla", () => {
+      renderPagina()
+      modoFoto(1)
+
+      adjuntar(1, archivo())
+
+      expect(document.activeElement).toBe(within(tarjeta(1)).getByRole("button", { name: "Quitar archivo del ítem 1" }))
+    })
+
+    it("al quitar el archivo el foco vuelve al input para elegir otro", () => {
+      renderPagina()
+      modoFoto(1)
+      adjuntar(1, archivo())
+
+      fireEvent.click(within(tarjeta(1)).getByRole("button", { name: "Quitar archivo del ítem 1" }))
+
+      expect(document.activeElement).toBe(screen.getByLabelText("Ítem 1: foto o plano"))
+    })
+
+    it("duplicar un ítem con archivo no le roba el foco al que estás usando", () => {
+      renderPagina()
+      modoFoto(1)
+      adjuntar(1, archivo())
+      fireEvent.click(screen.getByRole("button", { name: "Duplicar ítem 1" }))
+
+      expect(document.activeElement).not.toBe(within(tarjeta(2)).getByRole("button", { name: "Quitar archivo del ítem 2" }))
+    })
+
     it("«Quitar» limpia el archivo, revoca la vista previa y devuelve el input vacío", () => {
       renderPagina()
       modoFoto(1)
       adjuntar(1, archivo("pieza.jpg"))
 
-      fireEvent.click(within(tarjeta(1)).getByRole("button", { name: "Quitar archivo" }))
+      fireEvent.click(within(tarjeta(1)).getByRole("button", { name: "Quitar archivo del ítem 1" }))
 
       expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:vista-previa")
       expect(within(tarjeta(1)).queryByText("pieza.jpg")).toBeNull()
@@ -689,7 +730,7 @@ describe("NuevaSolicitudPage (D-01)", () => {
       modoFoto(1)
       llenarRepuesto(1, { descripcion: "Pieza rota" })
       adjuntar(1, archivo())
-      fireEvent.click(within(tarjeta(1)).getByRole("button", { name: "Quitar archivo" }))
+      fireEvent.click(within(tarjeta(1)).getByRole("button", { name: "Quitar archivo del ítem 1" }))
 
       enviar()
 
@@ -711,7 +752,7 @@ describe("NuevaSolicitudPage (D-01)", () => {
       renderPagina()
       modoFoto(1)
       adjuntar(1, archivo("uno.jpg"))
-      fireEvent.click(within(tarjeta(1)).getByRole("button", { name: "Quitar archivo" }))
+      fireEvent.click(within(tarjeta(1)).getByRole("button", { name: "Quitar archivo del ítem 1" }))
       ;(URL.createObjectURL as ReturnType<typeof vi.fn>).mockReturnValue("blob:segunda")
 
       adjuntar(1, archivo("dos.jpg"))
@@ -741,7 +782,7 @@ describe("NuevaSolicitudPage (D-01)", () => {
       enviar()
       expect(crear).not.toHaveBeenCalled()
 
-      fireEvent.click(within(tarjeta(1)).getByRole("button", { name: "Quitar archivo" }))
+      fireEvent.click(within(tarjeta(1)).getByRole("button", { name: "Quitar archivo del ítem 1" }))
       expect(within(tarjeta(1)).queryByText(/no puede pesar más de 10 MB/i)).toBeNull()
     })
 

@@ -391,7 +391,17 @@ interface ItemRepuestoProps {
 }
 
 /** Archivo elegido: nombre, peso y miniatura (imagen) o icono de documento (PDF), con «Quitar». */
-function TarjetaArchivo({ archivo, onQuitar }: { archivo: File; onQuitar: () => void }) {
+function TarjetaArchivo({
+  archivo,
+  numero,
+  botonQuitarRef,
+  onQuitar,
+}: {
+  archivo: File
+  numero: number
+  botonQuitarRef: React.Ref<HTMLButtonElement>
+  onQuitar: () => void
+}) {
   const esImagen = archivo.type.startsWith("image/")
   const [vista, setVista] = useState<string | null>(null)
 
@@ -421,7 +431,7 @@ function TarjetaArchivo({ archivo, onQuitar }: { archivo: File; onQuitar: () => 
         <p className="truncate text-sm font-medium">{archivo.name}</p>
         <p className="text-sm text-muted-foreground">{pesoEnMb(archivo.size)}</p>
       </div>
-      <Button type="button" variant="ghost" size="sm" aria-label="Quitar archivo" onClick={onQuitar}>
+      <Button ref={botonQuitarRef} type="button" variant="ghost" size="sm" aria-label={`Quitar archivo del ítem ${numero}`} onClick={onQuitar}>
         Quitar
       </Button>
     </div>
@@ -432,6 +442,15 @@ function ItemRepuesto({ numero, item, errores, puedeQuitar, puedeDuplicar, regis
   const [adjuntoAbierto, setAdjuntoAbierto] = useState(false)
   // «Más datos» arranca abierto solo si el repuesto ya trae un GTIN (borrador o precarga).
   const [masDatosAbierto, setMasDatosAbierto] = useState(() => item.gtin.trim() !== "")
+  // Al pasar del input a la tarjeta (o al revés) el elemento con foco desaparece: el foco se entrega al nuevo.
+  const foco = useRef<"quitar" | "entrada" | null>(null)
+  const botonQuitarRef = useRef<HTMLButtonElement>(null)
+  const entradaRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (foco.current === "quitar") botonQuitarRef.current?.focus()
+    else if (foco.current === "entrada") entradaRef.current?.focus()
+    foco.current = null
+  }, [item.foto])
   const id = (campo: string) => `${item.id}-${campo}`
   const nombre = (campo: string) => `Ítem ${numero}: ${campo}`
   const aria = (campo: keyof ItemPedidoForm, ayuda?: string) => ({
@@ -459,15 +478,28 @@ function ItemRepuesto({ numero, item, errores, puedeQuitar, puedeDuplicar, regis
       error={errores.foto}
     >
       {item.foto ? (
-        <TarjetaArchivo archivo={item.foto} onQuitar={() => onCambiar({ foto: null })} />
+        <TarjetaArchivo
+          archivo={item.foto}
+          numero={numero}
+          botonQuitarRef={botonQuitarRef}
+          onQuitar={() => {
+            foco.current = "entrada"
+            onCambiar({ foto: null })
+          }}
+        />
       ) : (
         <Input
+          ref={entradaRef}
           id={id("foto")}
           aria-label={nombre("foto o plano")}
           {...aria("foto", AYUDA_FOTO)}
           type="file"
           accept="image/jpeg,image/png,image/webp,application/pdf"
-          onChange={(e) => onCambiar({ foto: e.target.files?.[0] ?? null })}
+          onChange={(e) => {
+            const elegido = e.target.files?.[0] ?? null
+            if (elegido) foco.current = "quitar"
+            onCambiar({ foto: elegido })
+          }}
         />
       )}
     </Campo>
