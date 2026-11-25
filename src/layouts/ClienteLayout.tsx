@@ -35,7 +35,7 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
               <NavLink to="/portal/reclamos" className={claseEnlace}>Reclamos</NavLink>
               <NavLink to="/portal/solicitud" className={claseEnlace}>Nueva solicitud</NavLink>
               <NavLink to="/ayuda" className={claseEnlace}>Ayuda</NavLink>
-              <NavLink to="/contacto" className={claseEnlace}>Contáctame</NavLink>
+              <NavLink to="/contacto" className={claseEnlace}>Contacto</NavLink>
               <button
                 type="button"
                 onClick={() => {
@@ -52,7 +52,7 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
               <NavLink to="/portal/ingreso" className={claseEnlace}>Ingresar</NavLink>
               <NavLink to="/portal/registro" className={claseEnlace}>Crear cuenta</NavLink>
               <NavLink to="/ayuda" className={claseEnlace}>Ayuda</NavLink>
-              <NavLink to="/contacto" className={claseEnlace}>Contáctame</NavLink>
+              <NavLink to="/contacto" className={claseEnlace}>Contacto</NavLink>
             </nav>
           )}
         </div>

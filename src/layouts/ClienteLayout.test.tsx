@@ -49,9 +49,9 @@ describe("Menú del portal del cliente", () => {
     expect(enlace.getAttribute("href")).toBe("/portal/repuestos")
   })
 
-  it.each([[true], [false]])("con sesión = %s muestra Ayuda y Contáctame (v3.4, K2)", async (conSesion) => {
+  it.each([[true], [false]])("con sesión = %s muestra Ayuda y Contacto (v3.4, K2)", async (conSesion) => {
     await renderLayout(false, conSesion)
     expect(screen.getByRole("link", { name: "Ayuda" }).getAttribute("href")).toBe("/ayuda")
-    expect(screen.getByRole("link", { name: "Contáctame" }).getAttribute("href")).toBe("/contacto")
+    expect(screen.getByRole("link", { name: "Contacto" }).getAttribute("href")).toBe("/contacto")
   })
 })

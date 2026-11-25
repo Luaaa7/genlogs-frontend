@@ -19,7 +19,7 @@ function abrirSesionCliente() {
   sessionStorage.setItem("genlogs-cliente-auth", JSON.stringify({ nombre: "Cliente", rol: "CLIENTE" }))
 }
 
-describe("Marco de Ayuda y Contáctame", () => {
+describe("Marco de Ayuda y Contacto", () => {
   // Primero se vacía el estado (el store guarda copia en sessionStorage) y luego el almacenamiento.
   function limpiar() {
     useAuthStore.setState({ token: null })

@@ -44,7 +44,7 @@ const CompletarEmpresaPage = perezosa(() => import('@/features/acceso-cliente/pa
 const MisPedidosPage = perezosa(() => import('@/features/portal-cliente/pages/MisPedidosPage'), 'MisPedidosPage')
 const PedidoDetallePage = perezosa(() => import('@/features/portal-cliente/pages/PedidoDetallePage'), 'PedidoDetallePage')
 const NuevaSolicitudPage = perezosa(() => import('@/features/portal-cliente/pages/NuevaSolicitudPage'), 'NuevaSolicitudPage')
-// v3.4 (K2): Ayuda y Contáctame, públicas.
+// v3.4 (K2): Ayuda y Contacto, públicas.
 const AyudaPage = perezosa(() => import('@/features/ayuda/pages/AyudaPage'), 'AyudaPage')
 const ContactoPage = perezosa(() => import('@/features/ayuda/pages/ContactoPage'), 'ContactoPage')
 
@@ -53,7 +53,7 @@ export const router = createBrowserRouter([
     { path: '/', element: <LandingPage /> },
     ...RUTAS_BLOQUES.publicas,
   ] },
-  // Ayuda y Contáctame: públicas, pero con sesión se ven dentro del sistema (AyudaLayout elige el marco).
+  // Ayuda y Contacto: públicas, pero con sesión se ven dentro del sistema (AyudaLayout elige el marco).
   { element: <AyudaLayout />, children: [
     { path: '/ayuda', element: <AyudaPage /> },
     { path: '/contacto', element: <ContactoPage /> },

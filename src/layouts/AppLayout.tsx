@@ -390,7 +390,7 @@ export function AppLayout() {
                     <p className="truncate text-sm font-medium text-foreground">{nombreUsuario ?? 'Usuario'}</p>
                     <p className="truncate text-xs text-muted-foreground">{nombreRolLegible(nombreRol)}</p>
                   </div>
-                  {/* v3.4 (K2): Ayuda y Contáctame */}
+                  {/* v3.4 (K2): Ayuda y Contacto */}
                   <Link
                     to="/ayuda"
                     role="menuitem"
@@ -407,7 +407,7 @@ export function AppLayout() {
                     className="flex w-full items-center gap-2.5 border-b border-border px-3 py-2.5 text-sm text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <Mail className="h-4 w-4 shrink-0" aria-hidden="true" />
-                    Contáctame
+                    Contacto
                   </Link>
                   <button
                     type="button"
