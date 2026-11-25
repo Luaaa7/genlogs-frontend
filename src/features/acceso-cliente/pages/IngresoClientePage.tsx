@@ -87,7 +87,7 @@ export function IngresoClientePage() {
             <div className="flex items-center justify-between gap-3">
               <Label htmlFor="ingreso-password">Contraseña</Label>
               <Link
-                to="/recuperar-password"
+                to="/recuperar-password?origen=portal"
                 className="rounded-sm text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 ¿Olvidaste tu contraseña?
