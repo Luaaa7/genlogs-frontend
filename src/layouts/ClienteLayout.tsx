@@ -30,6 +30,7 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
             <nav aria-label="Portal del cliente" className="-mx-4 flex w-[calc(100%+2rem)] items-center gap-1 overflow-x-auto px-4 pb-1 text-sm sm:mx-0 sm:w-auto sm:overflow-visible sm:px-0 sm:pb-0">
               <NavLink to="/portal/pedidos" className={claseEnlace}>Mis pedidos</NavLink>
               <NavLink to="/portal/cotizaciones" className={claseEnlace}>Mis cotizaciones</NavLink>
+              <NavLink to="/portal/comprobantes" className={claseEnlace}>Mis comprobantes</NavLink>
               <NavLink to="/portal/despachos" className={claseEnlace}>Mis despachos</NavLink>
               {vitrinaHabilitada && <NavLink to="/portal/repuestos" className={claseEnlace}>Repuestos</NavLink>}
               <NavLink to="/portal/reclamos" className={claseEnlace}>Reclamos</NavLink>

@@ -44,6 +44,9 @@ const CompletarEmpresaPage = perezosa(() => import('@/features/acceso-cliente/pa
 const MisPedidosPage = perezosa(() => import('@/features/portal-cliente/pages/MisPedidosPage'), 'MisPedidosPage')
 const PedidoDetallePage = perezosa(() => import('@/features/portal-cliente/pages/PedidoDetallePage'), 'PedidoDetallePage')
 const NuevaSolicitudPage = perezosa(() => import('@/features/portal-cliente/pages/NuevaSolicitudPage'), 'NuevaSolicitudPage')
+// v3.4 (BPMN 4.1): comprobantes del cliente y pago en línea con Mercado Pago.
+const MisComprobantesPage = perezosa(() => import('@/features/portal-cliente/pages/MisComprobantesPage'), 'MisComprobantesPage')
+const PagoResultadoPage = perezosa(() => import('@/features/portal-cliente/pages/PagoResultadoPage'), 'PagoResultadoPage')
 // v3.4 (K2): Ayuda y Contacto, públicas.
 const AyudaPage = perezosa(() => import('@/features/ayuda/pages/AyudaPage'), 'AyudaPage')
 const ContactoPage = perezosa(() => import('@/features/ayuda/pages/ContactoPage'), 'ContactoPage')
@@ -121,6 +124,8 @@ export const router = createBrowserRouter([
     { path: '/portal/pedidos/:id', element: <PedidoDetallePage /> },
     { path: '/portal/solicitud', element: <NuevaSolicitudPage /> },
     { path: '/portal/empresa', element: <CompletarEmpresaPage /> },
+    { path: '/portal/comprobantes', element: <MisComprobantesPage /> },
+    { path: '/portal/comprobantes/pago', element: <PagoResultadoPage /> },
     ...RUTAS_BLOQUES.portal,
   ] }] },
 ])
