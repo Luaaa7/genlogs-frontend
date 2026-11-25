@@ -9,7 +9,8 @@ const claseEnlace = ({ isActive }: { isActive: boolean }) =>
 
 /**
  * Barra del portal del cliente. Con sesión de cliente muestra el menú completo y
- * «Cerrar sesión». Sin sesión (por ejemplo en /portal/ingreso y /portal/registro)
+ * «Cerrar sesión» (acción secundaria, separada a la derecha). «Nueva solicitud» ya es el botón principal
+ * de Mis pedidos, por eso no se repite en la barra (v3.4). Sin sesión (por ejemplo en /portal/ingreso y /portal/registro)
  * solo muestra «Ingresar» y «Crear cuenta» (BPMN v3.4 de Mell, PS2/PS3).
  * Con `children` los muestra en lugar de la ruta hija (portal de una cuenta sin empresa).
  */
@@ -33,16 +34,16 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
               <NavLink to="/portal/despachos" className={claseEnlace}>Mis despachos</NavLink>
               {vitrinaHabilitada && <NavLink to="/portal/repuestos" className={claseEnlace}>Repuestos</NavLink>}
               <NavLink to="/portal/reclamos" className={claseEnlace}>Reclamos</NavLink>
-              <NavLink to="/portal/solicitud" className={claseEnlace}>Nueva solicitud</NavLink>
               <NavLink to="/ayuda" className={claseEnlace}>Ayuda</NavLink>
               <NavLink to="/contacto" className={claseEnlace}>Contacto</NavLink>
+              <span aria-hidden="true" className="mx-1 hidden h-5 w-px shrink-0 bg-border sm:block" />
               <button
                 type="button"
                 onClick={() => {
                   cerrarSesionCliente()
                   navigate("/portal/ingreso", { replace: true })
                 }}
-                className="ml-1 shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Cerrar sesión
               </button>

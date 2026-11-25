@@ -20,11 +20,11 @@ describe("Menú del portal del cliente", () => {
   })
   afterEach(() => vi.doUnmock("@/lib/interruptores"))
 
-  it("con sesión muestra Mis pedidos, Mis cotizaciones, Nueva solicitud, Reclamos y Cerrar sesión", async () => {
+  it("con sesión muestra Mis pedidos, Mis cotizaciones, Reclamos y Cerrar sesión, sin repetir «Nueva solicitud»", async () => {
     await renderLayout(false, true)
     expect(screen.getByRole("link", { name: "Mis pedidos" })).toBeTruthy()
     expect(screen.getByRole("link", { name: "Mis cotizaciones" })).toBeTruthy()
-    expect(screen.getByRole("link", { name: "Nueva solicitud" })).toBeTruthy()
+    expect(screen.queryByRole("link", { name: "Nueva solicitud" })).toBeNull()
     expect(screen.getByRole("link", { name: "Reclamos" }).getAttribute("href")).toBe("/portal/reclamos")
     expect(screen.getByRole("button", { name: "Cerrar sesión" })).toBeTruthy()
   })
