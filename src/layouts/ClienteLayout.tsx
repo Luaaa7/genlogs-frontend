@@ -17,8 +17,8 @@ const claseEnlaceMovil = ({ isActive }: { isActive: boolean }) =>
 const claseBotonBarra = `shrink-0 whitespace-nowrap rounded-md px-2.5 py-2 text-muted-foreground hover:bg-muted hover:text-foreground xl:px-3 ${foco}`
 
 /**
- * Barra del portal del cliente. Con sesión de cliente, en escritorio (xl, desde 1280 px) deja las secciones operativas a la
- * vista y agrupa Ayuda y Contacto en «Soporte»; en pantallas chicas todo va en el panel de la hamburguesa, así
+ * Barra del portal del cliente. Con sesión de cliente, en escritorio (lg, desde 1024 px) deja 4 o 5 secciones a la
+ * vista y agrupa Reclamos, Ayuda y Contacto en «Soporte»; en pantallas chicas todo va en el panel de la hamburguesa, así
  * que la barra nunca se desborda ni necesita scroll horizontal. «Nueva solicitud» ya tiene su botón amarillo
  * en cada vista y solo se repite en el panel móvil. Sin sesión (por ejemplo en /portal/ingreso y
  * /portal/registro) solo ofrece «Ingresar» y «Crear cuenta» (BPMN v3.4 de Mell, PS2/PS3).
@@ -83,7 +83,7 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
             <img src={logoGenlogs} alt="GenLogs S.A.C." width={140} height={58} className="-my-2 h-14 w-auto object-contain dark:brightness-0 dark:invert" />
           </Link>
 
-          <nav aria-label="Portal del cliente" className="hidden items-center gap-1 text-sm xl:flex">
+          <nav aria-label="Portal del cliente" className="hidden items-center gap-1 text-sm lg:flex">
             {conSesion ? (
               <>
                 <NavLink to="/portal/pedidos" className={claseEnlace}>Mis pedidos</NavLink>
@@ -91,7 +91,6 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
                 <NavLink to="/portal/comprobantes" className={claseEnlace}>Mis comprobantes</NavLink>
                 <NavLink to="/portal/despachos" className={claseEnlace}>Mis despachos</NavLink>
                 {vitrinaHabilitada && <NavLink to="/portal/repuestos" className={claseEnlace}>Repuestos</NavLink>}
-                <NavLink to="/portal/reclamos" className={claseEnlace}>Reclamos</NavLink>
               </>
             ) : (
               <>
@@ -102,7 +101,7 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
           </nav>
 
           <div className="flex shrink-0 items-center gap-1 text-sm">
-            <div ref={soporteRef} className="relative hidden xl:block">
+            <div ref={soporteRef} className="relative hidden lg:block">
               <button
                 type="button"
                 aria-expanded={soporteAbierto}
@@ -123,6 +122,7 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
                   }}
                   className="absolute right-0 top-full z-20 mt-1 flex w-40 flex-col rounded-md border border-slate-200 bg-white p-1 shadow-md dark:border-border dark:bg-card"
                 >
+                  {conSesion && <NavLink to="/portal/reclamos" className={claseEnlace}>Reclamos</NavLink>}
                   <NavLink to="/ayuda" className={claseEnlace}>Ayuda</NavLink>
                   <NavLink to="/contacto" className={claseEnlace}>Contacto</NavLink>
                 </div>
@@ -130,7 +130,7 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
             </div>
             {botonTema}
             {conSesion && (
-              <button type="button" onClick={cerrarSesion} className={`hidden xl:inline-flex ${claseBotonBarra}`}>
+              <button type="button" onClick={cerrarSesion} className={`hidden lg:inline-flex ${claseBotonBarra}`}>
                 Cerrar sesión
               </button>
             )}
@@ -141,7 +141,7 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
               aria-expanded={menuAbierto}
               aria-controls="menu-portal-movil"
               onClick={() => setMenuEn(menuAbierto ? null : pathname)}
-              className={`rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground xl:hidden ${foco}`}
+              className={`rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden ${foco}`}
             >
               {menuAbierto ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
             </button>
@@ -155,7 +155,7 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
             onClick={(evento) => {
               if ((evento.target as HTMLElement).closest("a")) setMenuEn(null)
             }}
-            className="max-h-[calc(100vh-4.5rem)] overflow-y-auto border-t border-slate-200 bg-white px-4 py-3 dark:border-border dark:bg-card xl:hidden"
+            className="max-h-[calc(100vh-4.5rem)] overflow-y-auto border-t border-slate-200 bg-white px-4 py-3 dark:border-border dark:bg-card lg:hidden"
           >
             <div className="mx-auto flex max-w-7xl flex-col gap-1">
               {conSesion ? (

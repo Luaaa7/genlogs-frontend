@@ -11,4 +11,12 @@ describe("BotonNuevaSolicitud", () => {
     expect(enlace.className).toContain("bg-[#FACC15]")
     expect(enlace.className).toContain("text-[#183153]")
   })
+
+  it("la variante píldora es redonda, amarilla y lleva una flecha, sin cambiar su nombre accesible", () => {
+    render(<MemoryRouter><BotonNuevaSolicitud variante="pildora" /></MemoryRouter>)
+    const enlace = screen.getByRole("link", { name: "Nueva solicitud" })
+    expect(enlace.className).toContain("rounded-full")
+    expect(enlace.className).toContain("bg-[#FACC15]")
+    expect(enlace.querySelector("svg")).toBeTruthy()
+  })
 })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { ETAPAS_PEDIDO, etapaDelPedido, etiquetaEstado, esEstadoFinalSinCotizar, puedeCancelar } from "./estadoPedido"
+import { ETAPAS_PEDIDO, etapaDelPedido, etiquetaEstado, esEstadoFinalSinCotizar, puedeCancelar, resumenCotizacion } from "./estadoPedido"
 
 describe("estados del pedido que ve el cliente", () => {
   it("la barra tiene 4 etapas en orden", () => {
@@ -39,5 +39,18 @@ describe("estados del pedido que ve el cliente", () => {
     expect(puedeCancelar("EN_ESPERA_TERCERO")).toBe(false)
     expect(puedeCancelar("COTIZADA")).toBe(false)
     expect(puedeCancelar("CANCELADA")).toBe(false)
+  })
+})
+
+describe("resumenCotizacion: qué decirle al cliente de la cotización según el estado del pedido", () => {
+  it("cotizada: la cotización está lista para revisar", () => {
+    expect(resumenCotizacion("COTIZADA")).toMatch(/cotización está lista/i)
+  })
+  it.each(["PENDIENTE", "EN_REVISION", "EN_ESPERA_TERCERO"])("%s: todavía no hay cotización", (estado) => {
+    expect(resumenCotizacion(estado)).toMatch(/todavía no hay cotización/i)
+  })
+  it("rechazada y cancelada: no habrá cotización", () => {
+    expect(resumenCotizacion("RECHAZADA")).toMatch(/no se pudo cotizar/i)
+    expect(resumenCotizacion("CANCELADA")).toMatch(/cancelada/i)
   })
 })

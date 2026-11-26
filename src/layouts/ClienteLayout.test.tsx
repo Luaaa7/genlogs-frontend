@@ -25,7 +25,6 @@ const SECCIONES = [
   ["Mis cotizaciones", "/portal/cotizaciones"],
   ["Mis comprobantes", "/portal/comprobantes"],
   ["Mis despachos", "/portal/despachos"],
-  ["Reclamos", "/portal/reclamos"],
 ] as const
 
 describe("Menú del portal del cliente", () => {
@@ -36,26 +35,27 @@ describe("Menú del portal del cliente", () => {
   })
   afterEach(() => vi.doUnmock("@/lib/interruptores"))
 
-  describe("escritorio (xl:flex)", () => {
-    it("con sesión deja en la barra las 6 secciones operativas, con Repuestos si la vitrina está encendida", async () => {
+  describe("escritorio (lg:flex)", () => {
+    it("con sesión deja en la barra 5 secciones, con Repuestos si la vitrina está encendida (Reclamos va en Soporte)", async () => {
       await renderLayout(true, true)
       const nombres = menu().getAllByRole("link").map((enlace) => enlace.textContent)
-      expect(nombres).toEqual(["Mis pedidos", "Mis cotizaciones", "Mis comprobantes", "Mis despachos", "Repuestos", "Reclamos"])
+      expect(nombres).toEqual(["Mis pedidos", "Mis cotizaciones", "Mis comprobantes", "Mis despachos", "Repuestos"])
       for (const [nombre, ruta] of SECCIONES) expect(menu().getByRole("link", { name: nombre }).getAttribute("href")).toBe(ruta)
       expect(menu().getByRole("link", { name: "Repuestos" }).getAttribute("href")).toBe("/portal/repuestos")
     })
 
-    it("con la vitrina apagada no muestra Repuestos (quedan 5)", async () => {
+    it("con la vitrina apagada no muestra Repuestos (quedan 4)", async () => {
       await renderLayout(false, true)
       expect(menu().queryByRole("link", { name: "Repuestos" })).toBeNull()
-      expect(menu().getAllByRole("link")).toHaveLength(5)
+      expect(menu().getAllByRole("link")).toHaveLength(4)
+      expect(menu().queryByRole("link", { name: "Reclamos" })).toBeNull()
     })
 
     it("la barra es de escritorio: oculta hasta lg, sin overflow-x-auto en toda la cabecera", async () => {
       await renderLayout(true, true)
       const nav = screen.getByRole("navigation", { name: "Portal del cliente" })
       expect(nav.className).toContain("hidden")
-      expect(nav.className).toContain("xl:flex")
+      expect(nav.className).toContain("lg:flex")
       expect(nav.className).toContain("text-sm")
       expect(screen.getByRole("banner").innerHTML).not.toContain("overflow-x-auto")
     })
@@ -65,7 +65,7 @@ describe("Menú del portal del cliente", () => {
       expect(screen.queryByRole("link", { name: "Nueva solicitud" })).toBeNull()
     })
 
-    it("Ayuda y Contacto van agrupados en el desplegable «Soporte»", async () => {
+    it("Reclamos, Ayuda y Contacto van agrupados en el desplegable «Soporte»", async () => {
       await renderLayout(false, true)
       const boton = screen.getByRole("button", { name: "Soporte" })
       expect(boton.getAttribute("aria-expanded")).toBe("false")
@@ -74,6 +74,8 @@ describe("Menú del portal del cliente", () => {
       abrirSoporte()
 
       expect(boton.getAttribute("aria-expanded")).toBe("true")
+      expect(soporte().getAllByRole("link").map((e) => e.textContent)).toEqual(["Reclamos", "Ayuda", "Contacto"])
+      expect(soporte().getByRole("link", { name: "Reclamos" }).getAttribute("href")).toBe("/portal/reclamos")
       expect(soporte().getByRole("link", { name: "Ayuda" }).getAttribute("href")).toBe("/ayuda")
       expect(soporte().getByRole("link", { name: "Contacto" }).getAttribute("href")).toBe("/contacto")
     })
@@ -115,11 +117,11 @@ describe("Menú del portal del cliente", () => {
     })
   })
 
-  describe("celular, tableta y laptops chicas (xl:hidden)", () => {
+  describe("celular, tableta y laptops chicas (lg:hidden)", () => {
     it("la hamburguesa abre un panel vertical con todas las rutas del portal", async () => {
       await renderLayout(true, true)
       const boton = screen.getByRole("button", { name: "Abrir menú" })
-      expect(boton.className).toContain("xl:hidden")
+      expect(boton.className).toContain("lg:hidden")
       expect(boton.getAttribute("aria-expanded")).toBe("false")
       expect(screen.queryByRole("navigation", { name: "Menú del portal" })).toBeNull()
 
@@ -138,7 +140,7 @@ describe("Menú del portal del cliente", () => {
       await renderLayout(true, true)
       abrirHamburguesa()
       const panel = screen.getByRole("navigation", { name: "Menú del portal" })
-      expect(panel.className).toContain("xl:hidden")
+      expect(panel.className).toContain("lg:hidden")
       expect(panel.className).toContain("overflow-y-auto")
       expect(panel.className).not.toContain("overflow-x-auto")
     })
