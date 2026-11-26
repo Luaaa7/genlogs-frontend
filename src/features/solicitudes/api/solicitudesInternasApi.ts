@@ -4,11 +4,13 @@ import {
   RUTA_SOLICITUDES,
   rutaSolicitudHistorial,
   rutaSolicitudIniciar,
+  rutaSolicitudItems,
   rutaSolicitudPausar,
   rutaSolicitudReanudar,
   rutaSolicitudReasignar,
   rutaSolicitudReclasificar,
   type EventoSolicitud,
+  type ItemIdentificacion,
   type PausarSolicitudRequest,
   type ReasignarSolicitudRequest,
   type ReclasificarSolicitudRequest,
@@ -105,6 +107,11 @@ function exigir(s: SolicitudInternaResponse, estado: SolicitudInternaResponse['e
 const HISTORIAL: EventoSolicitud[] = [
   { tipo: 'CREADA', detalle: null, usuario: null, fecha: '2026-11-10T09:00:00' },
   { tipo: 'ESTADO', detalle: 'Pasó a revisión', usuario: 'Ana López', fecha: '2026-11-11T15:00:00' },
+]
+
+const ITEMS_MOCK: ItemIdentificacion[] = [
+  { idItem: 1, descripcion: 'Filtro de aire 1R-0750', cantidad: 2, unidad: 'UND', idMarca: 1, marca: 'Caterpillar', numeroParte: '1R-0750', gtin: null, urlFoto: null, idProducto: null, equivalentes: [], confirmado: false, confirmadoPor: null, fechaConfirmacion: null },
+  { idItem: 2, descripcion: 'Sello de goma', cantidad: 4, unidad: null, idMarca: null, marca: null, numeroParte: null, gtin: null, urlFoto: null, idProducto: null, equivalentes: [], confirmado: false, confirmadoPor: null, fechaConfirmacion: null },
 ]
 
 /**
@@ -207,6 +214,14 @@ export const solicitudesInternasApi = {
       return HISTORIAL.map((e) => ({ ...e }))
     }
     const { data } = await axiosClient.get<EventoSolicitud[]>(rutaSolicitudHistorial(id))
+    return data
+  },
+  async items(id: number): Promise<ItemIdentificacion[]> {
+    if (usarMock) {
+      if (!leer(id)) conflicto('No se encontró la solicitud.')
+      return ITEMS_MOCK.map((i) => ({ ...i, equivalentes: [...i.equivalentes] }))
+    }
+    const { data } = await axiosClient.get<ItemIdentificacion[]>(rutaSolicitudItems(id))
     return data
   },
   async listar(filtros: FiltrosSolicitudes): Promise<ListaSolicitudesResponse> {

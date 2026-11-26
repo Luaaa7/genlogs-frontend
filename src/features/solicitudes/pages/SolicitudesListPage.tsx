@@ -14,9 +14,9 @@ import { useAsignables } from '../hooks/useAsignables'
 import { useSolicitudesInternas } from '../hooks/useSolicitudesInternas'
 
 const ESTADO: Record<EstadoSolicitud, { label: string; tono: EstadoBadgeTono }> = {
-  PENDIENTE: { label: 'Pendiente', tono: 'warning' },
-  EN_REVISION: { label: 'En revisión', tono: 'info' },
-  EN_ESPERA_TERCERO: { label: 'En espera de tercero', tono: 'accent' },
+  PENDIENTE: { label: 'Recibida', tono: 'warning' },
+  EN_REVISION: { label: 'En búsqueda', tono: 'info' },
+  EN_ESPERA_TERCERO: { label: 'En espera de proveedor', tono: 'accent' },
   COTIZADA: { label: 'Cotizada', tono: 'success' },
   RECHAZADA: { label: 'Rechazada', tono: 'destructive' },
   CANCELADA: { label: 'Cancelada', tono: 'neutral' },

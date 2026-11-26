@@ -1,8 +1,9 @@
 import axios from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import type { SolicitudInternaResponse } from '@/api/contratos/solicitudes'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { solicitudesInternasApi } from '../api/solicitudesInternasApi'
 import { SolicitudInternaPage } from './SolicitudInternaPage'
@@ -21,31 +22,54 @@ function pintar(id: number, rol: string) {
   )
 }
 
+/** Respuesta simulada: el mock real guarda cambios entre pruebas y movería de estado las solicitudes de ejemplo. */
+const respuesta = (idSolicitud: number, estado: SolicitudInternaResponse['estado']): SolicitudInternaResponse => ({
+  idSolicitud, codigoSolicitud: `SOL-00${idSolicitud}`, asunto: 'Prueba', cliente: 'Minera Sur', estado, tipoPlazo: 'COMUN',
+  fechaRecepcion: '2026-11-10T09:00:00', fechaLimiteInterna: null, pausadaDesde: null, motivoPausa: null, fechaEstimadaTercero: null,
+  reclasificaciones: 0, asignado: null,
+})
+
 const boton = (nombre: string) => screen.queryByRole('button', { name: nombre })
 
 describe('SolicitudInternaPage', () => {
   beforeEach(() => useAuthStore.setState({ nombreRol: 'ASISTENTE_LOGISTICO' }))
-  afterEach(() => vi.restoreAllMocks())
+  afterEach(() => {
+    cleanup()
+    vi.restoreAllMocks()
+  })
 
-  it('Iniciar revisión solo en PENDIENTE, y Sin asignar si no hay responsable', () => {
+  it('en Recibida el botón principal dice «Empezar a buscar el producto», y Sin asignar si no hay responsable', () => {
     const primera = pintar(1, 'ASISTENTE_LOGISTICO')
-    expect(boton('Iniciar revisión')).toBeTruthy()
-    expect(boton('Reanudar')).toBeNull()
+    expect(boton('Empezar a buscar el producto')).toBeTruthy()
+    expect(boton('Iniciar revisión')).toBeNull()
+    expect(boton('Proveedor respondió')).toBeNull()
     expect(screen.getByText('Sin asignar')).toBeTruthy()
     primera.unmount()
     pintar(2, 'ASISTENTE_LOGISTICO')
-    expect(boton('Iniciar revisión')).toBeNull()
+    expect(boton('Empezar a buscar el producto')).toBeNull()
   })
 
-  it('Reanudar solo en espera de tercero, y muestra motivo y fecha', () => {
+  it('en espera de proveedor el botón para continuar dice «Proveedor respondió», y muestra motivo y fecha', () => {
     const primera = pintar(3, 'ASISTENTE_LOGISTICO')
-    expect(boton('Reanudar')).toBeTruthy()
-    expect(boton('Iniciar revisión')).toBeNull()
+    expect(boton('Proveedor respondió')).toBeTruthy()
+    expect(boton('Reanudar')).toBeNull()
+    expect(boton('Empezar a buscar el producto')).toBeNull()
     expect(screen.getByText('Esperando respuesta del proveedor')).toBeTruthy()
     expect(screen.getByText('Pausada')).toBeTruthy()
     primera.unmount()
     pintar(2, 'ASISTENTE_LOGISTICO')
-    expect(boton('Reanudar')).toBeNull()
+    expect(boton('Proveedor respondió')).toBeNull()
+  })
+
+  it('los estados se llaman Recibida, En búsqueda y En espera de proveedor', () => {
+    const a = pintar(1, 'GERENTE_GENERAL')
+    expect(screen.getByText('Recibida')).toBeTruthy()
+    a.unmount()
+    const b = pintar(2, 'GERENTE_GENERAL')
+    expect(screen.getByText('En búsqueda')).toBeTruthy()
+    b.unmount()
+    pintar(3, 'GERENTE_GENERAL')
+    expect(screen.getByText('En espera de proveedor')).toBeTruthy()
   })
 
   it('la segunda reclasificación se deshabilita para el asistente y no para el Jefe', () => {
@@ -85,32 +109,108 @@ describe('SolicitudInternaPage', () => {
     expect(screen.getByText('Abre la solicitud desde la lista')).toBeTruthy()
   })
 
+  it('en En búsqueda el botón es «Proveedor contactado» y solo pide la fecha estimada de respuesta', () => {
+    pintar(2, 'ASISTENTE_LOGISTICO')
+    expect(boton('Pausar')).toBeNull()
+    fireEvent.click(boton('Proveedor contactado')!)
+    const grupo = screen.getByRole('group', { name: 'Proveedor contactado' })
+    expect(within(grupo).getByLabelText('Fecha estimada de respuesta')).toBeTruthy()
+    expect(within(grupo).queryAllByRole('textbox')).toHaveLength(0)
+    for (const viejo of ['Esperando datos del cliente', 'Esperando confirmación de stock', 'Esperando documento de aduana', 'Otro']) {
+      expect(screen.queryByRole('button', { name: viejo })).toBeNull()
+    }
+  })
+
+  it('confirmar manda el único motivo de espera y la fecha, sin cambiar el contrato', async () => {
+    const pausar = vi.spyOn(solicitudesInternasApi, 'pausar').mockResolvedValue(respuesta(2, 'EN_ESPERA_TERCERO'))
+    pintar(2, 'ASISTENTE_LOGISTICO')
+    fireEvent.click(boton('Proveedor contactado')!)
+    fireEvent.change(screen.getByLabelText('Fecha estimada de respuesta'), { target: { value: '2999-12-31' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }))
+    await waitFor(() => expect(pausar).toHaveBeenCalledWith(2, { motivo: 'Esperando respuesta del proveedor', fechaEstimada: '2999-12-31' }))
+  })
+
+  it('la fecha es opcional: sin ella solo viaja el motivo', async () => {
+    const pausar = vi.spyOn(solicitudesInternasApi, 'pausar').mockResolvedValue(respuesta(2, 'EN_ESPERA_TERCERO'))
+    pintar(2, 'ASISTENTE_LOGISTICO')
+    fireEvent.click(boton('Proveedor contactado')!)
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }))
+    await waitFor(() => expect(pausar).toHaveBeenCalledWith(2, { motivo: 'Esperando respuesta del proveedor' }))
+  })
+
   it('la fecha estimada pasada no se envía', () => {
     const pausar = vi.spyOn(solicitudesInternasApi, 'pausar')
     pintar(2, 'ASISTENTE_LOGISTICO')
-    fireEvent.click(boton('Pausar')!)
-    fireEvent.change(screen.getByLabelText('Fecha estimada'), { target: { value: '2000-01-01' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Esperando datos del cliente' }))
+    fireEvent.click(boton('Proveedor contactado')!)
+    fireEvent.change(screen.getByLabelText('Fecha estimada de respuesta'), { target: { value: '2000-01-01' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }))
     expect(screen.getByRole('alert').textContent).toMatch(/no puede ser pasada/)
     expect(pausar).not.toHaveBeenCalled()
   })
 
-  it('Otro exige un motivo y el campo no pasa de 40', () => {
-    const pausar = vi.spyOn(solicitudesInternasApi, 'pausar')
-    pintar(2, 'ASISTENTE_LOGISTICO')
-    fireEvent.click(boton('Pausar')!)
-    fireEvent.click(screen.getByRole('button', { name: 'Otro' }))
-    const motivo = screen.getByLabelText('Motivo')
-    expect(motivo.getAttribute('maxLength')).toBe('40')
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pausa' }))
-    expect(screen.getByRole('alert').textContent).toMatch(/obligatorio/)
-    expect(pausar).not.toHaveBeenCalled()
+  it('«Proveedor respondió» reanuda la búsqueda con la llamada de siempre', async () => {
+    const reanudar = vi.spyOn(solicitudesInternasApi, 'reanudar').mockResolvedValue(respuesta(3, 'EN_REVISION'))
+    pintar(3, 'ASISTENTE_LOGISTICO')
+    fireEvent.click(boton('Proveedor respondió')!)
+    await waitFor(() => expect(reanudar).toHaveBeenCalledWith(3))
+  })
+
+  it('«Empezar a buscar el producto» inicia con la llamada de siempre', async () => {
+    const iniciar = vi.spyOn(solicitudesInternasApi, 'iniciar').mockResolvedValue(respuesta(1, 'EN_REVISION'))
+    pintar(1, 'ASISTENTE_LOGISTICO')
+    fireEvent.click(boton('Empezar a buscar el producto')!)
+    await waitFor(() => expect(iniciar).toHaveBeenCalledWith(1))
+  })
+
+  describe('clasificación de plazo', () => {
+    it('en Recibida no se ven «Tipo de plazo» ni «Reclasificar»', () => {
+      pintar(1, 'JEFE_ADMINISTRATIVO')
+      expect(screen.queryByLabelText('Tipo de plazo')).toBeNull()
+      expect(boton('Reclasificar')).toBeNull()
+    })
+
+    it('desde En búsqueda reaparecen', () => {
+      const a = pintar(2, 'ASISTENTE_LOGISTICO')
+      expect(screen.getByLabelText('Tipo de plazo')).toBeTruthy()
+      expect(boton('Reclasificar')).toBeTruthy()
+      a.unmount()
+      pintar(3, 'ASISTENTE_LOGISTICO')
+      expect(screen.getByLabelText('Tipo de plazo')).toBeTruthy()
+    })
+  })
+
+  describe('ítems y buscadores externos', () => {
+    it('en En búsqueda cada ítem trae sus buscadores externos', async () => {
+      pintar(2, 'ASISTENTE_LOGISTICO')
+      const enlace = (await screen.findAllByRole('link', { name: /Buscar .* en Google/ }))[0]
+      expect(enlace.getAttribute('target')).toBe('_blank')
+      expect(enlace.getAttribute('rel')).toBe('noopener noreferrer')
+      expect(screen.getAllByRole('link', { name: /en eBay/ }).length).toBeGreaterThan(0)
+    })
+
+    it('en Recibida y en espera de proveedor se ven los ítems pero sin buscadores', async () => {
+      const a = pintar(1, 'ASISTENTE_LOGISTICO')
+      expect(await screen.findByText('Ítems de la solicitud')).toBeTruthy()
+      expect(await screen.findByText('Filtro de aire 1R-0750')).toBeTruthy()
+      expect(screen.queryByRole('link', { name: /en Google/ })).toBeNull()
+      a.unmount()
+      pintar(3, 'ASISTENTE_LOGISTICO')
+      await screen.findByText('Filtro de aire 1R-0750')
+      expect(screen.queryByRole('link', { name: /en Google/ })).toBeNull()
+    })
+
+    it('si falla la carga de ítems avisa sin tumbar la pantalla', async () => {
+      vi.spyOn(solicitudesInternasApi, 'items').mockRejectedValue(new Error('500'))
+      pintar(2, 'ASISTENTE_LOGISTICO')
+      expect(await screen.findByText(/No se pudieron cargar los ítems/)).toBeTruthy()
+      expect(screen.getByText('SOL-002')).toBeTruthy()
+    })
   })
 
   it('el historial pinta un movimiento con usuario null y el más reciente arriba', async () => {
     pintar(2, 'GERENTE_GENERAL')
     expect(await screen.findByText('CREADA')).toBeTruthy()
-    const items = screen.getAllByRole('listitem')
+    const items = within(screen.getByRole('region', { name: 'Historial' })).getAllByRole('listitem')
     expect(items[0].textContent).toContain('Ana López')
     expect(items[1].textContent).toContain('CREADA')
     expect(items[1].textContent).not.toContain('Ana')
