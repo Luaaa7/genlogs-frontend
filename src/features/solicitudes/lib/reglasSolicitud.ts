@@ -15,12 +15,10 @@ export const ROLES_ASIGNABLES = ['ASISTENTE_LOGISTICO', 'JEFE_ADMINISTRATIVO'] a
 
 export const ROL_JEFE = 'JEFE_ADMINISTRATIVO' satisfies Rol
 
-export const MOTIVOS_PAUSA = [
-  'Esperando respuesta del proveedor',
-  'Esperando datos del cliente',
-  'Esperando confirmación de stock',
-  'Esperando documento de aduana',
-] as const
+/** Único motivo de espera: se contacta al proveedor y se espera su respuesta. El backend sigue recibiendo `motivo` como siempre. */
+export const MOTIVO_ESPERA_PROVEEDOR = 'Esperando respuesta del proveedor'
+
+export const MOTIVOS_PAUSA = [MOTIVO_ESPERA_PROVEEDOR] as const
 
 const ROLES_DE_PANTALLA: readonly Rol[] = ROLES_PANTALLA
 const ROLES_DE_ACCION: readonly Rol[] = ROLES_ACCION

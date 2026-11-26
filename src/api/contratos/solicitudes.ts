@@ -62,6 +62,7 @@ export interface SolicitudCreadaResponse {
  *   PATCH /solicitudes/{id}/reclasificar   ReclasificarSolicitudRequest. La 2.a solo la hace el Jefe
  *   PATCH /solicitudes/{id}/reasignar      ReasignarSolicitudRequest. Solo el Jefe
  *   GET   /solicitudes/{id}/historial      EventoSolicitud[]
+ *   GET   /solicitudes/{id}/items          ItemIdentificacion[] (solo lectura; el PUT de N.º de parte no se usa aquí)
  */
 export const rutaSolicitudIniciar = (id: number) => `${RUTA_SOLICITUDES}/${id}/iniciar`
 export const rutaSolicitudPausar = (id: number) => `${RUTA_SOLICITUDES}/${id}/pausar`
@@ -69,6 +70,7 @@ export const rutaSolicitudReanudar = (id: number) => `${RUTA_SOLICITUDES}/${id}/
 export const rutaSolicitudReclasificar = (id: number) => `${RUTA_SOLICITUDES}/${id}/reclasificar`
 export const rutaSolicitudReasignar = (id: number) => `${RUTA_SOLICITUDES}/${id}/reasignar`
 export const rutaSolicitudHistorial = (id: number) => `${RUTA_SOLICITUDES}/${id}/historial`
+export const rutaSolicitudItems = (id: number) => `${RUTA_SOLICITUDES}/${id}/items`
 
 /** motivo obligatorio, max. 40. fechaEstimada: fecha ISO sin hora; no puede ser pasada. */
 export interface PausarSolicitudRequest {
@@ -84,6 +86,24 @@ export interface ReclasificarSolicitudRequest {
 /** Solo el Jefe. */
 export interface ReasignarSolicitudRequest {
   idUsuario: number
+}
+
+/** Repuesto de la solicitud visto por el equipo interno (espejo de ItemIdentificacionResponse). */
+export interface ItemIdentificacion {
+  idItem: number
+  descripcion: string
+  cantidad: number
+  unidad: string | null
+  idMarca: number | null
+  marca: string | null
+  numeroParte: string | null
+  gtin: string | null
+  urlFoto: string | null
+  idProducto: number | null
+  equivalentes: string[]
+  confirmado: boolean
+  confirmadoPor: string | null
+  fechaConfirmacion: string | null
 }
 
 /** tipo llega como texto. fecha: ISO sin zona horaria. */

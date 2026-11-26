@@ -13,6 +13,15 @@ export function useHistorialSolicitud(id: number, activo: boolean) {
   })
 }
 
+export function useItemsSolicitud(id: number, activo: boolean) {
+  return useQuery({
+    queryKey: ['solicitud-items', id],
+    queryFn: () => solicitudesInternasApi.items(id),
+    enabled: activo,
+    retry: false,
+  })
+}
+
 export function useAccionesSolicitud(id: number, alActualizar: (solicitud: SolicitudInternaResponse) => void) {
   const cliente = useQueryClient()
   const listo = (texto: string) => (data: SolicitudInternaResponse) => {
@@ -21,9 +30,9 @@ export function useAccionesSolicitud(id: number, alActualizar: (solicitud: Solic
     void cliente.invalidateQueries({ queryKey: ['solicitud-historial', id] })
   }
   return {
-    iniciar: useMutation({ mutationFn: () => solicitudesInternasApi.iniciar(id), onSuccess: listo('Revisión iniciada.') }),
-    pausar: useMutation({ mutationFn: (body: PausarSolicitudRequest) => solicitudesInternasApi.pausar(id, body), onSuccess: listo('Solicitud pausada.') }),
-    reanudar: useMutation({ mutationFn: () => solicitudesInternasApi.reanudar(id), onSuccess: listo('Revisión reanudada.') }),
+    iniciar: useMutation({ mutationFn: () => solicitudesInternasApi.iniciar(id), onSuccess: listo('Búsqueda iniciada.') }),
+    pausar: useMutation({ mutationFn: (body: PausarSolicitudRequest) => solicitudesInternasApi.pausar(id, body), onSuccess: listo('Proveedor contactado.') }),
+    reanudar: useMutation({ mutationFn: () => solicitudesInternasApi.reanudar(id), onSuccess: listo('Búsqueda reanudada.') }),
     reclasificar: useMutation({ mutationFn: (tipoPlazo: TipoPlazo) => solicitudesInternasApi.reclasificar(id, { tipoPlazo }), onSuccess: listo('Plazo reclasificado.') }),
     reasignar: useMutation({ mutationFn: (idUsuario: number) => solicitudesInternasApi.reasignar(id, { idUsuario }), onSuccess: listo('Solicitud reasignada.') }),
   }

@@ -14,14 +14,15 @@ import { usePermisos } from '@/lib/permisos'
 import { solicitudDeRuta } from '../api/solicitudesInternasApi'
 import { AccionesSolicitud } from '../components/AccionesSolicitud'
 import { HistorialSolicitud } from '../components/HistorialSolicitud'
+import { ItemsSolicitud } from '../components/ItemsSolicitud'
 import { useAsignables } from '../hooks/useAsignables'
-import { useAccionesSolicitud, useHistorialSolicitud } from '../hooks/useSolicitudInterna'
+import { useAccionesSolicitud, useHistorialSolicitud, useItemsSolicitud } from '../hooks/useSolicitudInterna'
 import { puedeActuar, ROL_JEFE } from '../lib/reglasSolicitud'
 
 const ESTADO: Record<EstadoSolicitud, { label: string; tono: EstadoBadgeTono }> = {
-  PENDIENTE: { label: 'Pendiente', tono: 'warning' },
-  EN_REVISION: { label: 'En revisión', tono: 'info' },
-  EN_ESPERA_TERCERO: { label: 'En espera de tercero', tono: 'accent' },
+  PENDIENTE: { label: 'Recibida', tono: 'warning' },
+  EN_REVISION: { label: 'En búsqueda', tono: 'info' },
+  EN_ESPERA_TERCERO: { label: 'En espera de proveedor', tono: 'accent' },
   COTIZADA: { label: 'Cotizada', tono: 'success' },
   RECHAZADA: { label: 'Rechazada', tono: 'destructive' },
   CANCELADA: { label: 'Cancelada', tono: 'neutral' },
@@ -44,6 +45,7 @@ function Detalle() {
   const esJefe = rol === ROL_JEFE
   const acciones = useAccionesSolicitud(id, setSolicitud)
   const historial = useHistorialSolicitud(id, solicitud !== null)
+  const items = useItemsSolicitud(id, solicitud !== null)
   const asignables = useAsignables(esJefe && solicitud !== null)
   const errorAccion = acciones.iniciar.error ?? acciones.pausar.error ?? acciones.reanudar.error ?? acciones.reclasificar.error ?? acciones.reasignar.error
   const ocupado = acciones.iniciar.isPending || acciones.pausar.isPending || acciones.reanudar.isPending || acciones.reclasificar.isPending || acciones.reasignar.isPending
@@ -89,6 +91,8 @@ function Detalle() {
         onReclasificar={(tipo) => acciones.reclasificar.mutate(tipo)}
         onReasignar={(idUsuario) => acciones.reasignar.mutate(idUsuario)}
       />
+      {items.isError && <ErrorBanner message="No se pudieron cargar los ítems." error={items.error} onRetry={() => items.refetch()} />}
+      {items.data && <ItemsSolicitud items={items.data} buscar={solicitud.estado === 'EN_REVISION'} />}
       {historial.isError && <ErrorBanner message="No se pudo cargar el historial." error={historial.error} />}
       {historial.data && <HistorialSolicitud eventos={historial.data} />}
     </div>

@@ -5,6 +5,7 @@ import type { UsuarioResponse } from '@/types/usuario'
 import { hoyISO } from '@/lib/formatters/fechaLocal'
 import { solicitudDeRuta } from '../api/solicitudesInternasApi'
 import {
+  MOTIVO_ESPERA_PROVEEDOR,
   MOTIVOS_PAUSA,
   fechaEstimadaValida,
   filtrarAsignables,
@@ -22,7 +23,9 @@ const usuario = (nombreRol: string, bloqueado = false): UsuarioResponse => ({
 })
 
 describe('reglas de la solicitud interna', () => {
-  it('cada motivo predefinido cabe en 40 caracteres y el texto libre no', () => {
+  it('el único motivo de espera es «Esperando respuesta del proveedor» y cabe en 40 caracteres', () => {
+    expect(MOTIVO_ESPERA_PROVEEDOR).toBe('Esperando respuesta del proveedor')
+    expect(MOTIVOS_PAUSA).toEqual([MOTIVO_ESPERA_PROVEEDOR])
     for (const motivo of MOTIVOS_PAUSA) expect(motivo.length).toBeLessThanOrEqual(40)
     expect(motivoValido('')).toBe(false)
     expect(motivoValido('   ')).toBe(false)

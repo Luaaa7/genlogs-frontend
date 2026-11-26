@@ -89,7 +89,7 @@ describe('lista de solicitudes', () => {
     try {
       expect(await screen.findByRole('link', { name: 'SOL-002' })).toBeTruthy()
       fireEvent.change(screen.getByLabelText('Buscar'), { target: { value: 'aire' } })
-      fireEvent.click(screen.getByRole('button', { name: 'Pendiente' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Recibida' }))
       fireEvent.change(screen.getByLabelText('Plazo'), { target: { value: 'IMPORTADO' } })
       fireEvent.change(screen.getByLabelText('Asistente'), { target: { value: '7' } })
       await waitFor(() => {
