@@ -17,8 +17,10 @@ import { BotonCargando } from "../components/BotonCargando"
 import { ListaEsqueleto } from "../components/SkeletonCard"
 import { portalApi } from "@/api/portalApi"
 import { repuestosApi, type RepuestoPortal } from "./repuestosApi"
+import { MARCAS_VISIBLES, TAM_PAGINA, marcasPorCantidad } from "./lib/catalogo"
 import { agregar, guardarCarrito, leerCarrito, type ItemCarrito } from "./lib/carrito"
 import { CarritoCotizacion } from "./components/CarritoCotizacion"
+import { PaginacionCatalogo } from "./components/PaginacionCatalogo"
 
 const TIPO = { OEM: "Original (OEM)", ALTERNATIVO: "Alternativo compatible" } as const
 
@@ -31,8 +33,11 @@ export function RepuestosPage() {
   const navigate = useNavigate()
   const [texto, setTexto] = useState("")
   const [busqueda, setBusqueda] = useState("")
-  const [categoria, setCategoria] = useState<string>()
-  const [marca, setMarca] = useState<string>()
+  const [categoria, setCategoriaElegida] = useState<string>()
+  const [marca, setMarcaElegida] = useState<string>()
+  const [pagina, setPagina] = useState(1)
+  const [todasLasMarcas, setTodasLasMarcas] = useState(false)
+  const [todosLosPedidos, setTodosLosPedidos] = useState(false)
   const [carrito, setCarrito] = useState<ItemCarrito[]>(() => leerCarrito())
 
   useEffect(() => guardarCarrito(carrito), [carrito])
@@ -53,20 +58,33 @@ export function RepuestosPage() {
     }
     return [...conteo.entries()].map(([valor, c]) => ({ valor, ...c }))
   }, [todos])
-  const marcas = useMemo(() => [...new Set(todos.map((r) => r.marca).filter((m): m is string => !!m))].sort(), [todos])
-  const visibles = todos.filter((r) => (!categoria || String(r.idCategoria) === categoria) && (!marca || r.marca === marca))
+  // Cada cambio de búsqueda, categoría o marca vuelve a la primera página.
+  const setCategoria = (valor?: string) => { setCategoriaElegida(valor); setPagina(1) }
+  const setMarca = (valor?: string) => { setMarcaElegida(valor); setPagina(1) }
 
-  // "Lo que ya pediste": ítems de pedidos anteriores, sin repetir.
+  const marcas = useMemo(() => marcasPorCantidad(todos).map((m) => m.marca), [todos])
+  // Marcas con más repuestos primero; sin expandir solo las primeras, más la elegida si quedó fuera.
+  const marcasMostradas = todasLasMarcas || marcas.length <= MARCAS_VISIBLES
+    ? marcas
+    : [...marcas.slice(0, MARCAS_VISIBLES), ...(marca && !marcas.slice(0, MARCAS_VISIBLES).includes(marca) ? [marca] : [])]
+  const visibles = todos.filter((r) => (!categoria || String(r.idCategoria) === categoria) && (!marca || r.marca === marca))
+  const totalPaginas = Math.max(1, Math.ceil(visibles.length / TAM_PAGINA))
+  const paginaActual = Math.min(pagina, totalPaginas)
+  const enPagina = visibles.slice((paginaActual - 1) * TAM_PAGINA, paginaActual * TAM_PAGINA)
+
+  // "Lo que ya pediste": ítems de pedidos anteriores, del más reciente al más antiguo y sin repetir.
   const yaPedidos = useMemo(() => {
+    const recientes = [...(pedidos.data ?? [])].sort((a, b) => String(b.fecha ?? "").localeCompare(String(a.fecha ?? "")) || String(b.id).localeCompare(String(a.id), "es", { numeric: true }))
     const vistos = new Map<string, { descripcion: string; cantidad: number; unidad?: string }>()
-    for (const p of pedidos.data ?? []) {
+    for (const p of recientes) {
       for (const i of p.items ?? []) {
         const clave = i.descripcion.trim().toLowerCase()
         if (clave && !vistos.has(clave)) vistos.set(clave, { descripcion: i.descripcion.trim(), cantidad: i.cantidad, unidad: i.unidad ?? undefined })
       }
     }
-    return [...vistos.values()].slice(0, 6)
+    return [...vistos.values()]
   }, [pedidos.data])
+  const pedidosMostrados = todosLosPedidos ? yaPedidos : yaPedidos.slice(0, 3)
 
   const subirFoto = useMutation({
     mutationFn: ({ archivo }: { clave: string; archivo: File }) => portalApi.subirFotoSolicitud(archivo),
@@ -105,7 +123,7 @@ export function RepuestosPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="flex min-w-0 flex-col gap-6">
-          <form role="search" className="flex gap-2" onSubmit={(e) => { e.preventDefault(); setBusqueda(texto.trim()) }}>
+          <form role="search" className="flex gap-2" onSubmit={(e) => { e.preventDefault(); setBusqueda(texto.trim()); setPagina(1) }}>
             <label htmlFor="repuestos-buscar" className="sr-only">Buscar por nombre o N.º de parte</label>
             <input id="repuestos-buscar" type="search" value={texto} onChange={(e) => setTexto(e.target.value)}
               placeholder="Nombre o N.º de parte" className={inputFormClass} />
@@ -117,7 +135,50 @@ export function RepuestosPage() {
             <FiltroChips etiqueta="Filtrar por categoría" opciones={[{ label: "Todas" }, ...categorias]} valor={categoria} onChange={setCategoria} />
           )}
           {marcas.length > 1 && (
-            <FiltroChips etiqueta="Filtrar por marca" opciones={[{ label: "Todas las marcas" }, ...marcas.map((m) => ({ valor: m, label: m }))]} valor={marca} onChange={setMarca} />
+            <div className="flex flex-col items-start gap-2">
+              <FiltroChips etiqueta="Filtrar por marca" opciones={[{ label: "Todas las marcas" }, ...marcasMostradas.map((m) => ({ valor: m, label: m }))]} valor={marca} onChange={setMarca} />
+              {marcas.length > MARCAS_VISIBLES && (
+                <button
+                  type="button"
+                  aria-expanded={todasLasMarcas}
+                  onClick={() => setTodasLasMarcas((v) => !v)}
+                  className="inline-flex h-8 items-center rounded-full border border-dashed border-border px-3 text-[13px] font-medium text-accent hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {todasLasMarcas ? "Ver menos marcas" : `Ver todas las marcas (${marcas.length})`}
+                </button>
+              )}
+            </div>
+          )}
+
+          {yaPedidos.length > 0 && (
+            <section aria-labelledby="ya-pedidos" className="rounded-xl border border-border bg-card px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <h2 id="ya-pedidos" className="flex items-center gap-2 text-sm font-semibold">
+                  <History className="h-4 w-4 text-accent" aria-hidden="true" /> Lo que ya pediste
+                </h2>
+                {yaPedidos.length > 3 && (
+                  <button
+                    type="button"
+                    aria-expanded={todosLosPedidos}
+                    onClick={() => setTodosLosPedidos((v) => !v)}
+                    className="rounded-md px-2 py-1 text-sm font-medium text-accent hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {todosLosPedidos ? "Ver menos" : `Ver todos (${yaPedidos.length})`}
+                  </button>
+                )}
+              </div>
+              <ul className="mt-1 divide-y divide-border">
+                {pedidosMostrados.map((i) => (
+                  <li key={i.descripcion} className="flex items-center justify-between gap-3 py-1.5 text-sm">
+                    <span>{i.descripcion} <span className="text-muted-foreground">· {i.cantidad} {i.unidad ?? "und."}</span></span>
+                    <button type="button" onClick={() => volverAPedir(i)} aria-label={`Volver a pedir ${i.descripcion}`}
+                      className="shrink-0 rounded-md px-2 py-1 font-medium text-accent hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                      Volver a pedir
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
 
           {repuestos.isPending ? (
@@ -150,10 +211,11 @@ export function RepuestosPage() {
               }
             />
           ) : (
-            <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {visibles.map((r, indice) => (
+            <>
+            <ul aria-label="Lista de repuestos" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {enPagina.map((r, indice) => (
                 <li key={r.idProducto} style={retardoEntrada(indice)} className={`flex flex-col rounded-xl border border-border bg-card p-4 ${TARJETA_ELEVABLE} ${ENTRADA_TARJETA}`}>
-                  <div className="flex h-32 items-center justify-center overflow-hidden rounded-lg bg-muted">
+                  <div className={`flex ${r.urlImagen ? "h-32" : "h-24"} items-center justify-center overflow-hidden rounded-lg bg-muted`}>
                     {r.urlImagen ? (
                       <img src={r.urlImagen} alt={r.nombre} loading="lazy" className="h-full w-full object-cover" />
                     ) : (
@@ -171,9 +233,9 @@ export function RepuestosPage() {
                       <Clock className="h-3 w-3" aria-hidden="true" /> {textoPlazoEntrega(r.plazoEntrega)}
                     </span>
                   </div>
-                  <p className="mt-3 text-lg font-semibold tabular-nums">
+                  <p className="mt-2 text-lg font-semibold tabular-nums">
                     {r.precioReferencial != null ? formatCurrency(r.precioReferencial, "PEN") : "Precio a consultar"}
-                    <span className="ml-1 text-xs font-normal text-muted-foreground">referencial</span>
+                    {r.precioReferencial != null && <span className="ml-1 text-xs font-normal text-muted-foreground">referencial</span>}
                   </p>
                   <div className="mt-auto pt-4">
                     <button type="button" onClick={() => agregarRepuesto(r)} aria-label={`Agregar ${r.nombre} al pedido`}
@@ -184,26 +246,10 @@ export function RepuestosPage() {
                 </li>
               ))}
             </ul>
+            <PaginacionCatalogo pagina={paginaActual} totalPaginas={totalPaginas} onCambiar={setPagina} />
+            </>
           )}
 
-          {yaPedidos.length > 0 && (
-            <section aria-labelledby="ya-pedidos" className="rounded-xl border border-border bg-card p-5">
-              <h2 id="ya-pedidos" className="flex items-center gap-2 font-semibold">
-                <History className="h-5 w-5 text-accent" aria-hidden="true" /> Lo que ya pediste
-              </h2>
-              <ul className="mt-3 divide-y divide-border">
-                {yaPedidos.map((i) => (
-                  <li key={i.descripcion} className="flex items-center justify-between gap-3 py-2 text-sm">
-                    <span>{i.descripcion} <span className="text-muted-foreground">· {i.cantidad} {i.unidad ?? "und."}</span></span>
-                    <button type="button" onClick={() => volverAPedir(i)} aria-label={`Volver a pedir ${i.descripcion}`}
-                      className="shrink-0 rounded-md px-2 py-1 font-medium text-accent hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                      Volver a pedir
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
           <p className="text-sm text-muted-foreground">
             ¿No lo encuentras? <Link to="/portal/solicitud" className="font-semibold text-accent hover:underline">Pídelo con su N.º de parte o una foto</Link>
           </p>

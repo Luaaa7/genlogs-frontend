@@ -21,7 +21,7 @@ export function CarritoCotizacion({ items, enviando, error, onCantidad, onQuitar
   const total = estimado(items)
   const pendientes = items.filter((i) => faltaIdentificar(i)).length
   return (
-    <aside aria-labelledby="carrito-titulo" className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 lg:sticky lg:top-6">
+    <aside aria-labelledby="carrito-titulo" className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 lg:sticky lg:top-24 lg:self-start">
       <h2 id="carrito-titulo" className="flex items-center gap-2 font-semibold">
         <ShoppingCart className="h-5 w-5 text-accent" aria-hidden="true" />
         Tu pedido de cotización
