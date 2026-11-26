@@ -1,14 +1,19 @@
-import { render, screen, within } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { MemoryRouter } from "react-router-dom"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { obtenerCuentaPortal } from "@/features/acceso-cliente/api/ingresoGoogleApi"
+import { completarEmpresa, obtenerCuentaPortal } from "@/features/acceso-cliente/api/ingresoGoogleApi"
+import { publicApi } from "@/api/publicApi"
+import { leerSesionCliente } from "@/lib/sesiones"
 import { PerfilClientePage } from "./PerfilClientePage"
 
 vi.mock("@/features/acceso-cliente/api/ingresoGoogleApi", async (original) => ({
   ...(await original<typeof import("@/features/acceso-cliente/api/ingresoGoogleApi")>()),
   obtenerCuentaPortal: vi.fn(),
+  completarEmpresa: vi.fn(),
 }))
+
+vi.mock("@/api/publicApi", () => ({ publicApi: { consultarRazonSocial: vi.fn() } }))
 
 const cuenta = { nombre: "Luana Barrientos", correo: "luana@empresa.pe", perfilCompleto: true, empresa: "Minera Los Andes S.A.C." }
 
@@ -24,6 +29,9 @@ function pintar() {
 describe("PerfilClientePage (/portal/perfil)", () => {
   beforeEach(() => {
     vi.mocked(obtenerCuentaPortal).mockReset()
+    vi.mocked(completarEmpresa).mockReset()
+    vi.mocked(publicApi.consultarRazonSocial).mockReset()
+    vi.mocked(publicApi.consultarRazonSocial).mockResolvedValue({ tipo: "sinDato" })
     localStorage.setItem("cliente_access_token", "token")
     sessionStorage.setItem("genlogs-cliente-auth", JSON.stringify({ nombre: "Nombre de sesión", rol: "CLIENTE" }))
   })
@@ -71,13 +79,91 @@ describe("PerfilClientePage (/portal/perfil)", () => {
     expect(screen.getByText("Nombre de sesión")).toBeTruthy()
   })
 
-  it("una cuenta sin empresa lo dice y enlaza a completar los datos, volviendo al perfil", async () => {
-    vi.mocked(obtenerCuentaPortal).mockResolvedValue({ ...cuenta, perfilCompleto: false, empresa: null })
-    pintar()
+  describe("cuenta sin datos de empresa", () => {
+    const sinEmpresa = { ...cuenta, perfilCompleto: false, empresa: null }
 
-    const enlace = await screen.findByRole("link", { name: "Completar datos de la empresa" })
-    expect(enlace.getAttribute("href")).toBe("/portal/empresa?volver=%2Fportal%2Fperfil")
-    expect(screen.queryByText("Razón social")).toBeNull()
+    function llenar() {
+      fireEvent.change(screen.getByLabelText("RUC"), { target: { value: "20123456789" } })
+      fireEvent.change(screen.getByLabelText("Razón social"), { target: { value: "Minera Sol S.A.C." } })
+      fireEvent.change(screen.getByLabelText("Persona de contacto"), { target: { value: "Gina Paz" } })
+    }
+
+    it("muestra una tarjeta ámbar con el aviso y los campos listos, sin salir del perfil", async () => {
+      vi.mocked(obtenerCuentaPortal).mockResolvedValue(sinEmpresa)
+      pintar()
+
+      const tarjeta = await screen.findByRole("region", { name: /completa los datos de tu empresa/i })
+      expect(within(tarjeta).getByText(/RUC y Razón Social.*emitir y aprobar tus cotizaciones/i)).toBeTruthy()
+      expect(within(tarjeta).getByLabelText("RUC")).toBeTruthy()
+      expect(within(tarjeta).getByLabelText("Razón social")).toBeTruthy()
+      expect(within(tarjeta).getByLabelText("Persona de contacto")).toBeTruthy()
+      expect(within(tarjeta).getByLabelText("Teléfono (opcional)")).toBeTruthy()
+      expect(screen.queryByRole("link", { name: "Completar datos de la empresa" })).toBeNull()
+      expect(tarjeta.className).toMatch(/amber/)
+    })
+
+    it("la persona de contacto viene con el nombre de la sesión", async () => {
+      vi.mocked(obtenerCuentaPortal).mockResolvedValue(sinEmpresa)
+      pintar()
+      const tarjeta = await screen.findByRole("region", { name: /completa los datos de tu empresa/i })
+      expect((within(tarjeta).getByLabelText("Persona de contacto") as HTMLInputElement).value).toBe("Nombre de sesión")
+    })
+
+    it("no aparece si la cuenta ya tiene empresa", async () => {
+      vi.mocked(obtenerCuentaPortal).mockResolvedValue(cuenta)
+      pintar()
+      await screen.findByText("luana@empresa.pe")
+      expect(screen.queryByRole("region", { name: /completa los datos de tu empresa/i })).toBeNull()
+    })
+
+    it("con un RUC inválido avisa y no llama al servidor", async () => {
+      vi.mocked(obtenerCuentaPortal).mockResolvedValue(sinEmpresa)
+      pintar()
+      await screen.findByRole("region", { name: /completa los datos de tu empresa/i })
+      fireEvent.change(screen.getByLabelText("RUC"), { target: { value: "123" } })
+      fireEvent.change(screen.getByLabelText("Razón social"), { target: { value: "X" } })
+      fireEvent.click(screen.getByRole("button", { name: "Guardar datos" }))
+      expect(await screen.findByText(/el ruc debe tener 11 dígitos/i)).toBeTruthy()
+      expect(completarEmpresa).not.toHaveBeenCalled()
+    })
+
+    it("guarda con el endpoint real, marca el perfil completo y vuelve a leer la cuenta", async () => {
+      vi.mocked(obtenerCuentaPortal).mockResolvedValueOnce(sinEmpresa)
+      vi.mocked(obtenerCuentaPortal).mockResolvedValue(cuenta)
+      vi.mocked(completarEmpresa).mockResolvedValue({ pendiente: false, mensaje: "ok" })
+      pintar()
+      await screen.findByRole("region", { name: /completa los datos de tu empresa/i })
+      llenar()
+      fireEvent.click(screen.getByRole("button", { name: "Guardar datos" }))
+
+      await waitFor(() => expect(completarEmpresa).toHaveBeenCalledWith({ ruc: "20123456789", razonSocial: "Minera Sol S.A.C.", nombreContacto: "Gina Paz", telefono: "" }))
+      await waitFor(() => expect(screen.queryByRole("region", { name: /completa los datos de tu empresa/i })).toBeNull())
+      expect(screen.getByText("Razón social")).toBeTruthy()
+      expect(leerSesionCliente()?.perfilCompleto).toBe(true)
+    })
+
+    it("si la empresa ya es cliente: cierra la sesión y muestra el mensaje de acceso pendiente", async () => {
+      vi.mocked(obtenerCuentaPortal).mockResolvedValue(sinEmpresa)
+      vi.mocked(completarEmpresa).mockResolvedValue({ pendiente: true, mensaje: "Tu acceso está pendiente de aprobación." })
+      pintar()
+      await screen.findByRole("region", { name: /completa los datos de tu empresa/i })
+      llenar()
+      fireEvent.click(screen.getByRole("button", { name: "Guardar datos" }))
+
+      expect(await screen.findByText("Tu acceso está pendiente de aprobación.")).toBeTruthy()
+      expect(leerSesionCliente()).toBeNull()
+    })
+
+    it("si falla el guardado, muestra el error y deja corregir", async () => {
+      vi.mocked(obtenerCuentaPortal).mockResolvedValue(sinEmpresa)
+      vi.mocked(completarEmpresa).mockRejectedValue({ response: { status: 500, data: {} } })
+      pintar()
+      await screen.findByRole("region", { name: /completa los datos de tu empresa/i })
+      llenar()
+      fireEvent.click(screen.getByRole("button", { name: "Guardar datos" }))
+      expect(await screen.findByText(/no pudimos guardar los datos de tu empresa/i)).toBeTruthy()
+      expect(screen.getByRole("button", { name: "Guardar datos" })).toBeTruthy()
+    })
   })
 
   it("ofrece el enlace para cambiar o recuperar la contraseña", async () => {

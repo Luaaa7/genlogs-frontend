@@ -14,6 +14,7 @@ import { CampoPassword } from "../components/CampoPassword"
 import { EnlaceIngresoPersonal } from "../components/EnlaceIngresoPersonal"
 import { IngresoConGoogle } from "../components/IngresoConGoogle"
 import { SeparadorO } from "../components/SeparadorO"
+import { EtiquetaPortal } from "@/features/portal-cliente/components/EtiquetaPortal"
 
 const RESUMEN_PORTAL = [
   { Icono: FileText, titulo: "Cotizaciones:", texto: "revísalas y apruébalas o recházalas." },
@@ -70,7 +71,7 @@ export function IngresoClientePage() {
   return (
     <div className="mx-auto max-w-md px-4 py-16">
       <div data-testid="tarjeta-ingreso" className="rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
-        <p className="text-sm font-semibold uppercase tracking-wide text-accent">Portal del cliente</p>
+        <EtiquetaPortal />
         <h1 className="mt-2 text-3xl font-bold">Ingresa a tu cuenta</h1>
         <p className="mt-2 text-muted-foreground">Consulta tus pedidos y envía nuevas solicitudes.</p>
         <ul aria-label="Lo que puedes gestionar en el portal" className="mt-5 space-y-2.5 text-sm">

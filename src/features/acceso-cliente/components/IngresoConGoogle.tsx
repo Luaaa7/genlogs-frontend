@@ -57,6 +57,10 @@ export function IngresoConGoogle({ texto = "continue_with" }: Props) {
   return (
     <div className="space-y-3" aria-busy={cargando || undefined}>
       <BotonGoogle onCredential={conCredencial} texto={texto} />
+      <p className="text-center text-xs leading-relaxed text-muted-foreground">
+        Entra rápido con tu cuenta de Google. Los datos de tu empresa (RUC y razón social) te los pedimos
+        una sola vez, antes de tu primera cotización.
+      </p>
       {cargando && <p className="text-center text-sm text-muted-foreground">Ingresando con Google...</p>}
       {aviso && (
         <p role="status" className="rounded-md bg-info/10 px-3 py-2 text-sm text-info">
