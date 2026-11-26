@@ -108,82 +108,88 @@ export function CompletarEmpresaPage() {
             </div>
           </div>
 
-          <SelectorTipoDocumento valor={tipo} alCambiar={cambiarTipo} prefijo="empresa" />
+          <section aria-labelledby="empresa-fiscal-titulo" className="space-y-6">
+            <h3 id="empresa-fiscal-titulo" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Identificación fiscal</h3>
+            <SelectorTipoDocumento valor={tipo} alCambiar={cambiarTipo} prefijo="empresa" />
 
-          <div>
-            <Label htmlFor="empresa-ruc">{esDni ? "DNI" : "RUC"}</Label>
-            <div className="relative mt-2">
-              <Search className="pointer-events-none absolute left-3.5 top-6 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <div>
+              <Label htmlFor="empresa-ruc">{esDni ? "DNI" : "RUC"}</Label>
+              <div className="relative mt-2">
+                <Search className="pointer-events-none absolute left-3.5 top-6 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                <Input
+                  id="empresa-ruc"
+                  name="ruc"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  maxLength={esDni ? 8 : 11}
+                  value={documento}
+                  className={`h-12 pl-10 pr-3 text-lg sm:pr-44 font-semibold tracking-wider tabular-nums transition-colors ${bordeRuc}`}
+                  onChange={(e) => cambiarRuc(e.target.value)}
+                  aria-describedby={avisoRuc && !esDni ? "empresa-ruc-aviso" : undefined}
+                  required
+                />
+                <span className="mt-2 flex sm:absolute sm:right-2.5 sm:top-6 sm:mt-0 sm:-translate-y-1/2">
+                  {!esDni && estadoRuc === "buscando" && (
+                    <span className="flex h-7 items-center gap-1.5 rounded-full bg-accent/10 px-2.5 text-xs font-semibold text-accent">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />Buscando…
+                    </span>
+                  )}
+                  {!esDni && estadoRuc === "encontrado" && (
+                    <span className="portal-aparece flex h-7 items-center gap-1 rounded-full bg-success px-2.5 text-xs font-semibold text-success-foreground">
+                      <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />Encontrado en SUNAT
+                    </span>
+                  )}
+                </span>
+              </div>
+            </div>
+
+            {!esDni && (
+            <div>
+              <Label htmlFor="empresa-razon">Razón social</Label>
               <Input
-                id="empresa-ruc"
-                name="ruc"
-                inputMode="numeric"
-                autoComplete="off"
-                maxLength={esDni ? 8 : 11}
-                value={documento}
-                className={`h-12 pl-10 pr-3 text-lg sm:pr-44 font-semibold tracking-wider tabular-nums transition-colors ${bordeRuc}`}
-                onChange={(e) => cambiarRuc(e.target.value)}
-                aria-describedby={avisoRuc && !esDni ? "empresa-ruc-aviso" : undefined}
+                id="empresa-razon"
+                name="razonSocial"
+                autoComplete="organization"
+                maxLength={200}
+                className={`mt-2 h-11 ${estadoRuc === "buscando" && !razonSocial ? "animate-pulse bg-muted motion-reduce:animate-none" : ""}`}
+                value={razonSocial}
+                onChange={(e) => cambiarRazonSocial(e.target.value)}
                 required
               />
-              <span className="mt-2 flex sm:absolute sm:right-2.5 sm:top-6 sm:mt-0 sm:-translate-y-1/2">
-                {!esDni && estadoRuc === "buscando" && (
-                  <span className="flex h-7 items-center gap-1.5 rounded-full bg-accent/10 px-2.5 text-xs font-semibold text-accent">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />Buscando…
-                  </span>
-                )}
-                {!esDni && estadoRuc === "encontrado" && (
-                  <span className="portal-aparece flex h-7 items-center gap-1 rounded-full bg-success px-2.5 text-xs font-semibold text-success-foreground">
-                    <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />Encontrado en SUNAT
-                  </span>
-                )}
-              </span>
+              {avisoRuc && <p id="empresa-ruc-aviso" role="status" className="mt-1.5 text-xs text-muted-foreground">{avisoRuc}</p>}
             </div>
-          </div>
+            )}
+          </section>
 
-          {!esDni && (
-          <div>
-            <Label htmlFor="empresa-razon">Razón social</Label>
-            <Input
-              id="empresa-razon"
-              name="razonSocial"
-              autoComplete="organization"
-              maxLength={200}
-              className={`mt-2 h-11 ${estadoRuc === "buscando" && !razonSocial ? "animate-pulse bg-muted motion-reduce:animate-none" : ""}`}
-              value={razonSocial}
-              onChange={(e) => cambiarRazonSocial(e.target.value)}
-              required
-            />
-            {avisoRuc && <p id="empresa-ruc-aviso" role="status" className="mt-1.5 text-xs text-muted-foreground">{avisoRuc}</p>}
-          </div>
-          )}
-
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="empresa-contacto">{esDni ? "Nombres y apellidos" : "Persona de contacto"}</Label>
-              <Input
-                id="empresa-contacto"
-                name="nombreContacto"
-                autoComplete="name"
-                maxLength={150}
-                value={contacto}
-                onChange={(e) => cambiarContacto(e.target.value)}
-                className="mt-2 h-11"
-                required
-              />
+          <section aria-labelledby="empresa-contacto-titulo" className="space-y-5 border-t border-border pt-6">
+            <h3 id="empresa-contacto-titulo" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Contacto para tus cotizaciones</h3>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="empresa-contacto">{esDni ? "Nombres y apellidos" : "Persona de contacto"}</Label>
+                <Input
+                  id="empresa-contacto"
+                  name="nombreContacto"
+                  autoComplete="name"
+                  maxLength={150}
+                  value={contacto}
+                  onChange={(e) => cambiarContacto(e.target.value)}
+                  className="mt-2 h-11"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="empresa-telefono">Teléfono (opcional)</Label>
+                <Input id="empresa-telefono" name="telefono" type="tel" autoComplete="tel" maxLength={30} className="mt-2 h-11" />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="empresa-telefono">Teléfono (opcional)</Label>
-              <Input id="empresa-telefono" name="telefono" type="tel" autoComplete="tel" maxLength={30} className="mt-2 h-11" />
-            </div>
-          </div>
+          </section>
 
           <div className="flex items-start gap-3 rounded-xl bg-accent/10 px-4 py-3.5">
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground" aria-hidden="true"><ShieldCheck className="h-4 w-4" /></span>
             <p className="text-sm leading-relaxed">
               {esDni
                 ? "Para compras con DNI emitimos boleta de venta y no se requiere orden de compra."
-                : "Validamos el RUC en SUNAT. Si tu empresa ya tiene cuenta en el portal, GENLOGS revisará tu acceso y te avisará por correo."}
+                : "Validamos tu RUC en SUNAT con acceso inmediato. Solo si tu empresa ya tiene una cuenta activa en el portal, validaremos tu vínculo por seguridad."}
             </p>
           </div>
 
