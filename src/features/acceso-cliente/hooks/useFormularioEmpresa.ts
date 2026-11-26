@@ -2,6 +2,7 @@ import { useRef, useState } from "react"
 import { dniValido, rucValido, type TipoDocumentoPortal } from "@/api/contratos/ingresoGoogle"
 import { publicApi } from "@/api/publicApi"
 import { useTardaMucho } from "@/lib/useTardaMucho"
+import { separarNombreCompleto, unirNombreCompleto } from "@/lib/nombreCompleto"
 import { completarEmpresa } from "../api/ingresoGoogleApi"
 import { mensajeErrorAcceso } from "../api/ingresoClienteApi"
 
@@ -12,7 +13,7 @@ interface Opciones {
   alGuardar: (nombreContacto: string) => void
   /** Se llama cuando la empresa ya es cliente y el acceso queda por aprobar. */
   alPendiente: (mensaje: string) => void
-  /** Nombre que ya se conoce de la sesión (por ejemplo, el de Google): llena la persona de contacto. */
+  /** Nombre completo que ya se conoce de la sesión (por ejemplo, el de Google): llena Nombres y Apellidos. */
   nombreInicial?: string
 }
 
@@ -27,7 +28,9 @@ export function useFormularioEmpresa({ alGuardar, alPendiente, nombreInicial = "
   const tardaMucho = useTardaMucho(cargando)
   const [tipo, setTipo] = useState<TipoDocumentoPortal>("RUC")
   const [documento, setDocumento] = useState("")
-  const [contacto, setContacto] = useState(nombreInicial)
+  const inicial = separarNombreCompleto(nombreInicial)
+  const [nombres, setNombres] = useState(inicial.nombres)
+  const [apellidos, setApellidos] = useState(inicial.apellidos)
   const [razonSocial, setRazonSocial] = useState("")
   const [avisoRuc, setAvisoRuc] = useState("")
   const [rucConsultado, setRucConsultado] = useState("")
@@ -59,14 +62,26 @@ export function useFormularioEmpresa({ alGuardar, alPendiente, nombreInicial = "
     razonAutomatica.current = false
   }
 
-  function cambiarContacto(valor: string) {
-    setContacto(valor)
+  function cambiarNombres(valor: string) {
+    setNombres(valor)
+  }
+
+  function cambiarApellidos(valor: string) {
+    setApellidos(valor)
   }
 
   function cambiarRuc(valor: string) {
     const ruc = valor.replace(/\D/g, "").slice(0, tipo === "DNI" ? 8 : 11)
     setDocumento(ruc)
-    if (tipo === "DNI") return
+    if (tipo === "DNI") {
+      // Con los 8 dígitos, si Nombres y Apellidos están vacíos se completan con el nombre de la cuenta (editable).
+      if (ruc.length === 8 && nombres.trim() === "" && apellidos.trim() === "") {
+        const conocido = separarNombreCompleto(nombreInicial)
+        setNombres(conocido.nombres)
+        setApellidos(conocido.apellidos)
+      }
+      return
+    }
     consulta.current?.abort()
     consulta.current = null
     if (razonAutomatica.current) {
@@ -111,7 +126,6 @@ export function useFormularioEmpresa({ alGuardar, alPendiente, nombreInicial = "
     const form = new FormData(event.currentTarget)
     const ruc = String(form.get("ruc") ?? "").replace(/\D/g, "")
     const razon = String(form.get("razonSocial") ?? "").trim()
-    const nombreContacto = String(form.get("nombreContacto") ?? "").trim()
     const telefono = String(form.get("telefono") ?? "").trim()
     if (tipo === "DNI") {
       if (!dniValido(ruc)) {
@@ -122,9 +136,14 @@ export function useFormularioEmpresa({ alGuardar, alPendiente, nombreInicial = "
       setError("El RUC debe tener 11 dígitos y empezar con 10 o 20. Si eres persona natural, elige DNI o usa tu RUC 10.")
       return
     }
+    if (nombres.trim() === "" || apellidos.trim() === "") {
+      setError(tipo === "DNI" ? "Escribe tus nombres y apellidos." : "Escribe los nombres y apellidos de la persona de contacto.")
+      return
+    }
+    const nombreContacto = unirNombreCompleto(nombres, apellidos)
     setCargando(true)
     try {
-      // Con DNI no hay razón social: el titular es el nombre de contacto. Sin tipo, el servidor entiende RUC.
+      // Con DNI no hay razón social: el titular es el nombre de contacto (nombres y apellidos unidos). Sin tipo, el servidor entiende RUC.
       const datos = tipo === "DNI"
         ? { tipoDocumento: "DNI" as const, ruc, nombreContacto, telefono }
         : { ruc, razonSocial: razon, nombreContacto, telefono }
@@ -139,7 +158,8 @@ export function useFormularioEmpresa({ alGuardar, alPendiente, nombreInicial = "
   }
 
   return {
-    error, cargando, tardaMucho, tipo, documento, contacto, razonSocial, avisoRuc, rucConsultado, estadoRuc,
-    cambiarTipo, cambiarRuc, cambiarContacto, cambiarRazonSocial, enviar,
+    error, cargando, tardaMucho, tipo, documento, nombres, apellidos, contacto: unirNombreCompleto(nombres, apellidos),
+    razonSocial, avisoRuc, rucConsultado, estadoRuc,
+    cambiarTipo, cambiarRuc, cambiarNombres, cambiarApellidos, cambiarRazonSocial, enviar,
   }
 }

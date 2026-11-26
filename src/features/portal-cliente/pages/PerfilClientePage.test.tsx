@@ -85,7 +85,8 @@ describe("PerfilClientePage (/portal/perfil)", () => {
     function llenar() {
       fireEvent.change(screen.getByLabelText("RUC"), { target: { value: "20123456789" } })
       fireEvent.change(screen.getByLabelText("Razón social"), { target: { value: "Minera Sol S.A.C." } })
-      fireEvent.change(screen.getByLabelText("Persona de contacto"), { target: { value: "Gina Paz" } })
+      fireEvent.change(screen.getByLabelText("Nombres de contacto *"), { target: { value: "Gina" } })
+      fireEvent.change(screen.getByLabelText("Apellidos de contacto *"), { target: { value: "Paz" } })
     }
 
     it("muestra una tarjeta ámbar con el aviso y los campos listos, sin salir del perfil", async () => {
@@ -96,17 +97,19 @@ describe("PerfilClientePage (/portal/perfil)", () => {
       expect(within(tarjeta).getByText(/RUC y Razón Social.*emitir y aprobar tus cotizaciones/i)).toBeTruthy()
       expect(within(tarjeta).getByLabelText("RUC")).toBeTruthy()
       expect(within(tarjeta).getByLabelText("Razón social")).toBeTruthy()
-      expect(within(tarjeta).getByLabelText("Persona de contacto")).toBeTruthy()
+      expect(within(tarjeta).getByLabelText("Nombres de contacto *")).toBeTruthy()
+      expect(within(tarjeta).getByLabelText("Apellidos de contacto *")).toBeTruthy()
       expect(within(tarjeta).getByLabelText("Teléfono (opcional)")).toBeTruthy()
       expect(screen.queryByRole("link", { name: "Completar datos de la empresa" })).toBeNull()
       expect(tarjeta.className).toMatch(/amber/)
     })
 
-    it("la persona de contacto viene con el nombre de la sesión", async () => {
+    it("nombres y apellidos de contacto vienen repartidos desde el nombre de la sesión", async () => {
       vi.mocked(obtenerCuentaPortal).mockResolvedValue(sinEmpresa)
       pintar()
       const tarjeta = await screen.findByRole("region", { name: /completa los datos de tu empresa/i })
-      expect((within(tarjeta).getByLabelText("Persona de contacto") as HTMLInputElement).value).toBe("Nombre de sesión")
+      expect((within(tarjeta).getByLabelText("Nombres de contacto *") as HTMLInputElement).value).toBe("Nombre")
+      expect((within(tarjeta).getByLabelText("Apellidos de contacto *") as HTMLInputElement).value).toBe("de sesión")
     })
 
     it("no aparece si la cuenta ya tiene empresa", async () => {
@@ -153,7 +156,9 @@ describe("PerfilClientePage (/portal/perfil)", () => {
       expect(within(tarjeta).queryByLabelText("Razón social")).toBeNull()
       expect(within(tarjeta).getByText("Para compras con DNI emitimos boleta de venta y no se requiere orden de compra.")).toBeTruthy()
       fireEvent.change(within(tarjeta).getByLabelText("DNI"), { target: { value: "12345678" } })
-      fireEvent.change(within(tarjeta).getByLabelText("Nombres y apellidos"), { target: { value: "Rosa Quispe" } })
+      expect(within(tarjeta).queryByLabelText("Nombres de contacto *")).toBeNull()
+      fireEvent.change(within(tarjeta).getByLabelText("Nombres *"), { target: { value: "Rosa" } })
+      fireEvent.change(within(tarjeta).getByLabelText("Apellidos *"), { target: { value: "Quispe" } })
       fireEvent.click(screen.getByRole("button", { name: "Guardar datos" }))
 
       await waitFor(() => expect(completarEmpresa).toHaveBeenCalledWith({ tipoDocumento: "DNI", ruc: "12345678", nombreContacto: "Rosa Quispe", telefono: "" }))
