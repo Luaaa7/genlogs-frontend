@@ -245,4 +245,50 @@ describe("CoberturaMinera (v3.4)", () => {
       expect(within(lista).getAllByRole("heading", { level: 3 })).toHaveLength(11)
     })
   })
+
+  describe("estado de carga", () => {
+    function cargando() {
+      vi.mocked(useCobertura).mockReturnValue({ data: undefined, isPending: true, isError: false, refetch: vi.fn() } as never)
+    }
+
+    it("mientras carga muestra 6 tarjetas fantasma (3 filas de 2) y avisa que está cargando", () => {
+      cargando()
+      render(<CoberturaMinera />)
+      const aviso = screen.getByRole("status", { name: "Cargando cobertura" })
+      expect(aviso.getAttribute("aria-busy")).toBe("true")
+      expect(within(aviso).getAllByTestId("esqueleto-unidad")).toHaveLength(UNIDADES_INICIALES)
+      expect(screen.queryAllByRole("heading", { level: 3 })).toHaveLength(0)
+      expect(screen.queryByRole("button", { name: /ver todas las unidades/i })).toBeNull()
+    })
+
+    it("el título de la sección sigue visible durante la carga", () => {
+      cargando()
+      render(<CoberturaMinera />)
+      expect(screen.getByRole("heading", { level: 2, name: /llegamos donde tu operación lo necesita/i })).toBeTruthy()
+    })
+
+    it("cada tarjeta fantasma usa el mismo molde que la tarjeta real, para que no haya saltos", () => {
+      cargando()
+      const { rerender } = render(<CoberturaMinera />)
+      const fantasma = screen.getAllByTestId("esqueleto-unidad")[0]
+      conCobertura(8)
+      rerender(<CoberturaMinera />)
+      const real = screen.getAllByRole("heading", { level: 3 })[0].closest("article") as HTMLElement
+      for (const clase of ["flex", "items-start", "gap-3", "rounded-lg", "border", "px-3", "py-2.5"]) {
+        expect(fantasma.className).toContain(clase)
+        expect(real.className).toContain(clase)
+      }
+    })
+
+    it("al resolver los datos desaparecen los fantasmas y aparecen las unidades", () => {
+      cargando()
+      const { rerender } = render(<CoberturaMinera />)
+      expect(screen.getAllByTestId("esqueleto-unidad")).toHaveLength(6)
+      conCobertura(9)
+      rerender(<CoberturaMinera />)
+      expect(screen.queryByTestId("esqueleto-unidad")).toBeNull()
+      expect(screen.queryByRole("status", { name: "Cargando cobertura" })).toBeNull()
+      expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(UNIDADES_INICIALES)
+    })
+  })
 })

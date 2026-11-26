@@ -149,4 +149,53 @@ describe("VitrinaLanding (RF-82, D-16, D-30)", () => {
     expect(await screen.findByText(/vitrina en actualización/i)).toBeTruthy()
     expect(screen.getByRole("link", { name: /¿no está\? pídelo/i }).getAttribute("href")).toBe("#solicitud")
   })
+
+  describe("estado de carga", () => {
+    function pendiente<T>() {
+      let resolver!: (valor: T) => void
+      const promesa = new Promise<T>((r) => { resolver = r })
+      return { promesa, resolver }
+    }
+
+    it("en la carga inicial muestra 8 tarjetas y 6 píldoras fantasma, sin parpadeos de texto suelto", async () => {
+      const repuestos = pendiente<RepuestoPublico[]>()
+      const categorias = pendiente<{ idCategoria: number; nombre: string; cantidad: number }[]>()
+      api.listarRepuestos.mockReturnValue(repuestos.promesa)
+      api.listarCategoriasVitrina.mockReturnValue(categorias.promesa)
+      pintar()
+
+      const aviso = screen.getByRole("status", { name: "Cargando repuestos" })
+      expect(aviso.getAttribute("aria-busy")).toBe("true")
+      expect(within(aviso).getAllByTestId("esqueleto-repuesto")).toHaveLength(8)
+      expect(screen.getAllByTestId("esqueleto-categoria")).toHaveLength(6)
+      expect(screen.queryAllByRole("article")).toHaveLength(0)
+      expect(screen.getByRole("heading", { name: /encuentra tu repuesto/i })).toBeTruthy()
+
+      repuestos.resolver([filtro, rodamiento])
+      categorias.resolver([{ idCategoria: 3, nombre: "Filtros", cantidad: 1 }, { idCategoria: 5, nombre: "Rodamientos", cantidad: 1 }])
+      expect(await screen.findAllByRole("article")).toHaveLength(2)
+      expect(screen.queryByTestId("esqueleto-repuesto")).toBeNull()
+      expect(screen.queryByTestId("esqueleto-categoria")).toBeNull()
+      expect(screen.queryByRole("status", { name: "Cargando repuestos" })).toBeNull()
+      expect(screen.getByRole("button", { name: /Rodamientos/ })).toBeTruthy()
+    })
+
+    it("al filtrar conserva las tarjetas anteriores atenuadas, sin volver a los fantasmas", async () => {
+      pintar()
+      expect(await screen.findAllByRole("article")).toHaveLength(2)
+      const nueva = pendiente<RepuestoPublico[]>()
+      api.listarRepuestos.mockReturnValue(nueva.promesa)
+
+      fireEvent.click(screen.getByRole("button", { name: /Filtros/ }))
+
+      const lista = screen.getByTestId("lista-repuestos")
+      await waitFor(() => expect(lista.getAttribute("aria-busy")).toBe("true"))
+      expect(screen.queryByTestId("esqueleto-repuesto")).toBeNull()
+      expect(screen.getAllByRole("article")).toHaveLength(2)
+
+      nueva.resolver([filtro])
+      await waitFor(() => expect(screen.getAllByRole("article")).toHaveLength(1))
+      expect(screen.getByTestId("lista-repuestos").getAttribute("aria-busy")).not.toBe("true")
+    })
+  })
 })

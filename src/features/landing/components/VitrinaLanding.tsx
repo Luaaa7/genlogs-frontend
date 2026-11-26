@@ -3,7 +3,6 @@ import { PackageSearch, Search } from "lucide-react"
 import { EstadoVacio } from "@/components/ui/EstadoVacio"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { FiltroChips } from "@/components/ui/FiltroChips"
-import CargandoSpinner from "@/components/ui/CargandoSpinner"
 import { inputFormClass } from "@/components/ui/campoEstilos"
 import type { RepuestoPublico } from "@/api/publicApi"
 import { useCotizacionCart } from "@/hooks/useCotizacionCart"
@@ -12,6 +11,7 @@ import { useCategoriasVitrina, useRepuestosPublicos } from "../hooks/useVitrinaP
 import { TarjetaRepuesto } from "./TarjetaRepuesto"
 import { SelectorMarca } from "./SelectorMarca"
 import { Paginacion } from "./Paginacion"
+import { EsqueletoCategorias, EsqueletoMarca, EsqueletoRepuestos } from "./EsqueletosPublicos"
 
 /** Repuestos por página (3 filas de 4 en escritorio). */
 const POR_PAGINA = 12
@@ -100,9 +100,14 @@ export function VitrinaLanding() {
       </form>
 
       <div className="mt-4 flex flex-col gap-3">
-        {opcionesCategoria.length > 1 && (
-          <FiltroChips etiqueta="Filtrar por categoría" opciones={opcionesCategoria} valor={categoria} onChange={setCategoria} />
+        {categorias.isPending ? (
+          <EsqueletoCategorias />
+        ) : (
+          opcionesCategoria.length > 1 && (
+            <FiltroChips etiqueta="Filtrar por categoría" opciones={opcionesCategoria} valor={categoria} onChange={setCategoria} />
+          )
         )}
+        {repuestos.isPending && <EsqueletoMarca />}
         {marcas.length > 0 && (
           <div className="flex flex-wrap items-center gap-3">
             <span id="vitrina-marca" className="text-sm font-medium text-foreground">Marca</span>
@@ -113,7 +118,7 @@ export function VitrinaLanding() {
 
       <div className="mt-8">
         {repuestos.isPending ? (
-          <CargandoSpinner texto="Cargando repuestos..." />
+          <EsqueletoRepuestos etiqueta="Cargando repuestos" />
         ) : repuestos.isError ? (
           <ErrorBanner message="No pudimos cargar los repuestos. Puedes pedirlo en la solicitud rápida." onRetry={() => repuestos.refetch()} />
         ) : lista.length === 0 ? (
@@ -124,7 +129,11 @@ export function VitrinaLanding() {
             accion={<a href="#solicitud" className="text-sm font-semibold text-accent hover:underline">¿No está? Pídelo</a>}
           />
         ) : (
-          <>
+          <div
+            data-testid="lista-repuestos"
+            aria-busy={repuestos.isPlaceholderData}
+            className={cn("transition-opacity duration-200 motion-reduce:transition-none", repuestos.isPlaceholderData && "opacity-60")}
+          >
             <p ref={inicioLista} className="mb-4 scroll-mt-24 text-sm text-muted-foreground" aria-live="polite">
               {lista.length} {lista.length === 1 ? "repuesto" : "repuestos"}
               {totalPaginas > 1 && ` · página ${pagina} de ${totalPaginas}`}
@@ -146,7 +155,7 @@ export function VitrinaLanding() {
               ¿No está lo que buscas?{" "}
               <a href="#solicitud" className="font-semibold text-accent hover:underline">Pídelo aquí</a>
             </p>
-          </>
+          </div>
         )}
       </div>
     </section>

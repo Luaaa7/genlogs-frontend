@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { MapPin, Search, X } from "lucide-react"
 import { useCobertura } from "../hooks/useCobertura"
-import CargandoSpinner from "@/components/ui/CargandoSpinner"
+import { EsqueletoCobertura } from "./EsqueletosPublicos"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { departamentoDe, nombreDepartamento, normalizarTexto } from "../lib/departamentosCobertura"
 import { MapaPeru } from "./MapaPeru"
@@ -66,7 +66,7 @@ export function CoberturaMinera() {
         <p className="text-sm font-semibold uppercase tracking-wide text-accent">Cobertura minera</p>
         <h2 id="cobertura-titulo" className="mt-2 text-3xl font-bold">Llegamos donde tu operación lo necesita.</h2>
         {query.isPending ? (
-          <CargandoSpinner texto="Cargando cobertura..." />
+          <EsqueletoCobertura cantidad={UNIDADES_INICIALES} />
         ) : query.isError ? (
           <div className="mt-8">
             <ErrorBanner message="La cobertura se actualizará pronto. Contáctanos para confirmar atención en tu zona." onRetry={() => query.refetch()} />

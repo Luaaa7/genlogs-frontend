@@ -39,4 +39,19 @@ describe("CatalogoReferencia", () => {
     expect(screen.queryByRole("img", { name: "Anemómetro Digital" })).toBeNull()
     expect(screen.getByText("Anemómetro Digital")).toBeTruthy()
   })
+
+  it("mientras carga muestra 8 tarjetas fantasma y al resolver las reemplaza por los productos", async () => {
+    let resolver!: (v: unknown) => void
+    api.listarCatalogo.mockReturnValue(new Promise((r) => { resolver = r }))
+    pintar()
+
+    const aviso = screen.getByRole("status", { name: "Cargando catálogo" })
+    expect(within(aviso).getAllByTestId("esqueleto-repuesto")).toHaveLength(8)
+    expect(screen.queryAllByRole("article")).toHaveLength(0)
+
+    resolver([{ id: 1, nombre: "Adaptador Linksys", categoria: "Componentes y Accesorios", imagenUrl: null }])
+    expect(await screen.findAllByRole("article")).toHaveLength(1)
+    expect(screen.queryByTestId("esqueleto-repuesto")).toBeNull()
+    expect(screen.queryByRole("status", { name: "Cargando catálogo" })).toBeNull()
+  })
 })

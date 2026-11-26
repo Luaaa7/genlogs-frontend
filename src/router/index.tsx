@@ -38,8 +38,8 @@ const OrdenesCompraPage = perezosa(() => import('@/features/ordenes-compra/pages
 const FacturacionPage = perezosa(() => import('@/features/facturacion/pages/FacturacionPage'), 'FacturacionPage')
 const ReclamosPage = perezosa(() => import('@/features/reclamos/pages/ReclamosPage'), 'ReclamosPage')
 const ReclamoDetallePage = perezosa(() => import('@/features/reclamos/pages/ReclamoDetallePage'), 'ReclamoDetallePage')
-const RegistroClientePage = perezosa(() => import('@/features/portal-cliente/pages/RegistroClientePage'), 'RegistroClientePage')
-const IngresoClientePage = perezosa(() => import('@/features/acceso-cliente/pages/IngresoClientePage'), 'IngresoClientePage')
+const RegistroClientePage = perezosa(() => import('@/features/portal-cliente/pages/RegistroClientePage'), 'RegistroClientePage', { publica: true })
+const IngresoClientePage = perezosa(() => import('@/features/acceso-cliente/pages/IngresoClientePage'), 'IngresoClientePage', { publica: true })
 const CompletarEmpresaPage = perezosa(() => import('@/features/acceso-cliente/pages/CompletarEmpresaPage'), 'CompletarEmpresaPage')
 const PerfilClientePage = perezosa(() => import('@/features/portal-cliente/pages/PerfilClientePage'), 'PerfilClientePage')
 const MisPedidosPage = perezosa(() => import('@/features/portal-cliente/pages/MisPedidosPage'), 'MisPedidosPage')
@@ -49,8 +49,8 @@ const NuevaSolicitudPage = perezosa(() => import('@/features/portal-cliente/page
 const MisComprobantesPage = perezosa(() => import('@/features/portal-cliente/pages/MisComprobantesPage'), 'MisComprobantesPage')
 const PagoResultadoPage = perezosa(() => import('@/features/portal-cliente/pages/PagoResultadoPage'), 'PagoResultadoPage')
 // v3.4 (K2): Ayuda y Contacto, públicas.
-const AyudaPage = perezosa(() => import('@/features/ayuda/pages/AyudaPage'), 'AyudaPage')
-const ContactoPage = perezosa(() => import('@/features/ayuda/pages/ContactoPage'), 'ContactoPage')
+const AyudaPage = perezosa(() => import('@/features/ayuda/pages/AyudaPage'), 'AyudaPage', { publica: true })
+const ContactoPage = perezosa(() => import('@/features/ayuda/pages/ContactoPage'), 'ContactoPage', { publica: true })
 
 export const router = createBrowserRouter([
   { element: <PublicLayout />, children: [

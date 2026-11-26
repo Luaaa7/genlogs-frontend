@@ -285,6 +285,9 @@
 /* Landing: hero con camión (referencia landing-referencia-*.html). Todo se apaga con movimiento reducido. */
 @keyframes gl-up { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
 @keyframes gl-in { from { transform: translateX(-900px); } to { transform: translateX(0); } }
+@keyframes gl-barra-carga { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
+.gl-barra-carga { animation: gl-barra-carga 1.1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .gl-barra-carga { animation: none; } }
 @keyframes gl-spin { to { transform: rotate(360deg); } }
 @keyframes gl-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 @keyframes gl-road { to { stroke-dashoffset: -96; } }
