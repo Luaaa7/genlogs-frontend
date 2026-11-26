@@ -155,6 +155,8 @@ export interface FiltrosSolicitudes {
   estado?: EstadoSolicitud
   tipoPlazo?: TipoPlazo
   idAsistente?: number
+  /** Solo las que nadie atiende todavía (sin usuario asignado). Va sin idAsistente. */
+  sinAsignar?: boolean
 }
 
 /** Fila de la lista propuesta. El semaforo, si viene, lo calcula el backend. */

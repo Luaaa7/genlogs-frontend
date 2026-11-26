@@ -45,6 +45,7 @@ export function listaDeVencimiento(filas: FilaVencimiento[], filtros: FiltrosSol
     .filter(({ solicitud: s }) => !filtros.estado || s.estado === filtros.estado)
     .filter(({ solicitud: s }) => !filtros.tipoPlazo || s.tipoPlazo === filtros.tipoPlazo)
     .filter(({ solicitud: s }) => filtros.idAsistente == null || s.asignado?.idUsuario === filtros.idAsistente)
+    .filter(({ solicitud: s }) => !filtros.sinAsignar || !s.asignado)
     .map(({ solicitud, semaforo }): SolicitudInternaFila => ({
       ...solicitud,
       semaforo: semaforo === 'PAUSADA' ? null : semaforo,
@@ -151,6 +152,7 @@ function listarMock(filtros: FiltrosSolicitudes): ListaSolicitudesResponse {
     .filter((s) => !filtros.estado || s.estado === filtros.estado)
     .filter((s) => !filtros.tipoPlazo || s.tipoPlazo === filtros.tipoPlazo)
     .filter((s) => filtros.idAsistente == null || s.asignado?.idUsuario === filtros.idAsistente)
+    .filter((s) => !filtros.sinAsignar || !s.asignado)
     .sort(masRecientePrimero)
     .map(filaDe)
   const size = filtros.size

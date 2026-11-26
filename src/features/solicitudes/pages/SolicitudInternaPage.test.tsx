@@ -8,6 +8,16 @@ import { useAuthStore } from '@/features/auth/store/authStore'
 import { solicitudesInternasApi } from '../api/solicitudesInternasApi'
 import { SolicitudInternaPage } from './SolicitudInternaPage'
 
+const api = vi.hoisted(() => ({ listarUsuarios: vi.fn() }))
+vi.mock('@/api/usuariosApi', () => api)
+
+const USUARIOS = [
+  { idUsuario: 7, nombreUsuario: 'alopez', nombres: 'Ana López', correo: 'ana@genlogs.pe', nombreRol: 'ASISTENTE_LOGISTICO', bloqueado: false },
+  { idUsuario: 3, nombreUsuario: 'jperez', nombres: 'Juan Pérez', correo: 'juan@genlogs.pe', nombreRol: 'JEFE_ADMINISTRATIVO', bloqueado: false },
+  { idUsuario: 8, nombreUsuario: 'mora', nombres: 'Luis Mora', correo: 'luis@genlogs.pe', nombreRol: 'ASISTENTE_LOGISTICO', bloqueado: true },
+  { idUsuario: 4, nombreUsuario: 'conta', nombres: 'Carmen Conta', correo: 'carmen@genlogs.pe', nombreRol: 'CONTADOR_GENERAL', bloqueado: false },
+]
+
 function pintar(id: number, rol: string) {
   useAuthStore.setState({ nombreRol: rol })
   const cliente = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
@@ -32,7 +42,11 @@ const respuesta = (idSolicitud: number, estado: SolicitudInternaResponse['estado
 const boton = (nombre: string) => screen.queryByRole('button', { name: nombre })
 
 describe('SolicitudInternaPage', () => {
-  beforeEach(() => useAuthStore.setState({ nombreRol: 'ASISTENTE_LOGISTICO' }))
+  beforeEach(() => {
+    api.listarUsuarios.mockReset()
+    api.listarUsuarios.mockResolvedValue(USUARIOS)
+    useAuthStore.setState({ nombreRol: 'ASISTENTE_LOGISTICO' })
+  })
   afterEach(() => {
     cleanup()
     vi.restoreAllMocks()
@@ -82,14 +96,25 @@ describe('SolicitudInternaPage', () => {
     expect(screen.queryByText('La segunda reclasificación la aprueba el Jefe Administrativo')).toBeNull()
   })
 
-  it('Reasignar solo se renderiza para el Jefe', () => {
+  it('Reasignar solo se renderiza para el Jefe, con el personal real', async () => {
     const primera = pintar(2, 'ASISTENTE_LOGISTICO')
     expect(boton('Reasignar')).toBeNull()
+    expect(api.listarUsuarios).not.toHaveBeenCalled()
     primera.unmount()
     pintar(2, 'JEFE_ADMINISTRATIVO')
     expect(boton('Reasignar')).toBeTruthy()
-    expect(screen.getByRole('option', { name: 'Ana López' })).toBeTruthy()
+    expect(await screen.findByRole('option', { name: 'Ana López' })).toBeTruthy()
     expect(screen.queryByRole('option', { name: 'Carmen Conta' })).toBeNull()
+    expect(screen.queryByRole('option', { name: 'Luis Mora' })).toBeNull()
+    expect(api.listarUsuarios).toHaveBeenCalledTimes(1)
+  })
+
+  it('el Asistente Administrativo ve el detalle pero sin botones de acción', () => {
+    pintar(2, 'ASISTENTE_ADMINISTRATIVO')
+    expect(screen.getByRole('heading', { name: 'SOL-002' })).toBeTruthy()
+    expect(boton('Reasignar')).toBeNull()
+    expect(boton('Empezar a buscar el producto')).toBeNull()
+    expect(boton('Reclasificar')).toBeNull()
   })
 
   it('el Gerente no ve botones de acción', () => {

@@ -8,9 +8,13 @@ import {
   MOTIVO_ESPERA_PROVEEDOR,
   MOTIVOS_PAUSA,
   fechaEstimadaValida,
+  ESTADOS_ABIERTOS,
+  entraALaPantalla,
   filtrarAsignables,
   mensajeCargaUsuarios,
   motivoValido,
+  puedeActuar,
+  puedeVerPersonal,
 } from './reglasSolicitud'
 
 const usuario = (nombreRol: string, bloqueado = false): UsuarioResponse => ({
@@ -56,7 +60,37 @@ describe('reglas de la solicitud interna', () => {
   it('el 403 del listado de usuarios tiene un mensaje propio', () => {
     const error = new axios.AxiosError('no')
     error.response = { status: 403, data: { message: 'Forbidden' }, statusText: 'Forbidden', headers: {}, config: {} as never }
-    expect(mensajeCargaUsuarios(error)).toMatch(/no está habilitado para el Jefe/)
+    expect(mensajeCargaUsuarios(error)).toBe('No tienes permiso para ver al personal interno.')
+  })
+
+  it('entran a la pantalla los cuatro roles que la matriz marca con C o V, y no Contador, SST ni Cliente', () => {
+    for (const rol of ['GERENTE_GENERAL', 'JEFE_ADMINISTRATIVO', 'ASISTENTE_LOGISTICO', 'ASISTENTE_ADMINISTRATIVO'] as const) {
+      expect(entraALaPantalla(rol)).toBe(true)
+    }
+    for (const rol of ['CONTADOR_GENERAL', 'SUPERVISOR_SST', 'CLIENTE'] as const) {
+      expect(entraALaPantalla(rol)).toBe(false)
+    }
+    expect(entraALaPantalla(null)).toBe(false)
+  })
+
+  it('solo el Asistente Logístico y el Jefe actúan; Gerente y Asistente Administrativo solo consultan', () => {
+    expect(puedeActuar('ASISTENTE_LOGISTICO')).toBe(true)
+    expect(puedeActuar('JEFE_ADMINISTRATIVO')).toBe(true)
+    expect(puedeActuar('GERENTE_GENERAL')).toBe(false)
+    expect(puedeActuar('ASISTENTE_ADMINISTRATIVO')).toBe(false)
+  })
+
+  it('solo el Jefe y el Gerente pueden pedir el listado de personal (igual que GET /usuarios)', () => {
+    expect(puedeVerPersonal('JEFE_ADMINISTRATIVO')).toBe(true)
+    expect(puedeVerPersonal('GERENTE_GENERAL')).toBe(true)
+    for (const rol of ['ASISTENTE_LOGISTICO', 'ASISTENTE_ADMINISTRATIVO', 'CONTADOR_GENERAL', 'CLIENTE'] as const) {
+      expect(puedeVerPersonal(rol)).toBe(false)
+    }
+    expect(puedeVerPersonal(null)).toBe(false)
+  })
+
+  it('la lista interna solo ofrece los estados abiertos, que son los que devuelve el backend', () => {
+    expect(ESTADOS_ABIERTOS).toEqual(['PENDIENTE', 'EN_REVISION', 'EN_ESPERA_TERCERO'])
   })
 
   it('en modo real, sin fila, no inventa un GET', () => {
