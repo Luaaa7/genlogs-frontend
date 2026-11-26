@@ -330,3 +330,6 @@
 /* Barra de progreso superior del portal (BarraProgresoPortal). */
 @keyframes barra-desliza { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
 @keyframes barra-aparece { from { opacity: 0; } to { opacity: 1; } }
+
+/* Entrada de tarjetas del portal (ENTRADA_TARJETA). */
+@keyframes tarjeta-entra { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }

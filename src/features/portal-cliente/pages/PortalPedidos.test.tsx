@@ -212,13 +212,34 @@ describe("Mis pedidos con el estilo de la landing", () => {
     it("se cierra con el botón o con Escape, y el foco vuelve al botón de la tarjeta", async () => {
       await abrir()
       fireEvent.click(screen.getByRole("button", { name: "Cerrar vista rápida" }))
-      expect(screen.queryByRole("dialog")).toBeNull()
+      await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
       expect(document.activeElement).toBe(within(articulo("Mangueras")).getByRole("button", { name: "Vista rápida de Mangueras" }))
 
       fireEvent.click(within(articulo("Mangueras")).getByRole("button", { name: "Vista rápida de Mangueras" }))
       await screen.findByRole("dialog")
       fireEvent.keyDown(document, { key: "Escape" })
-      expect(screen.queryByRole("dialog")).toBeNull()
+      await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
+    })
+
+    it("se abre y se cierra con transición: fondo difuminado, panel que se desliza y espera a terminar antes de salir", async () => {
+      const dialogo = await abrir()
+      const fondo = dialogo.parentElement as HTMLElement
+      expect(fondo.className).toContain("backdrop-blur-xs")
+      expect(fondo.className).toContain("transition-opacity")
+      expect(fondo.className).toContain("motion-reduce:transition-none")
+      expect(dialogo.className).toContain("transition-transform")
+      expect(dialogo.className).toContain("motion-reduce:transition-none")
+
+      // Entra: primero fuera de pantalla y enseguida en su lugar.
+      await waitFor(() => expect(dialogo.className).toContain("translate-x-0"))
+      expect(fondo.className).toContain("opacity-100")
+
+      // Sale: se desliza y se desvanece, y solo después se desmonta.
+      fireEvent.click(screen.getByRole("button", { name: "Cerrar vista rápida" }))
+      expect(screen.getByRole("dialog")).toBeTruthy()
+      expect(dialogo.className).toContain("translate-x-full")
+      expect(fondo.className).toContain("opacity-0")
+      await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
     })
 
     it("no pierde el filtro que estaba activo", async () => {
@@ -231,6 +252,7 @@ describe("Mis pedidos con el estilo de la landing", () => {
       await screen.findByRole("dialog")
 
       fireEvent.click(screen.getByRole("button", { name: "Cerrar vista rápida" }))
+      await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
 
       expect(screen.queryByText("Filtros")).toBeNull()
       expect(screen.getByText("Mangueras")).toBeTruthy()

@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { ChevronRight, ClipboardList } from "lucide-react"
+import { ChevronRight } from "lucide-react"
 import { usePedidos } from "../hooks/usePedidos"
 import { usePaginacionLocal } from "@/hooks/usePaginacionLocal"
 import { EstadoBadge } from "@/components/ui/EstadoBadge"
-import { EstadoVacio } from "@/components/ui/EstadoVacio"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { BotonNuevaSolicitud } from "../components/BotonNuevaSolicitud"
 import { EncabezadoPortal } from "../components/EncabezadoPortal"
+import { EstadoVacioIlustrado } from "../components/EstadoVacioIlustrado"
 import { ListaEsqueleto } from "../components/SkeletonCard"
 import { ProgresoPedido } from "../components/ProgresoPedido"
 import { VistaRapidaPedido } from "../components/VistaRapidaPedido"
+import { ENTRADA_TARJETA, TARJETA_ELEVABLE, retardoEntrada } from "../lib/estilosTarjeta"
 import { ESTADOS_PEDIDO, TONO_ESTADO_PEDIDO, etiquetaEstado } from "../lib/estadoPedido"
 import type { EstadoPedido, Pedido } from "@/types/portal.types"
 
@@ -92,22 +93,28 @@ export function MisPedidosPage() {
       ) : query.isError ? (
         <div className="mt-6"><ErrorBanner message="No pudimos cargar tus pedidos." onRetry={() => query.refetch()} /></div>
       ) : filtrados.length === 0 ? (
-        <EstadoVacio
-          icono={<ClipboardList className="h-5 w-5" />}
+        <EstadoVacioIlustrado
+          ilustracion={filtro === "TODOS" ? "pedidos" : "busqueda"}
           titulo="No hay pedidos para mostrar"
           descripcion={filtro === "TODOS" ? "Cuando envíes una solicitud aparecerá aquí." : "Prueba con otro estado."}
+          accion={filtro === "TODOS" ? (
+            <Link to="/portal/solicitud" className={`inline-flex items-center rounded-md bg-[#FACC15] px-4 py-2 text-sm font-bold text-[#183153] hover:bg-[#EAB308] ${FOCO}`}>Crear mi primera solicitud</Link>
+          ) : (
+            <button type="button" onClick={() => setFiltro("TODOS")} className={`rounded-md border border-slate-200 px-4 py-2 text-sm font-medium hover:bg-muted dark:border-border ${FOCO}`}>Ver todos los pedidos</button>
+          )}
         />
       ) : (
         <>
           <div className="mt-6 grid gap-3">
-            {paginacion.visibles.map((pedido) => {
+            {paginacion.visibles.map((pedido, indice) => {
               const nuevo = String(pedido.id) === resaltado
               const titulo = pedido.asunto ?? "Solicitud de abastecimiento"
               const descripcion = descripcionUtil(pedido)
               return (
                 <article
-                  key={pedido.id}
-                  className={`rounded-xl border border-l-4 bg-white p-5 shadow-sm dark:bg-card ${BORDE_ESTADO[pedido.estado] ?? BORDE_FINAL} ${nuevo ? "border-[#183153]/50 ring-2 ring-[#183153]/20 dark:border-primary dark:ring-primary/30" : "border-slate-200 dark:border-border"}`}
+                  key={`${filtro}-${pedido.id}`}
+                  style={retardoEntrada(indice)}
+                  className={`group rounded-xl border border-l-4 bg-white p-5 shadow-sm dark:bg-card ${TARJETA_ELEVABLE} ${ENTRADA_TARJETA} ${BORDE_ESTADO[pedido.estado] ?? BORDE_FINAL} ${nuevo ? "border-[#183153]/50 ring-2 ring-[#183153]/20 dark:border-primary dark:ring-primary/30" : "border-slate-200 dark:border-border"}`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -139,7 +146,7 @@ export function MisPedidosPage() {
                       <Link to="/portal/cotizaciones" className={`rounded-md bg-[#FACC15] px-3 py-1.5 font-bold text-[#183153] hover:bg-[#EAB308] ${FOCO}`}>Ver cotizaciones</Link>
                     )}
                     <Link to={`/portal/pedidos/${pedido.id}`} aria-label={`Ver detalle de ${titulo}`} className={`ml-auto inline-flex items-center gap-1 rounded-sm text-muted-foreground hover:text-foreground ${FOCO}`}>
-                      Ver detalle<ChevronRight className="h-4 w-4" aria-hidden="true" />
+                      Ver detalle<ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1 motion-reduce:transition-none" aria-hidden="true" />
                     </Link>
                   </div>
                 </article>

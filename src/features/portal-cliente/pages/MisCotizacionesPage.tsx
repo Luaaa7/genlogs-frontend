@@ -1,41 +1,49 @@
 import { Link } from "react-router-dom"
-import { FileText } from "lucide-react"
+import { ChevronRight, FileText } from "lucide-react"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { EstadoBadge } from "@/components/ui/EstadoBadge"
 import { formatCurrency } from "@/lib/formatters/currency"
 import { BotonNuevaSolicitud } from "../components/BotonNuevaSolicitud"
+import { EncabezadoPortal } from "../components/EncabezadoPortal"
+import { EstadoVacioIlustrado } from "../components/EstadoVacioIlustrado"
 import { ListaEsqueleto } from "../components/SkeletonCard"
 import { useCotizacionesPortal } from "../hooks/useCotizacionesPortal"
 import { esCotizacionAnulada, puedeDecidir, tonoEstadoCotizacion } from "../lib/cotizacionPortal"
+import { ENTRADA_TARJETA, TARJETA_ELEVABLE, retardoEntrada } from "../lib/estilosTarjeta"
 
 export function MisCotizacionesPage() {
   const query = useCotizacionesPortal()
   const cotizaciones = query.data ?? []
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Mis cotizaciones</h1>
-          <p className="mt-2 text-muted-foreground">Revisa cada cotización y apruébala o recházala antes de su fecha de validez.</p>
-        </div>
-        <BotonNuevaSolicitud />
-      </div>
+    <div>
+      <EncabezadoPortal
+        titulo="Mis cotizaciones"
+        descripcion="Revisa cada cotización y apruébala o recházala antes de su fecha de validez."
+        accion={<BotonNuevaSolicitud variante="pildora" />}
+      />
       {query.isPending ? (
-        <div className="mt-8"><ListaEsqueleto variante="cotizacion" etiqueta="Cargando cotizaciones..." /></div>
+        <div className="mt-6"><ListaEsqueleto variante="cotizacion" etiqueta="Cargando cotizaciones..." /></div>
       ) : query.isError ? (
-        <div className="mt-8"><ErrorBanner message="No pudimos cargar tus cotizaciones." onRetry={() => query.refetch()} /></div>
+        <div className="mt-6"><ErrorBanner message="No pudimos cargar tus cotizaciones." onRetry={() => query.refetch()} /></div>
       ) : cotizaciones.length === 0 ? (
-        <p className="mt-8 rounded-xl border border-slate-200 bg-white shadow-sm dark:border-border dark:bg-card p-8 text-center text-muted-foreground">
-          Todavía no tienes cotizaciones. Cuando coticemos uno de tus pedidos, aparecerá aquí.
-        </p>
+        <EstadoVacioIlustrado
+          ilustracion="cotizaciones"
+          titulo="Todavía no tienes cotizaciones"
+          descripcion="Cuando coticemos uno de tus pedidos, aparecerá aquí."
+          accion={<Link to="/portal/solicitud" className="inline-flex items-center rounded-md bg-[#FACC15] px-4 py-2 text-sm font-bold text-[#183153] hover:bg-[#EAB308] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Crear mi primera solicitud</Link>}
+        />
       ) : (
-        <ul className="mt-8 divide-y divide-slate-200 dark:divide-border rounded-xl border border-slate-200 bg-white shadow-sm dark:border-border dark:bg-card">
-          {cotizaciones.map((c) => (
-            <li key={c.id}>
+        <ul className="mt-6 flex flex-col gap-3">
+          {cotizaciones.map((c, indice) => (
+            <li
+              key={c.id}
+              style={retardoEntrada(indice)}
+              className={`group rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-card ${TARJETA_ELEVABLE} ${ENTRADA_TARJETA}`}
+            >
               <Link
                 to={`/portal/cotizaciones/${c.id}`}
-                className="flex flex-wrap items-center justify-between gap-4 p-4 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-5"
+                className="flex flex-wrap items-center justify-between gap-4 rounded-xl p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-5"
               >
                 <span className="flex items-center gap-3">
                   <FileText className="h-5 w-5 text-accent" aria-hidden="true" />
@@ -56,6 +64,7 @@ export function MisCotizacionesPage() {
                     {esCotizacionAnulada(c) ? "Anulada" : c.estado}
                   </EstadoBadge>
                   {puedeDecidir(c) && <span className="text-sm font-medium text-accent">Revisar</span>}
+                  <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1 motion-reduce:transition-none" aria-hidden="true" />
                 </span>
               </Link>
             </li>

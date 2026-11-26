@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import { X } from "lucide-react"
 import { EstadoBadge } from "@/components/ui/EstadoBadge"
@@ -6,6 +6,9 @@ import type { Pedido } from "@/types/portal.types"
 import { usePedido } from "../hooks/usePedido"
 import { TONO_ESTADO_PEDIDO, etiquetaEstado, resumenCotizacion } from "../lib/estadoPedido"
 import { ProgresoPedido } from "./ProgresoPedido"
+
+/** Lo que dura la transición de salida antes de desmontar el panel (igual a duration-300). */
+const SALIDA_MS = 300
 
 const FOCO = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 
@@ -19,6 +22,25 @@ export function VistaRapidaPedido({ pedido, onCerrar }: { pedido: Pedido; onCerr
   const cerrar = useRef<HTMLButtonElement>(null)
   const titulo = pedido.asunto ?? "Solicitud de abastecimiento"
 
+  // Entra con transición: primero fuera de pantalla y un instante después en su lugar.
+  const [abierto, setAbierto] = useState(false)
+  useEffect(() => {
+    const temporizador = setTimeout(() => setAbierto(true), 20)
+    return () => clearTimeout(temporizador)
+  }, [])
+
+  // Sale con transición: se anima la salida y recién entonces se avisa a la página (sin movimiento, al instante).
+  const salida = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const solicitarCierre = useCallback(() => {
+    if (salida.current) return
+    setAbierto(false)
+    const sinMovimiento = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    salida.current = setTimeout(onCerrar, sinMovimiento ? 0 : SALIDA_MS)
+  }, [onCerrar])
+  useEffect(() => () => {
+    if (salida.current) clearTimeout(salida.current)
+  }, [])
+
   // Al abrir, el foco entra al panel; quien lo abrió devuelve el foco a su botón al cerrar.
   useEffect(() => {
     cerrar.current?.focus()
@@ -27,7 +49,7 @@ export function VistaRapidaPedido({ pedido, onCerrar }: { pedido: Pedido; onCerr
   useEffect(() => {
     const alPulsar = (evento: KeyboardEvent) => {
       if (evento.key === "Escape") {
-        onCerrar()
+        solicitarCierre()
         return
       }
       if (evento.key !== "Tab" || !panel.current) return
@@ -45,15 +67,15 @@ export function VistaRapidaPedido({ pedido, onCerrar }: { pedido: Pedido; onCerr
     }
     document.addEventListener("keydown", alPulsar)
     return () => document.removeEventListener("keydown", alPulsar)
-  }, [onCerrar])
+  }, [solicitarCierre])
 
   const items = detalle.data?.items ?? []
 
   return (
     <div
-      className="fixed inset-0 z-40 flex justify-end bg-black/40"
+      className={`fixed inset-0 z-40 flex justify-end bg-black/40 backdrop-blur-xs transition-opacity duration-300 motion-reduce:transition-none ${abierto ? "opacity-100" : "opacity-0"}`}
       onMouseDown={(evento) => {
-        if (evento.target === evento.currentTarget) onCerrar()
+        if (evento.target === evento.currentTarget) solicitarCierre()
       }}
     >
       <div
@@ -61,7 +83,7 @@ export function VistaRapidaPedido({ pedido, onCerrar }: { pedido: Pedido; onCerr
         role="dialog"
         aria-modal="true"
         aria-labelledby="vista-rapida-titulo"
-        className="flex h-full w-full max-w-md flex-col gap-6 overflow-y-auto border-l border-slate-200 bg-white p-6 shadow-xl dark:border-border dark:bg-card"
+        className={`flex h-full w-full max-w-md flex-col gap-6 overflow-y-auto border-l border-slate-200 bg-white p-6 shadow-xl transition-transform duration-300 ease-out motion-reduce:transition-none dark:border-border dark:bg-card ${abierto ? "translate-x-0" : "translate-x-full"}`}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -72,7 +94,7 @@ export function VistaRapidaPedido({ pedido, onCerrar }: { pedido: Pedido; onCerr
           <button
             ref={cerrar}
             type="button"
-            onClick={onCerrar}
+            onClick={solicitarCierre}
             aria-label="Cerrar vista rápida"
             className={`shrink-0 rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground ${FOCO}`}
           >

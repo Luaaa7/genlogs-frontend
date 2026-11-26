@@ -1,15 +1,17 @@
 import { useState } from "react"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { CreditCard, Loader2, Receipt } from "lucide-react"
+import { CreditCard, Loader2 } from "lucide-react"
 import { portalComprobantesApi, type ComprobantePortal } from "@/api/portalComprobantesApi"
 import { Button } from "@/components/ui/button"
 import { EstadoBadge } from "@/components/ui/EstadoBadge"
-import { EstadoVacio } from "@/components/ui/EstadoVacio"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { formatearMoneda } from "@/lib/formatters/codigoCotizacion"
 import { formatearFechaCorta } from "@/lib/formatters/fechaLocal"
 import { mensajeError } from "@/lib/errores"
+import { EncabezadoPortal } from "../components/EncabezadoPortal"
+import { EstadoVacioIlustrado } from "../components/EstadoVacioIlustrado"
 import { ListaEsqueleto } from "../components/SkeletonCard"
+import { ENTRADA_TARJETA, TARJETA_ELEVABLE, retardoEntrada } from "../lib/estilosTarjeta"
 import { navegacionExterna } from "../lib/navegacionExterna"
 
 function tono(codigo?: string | null) {
@@ -48,12 +50,10 @@ export function MisComprobantesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Mis comprobantes</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Tus facturas y lo que falta pagar. Los comprobantes en soles se pueden pagar en línea con Mercado Pago.
-        </p>
-      </div>
+      <EncabezadoPortal
+        titulo="Mis comprobantes"
+        descripcion="Tus facturas y lo que falta pagar. Los comprobantes en soles se pueden pagar en línea con Mercado Pago."
+      />
 
       {errorPago && <ErrorBanner message={errorPago} />}
       {isError && <ErrorBanner message="No se pudieron cargar tus comprobantes." error={error} onRetry={() => refetch()} />}
@@ -61,17 +61,17 @@ export function MisComprobantesPage() {
       {isLoading ? (
         <ListaEsqueleto variante="comprobante" etiqueta="Cargando comprobantes..." />
       ) : !isError && comprobantes.length === 0 ? (
-        <EstadoVacio
-          icono={<Receipt className="h-5 w-5" />}
+        <EstadoVacioIlustrado
+          ilustracion="comprobantes"
           titulo="Todavía no tienes comprobantes"
           descripcion="Cuando GENLOGS emita una factura de tus pedidos, aparecerá aquí."
         />
       ) : (
         <ul className="flex flex-col gap-3">
-          {comprobantes.map((c) => {
+          {comprobantes.map((c, indice) => {
             const ocupado = pagar.isPending && pagandoId === c.id
             return (
-              <li key={c.id} className="rounded-xl border border-border bg-card p-4 sm:p-5">
+              <li key={c.id} style={retardoEntrada(indice)} className={`rounded-xl border border-border bg-card p-4 sm:p-5 ${TARJETA_ELEVABLE} ${ENTRADA_TARJETA}`}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">

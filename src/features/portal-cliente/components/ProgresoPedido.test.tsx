@@ -29,4 +29,34 @@ describe("ProgresoPedido (barra de 4 etapas en la tarjeta)", () => {
     render(<ProgresoPedido estado={estado} etiqueta="Avance del pedido SOL-1" />)
     expect(screen.queryByRole("list")).toBeNull()
   })
+
+  describe("punto indicador de la etapa actual", () => {
+    const puntos = () => screen.queryAllByTestId("punto-activo")
+
+    it("hay un solo punto, dentro de la etapa en curso, oculto a los lectores de pantalla", () => {
+      render(<ProgresoPedido estado="EN_REVISION" etiqueta="Avance del pedido SOL-1" />)
+      expect(puntos()).toHaveLength(1)
+      expect(etapas()[1].contains(puntos()[0])).toBe(true)
+      expect(puntos()[0].getAttribute("aria-hidden")).toBe("true")
+    })
+
+    it("pulsa con un animate-ping discreto, que se apaga con movimiento reducido", () => {
+      render(<ProgresoPedido estado="EN_REVISION" etiqueta="Avance del pedido SOL-1" />)
+      const onda = puntos()[0].firstElementChild as HTMLElement
+      expect(onda.className).toContain("animate-ping")
+      expect(onda.className).toContain("motion-reduce:animate-none")
+      expect(onda.className).toContain("opacity-40")
+    })
+
+    it("en la etapa final (Cotizada) el punto queda fijo: ya no hay nada por esperar", () => {
+      render(<ProgresoPedido estado="COTIZADA" etiqueta="Avance del pedido SOL-1" />)
+      expect(puntos()).toHaveLength(1)
+      expect(puntos()[0].innerHTML).not.toContain("animate-ping")
+    })
+
+    it.each(["CANCELADA", "RECHAZADA"])("%s no muestra punto", (estado) => {
+      render(<ProgresoPedido estado={estado} etiqueta="Avance del pedido SOL-1" />)
+      expect(puntos()).toHaveLength(0)
+    })
+  })
 })

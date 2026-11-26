@@ -1,5 +1,15 @@
 import { ETAPAS_PEDIDO, esEstadoFinalSinCotizar, etapaDelPedido } from "../lib/estadoPedido"
 
+/** Punto de la etapa actual: pulsa con un ping discreto mientras el pedido avanza; en la etapa final queda fijo. */
+function PuntoActivo({ pulsa }: { pulsa: boolean }) {
+  return (
+    <span data-testid="punto-activo" aria-hidden="true" className="absolute -top-[3px] left-0 flex h-3 w-3">
+      {pulsa && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-40 motion-reduce:animate-none" />}
+      <span className="relative inline-flex h-3 w-3 rounded-full bg-accent ring-2 ring-white dark:ring-card" />
+    </span>
+  )
+}
+
 /**
  * Barra compacta de 4 etapas para la tarjeta del pedido (Recibida, En búsqueda, En espera de proveedor,
  * Cotizada). Solo estados, sin fechas ni colores de alerta (P9). Un pedido cancelado o que no se pudo
@@ -15,10 +25,13 @@ export function ProgresoPedido({ estado, etiqueta, className = "" }: { estado: s
         const enCurso = i === actual
         return (
           <li key={etapa.estado} aria-current={enCurso ? "step" : undefined} className="min-w-0">
-            <div
-              aria-hidden="true"
-              className={`h-1.5 rounded-full ${completada ? "bg-[#183153] dark:bg-primary" : enCurso ? "bg-accent" : "bg-slate-200 dark:bg-muted"}`}
-            />
+            <div className="relative">
+              <div
+                aria-hidden="true"
+                className={`h-1.5 rounded-full ${completada ? "bg-[#183153] dark:bg-primary" : enCurso ? "bg-accent" : "bg-slate-200 dark:bg-muted"}`}
+              />
+              {enCurso && <PuntoActivo pulsa={i < ETAPAS_PEDIDO.length - 1} />}
+            </div>
             <span className={`mt-1.5 block text-xs leading-tight ${enCurso ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
               {etapa.etiqueta}
             </span>
