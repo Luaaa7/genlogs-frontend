@@ -14,6 +14,7 @@ import { CampoPassword } from "../components/CampoPassword"
 import { EnlaceIngresoPersonal } from "../components/EnlaceIngresoPersonal"
 import { IngresoConGoogle } from "../components/IngresoConGoogle"
 import { SeparadorO } from "../components/SeparadorO"
+import { AvisoSesionVencida } from "@/components/ui/AvisoSesionVencida"
 import { EtiquetaPortal } from "@/features/portal-cliente/components/EtiquetaPortal"
 
 const RESUMEN_PORTAL = [
@@ -84,6 +85,7 @@ export function IngresoClientePage() {
             </li>
           ))}
         </ul>
+        <div className="mt-5 empty:hidden"><AvisoSesionVencida /></div>
         <AvisoCarritoPublico className="mt-5" />
         <form onSubmit={enviar} className="mt-6 space-y-5">
           <IngresoConGoogle />

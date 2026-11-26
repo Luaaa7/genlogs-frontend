@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { IngresoClientePage } from "./IngresoClientePage"
@@ -49,6 +49,14 @@ describe("IngresoClientePage", () => {
     renderIngreso("/portal/ingreso")
     expect(screen.getByTestId("etiqueta-portal").textContent).toBe("Portal del cliente")
     expect(screen.getByText(/antes de tu primera cotización/i)).toBeTruthy()
+  })
+
+  it("con ?motivo=sesion-expirada avisa que la sesión venció, y sin él no", () => {
+    renderIngreso("/portal/ingreso?volver=%2Fportal%2Fpedidos&motivo=sesion-expirada")
+    expect(screen.getByText("Tu sesión venció. Inicia sesión nuevamente para continuar.")).toBeTruthy()
+    cleanup()
+    renderIngreso("/portal/ingreso?volver=%2Fportal%2Fpedidos")
+    expect(screen.queryByText(/tu sesión venció/i)).toBeNull()
   })
 
   it("sin ?volver= va a Mis pedidos", async () => {

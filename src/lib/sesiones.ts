@@ -6,6 +6,16 @@
  * El almacenamiento del navegador puede fallar (modo privado, bloqueado): todo va en try/catch.
  */
 
+/** Marca que el 401 deja en la URL del login para avisar que la sesión venció (?motivo=sesion-expirada). */
+export const PARAMETRO_MOTIVO = "motivo"
+export const MOTIVO_SESION_EXPIRADA = "sesion-expirada"
+export const MENSAJE_SESION_VENCIDA = "Tu sesión venció. Inicia sesión nuevamente para continuar."
+
+/** ¿La URL trae la marca de sesión vencida? */
+export function sesionVencidaEn(search: string): boolean {
+  return new URLSearchParams(search).get(PARAMETRO_MOTIVO) === MOTIVO_SESION_EXPIRADA
+}
+
 const CLAVE_TOKEN_CLIENTE = "cliente_access_token"
 const CLAVE_SESION_CLIENTE = "genlogs-cliente-auth"
 
