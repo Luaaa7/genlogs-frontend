@@ -1,25 +1,10 @@
 import { Check, ExternalLink, PackagePlus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { EstadoBadge, type EstadoBadgeTono } from "@/components/ui/EstadoBadge"
+import { EstadoBadge } from "@/components/ui/EstadoBadge"
 import { Tabla, Td, Th, filaClass } from "@/components/ui/tabla"
 import { formatCurrency } from "@/lib/formatters/currency"
-import type { EstadoReferencia, Referencia } from "@/api/sourcingApi"
-
-const ESTADOS_REFERENCIA: Record<EstadoReferencia, { label: string; tono: EstadoBadgeTono }> = {
-  CAPTURADO: { label: "Nueva", tono: "info" },
-  UTIL: { label: "Útil", tono: "success" },
-  DESCARTADO: { label: "Descartada", tono: "neutral" },
-  CONVERTIDO: { label: "En vitrina", tono: "accent" },
-}
-
-const FUENTES: Record<string, string> = {
-  EBAY: "eBay",
-  MERCADO_LIBRE: "Mercado Libre",
-  AMAZON: "Amazon",
-  ALIEXPRESS: "AliExpress",
-  ALIBABA: "Alibaba",
-  PROVEEDOR: "Proveedor",
-}
+import type { Referencia } from "@/api/sourcingApi"
+import { ESTADOS_REFERENCIA, FUENTES } from "../lib/etiquetasReferencia"
 
 /** Defensa extra: solo se enlaza lo que es http(s); el backend ya lo valida (UrlSegura). */
 const esEnlaceSeguro = (url: string | null): url is string => !!url && /^https?:\/\/\S+$/i.test(url)

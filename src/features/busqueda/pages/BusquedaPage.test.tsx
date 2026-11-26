@@ -171,32 +171,70 @@ describe("BusquedaPage", () => {
     pintar("/busqueda?numeroParte=1R-0750")
 
     expect(await screen.findByText("Filtro CAT 1R-0750")).toBeTruthy()
-    fireEvent.click(screen.getByRole("button", { name: /ver historial/i }))
+    expect(api.historial).toHaveBeenCalledWith({ q: "1R-0750", soloElegibles: false, limite: 20 })
+    fireEvent.click(screen.getByRole("button", { name: /buscar en el historial/i }))
     expect(api.buscar).not.toHaveBeenCalled()
     expect(screen.queryByRole("button", { name: /marcar como útil/i })).toBeNull()
     expect(screen.queryByRole("button", { name: /pegar url/i })).toBeNull()
   })
 
-  it("el Jefe ve por qué solo consulta el historial y solo el campo que lo filtra (v3.4)", async () => {
+  it("el Jefe ve por qué solo consulta el historial y los filtros de la consulta (v3.4)", async () => {
     useAuthStore.setState({ nombreRol: "JEFE_ADMINISTRATIVO" })
     pintar()
     expect(screen.getByRole("note").textContent).toMatch(/la búsqueda en las tiendas .* lo hace el Asistente Logístico/i)
-    expect(screen.getByLabelText(/n\.º de parte/i).getAttribute("placeholder")).toBe("Ej.: 1R-0750")
-    expect(screen.queryByLabelText(/marca/i)).toBeNull()
+    expect(screen.getByLabelText(/n\.º de parte, marca o descripción/i)).toBeTruthy()
+    expect(screen.getByLabelText("Fuente")).toBeTruthy()
+    expect(screen.getByLabelText("Estado")).toBeTruthy()
+    expect(screen.getByLabelText("Mostrar")).toBeTruthy()
+    expect(screen.getByLabelText("Ocultar las descartadas")).toBeTruthy()
     expect(screen.queryByLabelText(/gtin/i)).toBeNull()
-    expect(screen.getByText("Consulta un N.º de parte")).toBeTruthy()
+    expect(screen.getByText("Consulta el historial de búsquedas")).toBeTruthy()
   })
 
-  it("el Jefe consulta el historial y, si está vacío, sabe a quién pedir la búsqueda (v3.4)", async () => {
+  it("el Jefe busca por texto, ve el resumen y filtra por fuente y estado (v3.4)", async () => {
+    useAuthStore.setState({ nombreRol: "JEFE_ADMINISTRATIVO" })
+    api.historial.mockResolvedValue([
+      ref({ idSourcing: 1, estado: "UTIL", precioRef: 18.5 }),
+      ref({ idSourcing: 2, titulo: "Filtro ML", fuente: "MERCADO_LIBRE", precioRef: 60, codigoMoneda: "PEN", estado: "CAPTURADO" }),
+      ref({ idSourcing: 3, titulo: "Filtro barato", precioRef: 12, estado: "DESCARTADO" }),
+    ])
+    pintar()
+    fireEvent.change(screen.getByLabelText(/n\.º de parte, marca o descripción/i), { target: { value: "filtro" } })
+    fireEvent.change(screen.getByLabelText("Mostrar"), { target: { value: "50" } })
+    fireEvent.click(screen.getByLabelText("Ocultar las descartadas"))
+    fireEvent.click(screen.getByRole("button", { name: /buscar en el historial/i }))
+
+    const resumen = await screen.findByLabelText("Resumen del historial")
+    expect(api.historial).toHaveBeenCalledWith({ q: "filtro", soloElegibles: true, limite: 50 })
+    expect(resumen.textContent).toMatch(/Referencias3/)
+    expect(plano(resumen.textContent ?? "")).toContain(plano(formatCurrency(12, "USD")))
+
+    fireEvent.change(screen.getByLabelText("Fuente"), { target: { value: "MERCADO_LIBRE" } })
+    expect(screen.getByText(/Se muestran 1 de 3/)).toBeTruthy()
+    expect(screen.getByText("Filtro ML")).toBeTruthy()
+    expect(screen.queryByText("Filtro barato")).toBeNull()
+
+    fireEvent.change(screen.getByLabelText("Estado"), { target: { value: "UTIL" } })
+    expect(screen.getByText("Ninguna referencia coincide con los filtros")).toBeTruthy()
+    fireEvent.click(screen.getByRole("button", { name: "Quitar filtros" }))
+    expect(screen.getByText("Filtro barato")).toBeTruthy()
+  })
+
+  it("el Jefe pide al menos 2 caracteres y, sin resultados, sabe a quién pedir la búsqueda (v3.4)", async () => {
     useAuthStore.setState({ nombreRol: "JEFE_ADMINISTRATIVO" })
     api.historial.mockResolvedValue([])
     pintar()
-    fireEvent.change(screen.getByLabelText(/n\.º de parte/i), { target: { value: "1R-0750" } })
-    fireEvent.click(screen.getByRole("button", { name: /ver historial/i }))
-    expect(await screen.findByText(/pídele al asistente logístico que lo busque/i)).toBeTruthy()
-    expect(api.historial).toHaveBeenCalledWith({ numeroParte: "1R-0750" })
+    const caja = screen.getByLabelText(/n\.º de parte, marca o descripción/i)
+    fireEvent.change(caja, { target: { value: "x" } })
+    fireEvent.click(screen.getByRole("button", { name: /buscar en el historial/i }))
+    expect(await screen.findByText("Escribe al menos 2 caracteres.")).toBeTruthy()
+    expect(api.historial).not.toHaveBeenCalled()
 
-    fireEvent.click(screen.getByRole("button", { name: /ver historial/i }))
+    fireEvent.change(caja, { target: { value: "1R-9999" } })
+    fireEvent.click(screen.getByRole("button", { name: /buscar en el historial/i }))
+    expect(await screen.findByText(/pídele al asistente logístico que lo busque/i)).toBeTruthy()
+
+    fireEvent.click(screen.getByRole("button", { name: /buscar en el historial/i }))
     await waitFor(() => expect(api.historial).toHaveBeenCalledTimes(2))
     expect(api.buscar).not.toHaveBeenCalled()
   })

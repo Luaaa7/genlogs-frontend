@@ -4,6 +4,15 @@ import { usePermisos } from "@/lib/permisos"
 
 const clave = (numeroParte: string) => ["sourcing", "historial", numeroParte.trim().toLowerCase()] as const
 
+/** v3.4: consulta del historial por texto, para quien no busca en las tiendas (Jefe Adm., Gerente). */
+export function useConsultaHistorial(filtro: { q: string; soloElegibles: boolean; limite: number } | null) {
+  return useQuery({
+    queryKey: ["sourcing", "consulta", filtro?.q.trim().toLowerCase() ?? "", filtro?.soloElegibles ?? false, filtro?.limite ?? 0] as const,
+    queryFn: () => sourcingApi.historial({ q: filtro!.q.trim(), soloElegibles: filtro!.soloElegibles, limite: filtro!.limite }),
+    enabled: !!filtro && filtro.q.trim().length >= 2,
+  })
+}
+
 /** Historial de un N.º de parte (incluye descartadas, para ver todo lo que se encontró). */
 export function useHistorialReferencias(numeroParte: string | undefined) {
   return useQuery({
