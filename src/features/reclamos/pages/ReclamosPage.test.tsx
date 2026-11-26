@@ -41,6 +41,10 @@ function chip(grupo: string, nombre: RegExp) {
 describe("ReclamosPage", () => {
   beforeEach(() => {
     vi.spyOn(reclamosApi, "listar").mockImplementation(async (f: ReclamoFiltros = {}) => respuesta(f) as never)
+    vi.spyOn(reclamosApi, "responsables").mockResolvedValue([
+      { idUsuario: 7, nombres: "Demo Logístico" },
+      { idUsuario: 8, nombres: "Karla" },
+    ])
   })
   afterEach(() => {
     vi.restoreAllMocks()
@@ -70,5 +74,43 @@ describe("ReclamosPage", () => {
     expect(screen.queryByText("Esto está tardando más de lo normal")).toBeNull()
     await act(async () => { vi.advanceTimersByTime(5000) })
     expect(screen.getByText("Esto está tardando más de lo normal")).toBeTruthy()
+  })
+
+  it("filtra por prioridad y responsable, los conteos los siguen y se pueden limpiar (v3.4)", async () => {
+    pintar()
+    fireEvent.change(screen.getByLabelText("Prioridad"), { target: { value: "ALTA" } })
+    fireEvent.change(await screen.findByLabelText("Responsable"), { target: { value: "7" } })
+    await waitFor(() => expect(reclamosApi.listar).toHaveBeenCalledWith(
+      expect.objectContaining({ prioridad: "ALTA", idResponsable: 7, page: 0, size: 10 })))
+    expect(reclamosApi.listar).toHaveBeenCalledWith(expect.objectContaining({ prioridad: "ALTA", idResponsable: 7, size: 1 }))
+
+    fireEvent.click(screen.getAllByRole("button", { name: /limpiar filtros/i })[0])
+    expect((screen.getByLabelText("Prioridad") as HTMLSelectElement).value).toBe("")
+    expect((screen.getByLabelText("Responsable") as HTMLSelectElement).value).toBe("")
+  })
+
+  it("muestra la descripción, el responsable y cuánto falta para el límite (v3.4)", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] })
+    vi.setSystemTime(new Date("2026-11-26T12:00:00"))
+    const base = {
+      tipo: "RECLAMO", estado: "REGISTRADO", prioridad: "ALTA", cliente: "MINERA DEMO S.A.",
+      fechaRegistro: "2026-11-26T09:00:00", descripcion: "Dos filtros llegaron golpeados",
+    }
+    vi.mocked(reclamosApi.listar).mockImplementation(async (f: ReclamoFiltros = {}) => (f.size === 1 ? respuesta(f) : {
+      content: [
+        { ...base, idReclamo: 1, codigoReclamo: "REC-000001", asunto: "Caja dañada", responsable: "Demo Logístico", fechaLimite: "2026-11-29" },
+        { ...base, idReclamo: 2, codigoReclamo: "REC-000002", asunto: "Entrega tarde", responsable: null, fechaLimite: "2026-11-24", vencido: true },
+        { ...base, idReclamo: 3, codigoReclamo: "REC-000003", asunto: "Ya resuelto", estado: "RESUELTO", fechaLimite: "2026-11-20" },
+      ],
+      totalElements: 3, totalPages: 1, number: 0, size: 10,
+    }) as never)
+    pintar()
+    expect(await screen.findByText("Caja dañada")).toBeTruthy()
+    expect(screen.getAllByText("Dos filtros llegaron golpeados").length).toBe(3)
+    expect(screen.getByText("DL")).toBeTruthy()
+    expect(screen.getByText("Faltan 3 días")).toBeTruthy()
+    expect(screen.getByText("Venció hace 2 días")).toBeTruthy()
+    expect(screen.getAllByText("Sin asignar")).toHaveLength(2)
+    expect(screen.queryByText(/Venció hace 6 días/)).toBeNull()
   })
 })

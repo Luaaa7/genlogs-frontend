@@ -21,11 +21,16 @@ export function useReclamos(filtros: ReclamoFiltros = {}) {
  * Cuántos reclamos hay de cada estado (y en total) con el tipo elegido. Pide una página de
  * un solo registro por estado y lee el total: no trae los reclamos.
  */
-export function useConteosReclamos(estados: EstadoReclamo[], tipo?: TipoReclamo) {
+export function useConteosReclamos(
+  estados: EstadoReclamo[],
+  tipo?: TipoReclamo,
+  /** v3.4: los conteos también siguen la prioridad y el responsable elegidos. */
+  extra: Pick<ReclamoFiltros, 'prioridad' | 'idResponsable'> = {},
+) {
   const claves: (EstadoReclamo | undefined)[] = [undefined, ...estados]
   const consultas = useQueries({
     queries: claves.map((estado) => {
-      const filtros: ReclamoFiltros = { tipo, estado, page: 0, size: 1 }
+      const filtros: ReclamoFiltros = { tipo, estado, ...extra, page: 0, size: 1 }
       return { queryKey: [...reclamosKeys.all, 'conteo', filtros] as const, queryFn: () => reclamosApi.listar(filtros) }
     }),
   })
