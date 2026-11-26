@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3f6fa"/><stop offset="1" stop-color="#dbe3ee"/></linearGradient>
+<linearGradient id="m" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7f8fa"/><stop offset=".5" stop-color="#a7b0bb"/><stop offset="1" stop-color="#e3e7ec"/></linearGradient>
+<linearGradient id="mv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b7480"/><stop offset=".35" stop-color="#eef1f4"/><stop offset="1" stop-color="#59626d"/></linearGradient>
+<linearGradient id="d" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4b525c"/><stop offset="1" stop-color="#1b1e23"/></linearGradient>
+<radialGradient id="b" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#c3cad2"/><stop offset="1" stop-color="#5d6670"/></radialGradient>
+<filter id="s" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+
+</defs>
+<rect width="480" height="360" fill="url(#bg)"/>
+<ellipse cx="240" cy="300" rx="135" ry="14" fill="#0b1a33" opacity=".18" filter="url(#s)"/>
+
+<polygon points="240,110 344,152 240,194 136,152" fill="#e4bb7f"/>
+<polygon points="136,152 240,194 240,294 136,252" fill="#c9965a"/>
+<polygon points="240,194 344,152 344,252 240,294" fill="#b5824a"/>
+<polygon points="182,133 196,127 298,168 284,174" fill="#d8c49c"/>
+<polygon points="284,174 298,168 298,208 284,214" fill="#c7b088"/>
+<rect x="160" y="200" width="54" height="34" fill="#fff" opacity=".85" transform="skewY(22.5) translate(0,-66)"/>
+<line x1="240" y1="194" x2="240" y2="294" stroke="#a87a42" stroke-width="1.5"/>
+</svg>

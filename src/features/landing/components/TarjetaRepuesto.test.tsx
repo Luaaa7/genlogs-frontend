@@ -38,6 +38,10 @@ describe("TarjetaRepuesto (IC9, IC10)", () => {
   it("si la foto falla al cargar, muestra la ilustración de su categoría (IC10)", () => {
     pintar(base)
     fireEvent.error(screen.getByRole("img", { name: "Rodamiento 6205" }))
+    // Primero intenta la foto referencial del tipo; si tampoco carga, la ilustración.
+    const ref = screen.getByRole("img", { name: "Rodamiento 6205" })
+    expect(ref.getAttribute("src")).toBe("/repuestos/rodamiento.svg")
+    fireEvent.error(ref)
     expect(screen.queryByRole("img", { name: "Rodamiento 6205" })).toBeNull()
     expect(screen.getByText(/foto referencial próximamente/i)).toBeTruthy()
   })
@@ -55,8 +59,15 @@ describe("TarjetaRepuesto (IC9, IC10)", () => {
     expect(screen.getByRole("img", { name: "Rodamiento 6205" })).toBeTruthy()
   })
 
-  it("sin foto muestra la ilustración", () => {
+  it("sin foto propia muestra la foto referencial de su tipo, marcada como tal", () => {
     pintar({ ...base, urlImagen: null })
+    expect(screen.getByRole("img", { name: "Rodamiento 6205" }).getAttribute("src")).toBe("/repuestos/rodamiento.svg")
+    expect(screen.getByText("Imagen referencial")).toBeTruthy()
+  })
+
+  it("sin foto propia ni referencial muestra la ilustración", () => {
+    pintar({ ...base, urlImagen: null })
+    fireEvent.error(screen.getByRole("img", { name: "Rodamiento 6205" }))
     expect(screen.queryByRole("img", { name: "Rodamiento 6205" })).toBeNull()
     expect(screen.getByText(/foto referencial próximamente/i)).toBeTruthy()
   })

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3f6fa"/><stop offset="1" stop-color="#dbe3ee"/></linearGradient>
+<linearGradient id="m" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7f8fa"/><stop offset=".5" stop-color="#a7b0bb"/><stop offset="1" stop-color="#e3e7ec"/></linearGradient>
+<linearGradient id="mv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b7480"/><stop offset=".35" stop-color="#eef1f4"/><stop offset="1" stop-color="#59626d"/></linearGradient>
+<linearGradient id="d" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4b525c"/><stop offset="1" stop-color="#1b1e23"/></linearGradient>
+<radialGradient id="b" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#c3cad2"/><stop offset="1" stop-color="#5d6670"/></radialGradient>
+<filter id="s" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+<linearGradient id="am" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f5b70a"/><stop offset=".4" stop-color="#ffd54a"/><stop offset="1" stop-color="#d89c00"/></linearGradient>
+</defs>
+<rect width="480" height="360" fill="url(#bg)"/>
+<ellipse cx="240" cy="300" rx="135" ry="14" fill="#0b1a33" opacity=".18" filter="url(#s)"/>
+
+<rect x="230" y="128" width="20" height="30" fill="#2b3037"/>
+<circle cx="240" cy="92" r="48" fill="#e9edf2" opacity=".6"/>
+<ellipse cx="240" cy="62" rx="9" ry="30" fill="#9aa3ad" stroke="#6b7480" transform="rotate(0 240 92)"/><ellipse cx="240" cy="62" rx="9" ry="30" fill="#9aa3ad" stroke="#6b7480" transform="rotate(72 240 92)"/><ellipse cx="240" cy="62" rx="9" ry="30" fill="#9aa3ad" stroke="#6b7480" transform="rotate(144 240 92)"/><ellipse cx="240" cy="62" rx="9" ry="30" fill="#9aa3ad" stroke="#6b7480" transform="rotate(216 240 92)"/><ellipse cx="240" cy="62" rx="9" ry="30" fill="#9aa3ad" stroke="#6b7480" transform="rotate(288 240 92)"/>
+<circle cx="240" cy="92" r="48" fill="none" stroke="#2b3037" stroke-width="9"/>
+<circle cx="240" cy="92" r="9" fill="#2b3037"/>
+<rect x="194" y="152" width="92" height="140" rx="18" fill="url(#am)"/>
+<rect x="206" y="166" width="68" height="44" rx="5" fill="#2b3037"/>
+<rect x="210" y="170" width="60" height="36" rx="3" fill="#b9d8c8"/>
+<text x="240" y="194" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#1f2937">3.6</text>
+<text x="240" y="203" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="7" fill="#1f2937">m/s</text>
+<circle cx="222" cy="232" r="8" fill="#2b3037"/><circle cx="258" cy="232" r="8" fill="#2b3037"/>
+<rect x="214" y="252" width="52" height="12" rx="6" fill="#2b3037"/>
+</svg>

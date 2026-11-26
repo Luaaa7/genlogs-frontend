@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3f6fa"/><stop offset="1" stop-color="#dbe3ee"/></linearGradient>
+<linearGradient id="m" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7f8fa"/><stop offset=".5" stop-color="#a7b0bb"/><stop offset="1" stop-color="#e3e7ec"/></linearGradient>
+<linearGradient id="mv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b7480"/><stop offset=".35" stop-color="#eef1f4"/><stop offset="1" stop-color="#59626d"/></linearGradient>
+<linearGradient id="d" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4b525c"/><stop offset="1" stop-color="#1b1e23"/></linearGradient>
+<radialGradient id="b" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#c3cad2"/><stop offset="1" stop-color="#5d6670"/></radialGradient>
+<filter id="s" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+
+</defs>
+<rect width="480" height="360" fill="url(#bg)"/>
+<ellipse cx="240" cy="300" rx="135" ry="14" fill="#0b1a33" opacity=".18" filter="url(#s)"/>
+
+<polygon points="329.2,169.9 351.7,173.5 351.7,190.5 329.2,194.1 325.6,209.8 344.3,222.8 336.9,238.1 315.1,231.6 305.1,244.2 316.3,264.0 303.0,274.6 286.2,259.3 271.6,266.3 273.2,289.0 256.5,292.8 248.1,271.6 231.9,271.6 223.5,292.8 206.8,289.0 208.4,266.3 193.8,259.3 177.0,274.6 163.7,264.0 174.9,244.2 164.9,231.6 143.1,238.1 135.7,222.8 154.4,209.8 150.8,194.1 128.3,190.5 128.3,173.5 150.8,169.9 154.4,154.2 135.7,141.2 143.1,125.9 164.9,132.4 174.9,119.8 163.7,100.0 177.0,89.4 193.8,104.7 208.4,97.7 206.8,75.0 223.5,71.2 231.9,92.4 248.1,92.4 256.5,71.2 273.2,75.0 271.6,97.7 286.2,104.7 303.0,89.4 316.3,100.0 305.1,119.8 315.1,132.4 336.9,125.9 344.3,141.2 325.6,154.2" fill="url(#m)" stroke="#7f8995" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="240" cy="182" r="84" fill="none" stroke="#8f99a4" stroke-width="2"/>
+<circle cx="285.3" cy="227.3" r="13" fill="#6f7984"/><circle cx="194.7" cy="227.3" r="13" fill="#6f7984"/><circle cx="194.7" cy="136.7" r="13" fill="#6f7984"/><circle cx="285.3" cy="136.7" r="13" fill="#6f7984"/>
+<circle cx="240" cy="182" r="40" fill="#c4ccd4" stroke="#7f8995" stroke-width="2"/>
+<circle cx="240" cy="182" r="20" fill="#2c3138"/><rect x="234" y="156" width="12" height="10" fill="#2c3138"/>
+</svg>
