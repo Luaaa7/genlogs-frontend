@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react"
-import { AlertTriangle } from "lucide-react"
+import { AlertTriangle, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface ConfirmDialogProps {
@@ -11,6 +11,8 @@ interface ConfirmDialogProps {
   /** "destructive" (rojo, para eliminar/desactivar) o "default" (acento). */
   variant?: "destructive" | "default"
   isLoading?: boolean
+  /** Etiqueta del botón mientras espera la respuesta (gerundio): «Aprobando...». Por defecto «Procesando…». */
+  loadingLabel?: string
   /** Contenido extra bajo la descripción (p. ej. un campo de motivo). */
   children?: React.ReactNode
   onConfirm: () => void
@@ -30,6 +32,7 @@ export function ConfirmDialog({
   cancelLabel = "Cancelar",
   variant = "destructive",
   isLoading = false,
+  loadingLabel = "Procesando…",
   children,
   onConfirm,
   onCancel,
@@ -102,7 +105,8 @@ export function ConfirmDialog({
             onClick={onConfirm}
             disabled={isLoading}
           >
-            {isLoading ? "Procesando…" : confirmLabel}
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
+            {isLoading ? loadingLabel : confirmLabel}
           </Button>
         </div>
       </div>

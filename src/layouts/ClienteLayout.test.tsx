@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react"
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -358,6 +358,59 @@ describe("Menú del portal del cliente", () => {
     expect(fila.className).not.toContain("flex-wrap")
     expect(logo.className).toContain("shrink-0")
     expect(menu().getByRole("link", { name: conSesion ? "Mis pedidos" : "Ingresar" }).className).toContain("whitespace-nowrap")
+  })
+
+  describe("barra de progreso superior", () => {
+    const barra = () => screen.queryByRole("progressbar", { name: "Cargando" })
+
+    it("va pegada al borde inferior de la barra de navegación", async () => {
+      await renderLayout(false, true)
+      await waitFor(() => expect(barra()).toBeNull())
+      act(() => {
+        void clienteDeConsultas.fetchQuery({ queryKey: ["lenta"], queryFn: () => new Promise<string>(() => {}) })
+      })
+      await waitFor(() => expect(barra()).not.toBeNull())
+      expect(barra()?.parentElement).toBe(screen.getByRole("banner"))
+      expect(screen.getByRole("banner").className).toContain("relative")
+    })
+
+    it("se oculta cuando no hay cargas activas", async () => {
+      await renderLayout(false, true)
+      await waitFor(() => expect(barra()).toBeNull())
+    })
+
+    it("aparece mientras hay una consulta cargando y se va al terminar", async () => {
+      await renderLayout(false, true)
+      await waitFor(() => expect(barra()).toBeNull())
+
+      let terminar: (valor: string) => void = () => {}
+      act(() => {
+        void clienteDeConsultas.fetchQuery({ queryKey: ["lenta"], queryFn: () => new Promise<string>((resolver) => { terminar = resolver }) })
+      })
+      await waitFor(() => expect(barra()).not.toBeNull())
+
+      act(() => terminar("listo"))
+      await waitFor(() => expect(barra()).toBeNull())
+    })
+
+    it("también se activa un momento al navegar a otra sección", async () => {
+      await renderLayout(false, true)
+      await waitFor(() => expect(barra()).toBeNull())
+
+      fireEvent.click(menu().getByRole("link", { name: "Mis cotizaciones" }))
+
+      expect(barra()).not.toBeNull()
+      await waitFor(() => expect(barra()).toBeNull())
+    })
+
+    it("sin sesión también existe (ingreso y registro cargan datos)", async () => {
+      await renderLayout(false, false)
+      await waitFor(() => expect(barra()).toBeNull())
+      act(() => {
+        void clienteDeConsultas.fetchQuery({ queryKey: ["lenta"], queryFn: () => new Promise<string>(() => {}) })
+      })
+      await waitFor(() => expect(barra()).not.toBeNull())
+    })
   })
 
   it.each([[true], [false]])("con sesión = %s muestra el pie institucional con Ayuda y Contacto", async (conSesion) => {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { Check, ChevronDown, Copy, FileText, Info, Loader2, Package, Plus, Trash2, X } from "lucide-react"
+import { Check, ChevronDown, Copy, FileText, Info, Package, Plus, Trash2, X } from "lucide-react"
 import { useCrearSolicitud } from "../hooks/useCrearSolicitud"
 import {
   guardarBorrador,
@@ -24,6 +24,7 @@ import {
 import { portalApi } from "@/api/portalApi"
 import { carritoAPrecargados, vaciarCarrito } from "@/lib/carritoPublico"
 import { Button } from "@/components/ui/button"
+import { BotonCargando } from "../components/BotonCargando"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Campo } from "@/components/ui/campo"
@@ -406,10 +407,9 @@ export function NuevaSolicitudPage() {
         {mutation.isError && (
           <ErrorBanner message="No se pudo enviar la solicitud. Intenta nuevamente." onRetry={() => mutation.reset()} />
         )}
-        <Button type="submit" disabled={enviando} className="w-full">
-          {enviando && <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
-          {subiendo ? "Subiendo fotos..." : mutation.isPending ? "Registrando solicitud..." : "Enviar solicitud"}
-        </Button>
+        <BotonCargando type="submit" cargando={enviando} textoCargando={subiendo ? "Subiendo fotos..." : "Registrando solicitud..."} className="w-full">
+          Enviar solicitud
+        </BotonCargando>
       </form>
     </div>
   )

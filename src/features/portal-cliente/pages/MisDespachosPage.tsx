@@ -4,6 +4,7 @@ import { EstadoVacio } from '@/components/ui/EstadoVacio'
 import { textoPlazo } from '@/features/despacho/api/despachoTipos'
 import { useDespachosPortal } from '@/features/despacho/hooks/useDespachos'
 import { BotonNuevaSolicitud } from '../components/BotonNuevaSolicitud'
+import { ListaEsqueleto } from '../components/SkeletonCard'
 
 /** Despachos del cliente: etapa, plazo y número de orden. */
 export function MisDespachosPage() {
@@ -22,7 +23,7 @@ export function MisDespachosPage() {
       </div>
       {isError && <ErrorBanner message="No se pudieron cargar los despachos." error={error} onRetry={() => refetch()} />}
       {isLoading ? (
-        <p role="status" className="text-sm text-muted-foreground">Cargando despachos…</p>
+        <ListaEsqueleto variante="despacho" etiqueta="Cargando despachos..." />
       ) : !isError && despachos.length === 0 ? (
         <EstadoVacio icono={<Truck className="h-5 w-5" />} titulo="Aún no hay despachos" />
       ) : (

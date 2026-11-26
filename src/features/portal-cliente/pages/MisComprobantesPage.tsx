@@ -9,6 +9,7 @@ import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { formatearMoneda } from "@/lib/formatters/codigoCotizacion"
 import { formatearFechaCorta } from "@/lib/formatters/fechaLocal"
 import { mensajeError } from "@/lib/errores"
+import { ListaEsqueleto } from "../components/SkeletonCard"
 import { navegacionExterna } from "../lib/navegacionExterna"
 
 function tono(codigo?: string | null) {
@@ -58,7 +59,7 @@ export function MisComprobantesPage() {
       {isError && <ErrorBanner message="No se pudieron cargar tus comprobantes." error={error} onRetry={() => refetch()} />}
 
       {isLoading ? (
-        <p role="status" className="text-sm text-muted-foreground">Cargando tus comprobantes…</p>
+        <ListaEsqueleto variante="comprobante" etiqueta="Cargando comprobantes..." />
       ) : !isError && comprobantes.length === 0 ? (
         <EstadoVacio
           icono={<Receipt className="h-5 w-5" />}

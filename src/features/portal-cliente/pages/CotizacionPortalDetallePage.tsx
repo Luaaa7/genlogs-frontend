@@ -125,6 +125,7 @@ export function CotizacionPortalDetallePage() {
         confirmLabel={confirmar === "aprobar" ? "Sí, aprobar" : "Sí, rechazar"}
         variant={confirmar === "aprobar" ? "default" : "destructive"}
         isLoading={decidir.isPending}
+        loadingLabel={confirmar === "rechazar" ? "Rechazando..." : "Aprobando..."}
         onConfirm={enviar}
         onCancel={() => setConfirmar(null)}
       />
