@@ -46,7 +46,9 @@ export function PestanasTipoDocumento({ value, onChange, ariaLabel = 'Tipo de do
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card">
+    // v3.4: @container. Lo que entra en cada pestaña depende del ancho del bloque, no de la pantalla:
+    // en un panel lateral angosto (Reclamos) la pantalla es ancha y antes se aplastaban el texto y el chip.
+    <div className="@container rounded-xl border border-border bg-card">
       {/* Sin overflow-hidden en el contenedor: las listas desplegables del panel no deben cortarse. */}
       <div role="tablist" aria-label={ariaLabel} className="grid grid-cols-3 overflow-hidden rounded-t-xl bg-muted/60">
         {TIPOS_DOCUMENTO.map((t, i) => {
@@ -65,23 +67,24 @@ export function PestanasTipoDocumento({ value, onChange, ariaLabel = 'Tipo de do
               onClick={() => onChange(t.id)}
               onKeyDown={(e) => onKeyDown(e, i)}
               className={cn(
-                'flex min-w-0 items-center gap-3 border-t-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring disabled:opacity-60',
-                compacto ? 'px-3 py-2.5' : 'px-4 py-3.5',
+                'flex min-w-0 items-center gap-2.5 border-t-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring disabled:opacity-60 @3xl:gap-3',
+                compacto ? 'px-3 py-2.5' : 'px-3 py-3 @3xl:px-4 @3xl:py-3.5',
                 i < TIPOS_DOCUMENTO.length - 1 && 'border-r border-r-border',
                 activa
                   ? cn('bg-card text-foreground', t.bordeClass)
                   : 'border-t-transparent border-b border-b-border text-muted-foreground hover:bg-card/60 hover:text-foreground'
               )}
             >
-              <span className={cn('flex shrink-0 items-center justify-center rounded-lg', t.iconoClass, compacto ? 'h-8 w-8' : 'h-11 w-11')}>
-                <Icono className={compacto ? 'h-4 w-4' : 'h-5 w-5'} aria-hidden="true" />
+              <span className={cn('flex shrink-0 items-center justify-center rounded-lg', t.iconoClass, compacto ? 'h-8 w-8' : 'h-9 w-9 @3xl:h-11 @3xl:w-11')}>
+                <Icono className={compacto ? 'h-4 w-4' : 'h-4.5 w-4.5 @3xl:h-5 @3xl:w-5'} aria-hidden="true" />
               </span>
               <span className="flex min-w-0 flex-col">
                 <span className="truncate text-sm font-semibold">{t.label}</span>
-                {!compacto && <span className="hidden truncate text-xs text-muted-foreground md:block">{t.descripcion}</span>}
+                {/* Descripción y formato solo cuando cada pestaña tiene sitio: bloque de 48rem o más y de 56rem o más. */}
+                {!compacto && <span className="hidden truncate text-xs text-muted-foreground @3xl:block">{t.descripcion}</span>}
               </span>
               {!compacto && (
-                <span className="ml-auto hidden shrink-0 rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground lg:inline">
+                <span className="ml-auto hidden shrink-0 rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground @4xl:inline">
                   {t.formato}
                 </span>
               )}
