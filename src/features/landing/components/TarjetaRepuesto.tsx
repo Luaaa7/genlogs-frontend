@@ -4,6 +4,7 @@ import type { RepuestoPublico } from "@/api/publicApi"
 import { visualCategoria } from "../lib/visualCategoria"
 import { cn } from "@/lib/utils/utils"
 import { imagenCloudinary } from "@/lib/imagenCloudinary"
+import { textoPlazoRepuesto } from "../lib/plazoRepuesto"
 
 const TIPO: Record<RepuestoPublico["tipoRepuesto"], string> = {
   OEM: "Original (OEM)",
@@ -30,7 +31,7 @@ export function TarjetaRepuesto({ repuesto: r, enCotizacion, onAgregar, onSumar,
   const foto = r.urlImagen && r.urlImagen !== urlFallida ? r.urlImagen : null
   return (
     <article className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:border-accent/40 hover:shadow-md motion-safe:hover:-translate-y-0.5">
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+      <div className="relative aspect-4/3 overflow-hidden bg-muted">
         {foto ? (
           <img
             src={imagenCloudinary(foto, 480)}
@@ -43,7 +44,7 @@ export function TarjetaRepuesto({ repuesto: r, enCotizacion, onAgregar, onSumar,
           <div className={cn("relative flex h-full flex-col items-center justify-center gap-2", tono)}>
             <div
               aria-hidden="true"
-              className="absolute inset-0 opacity-20 [background-image:radial-gradient(currentColor_1px,transparent_1px)] [background-size:14px_14px]"
+              className="absolute inset-0 opacity-20 bg-[radial-gradient(currentColor_1px,transparent_1px)] bg-size-[14px_14px]"
             />
             <div aria-hidden="true" className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-current opacity-10" />
             <span className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-card shadow-sm motion-safe:transition-transform motion-safe:group-hover:scale-110">
@@ -71,7 +72,7 @@ export function TarjetaRepuesto({ repuesto: r, enCotizacion, onAgregar, onSumar,
         </dl>
         <p className="mt-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
           <Clock className="h-4 w-4 text-accent" aria-hidden="true" />
-          {r.plazoEntrega}
+          {textoPlazoRepuesto(r.plazoEntrega)}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">Disponible a pedido · sujeto a confirmación</p>
 
