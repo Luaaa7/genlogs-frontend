@@ -85,7 +85,17 @@ export const sourcingApi = {
     return data
   },
 
-  async historial(filtro: { numeroParte?: string; idSolicitudItem?: number }): Promise<Referencia[]> {
+  /**
+   * Con {@code q} (2 caracteres o más) busca en título, N.º de parte y marca, de la más reciente a la más
+   * antigua; {@code limite} va de 1 a 50 (20 por defecto) y {@code soloElegibles} deja fuera las descartadas.
+   */
+  async historial(filtro: {
+    numeroParte?: string
+    idSolicitudItem?: number
+    q?: string
+    soloElegibles?: boolean
+    limite?: number
+  }): Promise<Referencia[]> {
     if (usarMock) return sourcingMock.historial(filtro)
     const { data } = await axiosClient.get<Referencia[]>("/sourcing/historial", { params: filtro })
     return data
