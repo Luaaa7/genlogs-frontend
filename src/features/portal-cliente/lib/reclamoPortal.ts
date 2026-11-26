@@ -23,3 +23,11 @@ export function fechaCorta(iso?: string): string {
   const fecha = new Date(iso)
   return Number.isNaN(fecha.getTime()) ? "" : fecha.toLocaleDateString("es-PE")
 }
+
+/** Etapas del reclamo, en el orden en que avanzan. ANULADO no está: termina sin seguimiento. */
+export const ETAPAS_RECLAMO = ["REGISTRADO", "EN_PROCESO", "RESUELTO", "CERRADO"] as const
+
+/** Índice de la etapa del reclamo; -1 si está anulado o el estado no se conoce. */
+export function etapaDelReclamo(estado: string): number {
+  return (ETAPAS_RECLAMO as readonly string[]).indexOf(estado)
+}
