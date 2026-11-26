@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
-import { ChevronDown, Menu, Moon, Sun, X } from "lucide-react"
+import { ChevronDown, Menu, Moon, Sun, UserRound, X } from "lucide-react"
+import { useQueryClient } from "@tanstack/react-query"
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom"
 import logoGenlogs from "@/assets/GENLOGS.webp"
 import { useTheme } from "@/hooks/useTheme"
+import { useCuentaPortal } from "@/features/portal-cliente/hooks/useCuentaPortal"
+import { iniciales } from "@/features/portal-cliente/lib/iniciales"
 import { vitrinaHabilitada } from "@/lib/interruptores"
 import { cerrarSesionCliente, leerSesionCliente } from "@/lib/sesiones"
 
@@ -16,9 +19,19 @@ const claseEnlaceMovil = ({ isActive }: { isActive: boolean }) =>
 
 const claseBotonBarra = `shrink-0 whitespace-nowrap rounded-md px-2.5 py-2 text-muted-foreground hover:bg-muted hover:text-foreground xl:px-3 ${foco}`
 
+/** Círculo con las iniciales del cliente (o un icono de usuario si no hay nombre). */
+function Avatar({ nombre }: { nombre: string }) {
+  const letras = iniciales(nombre)
+  return (
+    <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1E3A5F] text-xs font-semibold text-white dark:bg-primary dark:text-primary-foreground">
+      {letras || <UserRound className="h-4 w-4" />}
+    </span>
+  )
+}
+
 /**
  * Barra del portal del cliente. Con sesión de cliente, en escritorio (lg, desde 1024 px) deja 4 o 5 secciones a la
- * vista y agrupa Reclamos, Ayuda y Contacto en «Soporte»; en pantallas chicas todo va en el panel de la hamburguesa, así
+ * vista y agrupa Reclamos, Ayuda y Contacto en «Soporte» y deja la cuenta (Mi perfil y Cerrar sesión) en un menú con avatar; en pantallas chicas todo va en el panel de la hamburguesa, así
  * que la barra nunca se desborda ni necesita scroll horizontal. «Nueva solicitud» ya tiene su botón amarillo
  * en cada vista y solo se repite en el panel móvil. Sin sesión (por ejemplo en /portal/ingreso y
  * /portal/registro) solo ofrece «Ingresar» y «Crear cuenta» (BPMN v3.4 de Mell, PS2/PS3).
@@ -26,30 +39,43 @@ const claseBotonBarra = `shrink-0 whitespace-nowrap rounded-md px-2.5 py-2 text-
  */
 export function ClienteLayout({ children }: { children?: ReactNode }) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   // Se vuelve a leer la sesión en cada cambio de ruta (al ingresar o al cerrar sesión).
   const { pathname } = useLocation()
   const conSesion = leerSesionCliente() !== null
   // Mismo hook y misma clave («genlogs-theme») que la landing: el portal conserva el tema elegido allí.
   const { tema, alternarTema } = useTheme()
 
-  // Soporte y el panel móvil guardan en qué ruta se abrieron: al navegar a otra, se cierran solos.
+  // Correo y empresa para el menú de cuenta; mientras llegan (o si falla) se usa el nombre de la sesión.
+  const cuenta = useCuentaPortal().data
+  const nombre = cuenta?.nombre || leerSesionCliente()?.nombre || ""
+  const empresa = cuenta?.empresa || ""
+
+  // Soporte, cuenta y el panel móvil guardan en qué ruta se abrieron: al navegar a otra, se cierran solos.
   const [soporteEn, setSoporteEn] = useState<string | null>(null)
+  const [cuentaEn, setCuentaEn] = useState<string | null>(null)
   const [menuEn, setMenuEn] = useState<string | null>(null)
   const soporteAbierto = soporteEn === pathname
+  const cuentaAbierta = cuentaEn === pathname
   const menuAbierto = menuEn === pathname
   const soporteRef = useRef<HTMLDivElement>(null)
+  const cuentaRef = useRef<HTMLDivElement>(null)
+  const cuentaBotonRef = useRef<HTMLButtonElement>(null)
   const hamburguesaRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
-    if (!soporteAbierto && !menuAbierto) return
+    if (!soporteAbierto && !cuentaAbierta && !menuAbierto) return
     const alPulsar = (evento: KeyboardEvent) => {
       if (evento.key !== "Escape") return
       if (menuAbierto) hamburguesaRef.current?.focus()
+      else if (cuentaAbierta) cuentaBotonRef.current?.focus()
       setSoporteEn(null)
+      setCuentaEn(null)
       setMenuEn(null)
     }
     const alHacerClic = (evento: MouseEvent) => {
       if (soporteAbierto && !soporteRef.current?.contains(evento.target as Node)) setSoporteEn(null)
+      if (cuentaAbierta && !cuentaRef.current?.contains(evento.target as Node)) setCuentaEn(null)
     }
     document.addEventListener("keydown", alPulsar)
     document.addEventListener("mousedown", alHacerClic)
@@ -57,10 +83,12 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
       document.removeEventListener("keydown", alPulsar)
       document.removeEventListener("mousedown", alHacerClic)
     }
-  }, [soporteAbierto, menuAbierto])
+  }, [soporteAbierto, cuentaAbierta, menuAbierto])
 
   function cerrarSesion() {
     cerrarSesionCliente()
+    // Los datos de la cuenta son de esta persona: no deben quedar para quien ingrese después en el mismo navegador.
+    queryClient.removeQueries({ queryKey: ["portal-cuenta"] })
     navigate("/portal/ingreso", { replace: true })
   }
 
@@ -106,7 +134,10 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
                 type="button"
                 aria-expanded={soporteAbierto}
                 aria-controls="portal-soporte"
-                onClick={() => setSoporteEn(soporteAbierto ? null : pathname)}
+                onClick={() => {
+                  setCuentaEn(null)
+                  setSoporteEn(soporteAbierto ? null : pathname)
+                }}
                 className={`inline-flex items-center gap-1 ${claseBotonBarra}`}
               >
                 Soporte
@@ -130,9 +161,46 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
             </div>
             {botonTema}
             {conSesion && (
-              <button type="button" onClick={cerrarSesion} className={`hidden lg:inline-flex ${claseBotonBarra}`}>
-                Cerrar sesión
-              </button>
+              <div ref={cuentaRef} className="relative hidden lg:block">
+                <button
+                  ref={cuentaBotonRef}
+                  type="button"
+                  aria-label="Menú de cuenta"
+                  aria-expanded={cuentaAbierta}
+                  aria-controls="portal-cuenta"
+                  onClick={() => {
+                    setSoporteEn(null)
+                    setCuentaEn(cuentaAbierta ? null : pathname)
+                  }}
+                  className={`flex max-w-[15rem] items-center gap-2 rounded-md py-1 pl-1 pr-2 text-left hover:bg-muted ${foco}`}
+                >
+                  <Avatar nombre={nombre} />
+                  <span className="hidden min-w-0 flex-col leading-tight xl:flex">
+                    <span className="truncate text-sm font-medium text-foreground">{nombre}</span>
+                    {empresa && <span className="truncate text-xs text-muted-foreground">{empresa}</span>}
+                  </span>
+                  <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none ${cuentaAbierta ? "rotate-180" : ""}`} aria-hidden="true" />
+                </button>
+                {cuentaAbierta && (
+                  <div
+                    id="portal-cuenta"
+                    role="group"
+                    aria-label="Cuenta"
+                    onClick={(evento) => {
+                      if ((evento.target as HTMLElement).closest("a")) setCuentaEn(null)
+                    }}
+                    className="absolute right-0 top-full z-20 mt-1 flex w-64 flex-col rounded-md border border-slate-200 bg-white p-1 shadow-md dark:border-border dark:bg-card"
+                  >
+                    <div className="border-b border-slate-100 px-3 py-2 dark:border-border">
+                      <p className="break-words text-sm font-medium text-foreground">{nombre}</p>
+                      {cuenta?.correo && <p className="break-all text-xs text-muted-foreground">{cuenta.correo}</p>}
+                      {empresa && <p className="mt-1 break-words text-xs text-muted-foreground">{empresa}</p>}
+                    </div>
+                    <NavLink to="/portal/perfil" className={claseEnlace}>Mi perfil</NavLink>
+                    <button type="button" onClick={cerrarSesion} className={`text-left ${claseBotonBarra}`}>Cerrar sesión</button>
+                  </div>
+                )}
+              </div>
             )}
             <button
               ref={hamburguesaRef}
@@ -167,6 +235,7 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
                   {vitrinaHabilitada && <NavLink to="/portal/repuestos" className={claseEnlaceMovil}>Repuestos</NavLink>}
                   <NavLink to="/portal/reclamos" className={claseEnlaceMovil}>Reclamos</NavLink>
                   <NavLink to="/portal/solicitud" className={claseEnlaceMovil}>Nueva solicitud</NavLink>
+                  <NavLink to="/portal/perfil" className={claseEnlaceMovil}>Mi perfil</NavLink>
                 </>
               ) : (
                 <>

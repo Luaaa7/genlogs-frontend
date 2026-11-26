@@ -1,22 +1,36 @@
-import { fireEvent, render, screen, within } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-async function renderLayout(vitrina: boolean, conSesion: boolean) {
+const CUENTA = { nombre: "Luana Barrientos", correo: "luana@empresa.pe", perfilCompleto: true, empresa: "Minera Los Andes S.A.C." }
+
+// QueryClient de la última prueba: permite comprobar qué queda en el caché.
+let clienteDeConsultas: import("@tanstack/react-query").QueryClient
+
+async function renderLayout(vitrina: boolean, conSesion: boolean, cuenta: unknown = CUENTA) {
   if (conSesion) {
     localStorage.setItem("cliente_access_token", "token")
-    sessionStorage.setItem("genlogs-cliente-auth", JSON.stringify({ nombre: "Cliente", rol: "CLIENTE" }))
+    sessionStorage.setItem("genlogs-cliente-auth", JSON.stringify({ nombre: "Luana Barrientos", rol: "CLIENTE" }))
   }
   vi.resetModules()
   vi.doMock("@/lib/interruptores", () => ({ vitrinaHabilitada: vitrina }))
+  // El menú de cuenta pide los datos de la cuenta (correo y empresa): se simulan.
+  vi.doMock("@/features/acceso-cliente/api/ingresoGoogleApi", () => ({
+    obtenerCuentaPortal: vi.fn(() => (cuenta instanceof Error ? Promise.reject(cuenta) : Promise.resolve(cuenta))),
+  }))
+  const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query")
   const { ClienteLayout } = await import("./ClienteLayout")
-  return render(<MemoryRouter><ClienteLayout /></MemoryRouter>)
+  const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  clienteDeConsultas = cliente
+  return render(<QueryClientProvider client={cliente}><MemoryRouter><ClienteLayout /></MemoryRouter></QueryClientProvider>)
 }
 
 // El pie repite Ayuda y Contacto, así que el menú de arriba se consulta por separado.
 const menu = () => within(screen.getByRole("navigation", { name: "Portal del cliente" }))
 const abrirSoporte = () => fireEvent.click(screen.getByRole("button", { name: "Soporte" }))
 const soporte = () => within(screen.getByRole("group", { name: "Soporte" }))
+const abrirCuenta = () => fireEvent.click(screen.getByRole("button", { name: "Menú de cuenta" }))
+const cuentaMenu = () => within(screen.getByRole("group", { name: "Cuenta" }))
 const abrirHamburguesa = () => fireEvent.click(screen.getByRole("button", { name: "Abrir menú" }))
 const drawer = () => within(screen.getByRole("navigation", { name: "Menú del portal" }))
 
@@ -33,7 +47,10 @@ describe("Menú del portal del cliente", () => {
     sessionStorage.clear()
     document.documentElement.classList.remove("dark")
   })
-  afterEach(() => vi.doUnmock("@/lib/interruptores"))
+  afterEach(() => {
+    vi.doUnmock("@/lib/interruptores")
+    vi.doUnmock("@/features/acceso-cliente/api/ingresoGoogleApi")
+  })
 
   describe("escritorio (lg:flex)", () => {
     it("con sesión deja en la barra 5 secciones, con Repuestos si la vitrina está encendida (Reclamos va en Soporte)", async () => {
@@ -96,13 +113,123 @@ describe("Menú del portal del cliente", () => {
       expect(screen.queryByRole("group", { name: "Soporte" })).toBeNull()
     })
 
-    it("«Soporte», el tema y «Cerrar sesión» van juntos a la derecha", async () => {
+    it("«Soporte», el tema y el menú de cuenta van juntos a la derecha", async () => {
       await renderLayout(false, true)
       const tema = screen.getByRole("button", { name: "Cambiar a tema oscuro" })
-      const cerrar = screen.getByRole("button", { name: "Cerrar sesión" })
+      const cuenta = screen.getByRole("button", { name: "Menú de cuenta" })
       const soporteBoton = screen.getByRole("button", { name: "Soporte" })
-      expect(tema.parentElement).toBe(cerrar.parentElement)
-      expect(soporteBoton.closest("div[class*='relative']")?.parentElement).toBe(cerrar.parentElement)
+      expect(tema.parentElement).toBe(cuenta.closest("div[class*='relative']")?.parentElement)
+      expect(soporteBoton.closest("div[class*='relative']")?.parentElement).toBe(tema.parentElement)
+    })
+
+    it("ya no deja «Cerrar sesión» suelto en la barra: está dentro del menú de cuenta", async () => {
+      await renderLayout(false, true)
+      expect(screen.queryByRole("button", { name: "Cerrar sesión" })).toBeNull()
+    })
+
+    it("el botón de cuenta muestra el avatar con iniciales y el nombre, y es solo de escritorio", async () => {
+      await renderLayout(false, true)
+      const boton = screen.getByRole("button", { name: "Menú de cuenta" })
+      expect(boton.getAttribute("aria-expanded")).toBe("false")
+      expect(boton.textContent).toContain("LB")
+      expect(boton.textContent).toContain("Luana Barrientos")
+      expect(boton.closest("div[class*='relative']")?.className).toContain("hidden")
+      expect(boton.closest("div[class*='relative']")?.className).toContain("lg:block")
+    })
+
+    it("con la empresa cargada, el botón la muestra bajo el nombre", async () => {
+      await renderLayout(false, true)
+      expect(await screen.findByText("Minera Los Andes S.A.C.", { selector: "button *" })).toBeTruthy()
+    })
+
+    it("sin nombre en la sesión usa un icono de usuario en lugar de iniciales", async () => {
+      localStorage.setItem("cliente_access_token", "token")
+      sessionStorage.setItem("genlogs-cliente-auth", JSON.stringify({ nombre: "", rol: "CLIENTE" }))
+      vi.resetModules()
+      vi.doMock("@/lib/interruptores", () => ({ vitrinaHabilitada: false }))
+      vi.doMock("@/features/acceso-cliente/api/ingresoGoogleApi", () => ({ obtenerCuentaPortal: vi.fn(() => new Promise(() => {})) }))
+      const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query")
+      const { ClienteLayout } = await import("./ClienteLayout")
+      render(<QueryClientProvider client={new QueryClient()}><MemoryRouter><ClienteLayout /></MemoryRouter></QueryClientProvider>)
+      const boton = screen.getByRole("button", { name: "Menú de cuenta" })
+      expect(boton.querySelector("svg")).toBeTruthy()
+    })
+
+    it("al abrirlo muestra nombre, correo y empresa, «Mi perfil» y «Cerrar sesión»", async () => {
+      await renderLayout(false, true)
+      abrirCuenta()
+
+      expect(screen.getByRole("button", { name: "Menú de cuenta" }).getAttribute("aria-expanded")).toBe("true")
+      expect(await cuentaMenu().findByText("luana@empresa.pe")).toBeTruthy()
+      expect(cuentaMenu().getByText("Luana Barrientos")).toBeTruthy()
+      expect(cuentaMenu().getByText("Minera Los Andes S.A.C.")).toBeTruthy()
+      expect(cuentaMenu().getByRole("link", { name: "Mi perfil" }).getAttribute("href")).toBe("/portal/perfil")
+      expect(cuentaMenu().getByRole("button", { name: "Cerrar sesión" })).toBeTruthy()
+    })
+
+    it("si la cuenta aún no carga o falla, el menú igual abre con el nombre de la sesión y las dos opciones", async () => {
+      await renderLayout(false, true, new Error("500"))
+      abrirCuenta()
+      expect(cuentaMenu().getByText("Luana Barrientos")).toBeTruthy()
+      expect(cuentaMenu().getByRole("link", { name: "Mi perfil" })).toBeTruthy()
+      expect(cuentaMenu().getByRole("button", { name: "Cerrar sesión" })).toBeTruthy()
+    })
+
+    it("una cuenta sin empresa no inventa el dato", async () => {
+      await renderLayout(false, true, { ...CUENTA, perfilCompleto: false, empresa: null })
+      abrirCuenta()
+      await cuentaMenu().findByText("luana@empresa.pe")
+      expect(cuentaMenu().queryByText("Minera Los Andes S.A.C.")).toBeNull()
+    })
+
+    it("«Cerrar sesión» del menú de cuenta termina la sesión del cliente", async () => {
+      await renderLayout(false, true)
+      abrirCuenta()
+      fireEvent.click(cuentaMenu().getByRole("button", { name: "Cerrar sesión" }))
+      expect(localStorage.getItem("cliente_access_token")).toBeNull()
+    })
+
+    it("al cerrar sesión se borra la cuenta guardada en caché (otra persona no ve datos ajenos)", async () => {
+      await renderLayout(false, true)
+      await waitFor(() => expect(clienteDeConsultas.getQueryData(["portal-cuenta"])).toBeTruthy())
+      abrirCuenta()
+      fireEvent.click(cuentaMenu().getByRole("button", { name: "Cerrar sesión" }))
+      expect(clienteDeConsultas.getQueryData(["portal-cuenta"])).toBeUndefined()
+    })
+
+    it("con Escape el foco vuelve al botón de cuenta", async () => {
+      await renderLayout(false, true)
+      abrirCuenta()
+      fireEvent.keyDown(document, { key: "Escape" })
+      expect(document.activeElement).toBe(screen.getByRole("button", { name: "Menú de cuenta" }))
+    })
+
+    it("el menú de cuenta se cierra con Escape, con un clic afuera y al elegir «Mi perfil»", async () => {
+      await renderLayout(false, true)
+
+      abrirCuenta()
+      fireEvent.keyDown(document, { key: "Escape" })
+      expect(screen.queryByRole("group", { name: "Cuenta" })).toBeNull()
+
+      abrirCuenta()
+      fireEvent.mouseDown(document.body)
+      expect(screen.queryByRole("group", { name: "Cuenta" })).toBeNull()
+
+      abrirCuenta()
+      fireEvent.click(cuentaMenu().getByRole("link", { name: "Mi perfil" }))
+      expect(screen.queryByRole("group", { name: "Cuenta" })).toBeNull()
+    })
+
+    it("abrir «Soporte» cierra el menú de cuenta, y al revés (nunca dos abiertos)", async () => {
+      await renderLayout(false, true)
+      abrirCuenta()
+      abrirSoporte()
+      expect(screen.queryByRole("group", { name: "Cuenta" })).toBeNull()
+      expect(screen.getByRole("group", { name: "Soporte" })).toBeTruthy()
+
+      abrirCuenta()
+      expect(screen.queryByRole("group", { name: "Soporte" })).toBeNull()
+      expect(screen.getByRole("group", { name: "Cuenta" })).toBeTruthy()
     })
 
     it("sin sesión solo muestra Ingresar y Crear cuenta en la barra (PS2), más Soporte", async () => {
@@ -112,6 +239,7 @@ describe("Menú del portal del cliente", () => {
       expect(screen.queryByRole("link", { name: "Mis pedidos" })).toBeNull()
       expect(screen.queryByRole("link", { name: "Repuestos" })).toBeNull()
       expect(screen.queryByRole("button", { name: "Cerrar sesión" })).toBeNull()
+      expect(screen.queryByRole("button", { name: "Menú de cuenta" })).toBeNull()
       abrirSoporte()
       expect(soporte().getByRole("link", { name: "Contacto" })).toBeTruthy()
     })
@@ -133,7 +261,14 @@ describe("Menú del portal del cliente", () => {
       expect(drawer().getByRole("link", { name: "Nueva solicitud" }).getAttribute("href")).toBe("/portal/solicitud")
       expect(drawer().getByRole("link", { name: "Ayuda" }).getAttribute("href")).toBe("/ayuda")
       expect(drawer().getByRole("link", { name: "Contacto" }).getAttribute("href")).toBe("/contacto")
+      expect(drawer().getByRole("link", { name: "Mi perfil" }).getAttribute("href")).toBe("/portal/perfil")
       expect(drawer().getByRole("button", { name: "Cerrar sesión" })).toBeTruthy()
+    })
+
+    it("sin sesión el panel no ofrece «Mi perfil»", async () => {
+      await renderLayout(true, false)
+      abrirHamburguesa()
+      expect(drawer().queryByRole("link", { name: "Mi perfil" })).toBeNull()
     })
 
     it("el panel no tiene scroll horizontal (solo vertical) y es solo para pantallas chicas", async () => {
@@ -167,13 +302,15 @@ describe("Menú del portal del cliente", () => {
       expect(screen.queryByRole("navigation", { name: "Menú del portal" })).toBeNull()
     })
 
-    it("«Cerrar sesión» del panel termina la sesión del cliente", async () => {
+    it("«Cerrar sesión» del panel termina la sesión del cliente y borra la cuenta en caché", async () => {
       await renderLayout(true, true)
+      await waitFor(() => expect(clienteDeConsultas.getQueryData(["portal-cuenta"])).toBeTruthy())
       abrirHamburguesa()
 
       fireEvent.click(drawer().getByRole("button", { name: "Cerrar sesión" }))
 
       expect(localStorage.getItem("cliente_access_token")).toBeNull()
+      expect(clienteDeConsultas.getQueryData(["portal-cuenta"])).toBeUndefined()
     })
 
     it("sin sesión el panel ofrece Ingresar, Crear cuenta, Ayuda y Contacto", async () => {
