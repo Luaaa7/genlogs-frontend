@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
-import { ChevronDown, Menu, Moon, Sun, UserRound, X } from "lucide-react"
+import { ChevronDown, ClipboardList, Menu, Moon, Sun, UserRound, X } from "lucide-react"
 import { useIsFetching, useIsMutating, useQueryClient } from "@tanstack/react-query"
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom"
 import logoGenlogs from "@/assets/GENLOGS.webp"
+import { useCotizacionCart } from "@/hooks/useCotizacionCart"
 import { useTheme } from "@/hooks/useTheme"
 import { useCuentaPortal } from "@/features/portal-cliente/hooks/useCuentaPortal"
 import { iniciales } from "@/features/portal-cliente/lib/iniciales"
@@ -20,6 +21,9 @@ const claseEnlaceMovil = ({ isActive }: { isActive: boolean }) =>
 
 /** Cuánto dura la barra de progreso al cambiar de sección. */
 const NAVEGACION_MS = 500
+
+/** Píldora dorada del carrito de cotización: discreta, sin panel flotante sobre las tablas y totales. */
+const clasePildora = `items-center gap-1.5 whitespace-nowrap rounded-full border border-dorado/40 bg-dorado/10 px-3 py-1.5 text-sm font-semibold text-dorado hover:bg-dorado/20 dark:border-amarillo/40 dark:bg-amarillo/10 dark:text-amarillo dark:hover:bg-amarillo/20 ${foco}`
 
 const claseBotonBarra = `shrink-0 whitespace-nowrap rounded-md px-2.5 py-2 text-muted-foreground hover:bg-muted hover:text-foreground xl:px-3 ${foco}`
 
@@ -47,6 +51,8 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
   // Se vuelve a leer la sesión en cada cambio de ruta (al ingresar o al cerrar sesión).
   const { pathname } = useLocation()
   const conSesion = leerSesionCliente() !== null
+  // Repuestos distintos elegidos en la landing o en Repuestos: se retoman desde «Cotización (N)».
+  const { total: enCotizacion } = useCotizacionCart()
   // Mismo hook y misma clave («genlogs-theme») que la landing: el portal conserva el tema elegido allí.
   const { tema, alternarTema } = useTheme()
 
@@ -178,6 +184,12 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
               )}
             </div>
             {botonTema}
+            {conSesion && enCotizacion > 0 && (
+              <Link to="/portal/solicitud" className={`hidden lg:inline-flex ${clasePildora}`}>
+                <ClipboardList className="h-4 w-4" aria-hidden="true" />
+                Cotización ({enCotizacion})
+              </Link>
+            )}
             {conSesion && (
               <div ref={cuentaRef} className="relative hidden lg:block">
                 <button
@@ -255,6 +267,12 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
                   {vitrinaHabilitada && <NavLink to="/portal/repuestos" className={claseEnlaceMovil}>Repuestos</NavLink>}
                   <NavLink to="/portal/reclamos" className={claseEnlaceMovil}>Reclamos</NavLink>
                   <NavLink to="/portal/solicitud" className={claseEnlaceMovil}>Nueva solicitud</NavLink>
+                  {enCotizacion > 0 && (
+                    <Link to="/portal/solicitud" className={`my-1 flex w-fit ${clasePildora}`}>
+                      <ClipboardList className="h-4 w-4" aria-hidden="true" />
+                      Cotización ({enCotizacion})
+                    </Link>
+                  )}
                   <NavLink to="/portal/perfil" className={claseEnlaceMovil}>Mi perfil</NavLink>
                 </>
               ) : (

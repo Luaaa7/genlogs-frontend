@@ -2,10 +2,9 @@ import { Link } from "react-router-dom"
 import { KeyRound, UserRound } from "lucide-react"
 import CargandoSpinner from "@/components/ui/CargandoSpinner"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
-import { RUTA_EMPRESA_PORTAL } from "@/api/contratos/ingresoGoogle"
-import { PARAMETRO_VOLVER } from "@/api/contratos/registro"
 import { leerSesionCliente } from "@/lib/sesiones"
 import { EncabezadoPortal } from "../components/EncabezadoPortal"
+import { TarjetaDatosEmpresa } from "../components/TarjetaDatosEmpresa"
 import { ENTRADA_TARJETA, retardoEntrada } from "../lib/estilosTarjeta"
 import { useCuentaPortal } from "../hooks/useCuentaPortal"
 
@@ -24,7 +23,8 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
 /**
  * Perfil del cliente (/portal/perfil). Muestra solo lo que la cuenta realmente trae
  * (nombre, correo y razón social); RUC, teléfono y dirección no existen aún en el backend.
- * No cambia datos: para la contraseña enlaza a la recuperación que ya existe.
+ * Una cuenta sin empresa completa aquí su RUC y razón social (registro progresivo, POST /portal/empresa).
+ * Para la contraseña enlaza a la recuperación que ya existe.
  */
 export function PerfilClientePage() {
   const cuenta = useCuentaPortal()
@@ -54,14 +54,7 @@ export function PerfilClientePage() {
           {datos?.empresa && <Dato etiqueta="Razón social" valor={datos.empresa} />}
         </dl>
 
-        {datos && !datos.empresa && (
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm dark:border-border dark:bg-muted/40">
-            <p className="text-muted-foreground">Tu cuenta aún no tiene empresa. La necesitas para pedir cotizaciones.</p>
-            <Link to={`${RUTA_EMPRESA_PORTAL}?${PARAMETRO_VOLVER}=${encodeURIComponent("/portal/perfil")}`} className={ENLACE}>
-              Completar datos de la empresa
-            </Link>
-          </div>
-        )}
+        {datos && !datos.empresa && <TarjetaDatosEmpresa nombreSesion={nombreSesion} />}
       </section>
 
       <section aria-labelledby="perfil-clave" style={retardoEntrada(1)} className={`mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-card ${ENTRADA_TARJETA}`}>

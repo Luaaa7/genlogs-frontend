@@ -38,6 +38,12 @@ describe("IngresoConGoogle", () => {
     vi.mocked(ingresarConGoogle).mockReset()
   })
 
+  it("explica bajo el botón de Google que los datos de la empresa se piden antes de la primera cotización", () => {
+    renderGoogle()
+    expect(screen.getByText(/entra rápido con tu cuenta de google/i)).toBeTruthy()
+    expect(screen.getByText(/antes de tu primera cotización/i)).toBeTruthy()
+  })
+
   it("cliente con empresa: abre la sesión y vuelve a ?volver=", async () => {
     vi.mocked(ingresarConGoogle).mockResolvedValue({
       token: "tok", nombre: "Titular", nombreRol: "CLIENTE", perfilCompleto: true, pendiente: false,

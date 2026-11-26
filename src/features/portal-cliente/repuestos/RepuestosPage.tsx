@@ -1,3 +1,4 @@
+import { textoPlazoEntrega } from "@/lib/plazoEntrega"
 import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useMutation, useQuery } from "@tanstack/react-query"
@@ -167,7 +168,7 @@ export function RepuestosPage() {
                   <div className="mt-2 flex flex-wrap gap-2 text-xs">
                     <span className="rounded-full border border-border px-2 py-0.5">{TIPO[r.tipoRepuesto]}</span>
                     <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5">
-                      <Clock className="h-3 w-3" aria-hidden="true" /> {r.plazoEntrega}
+                      <Clock className="h-3 w-3" aria-hidden="true" /> {textoPlazoEntrega(r.plazoEntrega)}
                     </span>
                   </div>
                   <p className="mt-3 text-lg font-semibold tabular-nums">

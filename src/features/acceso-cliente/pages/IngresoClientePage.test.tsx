@@ -45,8 +45,6 @@ describe("IngresoClientePage", () => {
     expect(ingresarCliente).toHaveBeenCalledWith({ correo: "compras@minera.pe", password: "secreta123" })
   })
 
-<<<<<<< Updated upstream
-=======
   it("usa el encabezado homologado del portal y la nota de Google", () => {
     renderIngreso("/portal/ingreso")
     expect(screen.getByTestId("etiqueta-portal").textContent).toBe("Portal del cliente")
@@ -61,7 +59,6 @@ describe("IngresoClientePage", () => {
     expect(screen.queryByText(/tu sesión venció/i)).toBeNull()
   })
 
->>>>>>> Stashed changes
   it("sin ?volver= va a Mis pedidos", async () => {
     vi.mocked(ingresarCliente).mockResolvedValue({ token: "tok", nombreRol: "CLIENTE" })
     renderIngreso("/portal/ingreso")
