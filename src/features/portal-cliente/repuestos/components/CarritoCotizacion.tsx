@@ -69,7 +69,7 @@ export function CarritoCotizacion({ items, enviando, error, onCantidad, onQuitar
           <span className="font-semibold tabular-nums">{formatCurrency(total, "PEN")}</span>
         </p>
       )}
-      <p className="text-xs text-muted-foreground">Los precios son referenciales: te enviamos la cotización con precio y plazo confirmados.</p>
+      <p className="text-xs text-muted-foreground">Te enviamos la cotización con precio y plazo confirmados.</p>
       {pendientes > 0 && (
         <p className="text-sm text-warning-text">
           {pendientes === 1 ? "A 1 repuesto le falta" : `A ${pendientes} repuestos les falta`} el N.º de parte con su marca, o una foto.
