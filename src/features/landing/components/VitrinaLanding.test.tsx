@@ -63,6 +63,14 @@ describe("VitrinaLanding (RF-82, D-16, D-30)", () => {
     expect(document.body.textContent).not.toMatch(/S\/\s?\d|US\$|\$\s?\d/)
   })
 
+  it("no muestra «24 a 48 horas»: indica «Plazo según cotización» o el plazo propio del repuesto", async () => {
+    pintar()
+    const tarjetas = await screen.findAllByRole("article")
+    expect(within(tarjetas[0]).getByText("Plazo según cotización")).toBeTruthy()
+    expect(within(tarjetas[1]).getByText("5 a 7 días hábiles")).toBeTruthy()
+    expect(document.body.textContent).not.toMatch(/24 a 48/)
+  })
+
   it("filtra por categoría y por búsqueda", async () => {
     pintar()
     fireEvent.click(await screen.findByRole("button", { name: /rodamientos/i }))
