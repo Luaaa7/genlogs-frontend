@@ -1,17 +1,15 @@
 import { Link } from "react-router-dom"
 import { FileText } from "lucide-react"
-import CargandoSpinner from "@/components/ui/CargandoSpinner"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { EstadoBadge } from "@/components/ui/EstadoBadge"
 import { formatCurrency } from "@/lib/formatters/currency"
 import { BotonNuevaSolicitud } from "../components/BotonNuevaSolicitud"
+import { ListaEsqueleto } from "../components/SkeletonCard"
 import { useCotizacionesPortal } from "../hooks/useCotizacionesPortal"
 import { esCotizacionAnulada, puedeDecidir, tonoEstadoCotizacion } from "../lib/cotizacionPortal"
 
 export function MisCotizacionesPage() {
   const query = useCotizacionesPortal()
-  if (query.isPending) return <CargandoSpinner texto="Cargando cotizaciones..." />
-  if (query.isError) return <ErrorBanner message="No pudimos cargar tus cotizaciones." onRetry={() => query.refetch()} />
   const cotizaciones = query.data ?? []
 
   return (
@@ -23,7 +21,11 @@ export function MisCotizacionesPage() {
         </div>
         <BotonNuevaSolicitud />
       </div>
-      {cotizaciones.length === 0 ? (
+      {query.isPending ? (
+        <div className="mt-8"><ListaEsqueleto variante="cotizacion" etiqueta="Cargando cotizaciones..." /></div>
+      ) : query.isError ? (
+        <div className="mt-8"><ErrorBanner message="No pudimos cargar tus cotizaciones." onRetry={() => query.refetch()} /></div>
+      ) : cotizaciones.length === 0 ? (
         <p className="mt-8 rounded-xl border border-slate-200 bg-white shadow-sm dark:border-border dark:bg-card p-8 text-center text-muted-foreground">
           Todavía no tienes cotizaciones. Cuando coticemos uno de tus pedidos, aparecerá aquí.
         </p>

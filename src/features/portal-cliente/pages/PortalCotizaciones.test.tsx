@@ -53,6 +53,32 @@ describe("Mis cotizaciones (portal)", () => {
 describe("Detalle de cotización: revisar y aprobar en 2 clics", () => {
   beforeEach(() => vi.restoreAllMocks())
 
+  it("mientras se registra la aprobación, el botón dice «Aprobando...» con spinner y queda deshabilitado", async () => {
+    vi.spyOn(portalCotizacionesApi, "detalle").mockResolvedValue(enviada)
+    vi.spyOn(portalCotizacionesApi, "aprobar").mockReturnValue(new Promise(() => {}))
+    renderEn("/portal/cotizaciones/7")
+    await screen.findByText("Filtro de aceite 1R-0750")
+    fireEvent.click(screen.getByRole("button", { name: "Aprobar cotización" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Sí, aprobar" }))
+
+    const boton = await screen.findByRole("button", { name: "Aprobando..." })
+    expect(boton.hasAttribute("disabled")).toBe(true)
+    expect(boton.firstElementChild?.getAttribute("class")).toContain("animate-spin")
+  })
+
+  it("mientras se registra el rechazo, el botón dice «Rechazando...» con spinner y queda deshabilitado", async () => {
+    vi.spyOn(portalCotizacionesApi, "detalle").mockResolvedValue(enviada)
+    vi.spyOn(portalCotizacionesApi, "rechazar").mockReturnValue(new Promise(() => {}))
+    renderEn("/portal/cotizaciones/7")
+    await screen.findByText("Filtro de aceite 1R-0750")
+    fireEvent.click(screen.getByRole("button", { name: "Rechazar" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Sí, rechazar" }))
+
+    const boton = await screen.findByRole("button", { name: "Rechazando..." })
+    expect(boton.hasAttribute("disabled")).toBe(true)
+    expect(boton.firstElementChild?.getAttribute("class")).toContain("animate-spin")
+  })
+
   it("muestra las líneas y aprueba con Aprobar → Confirmar", async () => {
     vi.spyOn(portalCotizacionesApi, "detalle").mockResolvedValue(enviada)
     const aprobar = vi.spyOn(portalCotizacionesApi, "aprobar").mockResolvedValue({ ...enviada, estado: "Aprobada" })

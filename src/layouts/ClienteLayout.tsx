@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { ChevronDown, Menu, Moon, Sun, UserRound, X } from "lucide-react"
-import { useQueryClient } from "@tanstack/react-query"
+import { useIsFetching, useIsMutating, useQueryClient } from "@tanstack/react-query"
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom"
 import logoGenlogs from "@/assets/GENLOGS.webp"
 import { useTheme } from "@/hooks/useTheme"
 import { useCuentaPortal } from "@/features/portal-cliente/hooks/useCuentaPortal"
 import { iniciales } from "@/features/portal-cliente/lib/iniciales"
+import { BarraProgresoPortal } from "@/features/portal-cliente/components/BarraProgresoPortal"
 import { vitrinaHabilitada } from "@/lib/interruptores"
 import { cerrarSesionCliente, leerSesionCliente } from "@/lib/sesiones"
 
@@ -16,6 +17,9 @@ const claseEnlace = ({ isActive }: { isActive: boolean }) =>
 
 const claseEnlaceMovil = ({ isActive }: { isActive: boolean }) =>
   `block rounded-md px-3 py-2.5 text-base ${isActive ? "bg-slate-100 font-medium text-[#183153] dark:bg-muted dark:text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`
+
+/** Cuánto dura la barra de progreso al cambiar de sección. */
+const NAVEGACION_MS = 500
 
 const claseBotonBarra = `shrink-0 whitespace-nowrap rounded-md px-2.5 py-2 text-muted-foreground hover:bg-muted hover:text-foreground xl:px-3 ${foco}`
 
@@ -45,6 +49,20 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
   const conSesion = leerSesionCliente() !== null
   // Mismo hook y misma clave («genlogs-theme») que la landing: el portal conserva el tema elegido allí.
   const { tema, alternarTema } = useTheme()
+
+  // Barra de progreso: se enciende con cualquier carga o envío en curso y un instante al cambiar de sección.
+  const cargasActivas = useIsFetching() + useIsMutating()
+  const [rutaPrevia, setRutaPrevia] = useState(pathname)
+  const [navegando, setNavegando] = useState(false)
+  if (rutaPrevia !== pathname) {
+    setRutaPrevia(pathname)
+    setNavegando(true)
+  }
+  useEffect(() => {
+    if (!navegando) return
+    const temporizador = setTimeout(() => setNavegando(false), NAVEGACION_MS)
+    return () => clearTimeout(temporizador)
+  }, [navegando])
 
   // Correo y empresa para el menú de cuenta; mientras llegan (o si falla) se usa el nombre de la sesión.
   const cuenta = useCuentaPortal().data
@@ -105,7 +123,7 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-foreground dark:bg-background">
-      <header className="border-b border-slate-200 bg-white dark:border-border dark:bg-card">
+      <header className="relative border-b border-slate-200 bg-white dark:border-border dark:bg-card">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
           <Link to={conSesion ? "/portal/pedidos" : "/"} className={`shrink-0 rounded-lg ${foco}`}>
             <img src={logoGenlogs} alt="GenLogs S.A.C." width={140} height={58} className="-my-2 h-14 w-auto object-contain dark:brightness-0 dark:invert" />
@@ -215,6 +233,8 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
             </button>
           </div>
         </div>
+
+        <BarraProgresoPortal activa={cargasActivas > 0 || navegando} />
 
         {menuAbierto && (
           <nav

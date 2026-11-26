@@ -326,3 +326,7 @@
   .gl-nl::after, .gl-cta:hover { transition: none; transform: none; }
   .gl-words b:first-child { opacity: 1; }
 }
+
+/* Barra de progreso superior del portal (BarraProgresoPortal). */
+@keyframes barra-desliza { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+@keyframes barra-aparece { from { opacity: 0; } to { opacity: 1; } }

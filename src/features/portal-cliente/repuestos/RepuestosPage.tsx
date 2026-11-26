@@ -5,12 +5,13 @@ import { Clock, History, Package, Plus, Search } from "lucide-react"
 import { EstadoVacio } from "@/components/ui/EstadoVacio"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { FiltroChips } from "@/components/ui/FiltroChips"
-import CargandoSpinner from "@/components/ui/CargandoSpinner"
 import { inputFormClass } from "@/components/ui/campoEstilos"
 import { avisar } from "@/lib/avisos"
 import { mensajeError } from "@/lib/errores"
 import { formatCurrency } from "@/lib/formatters/currency"
 import { usePedidos } from "../hooks/usePedidos"
+import { BotonCargando } from "../components/BotonCargando"
+import { ListaEsqueleto } from "../components/SkeletonCard"
 import { portalApi } from "@/api/portalApi"
 import { repuestosApi, type RepuestoPortal } from "./repuestosApi"
 import { agregar, guardarCarrito, leerCarrito, type ItemCarrito } from "./lib/carrito"
@@ -107,9 +108,9 @@ export function RepuestosPage() {
             <label htmlFor="repuestos-buscar" className="sr-only">Buscar por nombre o N.º de parte</label>
             <input id="repuestos-buscar" type="search" value={texto} onChange={(e) => setTexto(e.target.value)}
               placeholder="Nombre o N.º de parte" className={inputFormClass} />
-            <button type="submit" className="inline-flex shrink-0 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              <Search className="mr-1.5 h-4 w-4" aria-hidden="true" /> Buscar
-            </button>
+            <BotonCargando type="submit" className="shrink-0 font-semibold" cargando={repuestos.isPlaceholderData && repuestos.isFetching} textoCargando="Buscando..." icono={<Search className="mr-1.5 h-4 w-4" aria-hidden="true" />}>
+              Buscar
+            </BotonCargando>
           </form>
           {categorias.length > 1 && (
             <FiltroChips etiqueta="Filtrar por categoría" opciones={[{ label: "Todas" }, ...categorias]} valor={categoria} onChange={setCategoria} />
@@ -119,7 +120,7 @@ export function RepuestosPage() {
           )}
 
           {repuestos.isPending ? (
-            <CargandoSpinner texto="Cargando repuestos..." />
+            <ListaEsqueleto variante="repuesto" etiqueta="Cargando repuestos..." />
           ) : repuestos.isError ? (
             <ErrorBanner message="No pudimos cargar los repuestos." error={repuestos.error} onRetry={() => repuestos.refetch()} />
           ) : visibles.length === 0 ? (

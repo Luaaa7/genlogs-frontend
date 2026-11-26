@@ -5,10 +5,10 @@ import { usePedidos } from "../hooks/usePedidos"
 import { usePaginacionLocal } from "@/hooks/usePaginacionLocal"
 import { EstadoBadge } from "@/components/ui/EstadoBadge"
 import { EstadoVacio } from "@/components/ui/EstadoVacio"
-import CargandoSpinner from "@/components/ui/CargandoSpinner"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { BotonNuevaSolicitud } from "../components/BotonNuevaSolicitud"
 import { EncabezadoPortal } from "../components/EncabezadoPortal"
+import { ListaEsqueleto } from "../components/SkeletonCard"
 import { ProgresoPedido } from "../components/ProgresoPedido"
 import { VistaRapidaPedido } from "../components/VistaRapidaPedido"
 import { ESTADOS_PEDIDO, TONO_ESTADO_PEDIDO, etiquetaEstado } from "../lib/estadoPedido"
@@ -88,7 +88,7 @@ export function MisPedidosPage() {
       </div>
 
       {query.isPending ? (
-        <CargandoSpinner texto="Cargando pedidos..." />
+        <div className="mt-6"><ListaEsqueleto variante="pedido" etiqueta="Cargando pedidos..." /></div>
       ) : query.isError ? (
         <div className="mt-6"><ErrorBanner message="No pudimos cargar tus pedidos." onRetry={() => query.refetch()} /></div>
       ) : filtrados.length === 0 ? (

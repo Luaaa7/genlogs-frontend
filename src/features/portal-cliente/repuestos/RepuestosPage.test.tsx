@@ -53,6 +53,17 @@ describe("RepuestosPage (RF-82)", () => {
     expect(screen.getByText("Rodamiento 6205")).toBeTruthy()
   })
 
+  it("mientras se envía el pedido, el botón dice «Enviando pedido...» con spinner y queda deshabilitado", async () => {
+    api.pedirCotizacion.mockReturnValue(new Promise(() => {}))
+    pintar()
+    fireEvent.click(await screen.findByRole("button", { name: /agregar filtro de combustible al pedido/i }))
+    fireEvent.click(within(screen.getByRole("complementary")).getByRole("button", { name: /pedir cotización/i }))
+
+    const boton = await within(screen.getByRole("complementary")).findByRole("button", { name: "Enviando pedido..." })
+    expect(boton.hasAttribute("disabled")).toBe(true)
+    expect(boton.firstElementChild?.getAttribute("class")).toContain("animate-spin")
+  })
+
   it("arma el carrito con el total referencial y pide la cotización", async () => {
     api.pedirCotizacion.mockResolvedValue({ idSolicitud: 3, codigoSolicitud: "SOL-3", estado: "PENDIENTE" })
     pintar()

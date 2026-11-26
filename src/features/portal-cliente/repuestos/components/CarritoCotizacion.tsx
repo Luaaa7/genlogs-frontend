@@ -1,5 +1,6 @@
 import { CheckCircle2, Loader2, Paperclip, ShoppingCart, Trash2 } from "lucide-react"
 import { formatCurrency } from "@/lib/formatters/currency"
+import { BotonCargando } from "../../components/BotonCargando"
 import { estimado, faltaIdentificar, type ItemCarrito } from "../lib/carrito"
 
 interface Props {
@@ -75,15 +76,16 @@ export function CarritoCotizacion({ items, enviando, error, onCantidad, onQuitar
         </p>
       )}
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-      <button
+      <BotonCargando
         type="button"
         onClick={onEnviar}
-        disabled={items.length === 0 || pendientes > 0 || enviando}
-        className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+        cargando={enviando}
+        textoCargando="Enviando pedido..."
+        disabled={items.length === 0 || pendientes > 0}
+        className="py-2.5 font-semibold"
       >
-        {enviando && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden="true" />}
         Pedir cotización
-      </button>
+      </BotonCargando>
     </aside>
   )
 }
