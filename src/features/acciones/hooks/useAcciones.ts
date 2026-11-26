@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { crearAccion, listarAcciones, marcarAccionHecha } from "@/api/metasApi"
+import { cambiarEstadoAccion, crearAccion, listarAcciones, type AccionCorrectiva } from "@/api/metasApi"
 
 export function useAcciones(anio: number, mes: number) {
   return useQuery({
@@ -17,10 +17,11 @@ export function useCrearAccion(anio: number, mes: number) {
   })
 }
 
-export function useMarcarAccionHecha(anio: number, mes: number) {
+/** Marca una acción como HECHA o la reabre (PENDIENTE). */
+export function useCambiarEstadoAccion(anio: number, mes: number) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: number) => marcarAccionHecha(id),
+    mutationFn: ({ id, estado }: { id: number; estado: AccionCorrectiva["estado"] }) => cambiarEstadoAccion(id, estado),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["acciones", anio, mes] }),
   })
 }
