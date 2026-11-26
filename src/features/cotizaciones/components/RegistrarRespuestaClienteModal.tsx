@@ -53,9 +53,8 @@ function validar(
     if (!EXTENSIONES.has(extension) || !tipoOk) return "El adjunto solo puede ser PDF, PNG o JPG"
     if (archivo.size > MAX_BYTES) return "El adjunto no puede superar 5 MB"
   }
-  if (accion === "acepto" && !nota.trim() && !archivo) {
-    return "Para registrar que el cliente aceptó, escribe una nota o adjunta la evidencia"
-  }
+  // La nota es obligatoria en las tres respuestas; el adjunto no la reemplaza.
+  if (accion === "acepto" && !nota.trim()) return "La nota es obligatoria: escribe qué confirmó el cliente"
   if (accion === "pidio_cambios" && !nota.trim()) return "Indica el motivo del cambio que pidió el cliente"
   if (accion === "rechazo" && !nota.trim()) return "Indica el motivo del rechazo"
   return null
@@ -77,7 +76,6 @@ export function RegistrarRespuestaClienteModal({ accion, ocupado, error, onCerra
   const [nota, setNota] = useState("")
   const [archivo, setArchivo] = useState<File | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
-  const notaObligatoria = accion !== "acepto"
 
   const enviar = (e: FormEvent) => {
     e.preventDefault()
@@ -156,14 +154,14 @@ export function RegistrarRespuestaClienteModal({ accion, ocupado, error, onCerra
           </label>
         )}
         <label className="block text-sm text-foreground" htmlFor="nota-respuesta">
-          Nota {notaObligatoria ? <span className="text-destructive">*</span> : <span className="text-muted-foreground">(o un adjunto)</span>}
+          Nota <span className="text-destructive">*</span>
           <textarea
             id="nota-respuesta"
             className={`${textareaFormClass} mt-1`}
             value={nota}
             onChange={(e) => setNota(e.target.value)}
             disabled={ocupado}
-            placeholder={notaObligatoria ? "Motivo que indicó el cliente" : "Qué confirmó el cliente"}
+            placeholder={accion === "acepto" ? "Qué confirmó el cliente" : "Motivo que indicó el cliente"}
           />
         </label>
         <label className="block text-sm text-foreground" htmlFor="adjunto-respuesta">
