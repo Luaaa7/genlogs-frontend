@@ -30,7 +30,8 @@ export async function guardarCredenciales(codigo: string, cuenta: { usuario?: st
 
 /** L1: el servicio de lectura intenta iniciar sesión con la cuenta de búsqueda. */
 export async function probarSesion(codigo: string): Promise<FuenteConfig> {
-  const { data } = await axiosClient.post<FuenteConfig>(`/fuentes/${codigo}/probar`)
+  // El lector abre un navegador y puede tardar más que el límite global de 60 s (el backend espera hasta 120 s).
+  const { data } = await axiosClient.post<FuenteConfig>(`/fuentes/${codigo}/probar`, undefined, { timeout: 130_000 })
   return data
 }
 
