@@ -96,6 +96,12 @@ describe("VitrinaLanding (RF-82, D-16, D-30)", () => {
     expect(screen.getAllByRole("article")).toHaveLength(2)
   })
 
+  it("Cotizar guarda la foto del repuesto en el carrito para la miniatura", async () => {
+    pintar()
+    fireEvent.click(await screen.findByRole("button", { name: /cotizar rodamiento/i }))
+    expect(leerCarrito()[0].imagenUrl).toBe("https://res.cloudinary.com/x/6205.jpg")
+  })
+
   it("la tarjeta muestra «En cotización (N)» y los controles - y + suben o bajan la cantidad", async () => {
     pintar()
     fireEvent.click(await screen.findByRole("button", { name: /cotizar rodamiento 6205/i }))

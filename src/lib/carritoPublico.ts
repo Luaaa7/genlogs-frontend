@@ -8,7 +8,7 @@ import { leerVolver } from "@/api/contratos/registro"
 export const CLAVE_CARRITO = "genlogs_public_cart"
 /** Máximo de repuestos distintos por solicitud en el backend. */
 export const MAX_ITEMS_CARRITO = 50
-const MAX_CANTIDAD = 9999
+export const MAX_CANTIDAD = 9999
 
 export interface ItemCarrito {
   /** idProducto de la vitrina. */
@@ -17,9 +17,13 @@ export interface ItemCarrito {
   marca: string
   numeroParte: string
   cantidad: number
+  /** Foto del repuesto en la vitrina, para la miniatura del carrito (si la tiene). */
+  imagenUrl?: string
 }
 
-export type NuevoItemCarrito = Omit<ItemCarrito, "cantidad"> & { cantidad?: number }
+export type NuevoItemCarrito = Omit<ItemCarrito, "cantidad" | "imagenUrl"> & { cantidad?: number; imagenUrl?: string | null }
+
+const urlValida = (valor: unknown): string | undefined => (typeof valor === "string" && valor.trim() ? valor : undefined)
 
 const oyentes = new Set<() => void>()
 const avisar = () => oyentes.forEach((oyente) => oyente())
@@ -51,6 +55,7 @@ function itemsDe(crudo: string | null): ItemCarrito[] {
         marca: typeof r.marca === "string" ? r.marca : "",
         numeroParte: typeof r.numeroParte === "string" ? r.numeroParte : "",
         cantidad,
+        ...(urlValida(r.imagenUrl) && { imagenUrl: urlValida(r.imagenUrl) }),
       })
     }
     return items.slice(0, MAX_ITEMS_CARRITO)
@@ -89,13 +94,20 @@ function guardar(items: ItemCarrito[]) {
 export function agregarAlCarrito(nuevo: NuevoItemCarrito): boolean {
   const items = leerCarrito()
   const cantidad = cantidadValida(nuevo.cantidad ?? 1) ?? 1
+  const imagenUrl = urlValida(nuevo.imagenUrl)
   const existente = items.find((item) => item.id === nuevo.id)
   if (existente) {
-    guardar(items.map((item) => (item.id === nuevo.id ? { ...item, cantidad: Math.min(item.cantidad + cantidad, MAX_CANTIDAD) } : item)))
+    guardar(
+      items.map((item) =>
+        item.id === nuevo.id
+          ? { ...item, cantidad: Math.min(item.cantidad + cantidad, MAX_CANTIDAD), ...(!item.imagenUrl && imagenUrl && { imagenUrl }) }
+          : item,
+      ),
+    )
     return true
   }
   if (items.length >= MAX_ITEMS_CARRITO) return false
-  guardar([...items, { id: nuevo.id, nombre: nuevo.nombre, marca: nuevo.marca, numeroParte: nuevo.numeroParte, cantidad }])
+  guardar([...items, { id: nuevo.id, nombre: nuevo.nombre, marca: nuevo.marca, numeroParte: nuevo.numeroParte, cantidad, ...(imagenUrl && { imagenUrl }) }])
   return true
 }
 
