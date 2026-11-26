@@ -3,6 +3,7 @@
  * Recibida → En búsqueda → En espera de proveedor → Cotizada, sin fechas ni horas.
  * Las claves son los valores de solicitud_cotizacion.estado_solicitud del backend.
  */
+import type { EstadoBadgeTono } from "@/components/ui/EstadoBadge"
 import type { EstadoPedido } from "@/types/portal.types"
 
 export const ETAPAS_PEDIDO: ReadonlyArray<{ estado: EstadoPedido; etiqueta: string }> = [
@@ -42,4 +43,25 @@ export function etiquetaEstado(estado: string): string {
 /** D-28: el cliente puede cancelar mientras no se haya empezado a cotizar con un proveedor. */
 export function puedeCancelar(estado: string): boolean {
   return estado === "PENDIENTE" || estado === "EN_REVISION"
+}
+
+/** Tono del chip de estado (P9): el avance en azul, lo cotizado en verde y lo cerrado en gris, sin colores de alerta. */
+export const TONO_ESTADO_PEDIDO: Record<string, EstadoBadgeTono> = {
+  PENDIENTE: "info",
+  EN_REVISION: "info",
+  EN_ESPERA_TERCERO: "info",
+  COTIZADA: "success",
+  CANCELADA: "neutral",
+  RECHAZADA: "neutral",
+}
+
+/**
+ * Qué decirle al cliente de la cotización de su pedido. El portal aún no sabe qué cotización pertenece a
+ * qué pedido (la cotización no trae la solicitud), así que solo se habla del estado, sin montos.
+ */
+export function resumenCotizacion(estado: string): string {
+  if (estado === "COTIZADA") return "Tu cotización está lista. Revísala en Mis cotizaciones y apruébala o recházala antes de su fecha de validez."
+  if (estado === "RECHAZADA") return "No se pudo cotizar esta solicitud, por eso no habrá cotización."
+  if (estado === "CANCELADA") return "La solicitud fue cancelada: no habrá cotización."
+  return "Todavía no hay cotización: estamos trabajando en tu solicitud."
 }

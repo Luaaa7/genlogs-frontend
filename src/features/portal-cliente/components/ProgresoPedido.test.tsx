@@ -1,0 +1,32 @@
+import { render, screen, within } from "@testing-library/react"
+import { describe, expect, it } from "vitest"
+import { ProgresoPedido } from "./ProgresoPedido"
+
+const etapas = () => within(screen.getByRole("list", { name: "Avance del pedido SOL-1" })).getAllByRole("listitem")
+
+describe("ProgresoPedido (barra de 4 etapas en la tarjeta)", () => {
+  it("muestra las 4 etapas del BPMN en orden", () => {
+    render(<ProgresoPedido estado="PENDIENTE" etiqueta="Avance del pedido SOL-1" />)
+    expect(etapas().map((e) => e.textContent?.replace(/\(.*\)/, ""))).toEqual(["Recibida", "En búsqueda", "En espera de proveedor", "Cotizada"])
+  })
+
+  it("marca lo completado, lo que está en curso y lo pendiente", () => {
+    render(<ProgresoPedido estado="EN_ESPERA_TERCERO" etiqueta="Avance del pedido SOL-1" />)
+    const [recibida, busqueda, espera, cotizada] = etapas()
+    expect(recibida.textContent).toContain("(completada)")
+    expect(busqueda.textContent).toContain("(completada)")
+    expect(espera.getAttribute("aria-current")).toBe("step")
+    expect(espera.textContent).toContain("(en curso)")
+    expect(cotizada.textContent).toContain("(pendiente)")
+  })
+
+  it("cotizada deja la última etapa en curso", () => {
+    render(<ProgresoPedido estado="COTIZADA" etiqueta="Avance del pedido SOL-1" />)
+    expect(etapas()[3].getAttribute("aria-current")).toBe("step")
+  })
+
+  it.each(["CANCELADA", "RECHAZADA"])("%s no muestra barra", (estado) => {
+    render(<ProgresoPedido estado={estado} etiqueta="Avance del pedido SOL-1" />)
+    expect(screen.queryByRole("list")).toBeNull()
+  })
+})
