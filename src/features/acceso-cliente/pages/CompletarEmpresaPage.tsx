@@ -30,8 +30,8 @@ export function CompletarEmpresaPage() {
   const [pendiente, setPendiente] = useState("")
   const nombreSesion = leerSesionCliente()?.nombre ?? ""
   const {
-    error, cargando, tardaMucho, tipo, documento, contacto, razonSocial, avisoRuc, rucConsultado, estadoRuc,
-    cambiarTipo, cambiarRuc, cambiarContacto, cambiarRazonSocial, enviar,
+    error, cargando, tardaMucho, tipo, documento, nombres, apellidos, contacto, razonSocial, avisoRuc, rucConsultado, estadoRuc,
+    cambiarTipo, cambiarRuc, cambiarNombres, cambiarApellidos, cambiarRazonSocial, enviar,
   } = useFormularioEmpresa({
     nombreInicial: nombreSesion,
     alGuardar: (nombreContacto) => {
@@ -159,24 +159,72 @@ export function CompletarEmpresaPage() {
               {avisoRuc && <p id="empresa-ruc-aviso" role="status" className="mt-1.5 text-xs text-muted-foreground">{avisoRuc}</p>}
             </div>
             )}
+
+            {esDni && (
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="empresa-nombres">Nombres <span aria-hidden="true">*</span></Label>
+                <Input
+                  id="empresa-nombres"
+                  name="nombres"
+                  autoComplete="given-name"
+                  maxLength={75}
+                  value={nombres}
+                  onChange={(e) => cambiarNombres(e.target.value)}
+                  className="mt-2 h-11"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="empresa-apellidos">Apellidos <span aria-hidden="true">*</span></Label>
+                <Input
+                  id="empresa-apellidos"
+                  name="apellidos"
+                  autoComplete="family-name"
+                  maxLength={75}
+                  value={apellidos}
+                  onChange={(e) => cambiarApellidos(e.target.value)}
+                  className="mt-2 h-11"
+                  required
+                />
+              </div>
+            </div>
+            )}
           </section>
 
           <section aria-labelledby="empresa-contacto-titulo" className="space-y-5 border-t border-border pt-6">
             <h3 id="empresa-contacto-titulo" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Contacto para tus cotizaciones</h3>
             <div className="grid gap-5 sm:grid-cols-2">
+              {!esDni && (
+              <>
               <div>
-                <Label htmlFor="empresa-contacto">{esDni ? "Nombres y apellidos" : "Persona de contacto"}</Label>
+                <Label htmlFor="empresa-contacto-nombres">Nombres de contacto <span aria-hidden="true">*</span></Label>
                 <Input
-                  id="empresa-contacto"
-                  name="nombreContacto"
-                  autoComplete="name"
-                  maxLength={150}
-                  value={contacto}
-                  onChange={(e) => cambiarContacto(e.target.value)}
+                  id="empresa-contacto-nombres"
+                  name="nombres"
+                  autoComplete="given-name"
+                  maxLength={75}
+                  value={nombres}
+                  onChange={(e) => cambiarNombres(e.target.value)}
                   className="mt-2 h-11"
                   required
                 />
               </div>
+              <div>
+                <Label htmlFor="empresa-contacto-apellidos">Apellidos de contacto <span aria-hidden="true">*</span></Label>
+                <Input
+                  id="empresa-contacto-apellidos"
+                  name="apellidos"
+                  autoComplete="family-name"
+                  maxLength={75}
+                  value={apellidos}
+                  onChange={(e) => cambiarApellidos(e.target.value)}
+                  className="mt-2 h-11"
+                  required
+                />
+              </div>
+              </>
+              )}
               <div>
                 <Label htmlFor="empresa-telefono">Teléfono (opcional)</Label>
                 <Input id="empresa-telefono" name="telefono" type="tel" autoComplete="tel" maxLength={30} className="mt-2 h-11" />

@@ -26,8 +26,8 @@ export function TarjetaDatosEmpresa({ nombreSesion }: Props) {
   const queryClient = useQueryClient()
   const [pendiente, setPendiente] = useState("")
   const {
-    error, cargando, tardaMucho, tipo, documento, contacto, razonSocial, avisoRuc, estadoRuc,
-    cambiarTipo, cambiarRuc, cambiarContacto, cambiarRazonSocial, enviar,
+    error, cargando, tardaMucho, tipo, documento, nombres, apellidos, razonSocial, avisoRuc, estadoRuc,
+    cambiarTipo, cambiarRuc, cambiarNombres, cambiarApellidos, cambiarRazonSocial, enviar,
   } =
     useFormularioEmpresa({
       nombreInicial: nombreSesion,
@@ -111,8 +111,12 @@ export function TarjetaDatosEmpresa({ nombreSesion }: Props) {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <Label htmlFor="perfil-contacto">{esDni ? "Nombres y apellidos" : "Persona de contacto"}</Label>
-            <Input id="perfil-contacto" name="nombreContacto" autoComplete="name" maxLength={150} value={contacto} onChange={(e) => cambiarContacto(e.target.value)} className="mt-2 h-11 bg-white dark:bg-background" required />
+            <Label htmlFor="perfil-nombres">{esDni ? "Nombres" : "Nombres de contacto"} <span aria-hidden="true">*</span></Label>
+            <Input id="perfil-nombres" name="nombres" autoComplete="given-name" maxLength={75} value={nombres} onChange={(e) => cambiarNombres(e.target.value)} className="mt-2 h-11 bg-white dark:bg-background" required />
+          </div>
+          <div>
+            <Label htmlFor="perfil-apellidos">{esDni ? "Apellidos" : "Apellidos de contacto"} <span aria-hidden="true">*</span></Label>
+            <Input id="perfil-apellidos" name="apellidos" autoComplete="family-name" maxLength={75} value={apellidos} onChange={(e) => cambiarApellidos(e.target.value)} className="mt-2 h-11 bg-white dark:bg-background" required />
           </div>
           <div>
             <Label htmlFor="perfil-telefono">Teléfono (opcional)</Label>

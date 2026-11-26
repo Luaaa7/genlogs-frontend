@@ -27,7 +27,8 @@ function renderPagina(ruta = "/portal/empresa?volver=%2Fportal%2Fsolicitud") {
 function llenar(ruc = "20123456789") {
   fireEvent.change(screen.getByLabelText("RUC"), { target: { value: ruc } })
   fireEvent.change(screen.getByLabelText("Razón social"), { target: { value: "Minera Sol S.A.C." } })
-  fireEvent.change(screen.getByLabelText("Persona de contacto"), { target: { value: "Gina Paz" } })
+  fireEvent.change(screen.getByLabelText("Nombres de contacto *"), { target: { value: "Gina" } })
+  fireEvent.change(screen.getByLabelText("Apellidos de contacto *"), { target: { value: "Paz" } })
   fireEvent.change(screen.getByLabelText("Teléfono (opcional)"), { target: { value: "999111222" } })
 }
 
@@ -225,23 +226,28 @@ describe("CompletarEmpresaPage", () => {
       expect(within(fiscal).getByLabelText("Persona natural (DNI)")).toBeTruthy()
       expect(within(fiscal).getByLabelText("RUC")).toBeTruthy()
       expect(within(fiscal).getByLabelText("Razón social")).toBeTruthy()
-      expect(within(fiscal).queryByLabelText("Persona de contacto")).toBeNull()
+      expect(within(fiscal).queryByLabelText("Nombres de contacto *")).toBeNull()
+      expect(within(fiscal).queryByLabelText("Nombres *")).toBeNull()
 
       const contacto = screen.getByRole("region", { name: "Contacto para tus cotizaciones" })
-      expect(within(contacto).getByLabelText("Persona de contacto")).toBeTruthy()
+      expect(within(contacto).getByLabelText("Nombres de contacto *")).toBeTruthy()
+      expect(within(contacto).getByLabelText("Apellidos de contacto *")).toBeTruthy()
       expect(within(contacto).getByLabelText("Teléfono (opcional)")).toBeTruthy()
       expect(within(contacto).queryByLabelText("RUC")).toBeNull()
       expect(contacto.className).toContain("border-t")
     })
 
-    it("DNI: la razón social no está en la identificación fiscal y el contacto sigue en su bloque", () => {
+    it("DNI: Nombres y Apellidos van en la identificación y el contacto conserva solo el teléfono", () => {
       renderPagina()
       fireEvent.click(screen.getByLabelText("Persona natural (DNI)"))
       const fiscal = screen.getByRole("region", { name: "Identificación fiscal" })
       expect(within(fiscal).getByLabelText("DNI")).toBeTruthy()
       expect(within(fiscal).queryByLabelText("Razón social")).toBeNull()
       const contacto = screen.getByRole("region", { name: "Contacto para tus cotizaciones" })
-      expect(within(contacto).getByLabelText("Nombres y apellidos")).toBeTruthy()
+      expect(within(fiscal).getByLabelText("Nombres *")).toBeTruthy()
+      expect(within(fiscal).getByLabelText("Apellidos *")).toBeTruthy()
+      expect(within(contacto).queryByLabelText("Nombres *")).toBeNull()
+      expect(within(contacto).queryByLabelText("Nombres de contacto *")).toBeNull()
       expect(within(contacto).getByLabelText("Teléfono (opcional)")).toBeTruthy()
     })
   })
@@ -274,7 +280,8 @@ describe("CompletarEmpresaPage", () => {
 
       expect(screen.queryByLabelText("Razón social")).toBeNull()
       expect((screen.getByLabelText("DNI") as HTMLInputElement).maxLength).toBe(8)
-      expect(screen.getByLabelText("Nombres y apellidos")).toBeTruthy()
+      expect(screen.getByLabelText("Nombres *")).toBeTruthy()
+      expect(screen.getByLabelText("Apellidos *")).toBeTruthy()
       expect(screen.getByText("Para compras con DNI emitimos boleta de venta y no se requiere orden de compra.")).toBeTruthy()
       expect(screen.queryByText(/Validamos tu RUC en SUNAT/)).toBeNull()
     })
@@ -291,7 +298,8 @@ describe("CompletarEmpresaPage", () => {
       renderPagina()
       elegirDni()
       fireEvent.change(screen.getByLabelText("DNI"), { target: { value: "12345678" } })
-      fireEvent.change(screen.getByLabelText("Nombres y apellidos"), { target: { value: "Rosa Quispe Mamani" } })
+      fireEvent.change(screen.getByLabelText("Nombres *"), { target: { value: "  Rosa  " } })
+      fireEvent.change(screen.getByLabelText("Apellidos *"), { target: { value: " Quispe Mamani " } })
       fireEvent.click(screen.getByRole("button", { name: "Guardar y continuar" }))
 
       expect(await screen.findByText("Nueva solicitud")).toBeTruthy()
@@ -305,6 +313,7 @@ describe("CompletarEmpresaPage", () => {
       renderPagina()
       elegirDni()
       fireEvent.change(screen.getByLabelText("DNI"), { target: { value: "1234567" } })
+      fireEvent.change(screen.getByLabelText("Apellidos *"), { target: { value: "Quispe" } })
       fireEvent.click(screen.getByRole("button", { name: "Guardar y continuar" }))
 
       expect(screen.getByText("El DNI debe tener 8 dígitos.")).toBeTruthy()
@@ -318,7 +327,8 @@ describe("CompletarEmpresaPage", () => {
       expect(within(resumen).getByText("Escribe tu DNI")).toBeTruthy()
 
       fireEvent.change(screen.getByLabelText("DNI"), { target: { value: "12345678" } })
-      fireEvent.change(screen.getByLabelText("Nombres y apellidos"), { target: { value: "Rosa Quispe" } })
+      fireEvent.change(screen.getByLabelText("Nombres *"), { target: { value: "Rosa" } })
+      fireEvent.change(screen.getByLabelText("Apellidos *"), { target: { value: "Quispe" } })
       expect(within(resumen).getByText("Rosa Quispe")).toBeTruthy()
       expect(within(resumen).getByText("DNI 12345678")).toBeTruthy()
     })
@@ -338,11 +348,94 @@ describe("CompletarEmpresaPage", () => {
       renderPagina()
       elegirDni()
       fireEvent.change(screen.getByLabelText("DNI"), { target: { value: "12345678" } })
-      fireEvent.change(screen.getByLabelText("Nombres y apellidos"), { target: { value: "Rosa Quispe" } })
+      fireEvent.change(screen.getByLabelText("Nombres *"), { target: { value: "Rosa" } })
+      fireEvent.change(screen.getByLabelText("Apellidos *"), { target: { value: "Quispe" } })
       fireEvent.click(screen.getByRole("button", { name: "Guardar y continuar" }))
 
       expect(await screen.findByText("Tu acceso quedó pendiente.")).toBeTruthy()
       expect(localStorage.getItem("cliente_access_token")).toBeNull()
+    })
+
+    describe("nombres y apellidos separados", () => {
+      function enviarSinValidarNavegador() {
+        const formulario = screen.getByRole("button", { name: "Guardar y continuar" }).closest("form") as HTMLFormElement
+        fireEvent.submit(formulario)
+      }
+
+      it("con la cuenta de Google ya conocida, reparte el nombre en Nombres y Apellidos editables", () => {
+        iniciarSesionCliente("tok", "Luana Gabriela Barrientos Espinoza", false)
+        renderPagina()
+        elegirDni()
+        const nombres = screen.getByLabelText("Nombres *") as HTMLInputElement
+        const apellidos = screen.getByLabelText("Apellidos *") as HTMLInputElement
+        expect(nombres.value).toBe("Luana Gabriela")
+        expect(apellidos.value).toBe("Barrientos Espinoza")
+        fireEvent.change(nombres, { target: { value: "Luana" } })
+        expect(nombres.value).toBe("Luana")
+      })
+
+      it("al completar los 8 dígitos con los campos vacíos, los llena con el nombre de la cuenta", () => {
+        iniciarSesionCliente("tok", "Rosa Quispe Mamani", false)
+        renderPagina()
+        elegirDni()
+        fireEvent.change(screen.getByLabelText("Nombres *"), { target: { value: "" } })
+        fireEvent.change(screen.getByLabelText("Apellidos *"), { target: { value: "" } })
+        fireEvent.change(screen.getByLabelText("DNI"), { target: { value: "1234567" } })
+        expect((screen.getByLabelText("Nombres *") as HTMLInputElement).value).toBe("")
+        fireEvent.change(screen.getByLabelText("DNI"), { target: { value: "12345678" } })
+        expect((screen.getByLabelText("Nombres *") as HTMLInputElement).value).toBe("Rosa")
+        expect((screen.getByLabelText("Apellidos *") as HTMLInputElement).value).toBe("Quispe Mamani")
+      })
+
+      it("no pisa lo que la persona ya escribió al completar los 8 dígitos", () => {
+        iniciarSesionCliente("tok", "Rosa Quispe Mamani", false)
+        renderPagina()
+        elegirDni()
+        fireEvent.change(screen.getByLabelText("Nombres *"), { target: { value: "Ana María" } })
+        fireEvent.change(screen.getByLabelText("DNI"), { target: { value: "12345678" } })
+        expect((screen.getByLabelText("Nombres *") as HTMLInputElement).value).toBe("Ana María")
+      })
+
+      it("sin Apellidos avisa y no llama al servidor", () => {
+        renderPagina()
+        elegirDni()
+        fireEvent.change(screen.getByLabelText("DNI"), { target: { value: "12345678" } })
+        fireEvent.change(screen.getByLabelText("Nombres *"), { target: { value: "Rosa" } })
+        fireEvent.change(screen.getByLabelText("Apellidos *"), { target: { value: "   " } })
+        enviarSinValidarNavegador()
+        expect(screen.getByText("Escribe tus nombres y apellidos.")).toBeTruthy()
+        expect(completarEmpresa).not.toHaveBeenCalled()
+      })
+
+      it("el resumen de la derecha muestra el nombre completo unido", () => {
+        renderPagina()
+        elegirDni()
+        fireEvent.change(screen.getByLabelText("DNI"), { target: { value: "12345678" } })
+        fireEvent.change(screen.getByLabelText("Nombres *"), { target: { value: "Rosa Elena" } })
+        fireEvent.change(screen.getByLabelText("Apellidos *"), { target: { value: "Quispe Mamani" } })
+        const resumen = screen.getByRole("complementary", { name: "Resumen de tus datos" })
+        expect(within(resumen).getByText("Rosa Elena Quispe Mamani")).toBeTruthy()
+      })
+
+      it("RUC: pide nombres y apellidos de contacto y los envía unidos sin espacios de más", async () => {
+        vi.mocked(completarEmpresa).mockResolvedValue({ pendiente: false, mensaje: "Listo" })
+        renderPagina()
+        llenar()
+        fireEvent.change(screen.getByLabelText("Nombres de contacto *"), { target: { value: " Gina  " } })
+        fireEvent.change(screen.getByLabelText("Apellidos de contacto *"), { target: { value: "  Paz Soto " } })
+        fireEvent.click(screen.getByRole("button", { name: "Guardar y continuar" }))
+        expect(await screen.findByText("Nueva solicitud")).toBeTruthy()
+        expect(completarEmpresa).toHaveBeenCalledWith(expect.objectContaining({ nombreContacto: "Gina Paz Soto" }))
+      })
+
+      it("RUC: sin apellidos de contacto avisa y no llama al servidor", () => {
+        renderPagina()
+        llenar()
+        fireEvent.change(screen.getByLabelText("Apellidos de contacto *"), { target: { value: "" } })
+        enviarSinValidarNavegador()
+        expect(screen.getByText("Escribe los nombres y apellidos de la persona de contacto.")).toBeTruthy()
+        expect(completarEmpresa).not.toHaveBeenCalled()
+      })
     })
   })
 })
