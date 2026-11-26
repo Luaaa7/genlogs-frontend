@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { ChevronDown, Menu, Moon, Sun, UserRound, X } from "lucide-react"
+import { useQueryClient } from "@tanstack/react-query"
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom"
 import logoGenlogs from "@/assets/GENLOGS.webp"
 import { useTheme } from "@/hooks/useTheme"
@@ -38,6 +39,7 @@ function Avatar({ nombre }: { nombre: string }) {
  */
 export function ClienteLayout({ children }: { children?: ReactNode }) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   // Se vuelve a leer la sesión en cada cambio de ruta (al ingresar o al cerrar sesión).
   const { pathname } = useLocation()
   const conSesion = leerSesionCliente() !== null
@@ -58,6 +60,7 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
   const menuAbierto = menuEn === pathname
   const soporteRef = useRef<HTMLDivElement>(null)
   const cuentaRef = useRef<HTMLDivElement>(null)
+  const cuentaBotonRef = useRef<HTMLButtonElement>(null)
   const hamburguesaRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -65,6 +68,7 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
     const alPulsar = (evento: KeyboardEvent) => {
       if (evento.key !== "Escape") return
       if (menuAbierto) hamburguesaRef.current?.focus()
+      else if (cuentaAbierta) cuentaBotonRef.current?.focus()
       setSoporteEn(null)
       setCuentaEn(null)
       setMenuEn(null)
@@ -83,6 +87,8 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
 
   function cerrarSesion() {
     cerrarSesionCliente()
+    // Los datos de la cuenta son de esta persona: no deben quedar para quien ingrese después en el mismo navegador.
+    queryClient.removeQueries({ queryKey: ["portal-cuenta"] })
     navigate("/portal/ingreso", { replace: true })
   }
 
@@ -157,6 +163,7 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
             {conSesion && (
               <div ref={cuentaRef} className="relative hidden lg:block">
                 <button
+                  ref={cuentaBotonRef}
                   type="button"
                   aria-label="Menú de cuenta"
                   aria-expanded={cuentaAbierta}

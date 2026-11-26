@@ -1,8 +1,11 @@
-import { fireEvent, render, screen, within } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const CUENTA = { nombre: "Luana Barrientos", correo: "luana@empresa.pe", perfilCompleto: true, empresa: "Minera Los Andes S.A.C." }
+
+// QueryClient de la última prueba: permite comprobar qué queda en el caché.
+let clienteDeConsultas: import("@tanstack/react-query").QueryClient
 
 async function renderLayout(vitrina: boolean, conSesion: boolean, cuenta: unknown = CUENTA) {
   if (conSesion) {
@@ -18,6 +21,7 @@ async function renderLayout(vitrina: boolean, conSesion: boolean, cuenta: unknow
   const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query")
   const { ClienteLayout } = await import("./ClienteLayout")
   const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  clienteDeConsultas = cliente
   return render(<QueryClientProvider client={cliente}><MemoryRouter><ClienteLayout /></MemoryRouter></QueryClientProvider>)
 }
 
@@ -185,6 +189,21 @@ describe("Menú del portal del cliente", () => {
       expect(localStorage.getItem("cliente_access_token")).toBeNull()
     })
 
+    it("al cerrar sesión se borra la cuenta guardada en caché (otra persona no ve datos ajenos)", async () => {
+      await renderLayout(false, true)
+      await waitFor(() => expect(clienteDeConsultas.getQueryData(["portal-cuenta"])).toBeTruthy())
+      abrirCuenta()
+      fireEvent.click(cuentaMenu().getByRole("button", { name: "Cerrar sesión" }))
+      expect(clienteDeConsultas.getQueryData(["portal-cuenta"])).toBeUndefined()
+    })
+
+    it("con Escape el foco vuelve al botón de cuenta", async () => {
+      await renderLayout(false, true)
+      abrirCuenta()
+      fireEvent.keyDown(document, { key: "Escape" })
+      expect(document.activeElement).toBe(screen.getByRole("button", { name: "Menú de cuenta" }))
+    })
+
     it("el menú de cuenta se cierra con Escape, con un clic afuera y al elegir «Mi perfil»", async () => {
       await renderLayout(false, true)
 
@@ -283,13 +302,15 @@ describe("Menú del portal del cliente", () => {
       expect(screen.queryByRole("navigation", { name: "Menú del portal" })).toBeNull()
     })
 
-    it("«Cerrar sesión» del panel termina la sesión del cliente", async () => {
+    it("«Cerrar sesión» del panel termina la sesión del cliente y borra la cuenta en caché", async () => {
       await renderLayout(true, true)
+      await waitFor(() => expect(clienteDeConsultas.getQueryData(["portal-cuenta"])).toBeTruthy())
       abrirHamburguesa()
 
       fireEvent.click(drawer().getByRole("button", { name: "Cerrar sesión" }))
 
       expect(localStorage.getItem("cliente_access_token")).toBeNull()
+      expect(clienteDeConsultas.getQueryData(["portal-cuenta"])).toBeUndefined()
     })
 
     it("sin sesión el panel ofrece Ingresar, Crear cuenta, Ayuda y Contacto", async () => {
