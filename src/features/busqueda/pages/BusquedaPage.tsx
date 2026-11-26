@@ -26,6 +26,7 @@ import { PegarUrlModal } from "../components/PegarUrlModal"
 import { ConvertirModal } from "@/features/vitrina/components/ConvertirModal"
 import { vitrinaHabilitada } from "@/lib/interruptores"
 import { usePermisos } from "@/lib/permisos"
+import { cn } from "@/lib/utils/utils"
 
 const esquema = z.object({
   numeroParte: z.string().trim().min(1, "Escribe el N.º de parte").max(60, "Máximo 60 caracteres"),
@@ -81,7 +82,13 @@ export function BusquedaPage() {
   }
 
   // Gerente y Jefe Adm. solo consultan el historial: no disparan búsquedas en las fuentes.
-  const enviar = handleSubmit((v) => (puedeBuscar ? ejecutar(v, false) : setNumeroParte(v.numeroParte.trim())))
+  // v3.4: al volver a pulsar «Ver historial» con el mismo N.º de parte se vuelve a consultar.
+  function verHistorial(v: Valores) {
+    const np = v.numeroParte.trim()
+    if (np === numeroParte) historial.refetch()
+    else setNumeroParte(np)
+  }
+  const enviar = handleSubmit((v) => (puedeBuscar ? ejecutar(v, false) : verHistorial(v)))
   const forzar = () => handleSubmit((v) => ejecutar(v, true))()
 
   function marcar(idSourcing: number, estado: "UTIL" | "DESCARTADO") {
@@ -102,7 +109,9 @@ export function BusquedaPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         titulo="Búsqueda de repuestos"
-        descripcion="Busca por marca y N.º de parte en las fuentes aprobadas. Nada de esto se muestra al cliente."
+        descripcion={puedeBuscar
+          ? "Busca por marca y N.º de parte en las fuentes aprobadas. Nada de esto se muestra al cliente."
+          : "Consulta lo que ya se encontró para un N.º de parte. Nada de esto se muestra al cliente."}
         acciones={puedeBuscar && (
           <Button variant="outline" onClick={() => setPegandoUrl(true)}>
             <Link2 className="mr-1.5 h-4 w-4" aria-hidden="true" />
@@ -111,35 +120,53 @@ export function BusquedaPage() {
         )}
       />
 
-      <form onSubmit={enviar} noValidate className="grid gap-4 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
+      {!puedeBuscar && (
+        <p role="note" className="flex items-start gap-2 rounded-lg bg-info/10 px-3 py-2 text-sm text-info">
+          <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          Con tu rol consultas el historial de búsquedas. La búsqueda en las tiendas y marcar las referencias
+          lo hace el Asistente Logístico.
+        </p>
+      )}
+
+      <form
+        onSubmit={enviar}
+        noValidate
+        className={cn("grid gap-4 rounded-xl border border-border bg-card p-4", puedeBuscar ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:max-w-md")}
+      >
         <Campo id="numeroParte" label="N.º de parte" obligatorio error={errors.numeroParte?.message}>
           <input
             id="numeroParte"
             className={inputFormClass}
             autoComplete="off"
-            placeholder="1R-0750"
+            placeholder="Ej.: 1R-0750"
             aria-invalid={!!errors.numeroParte}
             aria-describedby={describedBy("numeroParte", { error: errors.numeroParte })}
             {...register("numeroParte")}
           />
         </Campo>
-        <Campo id="marca" label="Marca" opcional error={errors.marca?.message}>
-          <input id="marca" className={inputFormClass} placeholder="Caterpillar" {...register("marca")} />
-        </Campo>
-        <Campo id="gtin" label="GTIN" opcional error={errors.gtin?.message}>
-          <input
-            id="gtin"
-            className={inputFormClass}
-            inputMode="numeric"
-            aria-invalid={!!errors.gtin}
-            aria-describedby={describedBy("gtin", { error: errors.gtin })}
-            {...register("gtin")}
-          />
-        </Campo>
-        <Campo id="palabras" label="Palabras clave" opcional>
-          <input id="palabras" className={inputFormClass} placeholder="filtro combustible" {...register("palabras")} />
-        </Campo>
-        <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-4">
+        {/* El historial se consulta solo por N.º de parte: los demás filtros sirven para buscar en las tiendas. */}
+        {puedeBuscar && (
+          <>
+            <Campo id="marca" label="Marca" opcional error={errors.marca?.message}>
+              <input id="marca" className={inputFormClass} placeholder="Ej.: Caterpillar" {...register("marca")} />
+            </Campo>
+            <Campo id="gtin" label="GTIN" opcional error={errors.gtin?.message}>
+              <input
+                id="gtin"
+                className={inputFormClass}
+                inputMode="numeric"
+                placeholder="8 a 14 dígitos"
+                aria-invalid={!!errors.gtin}
+                aria-describedby={describedBy("gtin", { error: errors.gtin })}
+                {...register("gtin")}
+              />
+            </Campo>
+            <Campo id="palabras" label="Palabras clave" opcional>
+              <input id="palabras" className={inputFormClass} placeholder="Ej.: filtro combustible" {...register("palabras")} />
+            </Campo>
+          </>
+        )}
+        <div className={cn("flex flex-wrap gap-2", puedeBuscar && "sm:col-span-2 lg:col-span-4")}>
           <Button type="submit" disabled={buscar.isPending}>
             {buscar.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden="true" /> : <Search className="mr-1.5 h-4 w-4" aria-hidden="true" />}
             {puedeBuscar ? "Buscar" : "Ver historial"}
@@ -163,6 +190,16 @@ export function BusquedaPage() {
 
       {ultimo && <ResumenBusqueda resultado={ultimo} numeroParte={getValues("numeroParte")} />}
 
+      {!numeroParte && !buscar.isPending && (
+        <EstadoVacio
+          icono={<Search className="h-5.5 w-5.5" />}
+          titulo={puedeBuscar ? "Busca un repuesto" : "Consulta un N.º de parte"}
+          descripcion={puedeBuscar
+            ? "Escribe el N.º de parte y pulsa Buscar. La marca y las palabras clave ayudan a encontrar el repuesto correcto."
+            : "Escribe el N.º de parte y pulsa Ver historial para ver lo que el Asistente Logístico ya encontró."}
+        />
+      )}
+
       {numeroParte && (
         <TablaCard>
           {cargando ? (
@@ -171,7 +208,9 @@ export function BusquedaPage() {
             <EstadoVacio
               icono={<SearchX className="h-5.5 w-5.5" />}
               titulo="Sin referencias para este N.º de parte"
-              descripcion="Las fuentes no devolvieron resultados. Busca el repuesto en una tienda y pega su URL."
+              descripcion={puedeBuscar
+                ? "Las fuentes no devolvieron resultados. Busca el repuesto en una tienda y pega su URL."
+                : "Todavía no se ha buscado este N.º de parte. Pídele al Asistente Logístico que lo busque."}
               accion={puedeBuscar && (
                 <Button onClick={() => setPegandoUrl(true)}>
                   <Link2 className="mr-1.5 h-4 w-4" aria-hidden="true" />
