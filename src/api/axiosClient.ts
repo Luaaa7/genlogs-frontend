@@ -1,4 +1,5 @@
 import axios from "axios"
+import { MOTIVO_SESION_EXPIRADA, PARAMETRO_MOTIVO } from "@/lib/sesiones"
 
 // Si nadie configuró VITE_API_URL (falta el .env.local), apuntamos al
 // backend real desplegado en Render en vez de a una ruta relativa rota
@@ -40,8 +41,8 @@ function cerrarSesionInvalida(motivo: string) {
   if (esPortal) {
     localStorage.removeItem("cliente_access_token")
     sessionStorage.removeItem("genlogs-cliente-auth")
-    // Al ingreso del cliente, con ?volver= para regresar a la misma página.
-    window.location.href = `/portal/ingreso?volver=${encodeURIComponent(window.location.pathname + window.location.search)}`
+    // Al ingreso del cliente, con ?volver= para regresar a la misma página y ?motivo= para avisar que la sesión venció.
+    window.location.href = `/portal/ingreso?volver=${encodeURIComponent(window.location.pathname + window.location.search)}&${PARAMETRO_MOTIVO}=${MOTIVO_SESION_EXPIRADA}`
     return
   }
   // Limpia tanto la clave que lee axios/ProtectedRoute (localStorage) como la
@@ -51,7 +52,7 @@ function cerrarSesionInvalida(motivo: string) {
   localStorage.removeItem("refresh_token")
   sessionStorage.removeItem("genlogs-auth")
   if (window.location.pathname !== "/login") {
-    window.location.href = "/login"
+    window.location.href = `/login?${PARAMETRO_MOTIVO}=${MOTIVO_SESION_EXPIRADA}`
   }
 }
 

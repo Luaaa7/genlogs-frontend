@@ -6,6 +6,7 @@ import { useAuthStore } from "@/features/auth/store/authStore"
 import { cerrarSesionCliente } from "@/lib/sesiones"
 import { PasswordInput } from "@/components/ui/PasswordInput"
 import { IconInput } from "@/components/ui/IconInput"
+import { AvisoSesionVencida } from "@/components/ui/AvisoSesionVencida"
 
 const INTENTOS_ARRANQUE = 4
 const ESPERA_REINTENTO_MS = 5_000
@@ -51,6 +52,11 @@ export function LoginPage() {
       if (tokenRecibido) {
         localStorage.setItem("access_token", tokenRecibido)
       }
+      // Con refresh_token el interceptor renueva en silencio ante un 401; sin él (o si el backend no lo manda)
+      // no se deja el de otra persona.
+      const refresco = data.refreshToken ?? data.refresh_token
+      if (typeof refresco === "string" && refresco) localStorage.setItem("refresh_token", refresco)
+      else localStorage.removeItem("refresh_token")
       
       setAuth(tokenRecibido, data.nombreUsuario, data.nombreRol)
       navigate("/dashboard")
@@ -118,6 +124,8 @@ export function LoginPage() {
           required
         />
       </div>
+
+      <AvisoSesionVencida />
 
       {aviso && (
         <p role="status" className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">{aviso}</p>
