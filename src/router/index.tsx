@@ -41,6 +41,7 @@ const ReclamoDetallePage = perezosa(() => import('@/features/reclamos/pages/Recl
 const RegistroClientePage = perezosa(() => import('@/features/portal-cliente/pages/RegistroClientePage'), 'RegistroClientePage')
 const IngresoClientePage = perezosa(() => import('@/features/acceso-cliente/pages/IngresoClientePage'), 'IngresoClientePage')
 const CompletarEmpresaPage = perezosa(() => import('@/features/acceso-cliente/pages/CompletarEmpresaPage'), 'CompletarEmpresaPage')
+const PerfilClientePage = perezosa(() => import('@/features/portal-cliente/pages/PerfilClientePage'), 'PerfilClientePage')
 const MisPedidosPage = perezosa(() => import('@/features/portal-cliente/pages/MisPedidosPage'), 'MisPedidosPage')
 const PedidoDetallePage = perezosa(() => import('@/features/portal-cliente/pages/PedidoDetallePage'), 'PedidoDetallePage')
 const NuevaSolicitudPage = perezosa(() => import('@/features/portal-cliente/pages/NuevaSolicitudPage'), 'NuevaSolicitudPage')
@@ -124,6 +125,7 @@ export const router = createBrowserRouter([
     { path: '/portal/pedidos/:id', element: <PedidoDetallePage /> },
     { path: '/portal/solicitud', element: <NuevaSolicitudPage /> },
     { path: '/portal/empresa', element: <CompletarEmpresaPage /> },
+    { path: '/portal/perfil', element: <PerfilClientePage /> },
     { path: '/portal/comprobantes', element: <MisComprobantesPage /> },
     { path: '/portal/comprobantes/pago', element: <PagoResultadoPage /> },
     ...RUTAS_BLOQUES.portal,
