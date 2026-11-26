@@ -53,6 +53,14 @@ describe("RepuestosPage (RF-82)", () => {
     expect(screen.getByText("Rodamiento 6205")).toBeTruthy()
   })
 
+  it("el panel «Tu pedido de cotización» dice solo que se enviará la cotización confirmada", async () => {
+    pintar()
+    fireEvent.click(await screen.findByRole("button", { name: /agregar filtro de combustible al pedido/i }))
+    const carrito = screen.getByRole("complementary")
+    expect(within(carrito).getByText("Te enviamos la cotización con precio y plazo confirmados.")).toBeTruthy()
+    expect(within(carrito).queryByText(/los precios son referenciales/i)).toBeNull()
+  })
+
   it("mientras se envía el pedido, el botón dice «Enviando pedido...» con spinner y queda deshabilitado", async () => {
     api.pedirCotizacion.mockReturnValue(new Promise(() => {}))
     pintar()

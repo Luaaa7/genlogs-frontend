@@ -52,6 +52,64 @@ describe("Menú del portal del cliente", () => {
     vi.doUnmock("@/features/acceso-cliente/api/ingresoGoogleApi")
   })
 
+  describe("indicador de cotización (carrito compartido)", () => {
+    const sembrar = (n: number) =>
+      localStorage.setItem("genlogs_public_cart", JSON.stringify(Array.from({ length: n }, (_, i) => ({ id: i + 1, nombre: `Repuesto ${i + 1}`, marca: "CAT", numeroParte: `P${i}`, cantidad: 3 }))))
+
+    it("con el carrito vacío no muestra el botón, ni en la barra ni en el panel móvil", async () => {
+      await renderLayout(false, true)
+      expect(screen.queryByRole("link", { name: /^Cotización/ })).toBeNull()
+      abrirHamburguesa()
+      expect(screen.queryByRole("link", { name: /^Cotización/ })).toBeNull()
+    })
+
+    it("con repuestos muestra «Cotización (N)» con los repuestos distintos y lleva a la solicitud", async () => {
+      sembrar(2)
+      await renderLayout(false, true)
+      const pildora = screen.getByRole("link", { name: "Cotización (2)" })
+      expect(pildora.getAttribute("href")).toBe("/portal/solicitud")
+      expect(pildora.className).toMatch(/dorado/)
+      expect(pildora.className).toMatch(/dark:/)
+    })
+
+    it("va en la barra de escritorio, junto al menú de cuenta, y no despliega ningún panel flotante", async () => {
+      sembrar(1)
+      await renderLayout(false, true)
+      const pildora = screen.getByRole("link", { name: "Cotización (1)" })
+      expect(pildora.className).toContain("lg:inline-flex")
+      expect(pildora.className).toContain("hidden")
+      expect(pildora.parentElement).toBe(screen.getByRole("button", { name: "Menú de cuenta" }).closest("div[class*='relative']")?.parentElement)
+      expect(screen.queryByRole("dialog")).toBeNull()
+    })
+
+    it("en el panel móvil también aparece, y al elegirlo el panel se cierra", async () => {
+      sembrar(3)
+      await renderLayout(false, true)
+      abrirHamburguesa()
+      const enlace = drawer().getByRole("link", { name: "Cotización (3)" })
+      expect(enlace.getAttribute("href")).toBe("/portal/solicitud")
+      fireEvent.click(enlace)
+      expect(screen.queryByRole("navigation", { name: "Menú del portal" })).toBeNull()
+    })
+
+    it("se actualiza solo cuando cambia el carrito y desaparece al vaciarlo", async () => {
+      sembrar(1)
+      await renderLayout(false, true)
+      expect(screen.getByRole("link", { name: "Cotización (1)" })).toBeTruthy()
+      const { agregarAlCarrito, vaciarCarrito } = await import("@/lib/carritoPublico")
+      act(() => { agregarAlCarrito({ id: 99, nombre: "Otro", marca: "CAT", numeroParte: "X" }) })
+      expect(screen.getByRole("link", { name: "Cotización (2)" })).toBeTruthy()
+      act(() => vaciarCarrito())
+      expect(screen.queryByRole("link", { name: /^Cotización/ })).toBeNull()
+    })
+
+    it("sin sesión (ingreso y registro) no se muestra", async () => {
+      sembrar(2)
+      await renderLayout(false, false)
+      expect(screen.queryByRole("link", { name: /^Cotización/ })).toBeNull()
+    })
+  })
+
   describe("escritorio (lg:flex)", () => {
     it("con sesión deja en la barra 5 secciones, con Repuestos si la vitrina está encendida (Reclamos va en Soporte)", async () => {
       await renderLayout(true, true)
