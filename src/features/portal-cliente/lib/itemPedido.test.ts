@@ -83,6 +83,12 @@ describe("validarItem en modo «Tengo una foto»", () => {
     expect(errores).toEqual({})
   })
 
+  it("un ítem de catálogo (con idProducto) no exige marca ni N.º de parte, aunque vengan vacíos", () => {
+    const base = { ...modoFoto, modo: "parte" as const, numeroParte: "", marca: "" }
+    expect(validarItem({ ...base, idProducto: 7 })).toEqual({})
+    expect(validarItem(base).numeroParte).toBeTruthy()
+  })
+
   it("un repuesto que viene de la vitrina (con idProducto) ya está identificado: no pide foto", () => {
     expect(validarItem({ ...modoFoto, idProducto: 7 })).toEqual({})
   })
