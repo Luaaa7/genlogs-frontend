@@ -176,4 +176,36 @@ describe("BusquedaPage", () => {
     expect(screen.queryByRole("button", { name: /marcar como útil/i })).toBeNull()
     expect(screen.queryByRole("button", { name: /pegar url/i })).toBeNull()
   })
+
+  it("el Jefe ve por qué solo consulta el historial y solo el campo que lo filtra (v3.4)", async () => {
+    useAuthStore.setState({ nombreRol: "JEFE_ADMINISTRATIVO" })
+    pintar()
+    expect(screen.getByRole("note").textContent).toMatch(/la búsqueda en las tiendas .* lo hace el Asistente Logístico/i)
+    expect(screen.getByLabelText(/n\.º de parte/i).getAttribute("placeholder")).toBe("Ej.: 1R-0750")
+    expect(screen.queryByLabelText(/marca/i)).toBeNull()
+    expect(screen.queryByLabelText(/gtin/i)).toBeNull()
+    expect(screen.getByText("Consulta un N.º de parte")).toBeTruthy()
+  })
+
+  it("el Jefe consulta el historial y, si está vacío, sabe a quién pedir la búsqueda (v3.4)", async () => {
+    useAuthStore.setState({ nombreRol: "JEFE_ADMINISTRATIVO" })
+    api.historial.mockResolvedValue([])
+    pintar()
+    fireEvent.change(screen.getByLabelText(/n\.º de parte/i), { target: { value: "1R-0750" } })
+    fireEvent.click(screen.getByRole("button", { name: /ver historial/i }))
+    expect(await screen.findByText(/pídele al asistente logístico que lo busque/i)).toBeTruthy()
+    expect(api.historial).toHaveBeenCalledWith({ numeroParte: "1R-0750" })
+
+    fireEvent.click(screen.getByRole("button", { name: /ver historial/i }))
+    await waitFor(() => expect(api.historial).toHaveBeenCalledTimes(2))
+    expect(api.buscar).not.toHaveBeenCalled()
+  })
+
+  it("el Asistente Logístico ve todos los filtros y una guía antes de buscar (v3.4)", () => {
+    pintar()
+    expect(screen.queryByRole("note")).toBeNull()
+    expect(screen.getByLabelText(/marca/i)).toBeTruthy()
+    expect(screen.getByLabelText(/gtin/i)).toBeTruthy()
+    expect(screen.getByText("Busca un repuesto")).toBeTruthy()
+  })
 })
