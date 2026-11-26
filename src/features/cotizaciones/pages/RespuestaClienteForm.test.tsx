@@ -34,7 +34,8 @@ function errorHttp(status: number, message: string) {
 let cabecera: Record<string, unknown>
 let seguimientos: Record<string, unknown>[]
 let ordenes: Record<string, unknown>[]
-let tipoDocCliente: string
+let tipoDocCliente: unknown
+let numeroDocCliente: string | undefined
 
 function ordenInterna(parcial: Record<string, unknown> = {}) {
   return {
@@ -103,13 +104,14 @@ describe('respuesta del cliente en el detalle', () => {
     seguimientos = []
     ordenes = []
     tipoDocCliente = 'RUC'
+    numeroDocCliente = '10456789'
     cabecera = {
       idCotizacion: 1, idCliente: 4, codigoCotizacion: 'COT-001', estado: 'ENVIADA',
       fechaCotizacion: '2026-11-10', fechaValidez: diaLima(10), condicionPago: 'CONTADO',
       moneda: 'PEN', clienteRazonSocial: 'Minera Sur', subtotal: 100, igv: 18, total: 118,
     }
     http.get.mockImplementation((url: string) => {
-      if (url === '/clientes/4') return Promise.resolve({ data: { idCliente: 4, tipoDocumento: tipoDocCliente, numeroDocumento: '10456789', razonSocial: 'Minera Sur', situacion: 'ACTIVO', esTambienProveedor: false } })
+      if (url === '/clientes/4') return Promise.resolve({ data: { idCliente: 4, tipoDocumento: tipoDocCliente, numeroDocumento: numeroDocCliente, razonSocial: 'Minera Sur', situacion: 'ACTIVO', esTambienProveedor: false } })
       if (url === '/cotizaciones/1') return Promise.resolve({ data: cabecera })
       if (url.endsWith('/adjuntos')) return Promise.resolve({ data: [] })
       if (url.endsWith('/seguimiento')) return Promise.resolve({ data: seguimientos })
@@ -541,5 +543,64 @@ describe('respuesta del cliente en el detalle', () => {
     expect((await screen.findAllByRole('link', { name: 'Orden 0032-10' })).length).toBeGreaterThan(0)
     expect(screen.queryByRole('button', { name: 'Registrar OC del cliente' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Registrar orden de compra' })).toBeNull()
+  })
+
+  describe('Registrar orden de compra según el documento del cliente', () => {
+    const aceptadaSinOrden = () => {
+      cabecera = { ...cabecera, estado: 'ACEPTADA_CLIENTE' }
+      ordenes = []
+    }
+    const botonOrden = () => screen.queryByRole('button', { name: 'Registrar orden de compra' })
+
+    it('con RUC se muestra y abre el modal', async () => {
+      aceptadaSinOrden()
+      tipoDocCliente = 'RUC'
+      numeroDocCliente = '20123456789'
+      pintar('ASISTENTE_LOGISTICO')
+      fireEvent.click(await screen.findByRole('button', { name: 'Registrar orden de compra' }))
+      expect(await screen.findByRole('heading', { name: 'Registrar orden de compra' })).toBeTruthy()
+    })
+
+    it('con RUC en forma de objeto también se muestra', async () => {
+      aceptadaSinOrden()
+      tipoDocCliente = { codigoTipo: 'RUC', nombreTipo: 'RUC' }
+      numeroDocCliente = '20123456789'
+      pintar('ASISTENTE_LOGISTICO')
+      expect(await screen.findByRole('button', { name: 'Registrar orden de compra' })).toBeTruthy()
+    })
+
+    it('con DNI se oculta y no hay modal', async () => {
+      aceptadaSinOrden()
+      tipoDocCliente = 'DNI'
+      numeroDocCliente = '45678912'
+      pintar('ASISTENTE_LOGISTICO')
+      await cargar()
+      expect(botonOrden()).toBeNull()
+      expect(screen.queryByRole('heading', { name: 'Registrar orden de compra' })).toBeNull()
+      expect(screen.queryByRole('button', { name: 'Registrar OC del cliente' })).toBeNull()
+    })
+
+    it('con DNI en forma de objeto también se oculta', async () => {
+      aceptadaSinOrden()
+      tipoDocCliente = { codigoTipo: 'DNI', nombreTipo: 'DNI' }
+      numeroDocCliente = '45678912'
+      pintar('ASISTENTE_LOGISTICO')
+      await cargar()
+      expect(botonOrden()).toBeNull()
+    })
+
+    it('sin tipo de documento, un número de 8 dígitos lo oculta y uno de 11 lo muestra', async () => {
+      aceptadaSinOrden()
+      tipoDocCliente = undefined
+      numeroDocCliente = '45678912'
+      const vista = pintar('ASISTENTE_LOGISTICO')
+      await cargar()
+      expect(botonOrden()).toBeNull()
+      vista.unmount()
+
+      numeroDocCliente = '20123456789'
+      pintar('ASISTENTE_LOGISTICO')
+      expect(await screen.findByRole('button', { name: 'Registrar orden de compra' })).toBeTruthy()
+    })
   })
 })
