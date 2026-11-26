@@ -197,7 +197,7 @@ export function PegarUrlModal({ numeroParte, marca, idSolicitudItem, onCerrar }:
               id={idDe("url-tienda")}
               type="url"
               className={inputFormClass}
-              placeholder="https://www.amazon.com/dp/…"
+              placeholder="https://www.ebay.com/itm/…"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); leerPagina() } }}

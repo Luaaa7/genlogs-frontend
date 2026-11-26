@@ -53,7 +53,9 @@ describe('Configuración > Fuentes de búsqueda (L2, BPMN 9-A)', () => {
         ultimoError: 'Mercado Libre: faltan reglas de la página de inicio de sesión (casilla del usuario, casilla de la clave, botón para ingresar y señal de sesión iniciada) en Configuración > Fuentes > Reglas de extracción.',
       }),
       fuente({ codigo: 'EBAY', nombre: 'eBay', estado: 'CON_ERROR', ultimoError: 'La tienda bloqueó la lectura.', tieneUsuario: true, tieneClave: true }),
-      fuente({ codigo: 'AMAZON', nombre: 'Amazon', estado: 'ACTIVA', aciertosPrueba: 3, tieneUsuario: true, tieneClave: true }),
+      fuente({ codigo: 'OTRA', nombre: 'Otra tienda', estado: 'ACTIVA', aciertosPrueba: 3, tieneUsuario: true, tieneClave: true }),
+      // v3.4: el backend todavía la envía, pero la pantalla no la muestra.
+      fuente({ codigo: 'AMAZON', nombre: 'Amazon', estado: 'CON_ERROR', tieneUsuario: true, tieneClave: true }),
       fuente({ codigo: 'ALIEXPRESS', nombre: 'AliExpress', estado: 'ACTIVA', aciertosPrueba: 6, tieneUsuario: true, tieneClave: true }),
       fuente({ codigo: 'ALIBABA', nombre: 'Alibaba', estado: 'REQUIERE_VERIFICACION', ultimoError: 'La tienda pidió un código.' }),
     ])
@@ -79,6 +81,13 @@ describe('Configuración > Fuentes de búsqueda (L2, BPMN 9-A)', () => {
     expect(within(tarjeta('AliExpress')).getByText('6 de 10')).toBeTruthy()
   })
 
+  it('Amazon no aparece: bloquea el acceso automatizado y se usa a mano (v3.4)', async () => {
+    await renderPagina()
+    await screen.findAllByRole('region')
+    expect(screen.queryByRole('region', { name: 'Amazon' })).toBeNull()
+    expect(screen.queryByText('Amazon')).toBeNull()
+  })
+
   it('con reglasFaltantes muestra «Sin configurar» con lo que falta, aunque la base diga Con error (EF2/EF3)', async () => {
     api.listarFuentes.mockResolvedValue([
       fuente({
@@ -86,7 +95,7 @@ describe('Configuración > Fuentes de búsqueda (L2, BPMN 9-A)', () => {
         ultimoError: 'eBay: faltan reglas para buscar.', reglasFaltantes: ['PRECIO', 'ENLACE'],
       }),
       fuente({
-        codigo: 'AMAZON', nombre: 'Amazon', estado: 'SIN_PROBAR', tieneUsuario: true, tieneClave: true,
+        codigo: 'ALIBABA', nombre: 'Alibaba', estado: 'SIN_PROBAR', tieneUsuario: true, tieneClave: true,
         reglasFaltantes: ['ENVIAR', 'EXITO'],
       }),
     ])
@@ -96,8 +105,8 @@ describe('Configuración > Fuentes de búsqueda (L2, BPMN 9-A)', () => {
     expect(within(ebay).getByText('Faltan reglas de búsqueda: precio y enlace.')).toBeTruthy()
     expect(within(ebay).queryByText('Con error')).toBeNull()
     expect(within(ebay).queryByText('eBay: faltan reglas para buscar.')).toBeNull()
-    const amazon = tarjeta('Amazon')
-    expect(within(amazon).getByText('Faltan reglas de ingreso: botón para ingresar y señal de sesión iniciada.')).toBeTruthy()
+    const alibaba = tarjeta('Alibaba')
+    expect(within(alibaba).getByText('Faltan reglas de ingreso: botón para ingresar y señal de sesión iniciada.')).toBeTruthy()
   })
 
   it('el Asistente Logístico también ve qué reglas faltan', async () => {
@@ -145,8 +154,8 @@ describe('Configuración > Fuentes de búsqueda (L2, BPMN 9-A)', () => {
   it('«Activar» solo con la sesión activa y 4 o más aciertos de 10 (D-37)', async () => {
     await renderPagina()
     await screen.findAllByRole('region')
-    expect(boton(tarjeta('Amazon'), 'Activar').disabled).toBe(true)
-    expect(within(tarjeta('Amazon')).getByText(/4 o más aciertos/)).toBeTruthy()
+    expect(boton(tarjeta('Otra tienda'), 'Activar').disabled).toBe(true)
+    expect(within(tarjeta('Otra tienda')).getByText(/4 o más aciertos/)).toBeTruthy()
     expect(boton(tarjeta('eBay'), 'Activar').disabled).toBe(true)
 
     const aliexpress = tarjeta('AliExpress')
@@ -192,7 +201,8 @@ describe('Configuración > Fuentes: ?fuente= resalta la tienda del aviso', () =>
     api.listarFuentes.mockResolvedValue([
       fuente({ codigo: 'MERCADO_LIBRE', nombre: 'Mercado Libre' }),
       fuente({ codigo: 'EBAY', nombre: 'eBay', estado: 'CON_ERROR', ultimoError: 'La tienda bloqueó la lectura.', tieneUsuario: true, tieneClave: true }),
-      fuente({ codigo: 'AMAZON', nombre: 'Amazon', estado: 'ACTIVA', tieneUsuario: true, tieneClave: true }),
+      fuente({ codigo: 'ALIBABA', nombre: 'Alibaba', estado: 'ACTIVA', tieneUsuario: true, tieneClave: true }),
+      fuente({ codigo: 'AMAZON', nombre: 'Amazon', estado: 'CON_ERROR', tieneUsuario: true, tieneClave: true }),
     ])
   })
 
@@ -220,21 +230,28 @@ describe('Configuración > Fuentes: ?fuente= resalta la tienda del aviso', () =>
 
   it('un código que no existe no resalta nada ni rompe la página', async () => {
     await renderPagina('JEFE_ADMINISTRATIVO', '/configuracion/fuentes?fuente=NO_EXISTE')
-    await screen.findByRole('region', { name: 'Amazon' })
+    await screen.findByRole('region', { name: 'Alibaba' })
+    expect(resaltadas()).toHaveLength(0)
+  })
+
+  it('?fuente=AMAZON no resalta nada: Amazon ya no se muestra (v3.4)', async () => {
+    await renderPagina('JEFE_ADMINISTRATIVO', '/configuracion/fuentes?fuente=AMAZON')
+    await screen.findByRole('region', { name: 'Alibaba' })
+    expect(screen.queryByRole('region', { name: 'Amazon' })).toBeNull()
     expect(resaltadas()).toHaveLength(0)
   })
 
   it('también resalta para quien solo ve (Asistente Logístico)', async () => {
-    await renderPagina('ASISTENTE_LOGISTICO', '/configuracion/fuentes?fuente=AMAZON')
-    const amazon = await screen.findByRole('region', { name: 'Amazon' })
-    expect(resaltadas()).toEqual([amazon])
+    await renderPagina('ASISTENTE_LOGISTICO', '/configuracion/fuentes?fuente=ALIBABA')
+    const alibaba = await screen.findByRole('region', { name: 'Alibaba' })
+    expect(resaltadas()).toEqual([alibaba])
   })
 
   it('al navegar a otro ?fuente= cambia la tienda resaltada (y al recargar se conserva por la URL)', async () => {
     const router = await renderPagina('JEFE_ADMINISTRATIVO', '/configuracion/fuentes?fuente=EBAY')
     await screen.findByRole('region', { name: 'eBay' })
-    await act(async () => { await router.navigate('/configuracion/fuentes?fuente=AMAZON') })
-    await waitFor(() => expect(resaltadas()).toEqual([screen.getByRole('region', { name: 'Amazon' })]))
-    expect(router.state.location.search).toBe('?fuente=AMAZON')
+    await act(async () => { await router.navigate('/configuracion/fuentes?fuente=ALIBABA') })
+    await waitFor(() => expect(resaltadas()).toEqual([screen.getByRole('region', { name: 'Alibaba' })]))
+    expect(router.state.location.search).toBe('?fuente=ALIBABA')
   })
 })
