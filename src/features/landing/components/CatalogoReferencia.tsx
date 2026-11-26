@@ -2,7 +2,7 @@ import { useState } from "react"
 import { ArrowRight, PackageSearch } from "lucide-react"
 import { useCatalogoPublico } from "../hooks/useCatalogoPublico"
 import { visualCategoria } from "../lib/visualCategoria"
-import CargandoSpinner from "@/components/ui/CargandoSpinner"
+import { EsqueletoRepuestos } from "./EsqueletosPublicos"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { EstadoVacio } from "@/components/ui/EstadoVacio"
 import { cn } from "@/lib/utils/utils"
@@ -60,7 +60,7 @@ export function CatalogoReferencia() {
       </div>
 
       {query.isPending ? (
-        <CargandoSpinner texto="Cargando catálogo..." />
+        <div className="mt-10"><EsqueletoRepuestos etiqueta="Cargando catálogo" /></div>
       ) : query.isError ? (
         <div className="mt-8">
           <ErrorBanner message="No pudimos cargar el catálogo. Puedes solicitar una cotización directamente." onRetry={() => query.refetch()} />

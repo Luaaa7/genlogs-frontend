@@ -101,6 +101,8 @@ export function SolicitudRapida() {
   const masVisible = masAbierto || precarga !== null
 
   const alEnviar = handleSubmit((v) => {
+    // Un segundo envío mientras el primero sigue en curso no hace nada.
+    if (envio.isPending) return
     const pedido = { marca: v.marca, numeroParte: v.numeroParte, descripcion: v.descripcion, cantidad: Number(v.cantidad) }
     const token = tokenCliente()
     if (token) {
@@ -223,10 +225,11 @@ export function SolicitudRapida() {
             <button
               type="submit"
               disabled={envio.isPending}
+              aria-busy={envio.isPending || undefined}
               className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground ring-offset-background transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 sm:col-span-2"
             >
-              {envio.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden="true" />}
-              {envio.isPending ? "Enviando…" : "Pedir cotización"}
+              {envio.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
+              {envio.isPending ? "Procesando..." : "Pedir cotización"}
             </button>
           </form>
         )}

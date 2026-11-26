@@ -150,4 +150,33 @@ describe("SolicitudRapida (D-16, D-30)", () => {
     expect(leerPedidoPendiente()).not.toBeNull()
     expect((screen.getByLabelText(/qué repuesto necesitas/i) as HTMLTextAreaElement).value).toBe("Rodamiento")
   })
+
+  describe("botón mientras se envía", () => {
+    it("pasa a «Procesando...», se deshabilita con spinner y no deja enviar dos veces", async () => {
+      localStorage.setItem("cliente_access_token", "tok")
+      let resolver!: (v: unknown) => void
+      enviar.mockReturnValue(new Promise((r) => { resolver = r }))
+      pintar()
+      llenar()
+      fireEvent.click(screen.getByRole("button", { name: /pedir cotización/i }))
+
+      const boton = await screen.findByRole("button", { name: /procesando\.\.\./i }) as HTMLButtonElement
+      expect(boton.disabled).toBe(true)
+      expect(boton.getAttribute("aria-busy")).toBe("true")
+      expect(boton.querySelector("svg.animate-spin")).not.toBeNull()
+      fireEvent.click(boton)
+      fireEvent.submit(boton.closest("form") as HTMLFormElement)
+      expect(enviar).toHaveBeenCalledTimes(1)
+
+      resolver({ idSolicitud: 7, codigoSolicitud: "SOL-7", estado: "PENDIENTE" })
+      expect(await screen.findByText(/recibimos tu pedido sol-7/i)).toBeTruthy()
+    })
+
+    it("en reposo el botón dice «Pedir cotización» y está habilitado", () => {
+      pintar()
+      const boton = screen.getByRole("button", { name: /pedir cotización/i }) as HTMLButtonElement
+      expect(boton.disabled).toBe(false)
+      expect(boton.getAttribute("aria-busy")).toBeNull()
+    })
+  })
 })
