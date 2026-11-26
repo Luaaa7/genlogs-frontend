@@ -2,6 +2,8 @@ import axios from 'axios'
 import { axiosClient } from '@/api/axiosClient'
 import {
   RUTA_SOLICITUDES,
+  rutaSolicitudCotizacion,
+  rutaSolicitudDetalle,
   rutaSolicitudHistorial,
   rutaSolicitudIniciar,
   rutaSolicitudItems,
@@ -116,8 +118,8 @@ const ITEMS_MOCK: ItemIdentificacion[] = [
 ]
 
 /**
- * Pendiente de BE-B: GET /solicitudes/{id} para abrir el detalle sin pasar por la lista.
- * Con fila en la navegación se usa esa. En mock, si no hay fila, se lee la semilla. En real, sin fila, null.
+ * Punto de partida del detalle: con fila en la navegación se usa esa (sin esperar red). En mock, si no hay fila,
+ * se lee la semilla. En real, sin fila, null: la pantalla pide GET /solicitudes/{id}.
  */
 export function solicitudDeRuta(id: number, fila?: SolicitudInternaResponse | null, mock = usarMock): SolicitudInternaResponse | null {
   if (fila && fila.idSolicitud === id) return clonar(fila)
@@ -165,6 +167,22 @@ function listarMock(filtros: FiltrosSolicitudes): ListaSolicitudesResponse {
 }
 
 export const solicitudesInternasApi = {
+  /** GET /solicitudes/{id}: abre el detalle sin pasar por la lista. */
+  async detalle(id: number): Promise<SolicitudInternaResponse> {
+    if (usarMock) return leer(id) ?? conflicto('No se encontró la solicitud.')
+    const { data } = await axiosClient.get<SolicitudInternaResponse>(rutaSolicitudDetalle(id))
+    return data
+  },
+  /** PATCH /solicitudes/{id}/cotizacion: liga la cotización recién creada. Si estaba Recibida, pasa a En búsqueda. */
+  async vincularCotizacion(id: number, idCotizacion: number): Promise<SolicitudInternaResponse> {
+    if (usarMock) {
+      const s = leer(id) ?? conflicto('No se encontró la solicitud.')
+      if (CERRADA.has(s.estado)) conflicto('La solicitud no está en el estado que pide esta acción.')
+      return guardar({ ...s, estado: s.estado === 'PENDIENTE' ? 'EN_REVISION' : s.estado, idCotizacion, codigoCotizacion: `COT-${idCotizacion}` })
+    }
+    const { data } = await axiosClient.patch<SolicitudInternaResponse>(rutaSolicitudCotizacion(id), { idCotizacion })
+    return data
+  },
   async iniciar(id: number): Promise<SolicitudInternaResponse> {
     if (usarMock) {
       const s = leer(id) ?? conflicto('No se encontró la solicitud.')

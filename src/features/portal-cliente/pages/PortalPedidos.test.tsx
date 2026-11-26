@@ -314,3 +314,32 @@ describe("Detalle del pedido", () => {
     expect(await screen.findByText(/no se pudo cancelar/i)).toBeTruthy()
   })
 })
+
+describe("Detalle del pedido: su cotización", () => {
+  beforeEach(() => vi.restoreAllMocks())
+
+  it("cuando la cotización ya se le envió, ofrece abrirla", async () => {
+    vi.spyOn(portalApi, "obtenerPedido").mockResolvedValue({ ...pedidos[2], idCotizacion: 50 })
+    renderEn("/portal/pedidos/3")
+
+    const enlace = await screen.findByRole("link", { name: "Ver mi cotización" })
+    expect(enlace.getAttribute("href")).toBe("/portal/cotizaciones/50")
+  })
+
+  it("cotizado pero aún sin enviar, avisa que la está preparando y no ofrece enlace", async () => {
+    vi.spyOn(portalApi, "obtenerPedido").mockResolvedValue({ ...pedidos[2] })
+    renderEn("/portal/pedidos/3")
+
+    expect(await screen.findByText(/estamos preparando tu cotización/i)).toBeTruthy()
+    expect(screen.queryByRole("link", { name: "Ver mi cotización" })).toBeNull()
+  })
+
+  it("mientras lo buscamos no muestra nada de cotización", async () => {
+    vi.spyOn(portalApi, "obtenerPedido").mockResolvedValue({ ...pedidos[1] })
+    renderEn("/portal/pedidos/2")
+
+    await screen.findByRole("list", { name: "Avance del pedido" })
+    expect(screen.queryByText(/estamos preparando tu cotización/i)).toBeNull()
+    expect(screen.queryByRole("link", { name: "Ver mi cotización" })).toBeNull()
+  })
+})
