@@ -166,6 +166,96 @@ describe("CompletarEmpresaPage", () => {
     }
   })
 
+  describe("consulta automática del RUC", () => {
+    it("no consulta SUNAT hasta completar los 11 dígitos y consulta una sola vez al llegar al último", async () => {
+      renderPagina()
+      const ruc = screen.getByLabelText("RUC")
+      for (const parcial of ["2", "20", "2012345678"]) fireEvent.change(ruc, { target: { value: parcial } })
+      expect(publicApi.consultarRazonSocial).not.toHaveBeenCalled()
+
+      fireEvent.change(ruc, { target: { value: "20123456789" } })
+      await vi.waitFor(() => expect(publicApi.consultarRazonSocial).toHaveBeenCalledTimes(1))
+      expect(publicApi.consultarRazonSocial).toHaveBeenCalledWith("20123456789", expect.anything())
+    })
+
+    it("también consulta un RUC que empieza con 10 (persona con negocio)", async () => {
+      renderPagina()
+      fireEvent.change(screen.getByLabelText("RUC"), { target: { value: "10456789012" } })
+      await vi.waitFor(() => expect(publicApi.consultarRazonSocial).toHaveBeenCalledWith("10456789012", expect.anything()))
+    })
+
+    it("un número de 11 dígitos que no empieza con 10 o 20 no se consulta", () => {
+      renderPagina()
+      fireEvent.change(screen.getByLabelText("RUC"), { target: { value: "30123456789" } })
+      expect(publicApi.consultarRazonSocial).not.toHaveBeenCalled()
+    })
+
+    it("completa la razón social y la tarjeta de la derecha sin pulsar nada más", async () => {
+      vi.mocked(publicApi.consultarRazonSocial).mockResolvedValue({ tipo: "ok", razonSocial: "MINERA SOL S.A.C." })
+      renderPagina()
+      fireEvent.change(screen.getByLabelText("RUC"), { target: { value: "20123456789" } })
+
+      await vi.waitFor(() => expect((screen.getByLabelText("Razón social") as HTMLInputElement).value).toBe("MINERA SOL S.A.C."))
+      const resumen = screen.getByRole("complementary", { name: "Resumen de tu empresa" })
+      expect(within(resumen).getByText("MINERA SOL S.A.C.")).toBeTruthy()
+      expect(within(resumen).getByText("RUC 20123456789")).toBeTruthy()
+    })
+
+    it("si el servicio falla, la razón social queda editable y se puede escribir a mano", async () => {
+      vi.mocked(publicApi.consultarRazonSocial).mockRejectedValue(new Error("sin servicio"))
+      renderPagina()
+      fireEvent.change(screen.getByLabelText("RUC"), { target: { value: "20123456789" } })
+
+      expect(await screen.findByText(/escríbela a mano/)).toBeTruthy()
+      const razon = screen.getByLabelText("Razón social") as HTMLInputElement
+      expect(razon.readOnly).toBe(false)
+      expect(razon.disabled).toBe(false)
+      fireEvent.change(razon, { target: { value: "Minera Sol" } })
+      expect(razon.value).toBe("Minera Sol")
+      const resumen = screen.getByRole("complementary", { name: "Resumen de tu empresa" })
+      expect(within(resumen).getByText("Minera Sol")).toBeTruthy()
+    })
+  })
+
+  describe("datos fiscales y datos de contacto separados", () => {
+    it("RUC: la identificación fiscal agrupa tipo, RUC y razón social, y el contacto va aparte", () => {
+      renderPagina()
+      const fiscal = screen.getByRole("region", { name: "Identificación fiscal" })
+      expect(within(fiscal).getByLabelText("Empresa (RUC)")).toBeTruthy()
+      expect(within(fiscal).getByLabelText("Persona natural (DNI)")).toBeTruthy()
+      expect(within(fiscal).getByLabelText("RUC")).toBeTruthy()
+      expect(within(fiscal).getByLabelText("Razón social")).toBeTruthy()
+      expect(within(fiscal).queryByLabelText("Persona de contacto")).toBeNull()
+
+      const contacto = screen.getByRole("region", { name: "Contacto para tus cotizaciones" })
+      expect(within(contacto).getByLabelText("Persona de contacto")).toBeTruthy()
+      expect(within(contacto).getByLabelText("Teléfono (opcional)")).toBeTruthy()
+      expect(within(contacto).queryByLabelText("RUC")).toBeNull()
+      expect(contacto.className).toContain("border-t")
+    })
+
+    it("DNI: la razón social no está en la identificación fiscal y el contacto sigue en su bloque", () => {
+      renderPagina()
+      fireEvent.click(screen.getByLabelText("Persona natural (DNI)"))
+      const fiscal = screen.getByRole("region", { name: "Identificación fiscal" })
+      expect(within(fiscal).getByLabelText("DNI")).toBeTruthy()
+      expect(within(fiscal).queryByLabelText("Razón social")).toBeNull()
+      const contacto = screen.getByRole("region", { name: "Contacto para tus cotizaciones" })
+      expect(within(contacto).getByLabelText("Nombres y apellidos")).toBeTruthy()
+      expect(within(contacto).getByLabelText("Teléfono (opcional)")).toBeTruthy()
+    })
+  })
+
+  it("con RUC explica con calma que el acceso es inmediato y que solo se valida el vínculo si la empresa ya tiene cuenta", () => {
+    renderPagina()
+    expect(
+      screen.getByText(
+        "Validamos tu RUC en SUNAT con acceso inmediato. Solo si tu empresa ya tiene una cuenta activa en el portal, validaremos tu vínculo por seguridad.",
+      ),
+    ).toBeTruthy()
+    expect(screen.queryByText(/GENLOGS revisará tu acceso/)).toBeNull()
+  })
+
   describe("persona natural (DNI)", () => {
     function elegirDni() {
       fireEvent.click(screen.getByLabelText("Persona natural (DNI)"))
@@ -186,7 +276,7 @@ describe("CompletarEmpresaPage", () => {
       expect((screen.getByLabelText("DNI") as HTMLInputElement).maxLength).toBe(8)
       expect(screen.getByLabelText("Nombres y apellidos")).toBeTruthy()
       expect(screen.getByText("Para compras con DNI emitimos boleta de venta y no se requiere orden de compra.")).toBeTruthy()
-      expect(screen.queryByText(/Validamos el RUC en SUNAT/)).toBeNull()
+      expect(screen.queryByText(/Validamos tu RUC en SUNAT/)).toBeNull()
     })
 
     it("no consulta SUNAT con un DNI", () => {
