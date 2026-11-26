@@ -35,7 +35,8 @@ export async function crearAccion(anio: number, mes: number, descripcion: string
   return data
 }
 
-export async function marcarAccionHecha(id: number): Promise<AccionCorrectiva> {
-  const { data } = await axiosClient.patch<AccionCorrectiva>(`/metas/acciones/${id}`, { estado: "HECHA" })
+/** v3.4: el backend acepta PENDIENTE o HECHA, así que una acción marcada por error se puede reabrir. */
+export async function cambiarEstadoAccion(id: number, estado: AccionCorrectiva["estado"]): Promise<AccionCorrectiva> {
+  const { data } = await axiosClient.patch<AccionCorrectiva>(`/metas/acciones/${id}`, { estado })
   return data
 }

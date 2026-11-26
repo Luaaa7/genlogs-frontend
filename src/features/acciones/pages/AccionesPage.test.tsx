@@ -90,3 +90,77 @@ describe("acciones correctivas", () => {
     }
   })
 })
+
+describe("acciones correctivas: mejoras v3.4", () => {
+  const META_NO_CUMPLE = {
+    anio: 2026, mes: 11, metaPorcentaje: 90, cotizacionesEnPlazo: 17, cotizacionesConsideradas: 20, porcentaje: 85, cumple: false,
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    http.get.mockImplementation((url: string) => {
+      if (String(url).endsWith("/acciones")) return Promise.resolve({ data: ACCIONES })
+      if (url === "/metas") return Promise.resolve({ data: META_NO_CUMPLE })
+      return Promise.resolve({ data: [] })
+    })
+    http.post.mockResolvedValue({ data: ACCIONES[0] })
+    http.patch.mockResolvedValue({ data: ACCIONES[1] })
+  })
+
+  it("muestra el resultado de la meta del mes que motiva las acciones", async () => {
+    pintar("GERENTE_GENERAL")
+    const resultado = await screen.findByRole("region", { name: "Resultado de la meta del mes" })
+    expect(resultado.textContent).toMatch(/85% en plazo/)
+    expect(resultado.textContent).toMatch(/17 de 20/)
+    expect(resultado.textContent).toMatch(/no cumple/)
+  })
+
+  it("cuenta pendientes y hechas, y pone primero las pendientes", async () => {
+    pintar("GERENTE_GENERAL")
+    expect(await screen.findByText("1 pendiente · 1 hecha")).toBeTruthy()
+    const filas = screen.getAllByRole("listitem")
+    expect(filas[0].textContent).toMatch(/Llamar al cliente/)
+    expect(filas[1].textContent).toMatch(/Archivar el expediente/)
+  })
+
+  it("el Jefe puede reabrir una acción marcada como hecha por error", async () => {
+    pintar("JEFE_ADMINISTRATIVO")
+    fireEvent.click(await screen.findByRole("button", { name: "Reabrir" }))
+    await vi.waitFor(() => expect(http.patch).toHaveBeenCalledWith("/metas/acciones/2", { estado: "PENDIENTE" }))
+  })
+
+  it("marcar como hecha envía HECHA", async () => {
+    pintar("JEFE_ADMINISTRATIVO")
+    fireEvent.click(await screen.findByRole("button", { name: "Marcar como hecha" }))
+    await vi.waitFor(() => expect(http.patch).toHaveBeenCalledWith("/metas/acciones/1", { estado: "HECHA" }))
+  })
+
+  it("navega al mes anterior y no ofrece meses futuros", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] })
+    vi.setSystemTime(new Date("2026-11-20T15:00:00Z"))
+    try {
+      pintar("GERENTE_GENERAL")
+      await screen.findByText("Llamar al cliente")
+      expect(screen.getByRole("link", { name: "Mes anterior" }).getAttribute("href")).toBe("/acciones?anio=2026&mes=10")
+      expect(screen.queryByRole("link", { name: "Mes siguiente" })).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("Ctrl + Enter registra la acción y el contador respeta el límite", async () => {
+    pintar("JEFE_ADMINISTRATIVO")
+    const caja = await screen.findByLabelText("Descripción")
+    expect(caja.getAttribute("maxLength")).toBe("500")
+    fireEvent.change(caja, { target: { value: "Revisar las solicitudes atrasadas" } })
+    expect(screen.getByText("33/500")).toBeTruthy()
+    fireEvent.keyDown(caja, { key: "Enter", ctrlKey: true })
+    await vi.waitFor(() => expect(http.post).toHaveBeenCalledWith("/metas/2026/11/acciones", { descripcion: "Revisar las solicitudes atrasadas" }))
+  })
+
+  it("sin acciones, el vacío explica cuándo se registran", async () => {
+    http.get.mockImplementation((url: string) => Promise.resolve({ data: String(url).endsWith("/acciones") ? [] : META_NO_CUMPLE }))
+    pintar("JEFE_ADMINISTRATIVO")
+    expect(await screen.findByText(/Si el mes no llega a la meta, registra arriba/)).toBeTruthy()
+  })
+})
