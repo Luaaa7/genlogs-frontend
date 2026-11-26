@@ -36,6 +36,28 @@ describe("carrito de cotización público (genlogs_public_cart)", () => {
     expect(CLAVE_CARRITO).toBe("genlogs_public_cart")
   })
 
+  it("guarda imagenUrl si el repuesto la trae; sin foto no escribe la clave", () => {
+    agregarAlCarrito({ ...filtro, imagenUrl: "https://res.cloudinary.com/x/filtro.jpg" })
+    agregarAlCarrito({ ...rodamiento, imagenUrl: null })
+
+    const [conFoto, sinFoto] = leerCarrito()
+    expect(conFoto.imagenUrl).toBe("https://res.cloudinary.com/x/filtro.jpg")
+    expect("imagenUrl" in sinFoto).toBe(false)
+  })
+
+  it("si el repuesto ya estaba sin foto y ahora llega con foto, la completa", () => {
+    agregarAlCarrito(filtro)
+    agregarAlCarrito({ ...filtro, imagenUrl: "https://res.cloudinary.com/x/filtro.jpg" })
+
+    expect(leerCarrito()[0].imagenUrl).toBe("https://res.cloudinary.com/x/filtro.jpg")
+    expect(leerCarrito()[0].cantidad).toBe(2)
+  })
+
+  it("al leer ignora una imagenUrl que no sea texto (carritos viejos o dañados)", () => {
+    localStorage.setItem(CLAVE_CARRITO, JSON.stringify([{ ...filtro, cantidad: 1, imagenUrl: 42 }]))
+    expect("imagenUrl" in leerCarrito()[0]).toBe(false)
+  })
+
   it("si el repuesto ya está, suma a su cantidad en vez de duplicar la fila", () => {
     agregarAlCarrito(filtro)
     agregarAlCarrito(filtro)

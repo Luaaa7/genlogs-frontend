@@ -154,5 +154,5 @@ export function VitrinaLanding() {
 }
 
 function itemDe(r: RepuestoPublico) {
-  return { id: r.idProducto, nombre: r.nombre, marca: r.marca ?? "", numeroParte: r.numeroParte ?? "" }
+  return { id: r.idProducto, nombre: r.nombre, marca: r.marca ?? "", numeroParte: r.numeroParte ?? "", imagenUrl: r.urlImagen }
 }
