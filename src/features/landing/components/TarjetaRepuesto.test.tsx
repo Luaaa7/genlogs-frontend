@@ -15,6 +15,20 @@ function pintar(repuesto: RepuestoPublico, enCotizacion = 0, a = acciones()) {
 }
 
 describe("TarjetaRepuesto (IC9, IC10)", () => {
+  it("muestra el plazo que trae la API, no uno fijo", () => {
+    pintar({ ...base, plazoEntrega: "10 a 12 días hábiles" })
+    expect(screen.getByText("10 a 12 días hábiles")).toBeTruthy()
+    expect(screen.queryByText("24 a 48 horas")).toBeNull()
+  })
+
+  it.each([["vacío", ""], ["solo espacios", "   "], ["nulo", null], ["inexistente", undefined]])(
+    "si el plazo viene %s muestra «Plazo según cotización»",
+    (_caso, plazo) => {
+      pintar({ ...base, plazoEntrega: plazo as unknown as string })
+      expect(screen.getByText("Plazo según cotización")).toBeTruthy()
+    },
+  )
+
   it("con foto verificada muestra la foto real", () => {
     pintar(base)
     expect(screen.getByRole("img", { name: "Rodamiento 6205" })).toBeTruthy()
