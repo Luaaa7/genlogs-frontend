@@ -4,6 +4,15 @@ import type { TipoPlazo } from '@/api/contratos'
 import { avisar } from '@/lib/avisos'
 import { solicitudesInternasApi } from '../api/solicitudesInternasApi'
 
+export function useDetalleSolicitud(id: number, activo: boolean) {
+  return useQuery({
+    queryKey: ['solicitud-detalle', id],
+    queryFn: () => solicitudesInternasApi.detalle(id),
+    enabled: activo,
+    retry: false,
+  })
+}
+
 export function useHistorialSolicitud(id: number, activo: boolean) {
   return useQuery({
     queryKey: ['solicitud-historial', id],

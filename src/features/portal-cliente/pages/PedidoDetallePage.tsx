@@ -55,6 +55,21 @@ export function PedidoDetallePage() {
           <BarraEstadosPedido estado={String(pedido.estado)} />
         </div>
 
+        {pedido.idCotizacion != null ? (
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-background p-4 text-sm">
+            <p>Tu cotización ya está lista.</p>
+            <Button asChild>
+              <Link to={`/portal/cotizaciones/${pedido.idCotizacion}`}>Ver mi cotización</Link>
+            </Button>
+          </div>
+        ) : (
+          String(pedido.estado) === "COTIZADA" && (
+            <p role="status" className="mt-6 rounded-lg border border-border bg-background p-4 text-sm text-muted-foreground">
+              Estamos preparando tu cotización. Cuando te la enviemos, la verás aquí y en «Mis cotizaciones».
+            </p>
+          )
+        )}
+
         {cancelar.isError && (
           <div className="mt-6">
             <ErrorBanner

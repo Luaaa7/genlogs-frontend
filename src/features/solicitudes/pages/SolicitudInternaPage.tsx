@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Inbox } from 'lucide-react'
-import { useLocation, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import type { EstadoSolicitud, TipoPlazo } from '@/api/contratos'
 import type { SolicitudInternaResponse } from '@/api/contratos/solicitudes'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
 import { EstadoBadge, type EstadoBadgeTono } from '@/components/ui/EstadoBadge'
 import { EstadoVacio } from '@/components/ui/EstadoVacio'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { Button } from '@/components/ui/button'
 import { formatearFechaHora } from '@/lib/formatters/codigoCotizacion'
 import { formatearFechaCorta } from '@/lib/formatters/fechaLocal'
 import { mensajeError } from '@/lib/errores'
@@ -16,7 +17,8 @@ import { AccionesSolicitud } from '../components/AccionesSolicitud'
 import { HistorialSolicitud } from '../components/HistorialSolicitud'
 import { ItemsSolicitud } from '../components/ItemsSolicitud'
 import { useAsignables } from '../hooks/useAsignables'
-import { useAccionesSolicitud, useHistorialSolicitud, useItemsSolicitud } from '../hooks/useSolicitudInterna'
+import { useAccionesSolicitud, useDetalleSolicitud, useHistorialSolicitud, useItemsSolicitud } from '../hooks/useSolicitudInterna'
+import { puedeCotizar, rutaCotizarDesde } from '../lib/cotizarDesdeSolicitud'
 import { puedeActuar, ROL_JEFE } from '../lib/reglasSolicitud'
 
 const ESTADO: Record<EstadoSolicitud, { label: string; tono: EstadoBadgeTono }> = {
@@ -39,7 +41,9 @@ function Detalle() {
   const id = Number(raw)
   const location = useLocation()
   const fila = (location.state as { solicitud?: SolicitudInternaResponse } | null)?.solicitud ?? null
-  const [solicitud, setSolicitud] = useState(() => solicitudDeRuta(id, fila))
+  const [cambiada, setSolicitud] = useState(() => solicitudDeRuta(id, fila))
+  const detalle = useDetalleSolicitud(id, cambiada === null)
+  const solicitud = cambiada ?? detalle.data ?? null
   const { rol } = usePermisos()
   const actuar = puedeActuar(rol)
   const esJefe = rol === ROL_JEFE
@@ -51,7 +55,10 @@ function Detalle() {
   const ocupado = acciones.iniciar.isPending || acciones.pausar.isPending || acciones.reanudar.isPending || acciones.reclasificar.isPending || acciones.reasignar.isPending
 
   if (!solicitud) {
-    return <EstadoVacio icono={<Inbox className="h-6 w-6" />} titulo="Abre la solicitud desde la lista" />
+    if (detalle.isError) {
+      return <EstadoVacio icono={<Inbox className="h-6 w-6" />} titulo="No se encontró la solicitud" descripcion="Puede que ya no exista o que no tengas permiso para verla." />
+    }
+    return <EstadoVacio icono={<Inbox className="h-6 w-6" />} titulo="Cargando la solicitud…" />
   }
 
   const estado = ESTADO[solicitud.estado]
@@ -62,6 +69,21 @@ function Detalle() {
         <EstadoBadge tono={estado.tono}>{estado.label}</EstadoBadge>
         {solicitud.pausadaDesde != null && <EstadoBadge tono="warning">Pausada</EstadoBadge>}
       </div>
+      {solicitud.idCotizacion != null && (
+        <p className="text-sm">
+          Cotización creada:{' '}
+          <Link className="font-medium text-primary underline-offset-2 hover:underline" to={`/cotizaciones/${solicitud.idCotizacion}`}>
+            Ver {solicitud.codigoCotizacion ?? `cotización ${solicitud.idCotizacion}`}
+          </Link>
+        </p>
+      )}
+      {puedeCotizar(rol, solicitud) && (
+        <div>
+          <Button asChild>
+            <Link to={rutaCotizarDesde(solicitud.idSolicitud)}>Cotizar</Link>
+          </Button>
+        </div>
+      )}
       {errorAccion && <ErrorBanner message={mensajeError(errorAccion)} />}
       <dl className="grid gap-2 rounded-xl border border-border bg-card p-5 text-sm sm:grid-cols-2">
         <Dato titulo="Cliente" valor={solicitud.cliente} />

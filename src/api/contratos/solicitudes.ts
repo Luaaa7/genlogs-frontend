@@ -61,6 +61,8 @@ export interface SolicitudCreadaResponse {
  *   PATCH /solicitudes/{id}/reanudar       sin cuerpo. vuelve a EN_REVISION
  *   PATCH /solicitudes/{id}/reclasificar   ReclasificarSolicitudRequest. La 2.a solo la hace el Jefe
  *   PATCH /solicitudes/{id}/reasignar      ReasignarSolicitudRequest. Solo el Jefe
+ *   GET   /solicitudes/{id}                SolicitudInternaResponse (abre el detalle sin pasar por la lista)
+ *   PATCH /solicitudes/{id}/cotizacion     VincularCotizacionRequest: liga la cotización creada desde la solicitud
  *   GET   /solicitudes/{id}/historial      EventoSolicitud[]
  *   GET   /solicitudes/{id}/items          ItemIdentificacion[] (solo lectura; el PUT de N.º de parte no se usa aquí)
  */
@@ -70,7 +72,14 @@ export const rutaSolicitudReanudar = (id: number) => `${RUTA_SOLICITUDES}/${id}/
 export const rutaSolicitudReclasificar = (id: number) => `${RUTA_SOLICITUDES}/${id}/reclasificar`
 export const rutaSolicitudReasignar = (id: number) => `${RUTA_SOLICITUDES}/${id}/reasignar`
 export const rutaSolicitudHistorial = (id: number) => `${RUTA_SOLICITUDES}/${id}/historial`
+export const rutaSolicitudDetalle = (id: number) => `${RUTA_SOLICITUDES}/${id}`
+export const rutaSolicitudCotizacion = (id: number) => `${RUTA_SOLICITUDES}/${id}/cotizacion`
 export const rutaSolicitudItems = (id: number) => `${RUTA_SOLICITUDES}/${id}/items`
+
+/** Cotización recién creada desde la solicitud. */
+export interface VincularCotizacionRequest {
+  idCotizacion: number
+}
 
 /** motivo obligatorio, max. 40. fechaEstimada: fecha ISO sin hora; no puede ser pasada. */
 export interface PausarSolicitudRequest {
@@ -141,6 +150,11 @@ export interface SolicitudInternaResponse {
   fechaEstimadaTercero: string | null
   reclasificaciones: number
   asignado: UsuarioResumen | null
+  /** Cliente de la solicitud: la cotización que se crea desde ella es de este cliente. */
+  idCliente?: number | null
+  /** Cotización creada desde esta solicitud, si ya existe. */
+  idCotizacion?: number | null
+  codigoCotizacion?: string | null
 }
 
 /**

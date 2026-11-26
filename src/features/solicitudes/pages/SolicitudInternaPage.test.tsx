@@ -129,9 +129,9 @@ describe('SolicitudInternaPage', () => {
     expect(screen.getByText('—')).toBeTruthy()
   })
 
-  it('sin fila conocida pide abrirla desde la lista', () => {
+  it('sin fila conocida la pide por su número y, si no existe, lo dice', async () => {
     pintar(99, 'JEFE_ADMINISTRATIVO')
-    expect(screen.getByText('Abre la solicitud desde la lista')).toBeTruthy()
+    expect(await screen.findByText('No se encontró la solicitud')).toBeTruthy()
   })
 
   it('en En búsqueda el botón es «Proveedor contactado» y solo pide la fecha estimada de respuesta', () => {

@@ -11,6 +11,7 @@ import { crearCotizacionSchema, type CrearCotizacionFormData } from '@/lib/valid
 import { mensajeError } from '@/lib/errores'
 import { avisar } from '@/lib/avisos'
 import type { CreateCotizacionRequest, UpdateCotizacionRequest } from '@/types/cotizacion.types'
+import { solicitudesInternasApi } from '@/features/solicitudes/api/solicitudesInternasApi'
 import { useClientes } from '@/features/clientes-proveedores/hooks/useClientes'
 import { useIgvVigente } from '@/features/configuracion/hooks/useIgv'
 import { useTipoCambio } from '@/features/tipo-cambio/hooks/useTipoCambio'
@@ -29,10 +30,12 @@ interface Props {
   /** Tipo de cambio ya guardado en la cotización. null si nunca se guardó. */
   tipoCambioGuardado?: number | null
   idCotizacion?: number
+  /** Solicitud de la que nace la cotización: al crearla se liga con ella. */
+  idSolicitud?: number
 }
 
 /** Alta y edición comparten el formulario, el resumen y la confirmación. */
-export function FormularioCotizacion({ modo, valoresIniciales, monedaBloqueada = false, tipoCambioGuardado = null, idCotizacion }: Props) {
+export function FormularioCotizacion({ modo, valoresIniciales, monedaBloqueada = false, tipoCambioGuardado = null, idCotizacion, idSolicitud }: Props) {
   const navigate = useNavigate()
   const { data: clientes = [], isLoading: cargandoClientes } = useClientes({})
   const methods = useForm<CrearCotizacionFormData>({
@@ -99,6 +102,11 @@ export function FormularioCotizacion({ modo, valoresIniciales, monedaBloqueada =
         avisar('Cotización registrada correctamente como borrador')
         const idNueva = (guardada.idCotizacion ?? guardada.id) as number
         setCreada({ id: idNueva, codigo: guardada.codigoCotizacion ?? `#${idNueva}` })
+        if (idSolicitud != null) {
+          solicitudesInternasApi.vincularCotizacion(idSolicitud, idNueva).catch(() => {
+            avisar('La cotización se creó, pero no se pudo ligar a la solicitud. Avisa al Jefe Administrativo.')
+          })
+        }
       },
     })
   }

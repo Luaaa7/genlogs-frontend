@@ -25,6 +25,8 @@ export interface Pedido {
   asunto?: string | null
   descripcion?: string | null
   total?: number | null
+  /** Cotización ya enviada al cliente para este pedido. Mientras la preparamos, no viene. */
+  idCotizacion?: number | null
   items?: PedidoItem[]
 }
 
