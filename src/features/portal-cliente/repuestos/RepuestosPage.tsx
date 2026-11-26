@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { Clock, History, Package, Plus, Search } from "lucide-react"
-import { EstadoVacio } from "@/components/ui/EstadoVacio"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { FiltroChips } from "@/components/ui/FiltroChips"
 import { inputFormClass } from "@/components/ui/campoEstilos"
@@ -10,6 +9,9 @@ import { avisar } from "@/lib/avisos"
 import { mensajeError } from "@/lib/errores"
 import { formatCurrency } from "@/lib/formatters/currency"
 import { usePedidos } from "../hooks/usePedidos"
+import { EncabezadoPortal } from "../components/EncabezadoPortal"
+import { EstadoVacioIlustrado } from "../components/EstadoVacioIlustrado"
+import { ENTRADA_TARJETA, TARJETA_ELEVABLE, retardoEntrada } from "../lib/estilosTarjeta"
 import { BotonCargando } from "../components/BotonCargando"
 import { ListaEsqueleto } from "../components/SkeletonCard"
 import { portalApi } from "@/api/portalApi"
@@ -97,9 +99,7 @@ export function RepuestosPage() {
   return (
     <div className="mx-auto max-w-7xl">
       <div className="mb-6">
-        <p className="text-sm font-semibold uppercase tracking-wide text-accent">Portal del cliente</p>
-        <h1 className="mt-2 text-3xl font-bold">Repuestos</h1>
-        <p className="mt-2 text-muted-foreground">Arma tu pedido y te enviamos la cotización con precio y plazo confirmados.</p>
+        <EncabezadoPortal titulo="Repuestos" descripcion="Arma tu pedido y te enviamos la cotización con precio y plazo confirmados." />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
@@ -124,16 +124,34 @@ export function RepuestosPage() {
           ) : repuestos.isError ? (
             <ErrorBanner message="No pudimos cargar los repuestos." error={repuestos.error} onRetry={() => repuestos.refetch()} />
           ) : visibles.length === 0 ? (
-            <EstadoVacio
-              icono={<Package className="h-5 w-5" />}
+            <EstadoVacioIlustrado
+              ilustracion={busqueda || categoria || marca ? "busqueda" : "repuestos"}
               titulo="No encontramos ese repuesto"
               descripcion="Pídelo con su marca y N.º de parte, o con una foto o plano."
-              accion={<Link to="/portal/solicitud" className="text-sm font-semibold text-accent hover:underline">¿No lo encuentras? Pídelo aquí</Link>}
+              accion={
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  {(busqueda || categoria || marca) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTexto("")
+                        setBusqueda("")
+                        setCategoria(undefined)
+                        setMarca(undefined)
+                      }}
+                      className="rounded-md border border-input px-4 py-2 text-sm font-medium hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      Limpiar búsqueda
+                    </button>
+                  )}
+                  <Link to="/portal/solicitud" className="text-sm font-semibold text-accent hover:underline">¿No lo encuentras? Pídelo aquí</Link>
+                </div>
+              }
             />
           ) : (
             <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {visibles.map((r) => (
-                <li key={r.idProducto} className="flex flex-col rounded-xl border border-border bg-card p-4">
+              {visibles.map((r, indice) => (
+                <li key={r.idProducto} style={retardoEntrada(indice)} className={`flex flex-col rounded-xl border border-border bg-card p-4 ${TARJETA_ELEVABLE} ${ENTRADA_TARJETA}`}>
                   <div className="flex h-32 items-center justify-center overflow-hidden rounded-lg bg-muted">
                     {r.urlImagen ? (
                       <img src={r.urlImagen} alt={r.nombre} loading="lazy" className="h-full w-full object-cover" />

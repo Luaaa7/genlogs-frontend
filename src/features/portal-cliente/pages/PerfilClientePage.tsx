@@ -6,6 +6,7 @@ import { RUTA_EMPRESA_PORTAL } from "@/api/contratos/ingresoGoogle"
 import { PARAMETRO_VOLVER } from "@/api/contratos/registro"
 import { leerSesionCliente } from "@/lib/sesiones"
 import { EncabezadoPortal } from "../components/EncabezadoPortal"
+import { ENTRADA_TARJETA, retardoEntrada } from "../lib/estilosTarjeta"
 import { useCuentaPortal } from "../hooks/useCuentaPortal"
 
 const FOCO = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -34,7 +35,7 @@ export function PerfilClientePage() {
     <div>
       <EncabezadoPortal titulo="Mi perfil" descripcion="Los datos de tu cuenta en el portal." />
 
-      <section aria-labelledby="perfil-cuenta" className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
+      <section aria-labelledby="perfil-cuenta" style={retardoEntrada(0)} className={`mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-card ${ENTRADA_TARJETA}`}>
         <h2 id="perfil-cuenta" className="flex items-center gap-2 text-lg font-semibold text-[#183153] dark:text-foreground">
           <UserRound className="h-5 w-5" aria-hidden="true" />
           Datos de la cuenta
@@ -63,7 +64,7 @@ export function PerfilClientePage() {
         )}
       </section>
 
-      <section aria-labelledby="perfil-clave" className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card">
+      <section aria-labelledby="perfil-clave" style={retardoEntrada(1)} className={`mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-card ${ENTRADA_TARJETA}`}>
         <h2 id="perfil-clave" className="flex items-center gap-2 text-lg font-semibold text-[#183153] dark:text-foreground">
           <KeyRound className="h-5 w-5" aria-hidden="true" />
           Contraseña
