@@ -5,10 +5,9 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import axios from "axios"
-import { CheckCircle2, Loader2 } from "lucide-react"
+import { CheckCircle2, Loader2, Paperclip } from "lucide-react"
 import { Campo } from "@/components/ui/campo"
 import { describedBy, inputFormClass, textareaFormClass } from "@/components/ui/campoEstilos"
-import { rutaRegistro } from "@/api/contratos/registro"
 import { mensajeError } from "@/lib/errores"
 import {
   borrarPedidoPendiente,
@@ -31,14 +30,17 @@ type Valores = z.infer<typeof esquema>
 
 type Pedido = { marca: string; numeroParte: string; descripcion: string; cantidad: number; idProducto?: number }
 
-/** Al volver del registro, la landing llega con esta ruta y envía el pedido guardado (D-30). */
-const VOLVER = "/#solicitud"
+/**
+ * Sin sesión, el pedido queda guardado y se va a la nueva solicitud del portal: ahí se pide el ingreso
+ * (Google o correo), vuelve a esta misma ruta y el formulario ya trae lo que se escribió aquí.
+ */
+const RUTA_SOLICITUD_PORTAL = "/portal/solicitud"
 
 /** Lo que pasa después de enviar, en tres pasos. */
 const PASOS = [
-  "Escribe el repuesto, con marca y N.º de parte si los tienes",
-  "Crea tu acceso con el RUC de tu empresa",
-  "Sigue tu cotización desde el portal",
+  "Escribe el repuesto y la cantidad",
+  "Ingresa con Google o con tu correo",
+  "Adjunta una foto o PDF y sigue tu cotización desde el portal",
 ]
 
 function mensajeEnvio(error: unknown): string {
@@ -53,8 +55,9 @@ function mensajeEnvio(error: unknown): string {
 
 /**
  * Solicitud rápida de la landing (D-16, D-30). Sin cuenta: guarda el pedido en el
- * navegador y manda al registro con ?volver=; al volver con sesión, lo envía a
- * POST /api/solicitudes (canal LANDING). Con sesión de cliente, lo envía directo.
+ * navegador y manda a la nueva solicitud del portal, que pide el ingreso con Google o correo
+ * y precarga lo escrito (sin exigir RUC de entrada). Con sesión de cliente, lo envía directo
+ * a POST /api/solicitudes (canal LANDING).
  */
 export function SolicitudRapida() {
   const precarga = usePrecargaSolicitud()
@@ -62,6 +65,8 @@ export function SolicitudRapida() {
   // Pedido guardado antes de ir al registro (se lee una sola vez, al abrir la landing).
   const [pendiente] = useState(() => leerPedidoPendiente())
   const autoEnviado = useRef(false)
+  // Marca y N.º de parte van plegados; se abren solos si ya hay algo escrito o llegó un producto del catálogo.
+  const [masAbierto, setMasAbierto] = useState(() => Boolean(pendiente?.marca || pendiente?.numeroParte))
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<Valores>({
     resolver: zodResolver(esquema),
@@ -92,6 +97,9 @@ export function SolicitudRapida() {
     setValue("numeroParte", precarga.numeroParte ?? "", { shouldValidate: false })
   }, [precarga, setValue])
 
+  // Con un producto del catálogo se invita a completar la marca y el N.º de parte: quedan abiertos.
+  const masVisible = masAbierto || precarga !== null
+
   const alEnviar = handleSubmit((v) => {
     const pedido = { marca: v.marca, numeroParte: v.numeroParte, descripcion: v.descripcion, cantidad: Number(v.cantidad) }
     const token = tokenCliente()
@@ -99,9 +107,10 @@ export function SolicitudRapida() {
       envio.mutate({ pedido, token })
       return
     }
-    // D-16: sin cuenta no se crean solicitudes; se registra con RUC y vuelve aquí.
+    // D-16: sin cuenta no se crean solicitudes. El pedido queda guardado y el portal pide el ingreso
+    // (Google o correo) y lo precarga en la nueva solicitud, donde también se puede adjuntar foto o PDF.
     guardarPedidoPendiente(pedido)
-    navigate(rutaRegistro(VOLVER))
+    navigate(RUTA_SOLICITUD_PORTAL)
   })
 
   return (
@@ -111,8 +120,8 @@ export function SolicitudRapida() {
           <p className="text-sm font-semibold uppercase tracking-wide opacity-80">Solicitud rápida</p>
           <h2 id="solicitud-titulo" className="mt-2 text-3xl font-bold tracking-tight">Cuéntanos qué necesitas.</h2>
           <p className="mt-4 max-w-lg leading-7 text-primary-foreground/80">
-            Escribe la marca y el N.º de parte si los tienes. Para cotizar te pediremos crear tu acceso con el RUC
-            de tu empresa; es inmediato y no pierdes lo que escribiste.
+            Escribe qué repuesto necesitas y la cantidad. Para enviarlo ingresas con Google o con tu correo, sin pedirte
+            el RUC de entrada; es inmediato y no pierdes lo que escribiste.
           </p>
           <ol className="mt-8 space-y-4">
             {PASOS.map((paso, i) => (
@@ -145,26 +154,6 @@ export function SolicitudRapida() {
                 Cargamos «{precarga.descripcion}» desde el catálogo. Completa la marca y el N.º de parte si los tienes.
               </p>
             )}
-            <Campo id="sr-marca" label="Marca" opcional error={errors.marca?.message}>
-              <input
-                id="sr-marca"
-                className={inputFormClass}
-                placeholder="Caterpillar"
-                aria-invalid={!!errors.marca}
-                aria-describedby={describedBy("sr-marca", { error: errors.marca })}
-                {...register("marca")}
-              />
-            </Campo>
-            <Campo id="sr-numero-parte" label="N.º de parte" opcional error={errors.numeroParte?.message}>
-              <input
-                id="sr-numero-parte"
-                className={inputFormClass}
-                placeholder="1R-0750"
-                aria-invalid={!!errors.numeroParte}
-                aria-describedby={describedBy("sr-numero-parte", { error: errors.numeroParte })}
-                {...register("numeroParte")}
-              />
-            </Campo>
             <Campo id="sr-descripcion" label="¿Qué repuesto necesitas?" obligatorio error={errors.descripcion?.message} className="sm:col-span-2">
               <textarea
                 id="sr-descripcion"
@@ -186,6 +175,48 @@ export function SolicitudRapida() {
                 {...register("cantidad")}
               />
             </Campo>
+
+            {!masVisible && (
+              <div className="sm:self-end sm:pb-2">
+                <button
+                  type="button"
+                  aria-expanded={false}
+                  onClick={() => setMasAbierto(true)}
+                  className="rounded-sm text-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  + Agregar marca o N.° de parte (opcional)
+                </button>
+              </div>
+            )}
+            {masVisible && (
+              <div id="sr-mas-datos" className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
+                <Campo id="sr-marca" label="Marca" opcional error={errors.marca?.message}>
+                  <input
+                    id="sr-marca"
+                    className={inputFormClass}
+                    placeholder="Caterpillar"
+                    aria-invalid={!!errors.marca}
+                    aria-describedby={describedBy("sr-marca", { error: errors.marca })}
+                    {...register("marca")}
+                  />
+                </Campo>
+                <Campo id="sr-numero-parte" label="N.º de parte" opcional error={errors.numeroParte?.message}>
+                  <input
+                    id="sr-numero-parte"
+                    className={inputFormClass}
+                    placeholder="1R-0750"
+                    aria-invalid={!!errors.numeroParte}
+                    aria-describedby={describedBy("sr-numero-parte", { error: errors.numeroParte })}
+                    {...register("numeroParte")}
+                  />
+                </Campo>
+              </div>
+            )}
+
+            <p className="flex items-start gap-2 text-sm text-muted-foreground sm:col-span-2">
+              <Paperclip className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              ¿Tienes una foto de la placa o un listado en PDF? Podrás adjuntarlo en el siguiente paso al ingresar.
+            </p>
 
             {envio.isError && <p role="alert" className="text-sm text-destructive sm:col-span-2">{mensajeEnvio(envio.error)}</p>}
 

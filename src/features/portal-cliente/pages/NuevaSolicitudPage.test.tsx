@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { portalApi } from "@/api/portalApi"
 import { CLAVE_BORRADOR } from "../lib/borradorSolicitud"
 import { CLAVE_CARRITO, agregarAlCarrito, leerCarrito } from "@/lib/carritoPublico"
+import { guardarPedidoPendiente, leerPedidoPendiente } from "@/features/landing/lib/pedidoPendiente"
 import { NuevaSolicitudPage } from "./NuevaSolicitudPage"
 
 type Entrada = string | { pathname: string; state?: unknown; key?: string }
@@ -1363,6 +1364,69 @@ describe("NuevaSolicitudPage (D-01)", () => {
 
       await waitFor(() => expect(crear).toHaveBeenCalled())
       expect(crear.mock.calls[0][0].items).toEqual([{ descripcion: "Pieza", cantidad: 1, unidad: "UND", numeroParte: "ABC-1", idProducto: 8 }])
+    })
+  })
+
+  describe("pedido de la solicitud rápida de la landing", () => {
+    it("con N.º de parte precarga repuesto, cantidad, marca y N.º de parte y ofrece adjuntar foto o PDF", () => {
+      guardarPedidoPendiente({ marca: "Caterpillar", numeroParte: "1R-0750", descripcion: "Filtro de combustible", cantidad: 3 })
+      renderPagina()
+
+      expect((screen.getByLabelText("Ítem 1: descripción") as HTMLInputElement).value).toBe("Filtro de combustible")
+      expect((screen.getByLabelText("Ítem 1: cantidad") as HTMLInputElement).value).toBe("3")
+      expect((screen.getByLabelText("Ítem 1: marca") as HTMLInputElement).value).toBe("Caterpillar")
+      expect((screen.getByLabelText("Ítem 1: N.º de parte") as HTMLInputElement).value).toBe("1R-0750")
+      expect(radio(1, "Tengo el N.º de parte").checked).toBe(true)
+      expect(screen.getByText(/escribiste en la página principal/i).textContent).toMatch(/foto \(JPG o PNG\) o un PDF/)
+      expect(screen.getByRole("button", { name: BOTON_ADJUNTO })).toBeTruthy()
+    })
+
+    it("sin N.º de parte entra en «Tengo una foto», con el campo para adjuntar imagen o PDF ya visible", () => {
+      guardarPedidoPendiente({ marca: "", numeroParte: "", descripcion: "Faja de ventilador", cantidad: 1 })
+      renderPagina()
+
+      expect((screen.getByLabelText("Ítem 1: descripción") as HTMLInputElement).value).toBe("Faja de ventilador")
+      expect(radio(1, "Tengo una foto").checked).toBe(true)
+      const campo = screen.getByLabelText("Ítem 1: foto o plano") as HTMLInputElement
+      expect(campo.type).toBe("file")
+      expect(campo.accept).toContain("image/jpeg")
+      expect(campo.accept).toContain("image/png")
+      expect(campo.accept).toContain("application/pdf")
+    })
+
+    it("lo guardado se borra al abrir el formulario y una recarga conserva lo precargado", async () => {
+      guardarPedidoPendiente({ marca: "SKF", numeroParte: "6205", descripcion: "Rodamiento", cantidad: 4 })
+      const { unmount } = renderPagina({ pathname: "/portal/solicitud", key: "abierta" })
+      await waitFor(() => expect(leerPedidoPendiente()).toBeNull())
+      unmount()
+
+      // Recarga: misma clave de navegación, ya sin el pedido guardado; manda el borrador.
+      renderPagina({ pathname: "/portal/solicitud", key: "abierta" })
+      expect((screen.getByLabelText("Ítem 1: descripción") as HTMLInputElement).value).toBe("Rodamiento")
+      expect((screen.getByLabelText("Ítem 1: cantidad") as HTMLInputElement).value).toBe("4")
+    })
+
+    it("se envía como solicitud del portal con los datos de la landing", async () => {
+      guardarPedidoPendiente({ marca: "SKF", numeroParte: "6205", descripcion: "Rodamiento", cantidad: 4 })
+      const crear = vi.spyOn(portalApi, "crearSolicitud").mockResolvedValue(CREADA)
+      renderPagina()
+
+      enviar()
+
+      await waitFor(() => expect(crear).toHaveBeenCalled())
+      expect(crear.mock.calls[0][0]).toMatchObject({
+        canal: "PORTAL",
+        items: [{ descripcion: "Rodamiento", cantidad: 4, marcaTexto: "SKF", numeroParte: "6205" }],
+      })
+    })
+
+    it("el carrito de repuestos manda sobre el pedido de la landing y no lo borra", () => {
+      guardarPedidoPendiente({ marca: "", numeroParte: "", descripcion: "Faja de ventilador", cantidad: 1 })
+      agregarAlCarrito({ id: 8, nombre: "Pieza", marca: "", numeroParte: "ABC-1" })
+      renderPagina()
+
+      expect((screen.getByLabelText("Ítem 1: descripción") as HTMLInputElement).value).toBe("Pieza")
+      expect(leerPedidoPendiente()).not.toBeNull()
     })
   })
 })

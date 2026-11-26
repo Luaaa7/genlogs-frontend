@@ -9,10 +9,13 @@ vi.mock("../lib/enviarSolicitudLanding", () => ({ enviarSolicitudLanding: enviar
 import { SolicitudRapida } from "./SolicitudRapida"
 import { guardarPedidoPendiente, leerPedidoPendiente } from "../lib/pedidoPendiente"
 
-function Registro() {
-  const { search } = useLocation()
-  return <p>registro{search}</p>
+function SolicitudPortal() {
+  const { pathname, search } = useLocation()
+  return <p>portal{pathname}{search}</p>
 }
+
+const ENLACE_MAS = "+ Agregar marca o N.° de parte (opcional)"
+const abrirMas = () => fireEvent.click(screen.getByRole("button", { name: ENLACE_MAS }))
 
 function pintar() {
   const qc = new QueryClient({ defaultOptions: { mutations: { retry: false } } })
@@ -21,7 +24,7 @@ function pintar() {
     <MemoryRouter initialEntries={["/"]}>
       <Routes>
         <Route path="/" element={<SolicitudRapida />} />
-        <Route path="/portal/registro" element={<Registro />} />
+        <Route path="/portal/solicitud" element={<SolicitudPortal />} />
       </Routes>
     </MemoryRouter>
     </QueryClientProvider>,
@@ -29,6 +32,7 @@ function pintar() {
 }
 
 function llenar() {
+  abrirMas()
   fireEvent.change(screen.getByLabelText(/^marca/i), { target: { value: "Caterpillar" } })
   fireEvent.change(screen.getByLabelText(/n\.º de parte/i), { target: { value: "1R-0750" } })
   fireEvent.change(screen.getByLabelText(/qué repuesto necesitas/i), { target: { value: "Filtro de combustible" } })
@@ -41,8 +45,48 @@ describe("SolicitudRapida (D-16, D-30)", () => {
     vi.clearAllMocks()
   })
 
+  it("los textos de la izquierda hablan de ingresar con Google o correo, sin pedir el RUC de entrada", () => {
+    pintar()
+    expect(screen.getByRole("heading", { name: "Cuéntanos qué necesitas." })).toBeTruthy()
+    expect(screen.getByText(/ingresas con Google o con tu correo/i)).toBeTruthy()
+    const pasos = screen.getByRole("list")
+    expect(pasos.textContent).toContain("Ingresa con Google o con tu correo")
+    expect(pasos.textContent).toContain("Adjunta una foto o PDF")
+    expect(document.body.textContent).not.toMatch(/crear tu acceso con el RUC|Crea tu acceso con el RUC/)
+  })
+
+  it("deja a la vista el repuesto y la cantidad, y pliega marca y N.º de parte bajo un enlace", () => {
+    pintar()
+    expect(screen.getByLabelText(/qué repuesto necesitas/i)).toBeTruthy()
+    expect(screen.getByLabelText(/cantidad/i)).toBeTruthy()
+    // Los dos campos que quedan a la vista son obligatorios (asterisco).
+    expect(screen.getAllByText("(obligatorio)")).toHaveLength(2)
+    expect(screen.queryByLabelText(/^marca/i)).toBeNull()
+    expect(screen.queryByLabelText(/n\.º de parte/i)).toBeNull()
+
+    abrirMas()
+    expect(screen.getByLabelText(/^marca/i)).toBeTruthy()
+    expect(screen.getByLabelText(/n\.º de parte/i)).toBeTruthy()
+    expect(screen.queryByRole("button", { name: ENLACE_MAS })).toBeNull()
+  })
+
+  it("avisa que la foto de la placa o el PDF se adjuntan en el siguiente paso", () => {
+    pintar()
+    expect(
+      screen.getByText("¿Tienes una foto de la placa o un listado en PDF? Podrás adjuntarlo en el siguiente paso al ingresar."),
+    ).toBeTruthy()
+  })
+
+  it("un pedido guardado con marca y N.º de parte deja esos campos abiertos", () => {
+    guardarPedidoPendiente({ marca: "SKF", numeroParte: "6205", descripcion: "Rodamiento", cantidad: 4 })
+    pintar()
+    expect((screen.getByLabelText(/^marca/i) as HTMLInputElement).value).toBe("SKF")
+    expect(screen.queryByRole("button", { name: ENLACE_MAS })).toBeNull()
+  })
+
   it("valida antes de enviar: descripción y marca si hay N.º de parte", async () => {
     pintar()
+    abrirMas()
     fireEvent.change(screen.getByLabelText(/n\.º de parte/i), { target: { value: "1R-0750" } })
     fireEvent.click(screen.getByRole("button", { name: /pedir cotización/i }))
     expect(await screen.findByText(/cuéntanos qué repuesto necesitas/i)).toBeTruthy()
@@ -50,14 +94,25 @@ describe("SolicitudRapida (D-16, D-30)", () => {
     expect(enviar).not.toHaveBeenCalled()
   })
 
-  it("sin cuenta guarda el pedido y manda al registro con ?volver=", async () => {
+  it("sin cuenta guarda el pedido y manda a la nueva solicitud del portal (que pide el ingreso)", async () => {
     pintar()
     llenar()
     fireEvent.click(screen.getByRole("button", { name: /pedir cotización/i }))
 
-    expect(await screen.findByText("registro?volver=%2F%23solicitud")).toBeTruthy()
-    expect(leerPedidoPendiente()).toMatchObject({ numeroParte: "1R-0750", descripcion: "Filtro de combustible", cantidad: 2 })
+    expect(await screen.findByText("portal/portal/solicitud")).toBeTruthy()
+    expect(leerPedidoPendiente()).toMatchObject({
+      marca: "Caterpillar", numeroParte: "1R-0750", descripcion: "Filtro de combustible", cantidad: 2,
+    })
     expect(enviar).not.toHaveBeenCalled()
+  })
+
+  it("sin cuenta y sin marca ni N.º de parte también guarda el pedido con solo repuesto y cantidad", async () => {
+    pintar()
+    fireEvent.change(screen.getByLabelText(/qué repuesto necesitas/i), { target: { value: "Faja de ventilador" } })
+    fireEvent.click(screen.getByRole("button", { name: /pedir cotización/i }))
+
+    expect(await screen.findByText("portal/portal/solicitud")).toBeTruthy()
+    expect(leerPedidoPendiente()).toMatchObject({ marca: "", numeroParte: "", descripcion: "Faja de ventilador", cantidad: 1 })
   })
 
   it("con sesión de cliente envía directo y muestra el código", async () => {

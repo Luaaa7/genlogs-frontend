@@ -22,6 +22,7 @@ import {
   type ModoItem,
 } from "../lib/itemPedido"
 import { portalApi } from "@/api/portalApi"
+import { borrarPedidoPendiente, leerPedidoPendiente } from "@/features/landing/lib/pedidoPendiente"
 import { carritoAPrecargados, vaciarCarrito } from "@/lib/carritoPublico"
 import { Button } from "@/components/ui/button"
 import { BotonCargando } from "../components/BotonCargando"
@@ -56,12 +57,15 @@ interface EstadoInicial {
   items: ItemPedidoForm[]
   precargados: number
   avisoArchivos: boolean
+  /** El repuesto viene de la solicitud rápida de la landing (se borra del navegador al abrir el formulario). */
+  desdeLanding: boolean
 }
 
 /**
  * Con qué arranca el formulario. Prioridad:
  *  1. Repuestos que llegan en location.state (carrito de /portal/repuestos) o, si no hay, los del carrito
- *     de cotización de la landing (genlogs_public_cart), en una navegación NUEVA.
+ *     de cotización de la landing (genlogs_public_cart) o, si tampoco, el pedido que el visitante escribió
+ *     en la solicitud rápida de la landing antes de ingresar, en una navegación NUEVA.
  *  2. El borrador de sessionStorage (recarga de la página, o la misma navegación ya editada).
  *  3. Un repuesto vacío.
  * location.key no cambia al recargar, pero sí en cada navegación nueva: así se distingue una recarga
@@ -71,9 +75,26 @@ function estadoInicial(claveNavegacion: string, estado: unknown): EstadoInicial 
   const borrador = leerBorrador()
   let precargados = itemsDesdePrecargados((estado as { repuestos?: unknown } | null)?.repuestos)
   if (precargados.length === 0) precargados = itemsDesdePrecargados(carritoAPrecargados())
+  // Solicitud rápida de la landing: lo escrito sin sesión (la lectura no lo borra; se borra al montar).
+  let desdeLanding = false
+  if (precargados.length === 0) {
+    const pedido = leerPedidoPendiente()
+    if (pedido) {
+      precargados = itemsDesdePrecargados([
+        {
+          descripcion: pedido.descripcion,
+          cantidad: pedido.cantidad,
+          marca: pedido.marca,
+          numeroParte: pedido.numeroParte,
+          ...(pedido.idProducto !== undefined ? { idProducto: pedido.idProducto } : {}),
+        },
+      ])
+      desdeLanding = precargados.length > 0
+    }
+  }
 
   if (precargados.length > 0 && borrador?.claveNavegacion !== claveNavegacion) {
-    return { asunto: "", asuntoEditado: false, detalle: "", notaAbierta: false, items: precargados, precargados: precargados.length, avisoArchivos: false }
+    return { asunto: "", asuntoEditado: false, detalle: "", notaAbierta: false, items: precargados, precargados: precargados.length, avisoArchivos: false, desdeLanding }
   }
   if (borrador) {
     return {
@@ -84,9 +105,10 @@ function estadoInicial(claveNavegacion: string, estado: unknown): EstadoInicial 
       items: borrador.items.length > 0 ? borrador.items.map((item) => ({ ...itemVacio(), ...item })) : [itemVacio()],
       precargados: borrador.precargados,
       avisoArchivos: borrador.teniaAdjunto,
+      desdeLanding: false,
     }
   }
-  return { asunto: "", asuntoEditado: false, detalle: "", notaAbierta: false, items: [itemVacio()], precargados: 0, avisoArchivos: false }
+  return { asunto: "", asuntoEditado: false, detalle: "", notaAbierta: false, items: [itemVacio()], precargados: 0, avisoArchivos: false, desdeLanding: false }
 }
 
 /**
@@ -114,6 +136,12 @@ export function NuevaSolicitudPage() {
   const notaRef = useRef<HTMLTextAreaElement>(null)
   const enfocarNota = useRef(false)
   const enviado = useRef(false)
+
+  // El pedido de la landing ya está en el formulario (y en el borrador): se borra del almacenamiento para
+  // que no se vuelva a aplicar ni se envíe solo desde la landing.
+  useEffect(() => {
+    if (inicial.desdeLanding) borrarPedidoPendiente()
+  }, [inicial.desdeLanding])
 
   // Mientras el cliente no escriba el asunto, sigue a la descripción del primer repuesto.
   const asuntoMostrado = asuntoEditado ? asunto : asuntoAutomatico(items)
@@ -302,9 +330,11 @@ export function NuevaSolicitudPage() {
           <div role="status" className="flex items-start gap-2 rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
             <p>
-              {precargados === 1
-                ? "Se precargó 1 repuesto de tu selección."
-                : `Se precargaron ${precargados} repuestos de tu selección.`}{" "}
+              {inicial.desdeLanding
+                ? "Cargamos el repuesto que escribiste en la página principal. Aquí puedes adjuntar una foto (JPG o PNG) o un PDF."
+                : precargados === 1
+                  ? "Se precargó 1 repuesto de tu selección."
+                  : `Se precargaron ${precargados} repuestos de tu selección.`}{" "}
               Revisa los datos antes de enviar.
             </p>
           </div>
