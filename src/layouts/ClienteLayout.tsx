@@ -36,12 +36,13 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-foreground dark:bg-background">
       <header className="border-b border-slate-200 bg-white dark:border-border dark:bg-card">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
-          <Link to={conSesion ? "/portal/pedidos" : "/"} className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+          <Link to={conSesion ? "/portal/pedidos" : "/"} className="shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <img src={logoGenlogs} alt="GenLogs S.A.C." width={140} height={58} className="-my-2 h-14 w-auto object-contain dark:brightness-0 dark:invert" />
           </Link>
           {conSesion ? (
-            <nav aria-label="Portal del cliente" className="-mx-4 flex w-[calc(100%+2rem)] items-center gap-1 overflow-x-auto px-4 pb-1 text-sm sm:mx-0 sm:w-auto sm:overflow-visible sm:px-0 sm:pb-0">
+            <nav aria-label="Portal del cliente" className="min-w-0 overflow-x-auto">
+            <div className="flex w-max items-center gap-1 whitespace-nowrap text-sm">
               <NavLink to="/portal/pedidos" className={claseEnlace}>Mis pedidos</NavLink>
               <NavLink to="/portal/cotizaciones" className={claseEnlace}>Mis cotizaciones</NavLink>
               <NavLink to="/portal/comprobantes" className={claseEnlace}>Mis comprobantes</NavLink>
@@ -63,14 +64,17 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
                 Cerrar sesión
               </button>
               {botonTema}
+            </div>
             </nav>
           ) : (
-            <nav aria-label="Portal del cliente" className="flex items-center gap-1 text-sm">
+            <nav aria-label="Portal del cliente" className="min-w-0 overflow-x-auto">
+            <div className="flex w-max items-center gap-1 whitespace-nowrap text-sm">
               <NavLink to="/portal/ingreso" className={claseEnlace}>Ingresar</NavLink>
               <NavLink to="/portal/registro" className={claseEnlace}>Crear cuenta</NavLink>
               <NavLink to="/ayuda" className={claseEnlace}>Ayuda</NavLink>
               <NavLink to="/contacto" className={claseEnlace}>Contacto</NavLink>
               {botonTema}
+            </div>
             </nav>
           )}
         </div>

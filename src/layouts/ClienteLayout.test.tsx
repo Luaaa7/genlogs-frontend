@@ -104,4 +104,18 @@ describe("Menú del portal del cliente", () => {
     expect(enlaces.querySelector('a[href="/ayuda"]')?.textContent).toBe("Ayuda")
     expect(enlaces.querySelector('a[href="/contacto"]')?.textContent).toBe("Contacto")
   })
+
+  it.each([[true], [false]])("con sesión = %s el logo y el menú van en la misma fila, sin saltar de línea", async (conSesion) => {
+    await renderLayout(false, conSesion)
+    const logo = screen.getByRole("img", { name: "GenLogs S.A.C." }).closest("a") as HTMLElement
+    const nav = screen.getByRole("navigation", { name: "Portal del cliente" })
+    const fila = logo.parentElement as HTMLElement
+    expect(nav.parentElement).toBe(fila)
+    expect(fila.className).toContain("items-center")
+    expect(fila.className).toContain("justify-between")
+    expect(fila.className).not.toContain("flex-wrap")
+    expect(logo.className).toContain("shrink-0")
+    expect(nav.className).toContain("min-w-0")
+    expect(screen.getByRole("link", { name: conSesion ? "Mis pedidos" : "Ingresar" }).className).toContain("whitespace-nowrap")
+  })
 })

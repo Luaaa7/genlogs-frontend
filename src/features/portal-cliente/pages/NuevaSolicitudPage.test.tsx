@@ -1,13 +1,24 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react"
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { MemoryRouter, Route, Routes } from "react-router-dom"
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { portalApi } from "@/api/portalApi"
 import { CLAVE_BORRADOR } from "../lib/borradorSolicitud"
 import { CLAVE_CARRITO, agregarAlCarrito, leerCarrito } from "@/lib/carritoPublico"
 import { NuevaSolicitudPage } from "./NuevaSolicitudPage"
 
 type Entrada = string | { pathname: string; state?: unknown; key?: string }
+
+/** Mis pedidos de mentira: muestra el id que le llega en location.state. */
+function PedidosSimulado() {
+  const { state } = useLocation()
+  return (
+    <div>
+      <p>Mis pedidos</p>
+      <p data-testid="nuevo-pedido-id">{String((state as { nuevoPedidoId?: unknown } | null)?.nuevoPedidoId ?? "")}</p>
+    </div>
+  )
+}
 
 function renderPagina(entrada: Entrada = "/portal/solicitud") {
   const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } })
@@ -16,7 +27,7 @@ function renderPagina(entrada: Entrada = "/portal/solicitud") {
       <MemoryRouter initialEntries={[entrada]}>
         <Routes>
           <Route path="/portal/solicitud" element={<NuevaSolicitudPage />} />
-          <Route path="/portal/pedidos" element={<div>Mis pedidos</div>} />
+          <Route path="/portal/pedidos" element={<PedidosSimulado />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -78,6 +89,7 @@ function adjuntar(n: number, file: File) {
   fireEvent.change(screen.getByLabelText(`Ítem ${n}: foto o plano`), { target: { files: [file] } })
 }
 
+const TITULO_EXITO = "Solicitud registrada con éxito"
 const CREADA = { idSolicitud: 10, codigoSolicitud: "SOL-10", estado: "PENDIENTE" } as const
 const valorDe = (etiqueta: string) => (screen.getByLabelText(etiqueta) as HTMLInputElement).value
 
@@ -99,7 +111,7 @@ describe("NuevaSolicitudPage (D-01)", () => {
   })
 
   describe("envío", () => {
-    it("envía marca, N.º de parte y GTIN de cada repuesto y vuelve a Mis pedidos", async () => {
+    it("envía marca, N.º de parte y GTIN de cada repuesto y muestra la confirmación", async () => {
       const crear = vi.spyOn(portalApi, "crearSolicitud").mockResolvedValue(CREADA)
       renderPagina()
       llenarGeneral()
@@ -107,7 +119,7 @@ describe("NuevaSolicitudPage (D-01)", () => {
 
       enviar()
 
-      await waitFor(() => expect(screen.getByText("Mis pedidos")).toBeTruthy())
+      await waitFor(() => expect(screen.getByText(TITULO_EXITO)).toBeTruthy())
       expect(crear.mock.calls[0][0]).toEqual({
         canal: "PORTAL",
         asunto: "Filtros para cargador",
@@ -470,7 +482,7 @@ describe("NuevaSolicitudPage (D-01)", () => {
 
       enviar()
 
-      await waitFor(() => expect(screen.getByText("Mis pedidos")).toBeTruthy())
+      await waitFor(() => expect(screen.getByText(TITULO_EXITO)).toBeTruthy())
       expect(desplazados).toEqual([])
     })
   })
@@ -544,7 +556,7 @@ describe("NuevaSolicitudPage (D-01)", () => {
       expect(valorDe("Asunto")).toBe("Filtro de aceite del motor (+1 repuesto)")
     })
 
-    it("al enviar con éxito borra el borrador antes de volver a Mis pedidos", async () => {
+    it("al enviar con éxito borra el borrador", async () => {
       vi.spyOn(portalApi, "crearSolicitud").mockResolvedValue(CREADA)
       renderPagina()
       llenarGeneral()
@@ -553,7 +565,7 @@ describe("NuevaSolicitudPage (D-01)", () => {
 
       enviar()
 
-      await waitFor(() => expect(screen.getByText("Mis pedidos")).toBeTruthy())
+      await waitFor(() => expect(screen.getByText(TITULO_EXITO)).toBeTruthy())
       expect(sessionStorage.getItem(CLAVE_BORRADOR)).toBeNull()
     })
 
@@ -1082,8 +1094,8 @@ describe("NuevaSolicitudPage (D-01)", () => {
       expect(screen.getByText(/se precargaron 2 repuestos/i)).toBeTruthy()
       expect(valorDe("Ítem 1: descripción")).toBe("Filtro de combustible")
       expect(valorDe("Ítem 1: cantidad")).toBe("3")
-      expect(valorDe("Ítem 1: marca")).toBe("Caterpillar")
-      expect(valorDe("Ítem 1: N.º de parte")).toBe("1R-0750")
+      expect(within(tarjeta(1)).getByText("Caterpillar")).toBeTruthy()
+      expect(within(tarjeta(1)).getByText("1R-0750")).toBeTruthy()
       expect(valorDe("Ítem 2: descripción")).toBe("Rodamiento 6205")
       expect(valorDe("Ítem 2: cantidad")).toBe("1")
       expect(valorDe("Asunto")).toBe("Filtro de combustible (+1 repuesto)")
@@ -1150,7 +1162,7 @@ describe("NuevaSolicitudPage (D-01)", () => {
 
       enviar()
 
-      await waitFor(() => expect(screen.getByText("Mis pedidos")).toBeTruthy())
+      await waitFor(() => expect(screen.getByText(TITULO_EXITO)).toBeTruthy())
       expect(localStorage.getItem(CLAVE_CARRITO)).toBeNull()
     })
 
@@ -1189,6 +1201,168 @@ describe("NuevaSolicitudPage (D-01)", () => {
       localStorage.setItem(CLAVE_CARRITO, "no es json")
       renderPagina()
       expect(valorDe("Ítem 1: descripción")).toBe("")
+    })
+  })
+
+  describe("confirmación al enviar", () => {
+    const llenarMinimo = () => {
+      renderPagina()
+      llenarGeneral()
+      llenarRepuesto(1, { descripcion: "Filtro", marca: "Caterpillar", numeroParte: "1R-0750" })
+    }
+    afterEach(() => vi.useRealTimers())
+
+    it("mientras se registra, el botón queda deshabilitado con «Registrando solicitud...»", async () => {
+      vi.spyOn(portalApi, "crearSolicitud").mockReturnValue(new Promise(() => {}))
+      llenarMinimo()
+
+      enviar()
+
+      const boton = (await screen.findByRole("button", { name: /registrando solicitud\.\.\./i })) as HTMLButtonElement
+      expect(boton.disabled).toBe(true)
+      expect(boton.querySelector("svg")).toBeTruthy()
+    })
+
+    it("al responder con éxito muestra la tarjeta con el código, las 3 etapas y los dos botones", async () => {
+      vi.spyOn(portalApi, "crearSolicitud").mockResolvedValue(CREADA)
+      llenarMinimo()
+
+      enviar()
+
+      expect(await screen.findByText(TITULO_EXITO)).toBeTruthy()
+      expect(screen.getByText("SOL-10")).toBeTruthy()
+      const etapas = within(screen.getByRole("list", { name: "Avance de la solicitud" })).getAllByRole("listitem")
+      expect(etapas.map((e) => e.textContent)).toEqual([
+        expect.stringContaining("Solicitud recibida"),
+        expect.stringContaining("Revisión técnica"),
+        expect.stringContaining("Cotización formal"),
+      ])
+      expect(etapas[0].textContent).toContain("Completado")
+      expect(etapas[1].textContent).toContain("En curso")
+      expect(etapas[2].textContent).toContain("Pendiente")
+      expect(screen.getByRole("button", { name: "Ver en Mis pedidos" })).toBeTruthy()
+      expect(screen.getByRole("button", { name: "Crear otra solicitud" })).toBeTruthy()
+      expect(screen.queryByRole("button", { name: "Enviar solicitud" })).toBeNull()
+    })
+
+    it("antes de mostrar la tarjeta ya limpió el borrador y el carrito", async () => {
+      agregarAlCarrito({ id: 1, nombre: "Filtro", marca: "CAT", numeroParte: "1R-0750" })
+      vi.spyOn(portalApi, "crearSolicitud").mockResolvedValue(CREADA)
+      renderPagina()
+
+      enviar()
+
+      await screen.findByText(TITULO_EXITO)
+      expect(leerCarrito()).toEqual([])
+      expect(sessionStorage.getItem(CLAVE_BORRADOR)).toBeNull()
+    })
+
+    it("si la respuesta no trae código, no muestra la línea del código", async () => {
+      vi.spyOn(portalApi, "crearSolicitud").mockResolvedValue({ idSolicitud: 11, estado: "PENDIENTE" } as never)
+      llenarMinimo()
+
+      enviar()
+
+      await screen.findByText(TITULO_EXITO)
+      expect(screen.queryByText(/código de la solicitud/i)).toBeNull()
+    })
+
+    it("«Ver en Mis pedidos» va enseguida y pasa el id nuevo en location.state.nuevoPedidoId", async () => {
+      vi.spyOn(portalApi, "crearSolicitud").mockResolvedValue(CREADA)
+      llenarMinimo()
+      enviar()
+      await screen.findByText(TITULO_EXITO)
+
+      fireEvent.click(screen.getByRole("button", { name: "Ver en Mis pedidos" }))
+
+      expect(screen.getByText("Mis pedidos")).toBeTruthy()
+      expect(screen.getByTestId("nuevo-pedido-id").textContent).toBe("10")
+    })
+
+    it("pasa solo a Mis pedidos, con suavidad, unos segundos después", async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      vi.spyOn(portalApi, "crearSolicitud").mockResolvedValue(CREADA)
+      llenarMinimo()
+      enviar()
+      await screen.findByText(TITULO_EXITO)
+      expect(screen.queryByText("Mis pedidos")).toBeNull()
+
+      act(() => {
+        vi.advanceTimersByTime(8000)
+      })
+
+      expect(screen.getByText("Mis pedidos")).toBeTruthy()
+      expect(screen.getByTestId("nuevo-pedido-id").textContent).toBe("10")
+    })
+
+    it("«Crear otra solicitud» vuelve a un formulario vacío y cancela el paso automático", async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      vi.spyOn(portalApi, "crearSolicitud").mockResolvedValue(CREADA)
+      llenarMinimo()
+      enviar()
+      await screen.findByText(TITULO_EXITO)
+
+      fireEvent.click(screen.getByRole("button", { name: "Crear otra solicitud" }))
+      act(() => {
+        vi.advanceTimersByTime(8000)
+      })
+
+      expect(screen.queryByText("Mis pedidos")).toBeNull()
+      expect(screen.queryByText(TITULO_EXITO)).toBeNull()
+      expect(valorDe("Asunto")).toBe("")
+      expect(valorDe("Ítem 1: descripción")).toBe("")
+      expect((screen.getByRole("button", { name: "Enviar solicitud" }) as HTMLButtonElement).disabled).toBe(false)
+    })
+  })
+
+  describe("ítems de catálogo (idProducto) precargados del carrito", () => {
+    const catalogo = { id: 1, nombre: "Filtro de combustible", marca: "Caterpillar", numeroParte: "1R-0750" }
+
+    it("se muestran como «Ítem de catálogo», sin opciones de «Tengo una foto» ni campos de N.º de parte", () => {
+      agregarAlCarrito(catalogo)
+      renderPagina()
+
+      expect(within(tarjeta(1)).getByText("Ítem de catálogo")).toBeTruthy()
+      expect(within(tarjeta(1)).getByText("Identificado desde el catálogo; no requiere N.° de parte ni foto")).toBeTruthy()
+      expect(within(tarjeta(1)).queryByRole("radio")).toBeNull()
+      expect(screen.queryByLabelText("Ítem 1: N.º de parte")).toBeNull()
+      expect(screen.queryByLabelText("Ítem 1: marca")).toBeNull()
+    })
+
+    it("la foto o plano es solo una opción desplegable", () => {
+      agregarAlCarrito(catalogo)
+      renderPagina()
+      expect(screen.queryByLabelText("Ítem 1: foto o plano")).toBeNull()
+
+      fireEvent.click(within(tarjeta(1)).getByRole("button", { name: BOTON_ADJUNTO }))
+
+      expect(screen.getByLabelText("Ítem 1: foto o plano")).toBeTruthy()
+    })
+
+    it("un ítem escrito a mano sigue con sus opciones de identificación y sin la etiqueta de catálogo", () => {
+      renderPagina()
+      expect(within(tarjeta(1)).getAllByRole("radio")).toHaveLength(3)
+      expect(screen.queryByText("Ítem de catálogo")).toBeNull()
+    })
+
+    it("mezclados con un ítem manual, solo el de catálogo cambia", () => {
+      agregarAlCarrito(catalogo)
+      renderPagina()
+      agregarRepuesto()
+
+      expect(within(tarjeta(1)).getByText("Ítem de catálogo")).toBeTruthy()
+      expect(within(tarjeta(2)).getAllByRole("radio")).toHaveLength(3)
+    })
+
+    it("se envía con idProducto y sus datos aunque la marca venga vacía", async () => {
+      agregarAlCarrito({ id: 8, nombre: "Pieza", marca: "", numeroParte: "ABC-1" })
+      const crear = vi.spyOn(portalApi, "crearSolicitud").mockResolvedValue(CREADA)
+      renderPagina()
+
+      enviar()
+
+      await waitFor(() => expect(crear).toHaveBeenCalled())
+      expect(crear.mock.calls[0][0].items).toEqual([{ descripcion: "Pieza", cantidad: 1, unidad: "UND", numeroParte: "ABC-1", idProducto: 8 }])
     })
   })
 })

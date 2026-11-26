@@ -87,12 +87,14 @@ export function validarItem(item: ItemPedidoForm): ErroresItem {
   if (!Number.isFinite(cantidad) || cantidad <= 0) errores.cantidad = "La cantidad debe ser mayor a cero"
   if (gtin && !esGtinValido(gtin)) errores.gtin = "El GTIN no es válido (revisa los dígitos del código de barras)"
 
-  if (item.modo === "parte") {
-    if (!item.numeroParte.trim()) errores.numeroParte = "Indica el N.º de parte, o elige «Tengo una foto»"
-    if (!item.marca.trim()) errores.marca = "Indica la marca del N.º de parte"
-  } else if (item.modo === "foto" && !item.foto && !item.urlFoto && item.idProducto === undefined) {
-    // Un repuesto de la vitrina (con idProducto) ya viene identificado: no necesita foto.
-    errores.foto = "Adjunta una foto o plano del ítem"
+  // Un ítem de catálogo (con idProducto) ya viene identificado: no exige N.º de parte, marca ni foto.
+  if (item.idProducto === undefined) {
+    if (item.modo === "parte") {
+      if (!item.numeroParte.trim()) errores.numeroParte = "Indica el N.º de parte, o elige «Tengo una foto»"
+      if (!item.marca.trim()) errores.marca = "Indica la marca del N.º de parte"
+    } else if (item.modo === "foto" && !item.foto && !item.urlFoto) {
+      errores.foto = "Adjunta una foto o plano del ítem"
+    }
   }
 
   if (item.foto) {

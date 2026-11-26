@@ -1,12 +1,12 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { portalApi } from "@/api/portalApi"
 import { MisPedidosPage } from "./MisPedidosPage"
 import { PedidoDetallePage } from "./PedidoDetallePage"
 
-function renderEn(ruta: string) {
+function renderEn(ruta: string | { pathname: string; state?: unknown }) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={queryClient}>
@@ -48,6 +48,42 @@ describe("Mis pedidos con los estados reales del backend", () => {
     expect(screen.getByText("Rodamientos")).toBeTruthy()
     expect(screen.queryByText("Filtros")).toBeNull()
     expect(screen.queryByText("Mangueras")).toBeNull()
+  })
+})
+
+describe("Pedido recién creado (location.state.nuevoPedidoId)", () => {
+  beforeEach(() => vi.restoreAllMocks())
+  afterEach(() => vi.useRealTimers())
+
+  it("resalta la fila del pedido nuevo con la insignia «Recién creada» y no las demás", async () => {
+    vi.spyOn(portalApi, "listarPedidos").mockResolvedValue(pedidos)
+    renderEn({ pathname: "/portal/pedidos", state: { nuevoPedidoId: 2 } })
+
+    await screen.findByText("Rodamientos")
+
+    expect(screen.getAllByText("Recién creada")).toHaveLength(1)
+    const fila = screen.getByText("Rodamientos").closest("a") as HTMLElement
+    expect(within(fila).getByText("Recién creada")).toBeTruthy()
+  })
+
+  it("sin location.state no hay ninguna insignia", async () => {
+    vi.spyOn(portalApi, "listarPedidos").mockResolvedValue(pedidos)
+    renderEn("/portal/pedidos")
+    await screen.findByText("Rodamientos")
+    expect(screen.queryByText("Recién creada")).toBeNull()
+  })
+
+  it("el resaltado dura unos segundos y luego desaparece", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.spyOn(portalApi, "listarPedidos").mockResolvedValue(pedidos)
+    renderEn({ pathname: "/portal/pedidos", state: { nuevoPedidoId: 2 } })
+    await screen.findByText("Recién creada")
+
+    act(() => {
+      vi.advanceTimersByTime(8000)
+    })
+
+    expect(screen.queryByText("Recién creada")).toBeNull()
   })
 })
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { ChevronDown, Copy, FileText, Info, Plus, Trash2, X } from "lucide-react"
+import { Check, ChevronDown, Copy, FileText, Info, Loader2, Package, Plus, Trash2, X } from "lucide-react"
 import { useCrearSolicitud } from "../hooks/useCrearSolicitud"
 import {
   guardarBorrador,
@@ -40,6 +40,9 @@ const MAX_DETALLE = 4000
 
 /** Máximo de ítems por solicitud en el backend. */
 const MAX_ITEMS = 50
+
+/** Cuánto espera la tarjeta de confirmación antes de pasar sola a Mis pedidos. */
+const REDIRECCION_MS = 6000
 
 const enlaceDiscreto =
   "text-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
@@ -104,6 +107,8 @@ export function NuevaSolicitudPage() {
   const [erroresItems, setErroresItems] = useState<ErroresItem[]>([])
   const [error, setError] = useState("")
   const [subiendo, setSubiendo] = useState(false)
+  const [precargados, setPrecargados] = useState(inicial.precargados)
+  const [creada, setCreada] = useState<{ id: number; codigo?: string } | null>(null)
   const tarjetas = useRef(new Map<string, HTMLElement>())
   const notaRef = useRef<HTMLTextAreaElement>(null)
   const enfocarNota = useRef(false)
@@ -122,10 +127,10 @@ export function NuevaSolicitudPage() {
       notaAbierta,
       items: items.map(itemABorrador),
       teniaAdjunto: items.some((item) => item.foto && !item.urlFoto),
-      precargados: inicial.precargados,
+      precargados,
       claveNavegacion: location.key,
     })
-  }, [asuntoMostrado, asuntoEditado, detalle, notaAbierta, items, inicial.precargados, location.key])
+  }, [asuntoMostrado, asuntoEditado, detalle, notaAbierta, items, precargados, location.key])
 
   useEffect(() => {
     if (notaAbierta && enfocarNota.current) {
@@ -133,6 +138,28 @@ export function NuevaSolicitudPage() {
       notaRef.current?.focus()
     }
   }, [notaAbierta])
+
+  // Tras registrar la solicitud, la tarjeta de confirmación pasa sola a Mis pedidos (resaltando la nueva).
+  useEffect(() => {
+    if (!creada) return
+    const temporizador = setTimeout(() => navigate("/portal/pedidos", { state: { nuevoPedidoId: creada.id } }), REDIRECCION_MS)
+    return () => clearTimeout(temporizador)
+  }, [creada, navigate])
+
+  function crearOtra() {
+    enviado.current = false
+    setAsunto("")
+    setAsuntoEditado(false)
+    setDetalle("")
+    setNotaAbierta(false)
+    setItems([itemVacio()])
+    setAvisoArchivos(false)
+    setErroresItems([])
+    setError("")
+    setPrecargados(0)
+    mutation.reset()
+    setCreada(null)
+  }
 
   function cambiarItem(indice: number, cambios: Partial<ItemPedidoForm>) {
     // Si cambia la foto, la URL subida antes ya no sirve.
@@ -233,18 +260,30 @@ export function NuevaSolicitudPage() {
     mutation.mutate(
       { canal: "PORTAL", asunto: asuntoMostrado.trim(), descripcion: textoOpcional(detalle), items: detalleItems },
       {
-        onSuccess: () => {
+        onSuccess: (respuesta) => {
           enviado.current = true
           limpiarBorrador()
           // El carrito de la landing se vacía solo cuando la solicitud ya se envió.
           vaciarCarrito()
-          navigate("/portal/pedidos")
+          setCreada({ id: respuesta.idSolicitud, codigo: respuesta.codigoSolicitud })
         },
       },
     )
   }
 
   const enviando = subiendo || mutation.isPending
+
+  if (creada) {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <ConfirmacionSolicitud
+          codigo={creada.codigo}
+          onVerPedidos={() => navigate("/portal/pedidos", { state: { nuevoPedidoId: creada.id } })}
+          onCrearOtra={crearOtra}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -258,13 +297,13 @@ export function NuevaSolicitudPage() {
       </div>
 
       <form onSubmit={enviar} noValidate className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card sm:p-8">
-        {inicial.precargados > 0 && (
+        {precargados > 0 && (
           <div role="status" className="flex items-start gap-2 rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
             <p>
-              {inicial.precargados === 1
+              {precargados === 1
                 ? "Se precargó 1 repuesto de tu selección."
-                : `Se precargaron ${inicial.precargados} repuestos de tu selección.`}{" "}
+                : `Se precargaron ${precargados} repuestos de tu selección.`}{" "}
               Revisa los datos antes de enviar.
             </p>
           </div>
@@ -368,10 +407,60 @@ export function NuevaSolicitudPage() {
           <ErrorBanner message="No se pudo enviar la solicitud. Intenta nuevamente." onRetry={() => mutation.reset()} />
         )}
         <Button type="submit" disabled={enviando} className="w-full">
-          {subiendo ? "Subiendo fotos..." : mutation.isPending ? "Enviando..." : "Enviar solicitud"}
+          {enviando && <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
+          {subiendo ? "Subiendo fotos..." : mutation.isPending ? "Registrando solicitud..." : "Enviar solicitud"}
         </Button>
       </form>
     </div>
+  )
+}
+
+const ETAPAS_SOLICITUD = [
+  { nombre: "Solicitud recibida", estado: "Completado", avance: "w-full" },
+  { nombre: "Revisión técnica", estado: "En curso", avance: "w-1/2" },
+  { nombre: "Cotización formal", estado: "Pendiente", avance: "w-0" },
+] as const
+
+/** Tarjeta que reemplaza al formulario cuando el backend registró la solicitud. */
+function ConfirmacionSolicitud({ codigo, onVerPedidos, onCrearOtra }: { codigo?: string; onVerPedidos: () => void; onCrearOtra: () => void }) {
+  const titulo = useRef<HTMLHeadingElement>(null)
+  // El foco pasa al título para que quien usa lector de pantalla oiga la confirmación.
+  useEffect(() => titulo.current?.focus(), [])
+
+  return (
+    <section aria-labelledby="solicitud-exito" className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card sm:p-8">
+      <div className="flex items-start gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success/15 text-success">
+          <Check className="h-5 w-5" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <h2 id="solicitud-exito" ref={titulo} tabIndex={-1} className="text-xl font-semibold focus-visible:outline-none">Solicitud registrada con éxito</h2>
+          {codigo && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              Código de la solicitud: <strong className="font-semibold text-foreground">{codigo}</strong>
+            </p>
+          )}
+        </div>
+      </div>
+
+      <ol aria-label="Avance de la solicitud" className="mt-6 grid gap-4 sm:grid-cols-3">
+        {ETAPAS_SOLICITUD.map((etapa, i) => (
+          <li key={etapa.nombre}>
+            <div aria-hidden="true" className="h-1.5 overflow-hidden rounded-full bg-muted">
+              <div className={cn("h-full rounded-full bg-[#183153] dark:bg-primary", etapa.avance)} />
+            </div>
+            <p className="mt-2 text-sm font-medium">{i + 1}. {etapa.nombre}</p>
+            <p className="text-sm text-muted-foreground">{etapa.estado}</p>
+          </li>
+        ))}
+      </ol>
+
+      <p className="mt-6 text-sm text-muted-foreground">Te llevaremos a Mis pedidos en unos segundos.</p>
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+        <Button type="button" onClick={onVerPedidos}>Ver en Mis pedidos</Button>
+        <Button type="button" variant="outline" onClick={onCrearOtra}>Crear otra solicitud</Button>
+      </div>
+    </section>
   )
 }
 
@@ -464,6 +553,8 @@ function ItemRepuesto({ numero, item, errores, puedeQuitar, puedeDuplicar, regis
   })
   const AYUDA_FOTO = "JPG, PNG, WEBP o PDF, hasta 10 MB."
 
+  // Un ítem de catálogo (precargado del carrito) ya viene identificado: no se elige cómo identificarlo.
+  const esCatalogo = item.idProducto !== undefined
   const esParte = item.modo === "parte"
   const esServicio = item.modo === "servicio"
   // Un adjunto ya elegido nunca queda escondido: lo que se ve es lo que se envía.
@@ -566,34 +657,64 @@ function ItemRepuesto({ numero, item, errores, puedeQuitar, puedeDuplicar, regis
           </datalist>
         </Campo>
 
-        <div
-          role="radiogroup"
-          aria-label={nombre("cómo identificas el ítem")}
-          className="grid grid-cols-1 gap-1 sm:grid-cols-3 rounded-lg bg-muted p-1 sm:col-span-6"
-        >
-          {OPCIONES_MODO.map(({ valor, texto }) => (
-            <label
-              key={valor}
-              className={cn(
-                "flex cursor-pointer items-center justify-center rounded-md px-3 py-2 text-center text-sm font-medium transition-colors focus-within:ring-2 focus-within:ring-ring",
-                item.modo === valor ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <input
-                type="radio"
-                className="sr-only"
-                name={id("modo")}
-                value={valor}
-                checked={item.modo === valor}
-                aria-label={nombre(texto)}
-                onChange={() => onCambiarModo(valor)}
-              />
-              {texto}
-            </label>
-          ))}
-        </div>
+        {esCatalogo ? (
+          <div className="rounded-lg bg-muted/60 px-3 py-2.5 sm:col-span-6">
+            <p className="inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-0.5 text-xs font-semibold text-foreground shadow-sm">
+              <Package className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
+              Ítem de catálogo
+            </p>
+            <p className="mt-1.5 text-sm text-muted-foreground">Identificado desde el catálogo; no requiere N.° de parte ni foto</p>
+            {(item.marca.trim() || item.numeroParte.trim()) && (
+              <dl className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-muted-foreground">
+                {item.marca.trim() && (
+                  <div className="flex gap-1"><dt>Marca:</dt><dd className="font-medium text-foreground">{item.marca}</dd></div>
+                )}
+                {item.numeroParte.trim() && (
+                  <div className="flex gap-1"><dt>N.º de parte:</dt><dd className="font-mono text-foreground">{item.numeroParte}</dd></div>
+                )}
+              </dl>
+            )}
+          </div>
+        ) : (
+          <div
+            role="radiogroup"
+            aria-label={nombre("cómo identificas el ítem")}
+            className="grid grid-cols-1 gap-1 sm:grid-cols-3 rounded-lg bg-muted p-1 sm:col-span-6"
+          >
+            {OPCIONES_MODO.map(({ valor, texto }) => (
+              <label
+                key={valor}
+                className={cn(
+                  "flex cursor-pointer items-center justify-center rounded-md px-3 py-2 text-center text-sm font-medium transition-colors focus-within:ring-2 focus-within:ring-ring",
+                  item.modo === valor ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <input
+                  type="radio"
+                  className="sr-only"
+                  name={id("modo")}
+                  value={valor}
+                  checked={item.modo === valor}
+                  aria-label={nombre(texto)}
+                  onChange={() => onCambiarModo(valor)}
+                />
+                {texto}
+              </label>
+            ))}
+          </div>
+        )}
 
-        {esParte ? (
+        {esCatalogo ? (
+          adjuntoVisible ? (
+            campoFoto
+          ) : (
+            <div key="adjuntar" className="sm:col-span-6">
+              <button type="button" className={enlaceDiscreto} onClick={() => setAdjuntoAbierto(true)}>
+                + Adjuntar también foto o plano PDF (opcional)
+              </button>
+            </div>
+          )
+        ) : esParte ? (
           <>
             <Campo key="marca" className="sm:col-span-3" id={id("marca")} label="Marca" obligatorio error={errores.marca}>
               <Input
