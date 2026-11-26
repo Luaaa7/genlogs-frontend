@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3f6fa"/><stop offset="1" stop-color="#dbe3ee"/></linearGradient>
+<linearGradient id="m" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7f8fa"/><stop offset=".5" stop-color="#a7b0bb"/><stop offset="1" stop-color="#e3e7ec"/></linearGradient>
+<linearGradient id="mv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b7480"/><stop offset=".35" stop-color="#eef1f4"/><stop offset="1" stop-color="#59626d"/></linearGradient>
+<linearGradient id="d" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4b525c"/><stop offset="1" stop-color="#1b1e23"/></linearGradient>
+<radialGradient id="b" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#c3cad2"/><stop offset="1" stop-color="#5d6670"/></radialGradient>
+<filter id="s" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+
+</defs>
+<rect width="480" height="360" fill="url(#bg)"/>
+<ellipse cx="240" cy="300" rx="135" ry="14" fill="#0b1a33" opacity=".18" filter="url(#s)"/>
+
+<rect x="126" y="140" width="228" height="148" rx="10" fill="url(#d)"/>
+<rect x="118" y="124" width="244" height="28" rx="7" fill="#2b3037"/>
+<rect x="160" y="104" width="26" height="22" rx="3" fill="url(#m)"/><rect x="294" y="104" width="26" height="22" rx="3" fill="url(#m)"/>
+<circle cx="173" cy="104" r="11" fill="#dc2626"/><circle cx="307" cy="104" r="11" fill="#334155"/>
+<text x="173" y="146" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#ef4444">+</text>
+<text x="307" y="146" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#cbd5e1">−</text>
+<rect x="148" y="178" width="184" height="80" rx="6" fill="#1d4ed8"/>
+<rect x="148" y="178" width="184" height="12" rx="6" fill="#facc15"/>
+<text x="240" y="234" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="800" fill="#fff">12V</text>
+<rect x="196" y="242" width="88" height="5" rx="2" fill="#93c5fd"/>
+</svg>

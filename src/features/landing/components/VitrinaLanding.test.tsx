@@ -52,12 +52,14 @@ describe("VitrinaLanding (RF-82, D-16, D-30)", () => {
     ])
   })
 
-  it("muestra los repuestos sin precio, con foto propia o ícono, y los de foto primero", async () => {
+  it("muestra los repuestos sin precio, con foto propia o referencial, y los de foto primero", async () => {
     pintar()
     const tarjetas = await screen.findAllByRole("article")
     expect(within(tarjetas[0]).getByText("Rodamiento 6205")).toBeTruthy()
     expect(within(tarjetas[0]).getByRole("img", { name: "Rodamiento 6205" })).toBeTruthy()
-    expect(within(tarjetas[1]).getByText(/foto referencial próximamente/i)).toBeTruthy()
+    // Sin foto propia: la foto referencial de su tipo, marcada como tal.
+    expect(within(tarjetas[1]).getByText("Imagen referencial")).toBeTruthy()
+    expect(within(tarjetas[0]).queryByText("Imagen referencial")).toBeNull()
     expect(screen.getByText("Original (OEM)")).toBeTruthy()
     expect(screen.getByText("Alternativo compatible")).toBeTruthy()
     expect(document.body.textContent).not.toMatch(/S\/\s?\d|US\$|\$\s?\d/)

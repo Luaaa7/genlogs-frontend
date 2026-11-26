@@ -5,6 +5,7 @@ import type { RepuestoPublico } from "@/api/publicApi"
 import { visualCategoria } from "../lib/visualCategoria"
 import { cn } from "@/lib/utils/utils"
 import { imagenCloudinary } from "@/lib/imagenCloudinary"
+import { fotoReferencial } from "../lib/fotoReferencial"
 
 const TIPO: Record<RepuestoPublico["tipoRepuesto"], string> = {
   OEM: "Original (OEM)",
@@ -26,9 +27,13 @@ interface Props {
  */
 export function TarjetaRepuesto({ repuesto: r, enCotizacion, onAgregar, onSumar, onRestar }: Props) {
   const { Icono, tono } = visualCategoria(r.categoria, r.nombre)
-  // Se guarda la URL que falló: si el repuesto cambia de foto, se vuelve a intentar.
-  const [urlFallida, setUrlFallida] = useState<string | null>(null)
-  const foto = r.urlImagen && r.urlImagen !== urlFallida ? r.urlImagen : null
+  // Se guardan las URL que fallaron: si el repuesto cambia de foto, se vuelve a intentar.
+  const [fallidas, setFallidas] = useState<string[]>([])
+  const real = r.urlImagen && !fallidas.includes(r.urlImagen) ? r.urlImagen : null
+  // Sin foto propia: foto referencial (simulada) de su tipo; si tampoco existe, la ilustración.
+  const referencial = fotoReferencial(r.categoria, r.nombre)
+  const foto = real ?? (fallidas.includes(referencial) ? null : referencial)
+  const esReferencial = !real && foto !== null
   return (
     <article className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:border-accent/40 hover:shadow-md motion-safe:hover:-translate-y-0.5">
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
@@ -37,7 +42,7 @@ export function TarjetaRepuesto({ repuesto: r, enCotizacion, onAgregar, onSumar,
             src={imagenCloudinary(foto, 480)}
             alt={r.nombre}
             loading="lazy"
-            onError={() => setUrlFallida(foto)}
+            onError={() => setFallidas((f) => [...f, foto])}
             className="h-full w-full object-cover motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-105"
           />
         ) : (
@@ -52,6 +57,11 @@ export function TarjetaRepuesto({ repuesto: r, enCotizacion, onAgregar, onSumar,
             </span>
             <span className="relative text-xs text-muted-foreground">Foto referencial próximamente</span>
           </div>
+        )}
+        {esReferencial && (
+          <span className="absolute bottom-3 right-3 rounded-full bg-card/90 px-2 py-0.5 text-[11px] text-muted-foreground shadow-sm backdrop-blur">
+            Imagen referencial
+          </span>
         )}
         <span className="absolute left-3 top-3 rounded-full bg-card/90 px-2.5 py-0.5 text-xs font-medium text-foreground shadow-sm backdrop-blur">
           {TIPO[r.tipoRepuesto]}

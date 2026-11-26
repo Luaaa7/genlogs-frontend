@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3f6fa"/><stop offset="1" stop-color="#dbe3ee"/></linearGradient>
+<linearGradient id="m" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7f8fa"/><stop offset=".5" stop-color="#a7b0bb"/><stop offset="1" stop-color="#e3e7ec"/></linearGradient>
+<linearGradient id="mv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b7480"/><stop offset=".35" stop-color="#eef1f4"/><stop offset="1" stop-color="#59626d"/></linearGradient>
+<linearGradient id="d" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4b525c"/><stop offset="1" stop-color="#1b1e23"/></linearGradient>
+<radialGradient id="b" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#c3cad2"/><stop offset="1" stop-color="#5d6670"/></radialGradient>
+<filter id="s" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+<linearGradient id="pcb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#16804b"/><stop offset="1" stop-color="#0c5a34"/></linearGradient>
+</defs>
+<rect width="480" height="360" fill="url(#bg)"/>
+<ellipse cx="240" cy="300" rx="135" ry="14" fill="#0b1a33" opacity=".18" filter="url(#s)"/>
+
+<rect x="110" y="104" width="262" height="180" rx="10" fill="url(#pcb)" stroke="#07422a" stroke-width="2"/>
+<g stroke="#d6a93a" stroke-width="2.2" fill="none" opacity=".85">
+<polyline points="130,140 180,140 196,156"/><polyline points="130,250 180,250 200,232"/><polyline points="300,150 330,150 350,130"/>
+<polyline points="292,210 340,210 352,226 352,262"/><polyline points="150,200 196,200"/><polyline points="296,180 350,180"/></g>
+<rect x="204" y="150" width="5" height="10" fill="#c7ccd2"/><rect x="204" y="224" width="5" height="10" fill="#c7ccd2"/><rect x="216" y="150" width="5" height="10" fill="#c7ccd2"/><rect x="216" y="224" width="5" height="10" fill="#c7ccd2"/><rect x="228" y="150" width="5" height="10" fill="#c7ccd2"/><rect x="228" y="224" width="5" height="10" fill="#c7ccd2"/><rect x="240" y="150" width="5" height="10" fill="#c7ccd2"/><rect x="240" y="224" width="5" height="10" fill="#c7ccd2"/><rect x="252" y="150" width="5" height="10" fill="#c7ccd2"/><rect x="252" y="224" width="5" height="10" fill="#c7ccd2"/><rect x="264" y="150" width="5" height="10" fill="#c7ccd2"/><rect x="264" y="224" width="5" height="10" fill="#c7ccd2"/><rect x="276" y="150" width="5" height="10" fill="#c7ccd2"/><rect x="276" y="224" width="5" height="10" fill="#c7ccd2"/>
+<rect x="196" y="158" width="96" height="68" rx="4" fill="#1d2026"/>
+<circle cx="208" cy="170" r="3" fill="#4b5563"/>
+<rect x="306" y="232" width="32" height="20" rx="3" fill="#2d3239"/>
+<rect x="132" y="160" width="12" height="28" rx="2" fill="#d4c4a0"/>
+<circle cx="330" cy="128" r="13" fill="#1e3a8a"/><circle cx="330" cy="128" r="9" fill="#2b4fae"/>
+<circle cx="150" cy="232" r="9" fill="#111827"/><circle cx="150" cy="232" r="6" fill="#374151"/>
+<rect x="90" y="166" width="34" height="56" rx="3" fill="#e5e7eb" stroke="#9ca3af"/>
+<rect x="96" y="174" width="22" height="40" rx="2" fill="#4b5563"/>
+<circle cx="124" cy="118" r="6" fill="url(#m)"/><circle cx="358" cy="118" r="6" fill="url(#m)"/><circle cx="124" cy="270" r="6" fill="url(#m)"/><circle cx="358" cy="270" r="6" fill="url(#m)"/>
+</svg>
