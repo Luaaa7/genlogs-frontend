@@ -249,12 +249,47 @@ describe('respuesta del cliente en el detalle', () => {
     expect(http.post).not.toHaveBeenCalled()
   })
 
-  it('aceptó sin nota ni adjunto no llama al endpoint', async () => {
+  it('la etiqueta es «Nota *» con el mismo asterisco rojo de Fecha y Medio, en las tres respuestas', async () => {
+    pintar('JEFE_ADMINISTRATIVO')
+    for (const nombre of ['Cliente aceptó', 'Pidió cambios', 'Rechazó']) {
+      await abrir(nombre)
+      const etiqueta = screen.getByText(/^Nota/, { selector: 'label' })
+      expect(etiqueta.textContent?.startsWith('Nota *')).toBe(true)
+      expect(etiqueta.textContent).not.toMatch(/adjunto/i)
+      const asterisco = etiqueta.querySelector('span')
+      expect(asterisco?.textContent).toBe('*')
+      expect(asterisco?.className).toBe(screen.getByLabelText(/Fecha de la respuesta/).closest('label')?.querySelector('span')?.className)
+      fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    }
+  })
+
+  it('aceptó sin nota no llama al endpoint', async () => {
     pintar('JEFE_ADMINISTRATIVO')
     await abrir('Cliente aceptó')
     completar()
     fireEvent.click(screen.getByRole('button', { name: 'Guardar respuesta' }))
-    expect(await screen.findByText('Para registrar que el cliente aceptó, escribe una nota o adjunta la evidencia')).toBeTruthy()
+    expect(await screen.findByText('La nota es obligatoria: escribe qué confirmó el cliente')).toBeTruthy()
+    expect(http.post).not.toHaveBeenCalled()
+  })
+
+  it('aceptó con un adjunto válido pero sin nota tampoco se guarda: el adjunto no reemplaza la nota', async () => {
+    pintar('JEFE_ADMINISTRATIVO')
+    await abrir('Cliente aceptó')
+    completar()
+    const archivo = new File(['pdf'], 'evidencia.pdf', { type: 'application/pdf' })
+    fireEvent.change(screen.getByLabelText(/Adjunto \(opcional/), { target: { files: [archivo] } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar respuesta' }))
+    expect(await screen.findByText('La nota es obligatoria: escribe qué confirmó el cliente')).toBeTruthy()
+    expect(http.post).not.toHaveBeenCalled()
+  })
+
+  it('una nota de solo espacios cuenta como vacía', async () => {
+    pintar('JEFE_ADMINISTRATIVO')
+    await abrir('Cliente aceptó')
+    completar()
+    fireEvent.change(screen.getByLabelText(/^Nota/), { target: { value: '    ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar respuesta' }))
+    expect(await screen.findByText('La nota es obligatoria: escribe qué confirmó el cliente')).toBeTruthy()
     expect(http.post).not.toHaveBeenCalled()
   })
 
