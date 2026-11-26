@@ -1,7 +1,7 @@
 /** Tarjetas por página en el catálogo de Repuestos. */
 export const TAM_PAGINA = 12
-/** Marcas que se ven antes de «Ver todas las marcas». */
-export const MARCAS_VISIBLES = 8
+/** Marcas que se ven antes de «Ver todas las marcas»: tres filas de tarjetas junto a «Todas las marcas». */
+export const MARCAS_VISIBLES = 17
 
 /** Marcas con su cantidad de repuestos, de mayor a menor (a igualdad, por nombre). Ignora los repuestos sin marca. */
 export function marcasPorCantidad(repuestos: { marca?: string | null }[]): { marca: string; n: number }[] {

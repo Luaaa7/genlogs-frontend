@@ -153,6 +153,103 @@ describe("RepuestosPage (RF-82)", () => {
     fireEvent.click(await screen.findByRole("button", { name: /agregar filtro de combustible al pedido/i }))
     await waitFor(() => expect(localStorage.getItem("genlogs-carrito-repuestos")).toContain("Filtro de combustible"))
   })
+
+  it("marcas en tarjetas: filtra por marca, muestra el conteo y se puede quitar el filtro", async () => {
+    pintar()
+    const marcas = await screen.findByRole("group", { name: /filtrar por marca/i })
+    const skf = within(marcas).getByRole("button", { name: /skf/i })
+    expect(skf.textContent).toContain("1 repuesto")
+    fireEvent.click(skf)
+    expect(skf.getAttribute("aria-pressed")).toBe("true")
+    expect(screen.queryByText("Filtro de combustible")).toBeNull()
+    expect(screen.getByText("Rodamiento 6205")).toBeTruthy()
+
+    fireEvent.click(screen.getByRole("button", { name: /quitar marca skf/i }))
+    expect(await screen.findByText("Filtro de combustible")).toBeTruthy()
+    expect(within(marcas).getByRole("button", { name: /todas las marcas/i }).getAttribute("aria-pressed")).toBe("true")
+  })
+
+  it("no limita la cantidad de marcas: «Ver todas las marcas (N)» despliega todas", async () => {
+    const muchas = Array.from({ length: 25 }, (_, i) => ({ ...filtro, idProducto: 100 + i, nombre: `Repuesto ${i}`, marca: `Marca ${String(i).padStart(2, "0")}` }))
+    api.listar.mockResolvedValue(muchas)
+    pintar()
+    const marcas = await screen.findByRole("group", { name: /filtrar por marca/i })
+    expect(within(marcas).queryByRole("button", { name: /marca 24/i })).toBeNull()
+    fireEvent.click(screen.getByRole("button", { name: "Ver todas las marcas (25)" }))
+    expect(within(marcas).getByRole("button", { name: /marca 24/i })).toBeTruthy()
+    // 25 marcas + «Todas las marcas»
+    expect(within(marcas).getAllByRole("button")).toHaveLength(26)
+  })
+
+  it("la tarjeta indica cuánto hay en el pedido y el carrito suma y resta con los botones", async () => {
+    pintar()
+    fireEvent.click(await screen.findByRole("button", { name: /agregar filtro de combustible al pedido/i }))
+    expect(screen.getByText(/en tu pedido · 1/i)).toBeTruthy()
+
+    const carrito = screen.getByRole("complementary")
+    const cantidad = within(carrito).getByLabelText(/cantidad de filtro de combustible/i) as HTMLInputElement
+    const restar = within(carrito).getByRole("button", { name: /restar una unidad a filtro de combustible/i }) as HTMLButtonElement
+    expect(restar.disabled).toBe(true)
+    fireEvent.click(within(carrito).getByRole("button", { name: /sumar una unidad a filtro de combustible/i }))
+    expect(cantidad.value).toBe("2")
+    expect(screen.getByText(/en tu pedido · 2/i)).toBeTruthy()
+    fireEvent.click(restar)
+    expect(cantidad.value).toBe("1")
+  })
+
+  it("móvil: la barra del pedido abre el carrito y Escape lo cierra devolviendo el foco", async () => {
+    pintar()
+    fireEvent.click(await screen.findByRole("button", { name: /agregar rodamiento 6205 al pedido/i }))
+    const barra = screen.getByRole("button", { name: /ver tu pedido de cotización/i })
+    expect(barra.textContent).toContain("1 repuesto")
+    expect(barra.getAttribute("aria-expanded")).toBe("false")
+
+    fireEvent.click(barra)
+    const cerrar = within(screen.getByRole("complementary")).getByRole("button", { name: /cerrar tu pedido/i })
+    expect(document.activeElement).toBe(cerrar)
+
+    fireEvent.keyDown(document, { key: "Escape" })
+    await waitFor(() => expect(document.activeElement).toBe(barra))
+    expect(barra.getAttribute("aria-expanded")).toBe("false")
+  })
+
+  it("la tarjeta separa el tipo y el N.º de parte del nombre del catálogo, y pide con el nombre completo", async () => {
+    api.listar.mockResolvedValue([{ ...filtro, idProducto: 30, nombre: "Fusible - Bussmann - FRN-R-20", marca: "Bussmann", numeroParte: null }])
+    api.pedirCotizacion.mockResolvedValue({ idSolicitud: 5, codigoSolicitud: "SOL-5", estado: "PENDIENTE" })
+    pintar()
+    expect(await screen.findByRole("heading", { name: "Fusible" })).toBeTruthy()
+    expect(screen.getByText("FRN-R-20")).toBeTruthy()
+    fireEvent.click(screen.getByRole("button", { name: "Agregar Fusible - Bussmann - FRN-R-20 al pedido" }))
+    fireEvent.click(within(screen.getByRole("complementary")).getByRole("button", { name: /pedir cotización/i }))
+    await waitFor(() => expect(api.pedirCotizacion).toHaveBeenCalled())
+    expect(api.pedirCotizacion.mock.calls[0][0]).toEqual([expect.objectContaining({ descripcion: "Fusible - Bussmann - FRN-R-20", idProducto: 30 })])
+  })
+
+  it("marcas: se pueden buscar y ordenar por cantidad de repuestos o de la A a la Z", async () => {
+    api.listar.mockResolvedValue([filtro, rodamiento, { ...rodamiento, idProducto: 7, nombre: "Otro rodamiento" }])
+    pintar()
+    const marcas = await screen.findByRole("group", { name: /filtrar por marca/i })
+    const nombres = () => within(marcas).getAllByRole("button").map((b) => b.getAttribute("title")).filter(Boolean)
+    expect(nombres()).toEqual(["SKF", "Caterpillar"])
+    fireEvent.click(screen.getByRole("button", { name: /a–z/i }))
+    expect(nombres()).toEqual(["Caterpillar", "SKF"])
+    fireEvent.change(screen.getByLabelText(/buscar marca/i), { target: { value: "sk" } })
+    expect(nombres()).toEqual(["SKF"])
+    fireEvent.change(screen.getByLabelText(/buscar marca/i), { target: { value: "zzz" } })
+    expect(screen.getByText(/ninguna marca coincide/i)).toBeTruthy()
+  })
+
+  it("con más de cinco categorías, las demás quedan en «Más» y se pueden elegir", async () => {
+    const seis = Array.from({ length: 7 }, (_, i) => ({ ...filtro, idProducto: 400 + i, nombre: `Pieza C${i}`, idCategoria: 10 + i, categoria: `Categoría ${i}` }))
+    api.listar.mockResolvedValue(seis)
+    pintar()
+    const grupo = await screen.findByRole("group", { name: /filtrar por categoría/i })
+    expect(within(grupo).queryByRole("button", { name: /categoría 6/i })).toBeNull()
+    fireEvent.click(within(grupo).getByRole("button", { name: /más/i }))
+    fireEvent.click(within(grupo).getByRole("button", { name: /categoría 6/i }))
+    expect(screen.getByText("Pieza C6")).toBeTruthy()
+    expect(screen.queryByText("Pieza C0")).toBeNull()
+  })
 })
 
 const MARCAS = ["Marca A", "Marca B", "Marca C", "Marca D", "Marca E", "Marca F", "Marca G", "Marca H", "Marca I", "Marca J"]
@@ -186,33 +283,40 @@ describe("RepuestosPage: catálogo ordenado y liviano", () => {
   })
 
   describe("filtro de marcas colapsado", () => {
-    it("muestra solo las 8 marcas con más repuestos, de mayor a menor, y un botón «Ver todas las marcas (10)»", async () => {
+    // v3.4 tarjetas de marca: se pliega tras 17 marcas (tres filas con «Todas las marcas»).
+    const MARCAS_20 = Array.from({ length: 20 }, (_, i) => `Marca ${String.fromCharCode(65 + i)}`)
+    /** La marca i tiene (20 - i) repuestos: A es la que más tiene y T la que menos. */
+    const conVeinteMarcas = (): RepuestoPortal[] =>
+      MARCAS_20.flatMap((marca, m) => Array.from({ length: 20 - m }, (_, k) => ({ ...filtro, idProducto: 1000 + m * 100 + k, nombre: `${marca} pieza ${k}`, marca })))
+    beforeEach(() => api.listar.mockResolvedValue(conVeinteMarcas()))
+
+    it("muestra solo las 17 marcas con más repuestos, de mayor a menor, y un botón «Ver todas las marcas (20)»", async () => {
       pintar()
       await screen.findByRole("list", { name: /lista de repuestos/i })
-      const nombres = within(grupoMarcas()).getAllByRole("button").map((b) => b.textContent)
-      expect(nombres).toEqual(["Todas las marcas", ...MARCAS.slice(0, 8)])
-      expect(screen.getByRole("button", { name: "Ver todas las marcas (10)" }).getAttribute("aria-expanded")).toBe("false")
+      const nombres = within(grupoMarcas()).getAllByRole("button").map((b) => b.getAttribute("aria-label"))
+      expect(nombres).toEqual(["Todas las marcas", ...MARCAS_20.slice(0, 17)])
+      expect(screen.getByRole("button", { name: "Ver todas las marcas (20)" }).getAttribute("aria-expanded")).toBe("false")
     })
 
-    it("al expandir muestra las 10 marcas y el botón pasa a contraer", async () => {
+    it("al expandir muestra las 20 marcas y el botón pasa a contraer", async () => {
       pintar()
-      fireEvent.click(await screen.findByRole("button", { name: "Ver todas las marcas (10)" }))
-      expect(within(grupoMarcas()).getByRole("button", { name: "Marca J" })).toBeTruthy()
+      fireEvent.click(await screen.findByRole("button", { name: "Ver todas las marcas (20)" }))
+      expect(within(grupoMarcas()).getByRole("button", { name: "Marca T" })).toBeTruthy()
       const contraer = screen.getByRole("button", { name: "Ver menos marcas" })
       expect(contraer.getAttribute("aria-expanded")).toBe("true")
       fireEvent.click(contraer)
-      expect(within(grupoMarcas()).queryByRole("button", { name: "Marca J" })).toBeNull()
+      expect(within(grupoMarcas()).queryByRole("button", { name: "Marca T" })).toBeNull()
     })
 
-    it("la marca elegida sigue a la vista aunque no esté entre las 8 primeras", async () => {
+    it("la marca elegida sigue a la vista aunque no esté entre las 17 primeras", async () => {
       pintar()
-      fireEvent.click(await screen.findByRole("button", { name: "Ver todas las marcas (10)" }))
-      fireEvent.click(within(grupoMarcas()).getByRole("button", { name: "Marca J" }))
+      fireEvent.click(await screen.findByRole("button", { name: "Ver todas las marcas (20)" }))
+      fireEvent.click(within(grupoMarcas()).getByRole("button", { name: "Marca T" }))
       fireEvent.click(screen.getByRole("button", { name: "Ver menos marcas" }))
-      expect(within(grupoMarcas()).getByRole("button", { name: "Marca J" }).getAttribute("aria-pressed")).toBe("true")
+      expect(within(grupoMarcas()).getByRole("button", { name: "Marca T" }).getAttribute("aria-pressed")).toBe("true")
     })
 
-    it("con 8 marcas o menos no hay botón", async () => {
+    it("con 17 marcas o menos no hay botón", async () => {
       api.listar.mockResolvedValue([filtro, rodamiento])
       pintar()
       await screen.findByText("Filtro de combustible")
