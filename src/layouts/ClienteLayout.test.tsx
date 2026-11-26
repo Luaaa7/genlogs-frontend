@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { fireEvent, render, screen, within } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -13,10 +13,14 @@ async function renderLayout(vitrina: boolean, conSesion: boolean) {
   return render(<MemoryRouter><ClienteLayout /></MemoryRouter>)
 }
 
+// El pie repite Ayuda y Contacto, así que el menú de arriba se consulta por separado.
+const menu = () => within(screen.getByRole("navigation", { name: "Portal del cliente" }))
+
 describe("Menú del portal del cliente", () => {
   beforeEach(() => {
     localStorage.clear()
     sessionStorage.clear()
+    document.documentElement.classList.remove("dark")
   })
   afterEach(() => vi.doUnmock("@/lib/interruptores"))
 
@@ -30,7 +34,7 @@ describe("Menú del portal del cliente", () => {
     // v3.4: «Nueva solicitud» va justo antes de «Cerrar sesión», a la derecha de los demás enlaces.
     const cerrar = screen.getByRole("button", { name: "Cerrar sesión" })
     expect(nueva.compareDocumentPosition(cerrar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(screen.getByRole("link", { name: "Contacto" }).compareDocumentPosition(nueva) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(menu().getByRole("link", { name: "Contacto" }).compareDocumentPosition(nueva) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(screen.getByRole("link", { name: "Reclamos" }).getAttribute("href")).toBe("/portal/reclamos")
     expect(screen.getByRole("button", { name: "Cerrar sesión" })).toBeTruthy()
   })
@@ -58,7 +62,46 @@ describe("Menú del portal del cliente", () => {
 
   it.each([[true], [false]])("con sesión = %s muestra Ayuda y Contacto (v3.4, K2)", async (conSesion) => {
     await renderLayout(false, conSesion)
-    expect(screen.getByRole("link", { name: "Ayuda" }).getAttribute("href")).toBe("/ayuda")
-    expect(screen.getByRole("link", { name: "Contacto" }).getAttribute("href")).toBe("/contacto")
+    expect(menu().getByRole("link", { name: "Ayuda" }).getAttribute("href")).toBe("/ayuda")
+    expect(menu().getByRole("link", { name: "Contacto" }).getAttribute("href")).toBe("/contacto")
+  })
+
+  it("«Nueva solicitud» es un enlace más del menú, sin borde propio", async () => {
+    await renderLayout(false, true)
+    const nueva = screen.getByRole("link", { name: "Nueva solicitud" })
+    expect(nueva.className).not.toMatch(/(^|\s)border(\s|$)/)
+    expect(nueva.className).not.toContain("border-primary")
+  })
+
+  it.each([[true], [false]])("con sesión = %s muestra el botón de tema y lo alterna con la misma clave de la landing", async (conSesion) => {
+    await renderLayout(false, conSesion)
+    fireEvent.click(screen.getByRole("button", { name: "Cambiar a tema oscuro" }))
+    expect(document.documentElement.classList.contains("dark")).toBe(true)
+    expect(localStorage.getItem("genlogs-theme")).toBe("dark")
+    fireEvent.click(screen.getByRole("button", { name: "Cambiar a tema claro" }))
+    expect(document.documentElement.classList.contains("dark")).toBe(false)
+    expect(localStorage.getItem("genlogs-theme")).toBe("light")
+  })
+
+  it("si la landing dejó el tema oscuro guardado, el portal lo mantiene", async () => {
+    localStorage.setItem("genlogs-theme", "dark")
+    await renderLayout(false, true)
+    expect(screen.getByRole("button", { name: "Cambiar a tema claro" })).toBeTruthy()
+  })
+
+  it("el botón de tema va junto a «Cerrar sesión»", async () => {
+    await renderLayout(false, true)
+    const tema = screen.getByRole("button", { name: "Cambiar a tema oscuro" })
+    const cerrar = screen.getByRole("button", { name: "Cerrar sesión" })
+    expect(tema.parentElement).toBe(cerrar.parentElement)
+  })
+
+  it.each([[true], [false]])("con sesión = %s muestra el pie institucional con Ayuda y Contacto", async (conSesion) => {
+    await renderLayout(false, conSesion)
+    const pie = screen.getByRole("contentinfo")
+    expect(pie.textContent).toContain(`© ${new Date().getFullYear()} GenLogs S.A.C. Soluciones para minería.`)
+    const enlaces = screen.getByRole("navigation", { name: "Enlaces del pie" })
+    expect(enlaces.querySelector('a[href="/ayuda"]')?.textContent).toBe("Ayuda")
+    expect(enlaces.querySelector('a[href="/contacto"]')?.textContent).toBe("Contacto")
   })
 })

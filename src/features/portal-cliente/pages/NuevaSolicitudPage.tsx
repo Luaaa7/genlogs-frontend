@@ -257,7 +257,7 @@ export function NuevaSolicitudPage() {
         </p>
       </div>
 
-      <form onSubmit={enviar} noValidate className="space-y-6 rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
+      <form onSubmit={enviar} noValidate className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-border dark:bg-card sm:p-8">
         {inicial.precargados > 0 && (
           <div role="status" className="flex items-start gap-2 rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />

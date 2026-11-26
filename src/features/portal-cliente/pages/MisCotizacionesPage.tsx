@@ -4,6 +4,7 @@ import CargandoSpinner from "@/components/ui/CargandoSpinner"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { EstadoBadge } from "@/components/ui/EstadoBadge"
 import { formatCurrency } from "@/lib/formatters/currency"
+import { BotonNuevaSolicitud } from "../components/BotonNuevaSolicitud"
 import { useCotizacionesPortal } from "../hooks/useCotizacionesPortal"
 import { esCotizacionAnulada, puedeDecidir, tonoEstadoCotizacion } from "../lib/cotizacionPortal"
 
@@ -15,14 +16,19 @@ export function MisCotizacionesPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="text-3xl font-bold">Mis cotizaciones</h1>
-      <p className="mt-2 text-muted-foreground">Revisa cada cotización y apruébala o recházala antes de su fecha de validez.</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Mis cotizaciones</h1>
+          <p className="mt-2 text-muted-foreground">Revisa cada cotización y apruébala o recházala antes de su fecha de validez.</p>
+        </div>
+        <BotonNuevaSolicitud />
+      </div>
       {cotizaciones.length === 0 ? (
-        <p className="mt-8 rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
+        <p className="mt-8 rounded-xl border border-slate-200 bg-white shadow-sm dark:border-border dark:bg-card p-8 text-center text-muted-foreground">
           Todavía no tienes cotizaciones. Cuando coticemos uno de tus pedidos, aparecerá aquí.
         </p>
       ) : (
-        <ul className="mt-8 divide-y divide-border rounded-xl border border-border bg-card">
+        <ul className="mt-8 divide-y divide-slate-200 dark:divide-border rounded-xl border border-slate-200 bg-white shadow-sm dark:border-border dark:bg-card">
           {cotizaciones.map((c) => (
             <li key={c.id}>
               <Link
