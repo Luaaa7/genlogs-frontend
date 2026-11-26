@@ -545,6 +545,29 @@ describe('respuesta del cliente en el detalle', () => {
     expect(screen.queryByRole('button', { name: 'Registrar orden de compra' })).toBeNull()
   })
 
+  it('con DNI, al registrar que el cliente aceptó, la orden automática aparece al instante sin recargar', async () => {
+    tipoDocCliente = 'DNI'
+    numeroDocCliente = '12345678'
+    // El backend crea la orden y deja la cotización aceptada recién al guardar la respuesta.
+    http.post.mockImplementation(() => {
+      cabecera = { ...cabecera, estado: 'ACEPTADA_CLIENTE' }
+      ordenes = [ordenInterna()]
+      return Promise.resolve({ data: { cotizacion: cabecera } })
+    })
+    pintar('ASISTENTE_LOGISTICO')
+    await abrir('Cliente aceptó')
+    expect(screen.queryByRole('link', { name: 'Orden 0032-10' })).toBeNull()
+
+    completar(diaLima(-1), 'whatsapp', 'Aceptó por WhatsApp')
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar respuesta' }))
+
+    // El botón de arriba y el paso de la barra de progreso: los dos enlaces a la orden.
+    await waitFor(() => expect(screen.getAllByRole('link', { name: 'Orden 0032-10' })).toHaveLength(2))
+    expect(screen.queryByRole('heading', { name: 'Registrar respuesta del cliente' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Registrar orden de compra' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Registrar OC del cliente' })).toBeNull()
+  })
+
   describe('Registrar orden de compra según el documento del cliente', () => {
     const aceptadaSinOrden = () => {
       cabecera = { ...cabecera, estado: 'ACEPTADA_CLIENTE' }
