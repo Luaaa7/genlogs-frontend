@@ -22,7 +22,7 @@ import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EstadoCotizacion, type Cotizacion } from '@/types/cotizacion.types';
 import type { OrdenCompra } from '@/types/ordenCompra.types';
-import { codigoTipoDocumento } from '@/types/tercero.types';
+import { esClientePersonaNatural } from '../lib/documentoCliente';
 import {
   formatearMoneda,
   mapearEstadoCotizacion,
@@ -138,8 +138,8 @@ const CotizacionDetalleContenido: React.FC = () => {
 
   const { data: cotizacion, isLoading, isError, refetch } = useCotizacion(cotizacionId);
   // Una persona natural (DNI, pasaporte, CE) no emite una OC como una minera: no se le pide ese dato.
-  const { data: clienteDetalle } = useCliente(cotizacion?.idCliente ?? 0);
-  const clienteNatural = !!clienteDetalle?.tipoDocumento && codigoTipoDocumento(clienteDetalle.tipoDocumento) !== 'RUC';
+  const { data: clienteDetalle, isLoading: cargandoCliente } = useCliente(cotizacion?.idCliente ?? 0);
+  const clienteNatural = esClientePersonaNatural(clienteDetalle);
   const { mutate: cambiarEstado, isPending: isChangingState } = useCambiarEstado(cotizacionId || 0);
   const envioMarcado = useMarcarEnviada(cotizacionId || 0);
   const respuestaFlujo = useRegistrarRespuestaFlujo(cotizacionId || 0);
@@ -278,7 +278,8 @@ const CotizacionDetalleContenido: React.FC = () => {
     accionPrincipal = (
       <AprobacionCotizacion id={cotizacionId} estado={estado} asistente={asistente} jefe={jefe} onEnviar={() => setShowEnvioModal(true)} />
     );
-  } else if (clienteAcepto && ordenesListas && !ordenGenerada && asistente) {
+  } else if (clienteAcepto && ordenesListas && !ordenGenerada && asistente && !clienteNatural && !cargandoCliente) {
+    // Las órdenes de compra son solo para clientes con RUC: con DNI no hay botón. Mientras se lee el documento tampoco, para que no parpadee.
     accionPrincipal = (
       <Button onClick={() => setShowOrdenModal(true)}>
         <ShoppingCart className="mr-2 h-4 w-4" aria-hidden="true" />
@@ -552,7 +553,7 @@ const CotizacionDetalleContenido: React.FC = () => {
           detalles={detalles}
         />
       )}
-      {!ordenGenerada && (
+      {!ordenGenerada && !clienteNatural && (
         <RegistrarOrdenCompraModal
           isOpen={showOrdenModal}
           onClose={() => setShowOrdenModal(false)}
