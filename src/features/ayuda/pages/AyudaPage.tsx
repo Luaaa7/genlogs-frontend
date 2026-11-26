@@ -1,17 +1,27 @@
-import { Building2, ChevronDown, ClipboardList, FileText, PackageSearch, Search, ShieldCheck, Truck, UserPlus } from "lucide-react"
+import { ArrowRight, Building2, ChevronDown, ClipboardList, FileText, HelpCircle, Mail, PackageSearch, Search, ShieldCheck, Truck, UserPlus } from "lucide-react"
+import { EncabezadoPortal } from "@/features/portal-cliente/components/EncabezadoPortal"
+import { ENTRADA_TARJETA, ICONO_TARJETA, TARJETA_ELEVABLE, TARJETA_PORTAL, retardoEntrada } from "@/features/portal-cliente/lib/estilosTarjeta"
 import { useState, type KeyboardEvent } from "react"
 import { Link } from "react-router-dom"
 import { puedeEntrarAlPortal } from "@/lib/sesiones"
 import { useEsPersonalConSesion } from "../lib/sesionAyuda"
 
-const PARA_CLIENTES = [
-  { Icono: ClipboardList, titulo: "Pedir una cotización", texto: "Usa la Solicitud rápida de la página principal. Escribe la marca y el N.º de parte si los tienes." },
-  { Icono: UserPlus, titulo: "Crear tu acceso", texto: "Regístrate con el RUC de tu empresa (empieza con 10 o 20). Si tu empresa ya es cliente, el Jefe Administrativo activa tu acceso." },
-  { Icono: FileText, titulo: "Aprobar o rechazar una cotización", texto: "En el portal, entra a Mis cotizaciones. Puedes decidir hasta la fecha de validez." },
-  { Icono: Truck, titulo: "Seguir tus pedidos y despachos", texto: "En el portal revisa Mis pedidos y Mis despachos para ver en qué etapa está cada uno." },
+interface GuiaAyuda {
+  Icono: typeof ClipboardList
+  titulo: string
+  texto: string
+  /** Acceso directo a la página que explica la guía (solo rutas que ya existen). */
+  enlace?: { texto: string; a: string; soloVisitante?: boolean }
+}
+
+const PARA_CLIENTES: GuiaAyuda[] = [
+  { Icono: ClipboardList, titulo: "Pedir una cotización", texto: "Usa la Solicitud rápida de la página principal. Escribe la marca y el N.º de parte si los tienes.", enlace: { texto: "Ir a la Solicitud rápida", a: "/#solicitud" } },
+  { Icono: UserPlus, titulo: "Crear tu acceso", texto: "Regístrate con el RUC de tu empresa (empieza con 10 o 20). Si tu empresa ya es cliente, el Jefe Administrativo activa tu acceso.", enlace: { texto: "Crear mi acceso", a: "/portal/registro", soloVisitante: true } },
+  { Icono: FileText, titulo: "Aprobar o rechazar una cotización", texto: "En el portal, entra a Mis cotizaciones. Puedes decidir hasta la fecha de validez.", enlace: { texto: "Ir a Mis cotizaciones", a: "/portal/cotizaciones" } },
+  { Icono: Truck, titulo: "Seguir tus pedidos y despachos", texto: "En el portal revisa Mis pedidos y Mis despachos para ver en qué etapa está cada uno.", enlace: { texto: "Ir a Mis pedidos", a: "/portal/pedidos" } },
 ]
 
-const PARA_EL_PERSONAL = [
+const PARA_EL_PERSONAL: GuiaAyuda[] = [
   { Icono: FileText, titulo: "Cotizaciones", texto: "Se preparan, pasan por la aprobación del Jefe Administrativo y recién después se envían al cliente." },
   { Icono: Building2, titulo: "Órdenes de compra", texto: "Sube el PDF de la orden de la minera, revisa lo que leyó el sistema y confírmala." },
   { Icono: ShieldCheck, titulo: "Despachos", texto: "Avanzan por etapas. Para pasar a tránsito y a entregado, el pase y el SCTR deben estar vigentes." },
@@ -26,21 +36,43 @@ const PREGUNTAS = [
   { pregunta: "¿Cómo me comunico con GENLOGS?", respuesta: "En la página de Contacto están el correo de ventas y los demás datos de contacto." },
 ]
 
-function Tarjetas({ items }: { items: typeof PARA_CLIENTES }) {
+/** Guías en tarjetas con icono, título, texto y, si existe, el acceso a la página de la guía. */
+function Tarjetas({ items, conSesionCliente = false }: { items: GuiaAyuda[]; conSesionCliente?: boolean }) {
   return (
-    <div className="mt-6 grid gap-4 sm:grid-cols-2">
-      {items.map(({ Icono, titulo, texto }) => (
-        <article key={titulo} className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent">
-            <Icono className="h-5 w-5" aria-hidden="true" />
-          </span>
-          <h3 className="mt-4 font-semibold">{titulo}</h3>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">{texto}</p>
-        </article>
-      ))}
+    <div className="mt-5 grid gap-4 sm:grid-cols-2">
+      {items.map(({ Icono, titulo, texto, enlace }, indice) => {
+        const mostrarEnlace = enlace && !(enlace.soloVisitante && conSesionCliente)
+        return (
+          <article key={titulo} style={retardoEntrada(indice)} className={`group flex flex-col p-5 sm:p-6 ${TARJETA_PORTAL} ${TARJETA_ELEVABLE} ${ENTRADA_TARJETA}`}>
+            <div className="flex items-start gap-4">
+              <span aria-hidden="true" className={ICONO_TARJETA}><Icono className="h-5 w-5" /></span>
+              <div className="min-w-0">
+                <h3 className="text-base font-semibold text-[#183153] dark:text-slate-50">{titulo}</h3>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">{texto}</p>
+              </div>
+            </div>
+            {mostrarEnlace && enlace && (
+              <div className="mt-auto pt-4">
+                {enlace.a.startsWith("/#") ? (
+                  <a href={enlace.a} className="inline-flex items-center gap-1 rounded-sm text-sm font-semibold text-[#2E6BA8] hover:text-[#1E3A5F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-[#93C5FD] dark:hover:text-white">
+                    {enlace.texto}<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 motion-reduce:transition-none" aria-hidden="true" />
+                  </a>
+                ) : (
+                  <Link to={enlace.a} className="inline-flex items-center gap-1 rounded-sm text-sm font-semibold text-[#2E6BA8] hover:text-[#1E3A5F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-[#93C5FD] dark:hover:text-white">
+                    {enlace.texto}<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 motion-reduce:transition-none" aria-hidden="true" />
+                  </Link>
+                )}
+              </div>
+            )}
+          </article>
+        )
+      })}
     </div>
   )
 }
+
+const TITULO_SECCION = "flex items-center gap-2 text-xl font-semibold text-[#183153] dark:text-slate-50"
+const ENLACE = "font-semibold text-[#2E6BA8] hover:underline dark:text-[#93C5FD]"
 
 type Guia = "clientes" | "personal"
 
@@ -53,13 +85,13 @@ const PESTANAS: { id: Guia; texto: string }[] = [
 function GuiaClientes({ conSesionCliente = false }: { conSesionCliente?: boolean }) {
   return (
     <section aria-labelledby="ayuda-clientes">
-      <h2 id="ayuda-clientes" className="flex items-center gap-2 text-xl font-semibold">
-        <PackageSearch className="h-5 w-5 text-accent" aria-hidden="true" /> Para clientes
+      <h2 id="ayuda-clientes" className={TITULO_SECCION}>
+        <PackageSearch className="h-5 w-5 text-[#2E6BA8] dark:text-[#60A5FA]" aria-hidden="true" /> Para clientes
       </h2>
-      <Tarjetas items={PARA_CLIENTES} />
+      <Tarjetas items={PARA_CLIENTES} conSesionCliente={conSesionCliente} />
       {!conSesionCliente && (
         <p className="mt-4 text-sm text-muted-foreground">
-          <Link to="/portal/ingreso" className="font-semibold text-accent hover:underline">Ingresar al portal</Link>
+          <Link to="/portal/ingreso" className={ENLACE}>Ingresar al portal</Link>
         </p>
       )}
     </section>
@@ -69,12 +101,12 @@ function GuiaClientes({ conSesionCliente = false }: { conSesionCliente?: boolean
 function GuiaPersonal() {
   return (
     <section aria-labelledby="ayuda-personal">
-      <h2 id="ayuda-personal" className="flex items-center gap-2 text-xl font-semibold">
-        <ShieldCheck className="h-5 w-5 text-accent" aria-hidden="true" /> Para el personal de GENLOGS
+      <h2 id="ayuda-personal" className={TITULO_SECCION}>
+        <ShieldCheck className="h-5 w-5 text-[#2E6BA8] dark:text-[#60A5FA]" aria-hidden="true" /> Para el personal de GENLOGS
       </h2>
       <Tarjetas items={PARA_EL_PERSONAL} />
       <p className="mt-4 text-sm text-muted-foreground">
-        <Link to="/login" className="font-semibold text-accent hover:underline">Acceso del personal</Link>
+        <Link to="/login" className={ENLACE}>Acceso del personal</Link>
       </p>
     </section>
   )
@@ -94,8 +126,8 @@ function GuiasEnPestanas() {
   }
 
   return (
-    <div className="mt-10">
-      <div role="tablist" aria-label="Guías de ayuda" className="flex gap-2 border-b border-border">
+    <div>
+      <div role="tablist" aria-label="Guías de ayuda" className="inline-flex flex-wrap gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm dark:border-white/10 dark:bg-[#0F213D]">
         {PESTANAS.map(({ id, texto }, indice) => (
           <button
             key={id}
@@ -107,15 +139,15 @@ function GuiasEnPestanas() {
             tabIndex={activa === id ? 0 : -1}
             onClick={() => setActiva(id)}
             onKeyDown={(e) => alTeclear(e, indice)}
-            className={`-mb-px border-b-2 px-4 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-              activa === id ? "border-accent text-accent" : "border-transparent text-muted-foreground hover:text-foreground"
+            className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              activa === id ? "bg-[#2E6BA8] text-white shadow-sm dark:bg-[#2563EB]" : "text-muted-foreground hover:bg-slate-100 hover:text-foreground dark:hover:bg-white/5"
             }`}
           >
             {texto}
           </button>
         ))}
       </div>
-      <div role="tabpanel" id={`guia-${activa}`} aria-labelledby={`pestana-${activa}`} className="mt-8">
+      <div role="tabpanel" id={`guia-${activa}`} aria-labelledby={`pestana-${activa}`} className="mt-6">
         {activa === "clientes" ? <GuiaClientes /> : <GuiaPersonal />}
       </div>
     </div>
@@ -131,42 +163,47 @@ export function AyudaPage() {
   const conSesionCliente = !esPersonal && puedeEntrarAlPortal()
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-      <p className="text-sm font-semibold uppercase tracking-wide text-accent">Ayuda</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight">¿En qué te ayudamos?</h1>
-      <p className="mt-4 max-w-2xl leading-7 text-muted-foreground">
-        {esPersonal
+    <div className="mx-auto flex max-w-7xl flex-col gap-10 px-4 py-8 sm:px-6 lg:px-8">
+      <EncabezadoPortal
+        etiqueta="Ayuda"
+        titulo="¿En qué te ayudamos?"
+        descripcion={esPersonal
           ? "Una guía rápida del portal para clientes y del sistema para el personal de GENLOGS."
           : "Una guía rápida para usar el portal de clientes de GENLOGS."}
-      </p>
+        ilustracion="ayuda"
+      />
 
-      {esPersonal ? (
-        <GuiasEnPestanas />
-      ) : (
-        <div className="mt-12">
-          <GuiaClientes conSesionCliente={conSesionCliente} />
-        </div>
-      )}
+      {esPersonal ? <GuiasEnPestanas /> : <GuiaClientes conSesionCliente={conSesionCliente} />}
 
-      <section aria-labelledby="ayuda-preguntas" className="mt-12">
-        <h2 id="ayuda-preguntas" className="text-xl font-semibold">Preguntas frecuentes</h2>
-        <div className="mt-6 divide-y divide-border rounded-xl border border-border bg-card">
+      <section aria-labelledby="ayuda-preguntas">
+        <h2 id="ayuda-preguntas" className={TITULO_SECCION}>
+          <HelpCircle className="h-5 w-5 text-[#2E6BA8] dark:text-[#60A5FA]" aria-hidden="true" />Preguntas frecuentes
+        </h2>
+        <div className="mt-5 grid gap-3">
           {PREGUNTAS.map(({ pregunta, respuesta }) => (
-            <details key={pregunta} className="group px-5 py-4">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <details key={pregunta} className="group rounded-xl border border-slate-200 bg-white shadow-sm transition-colors open:border-[#2E6BA8]/40 dark:border-white/10 dark:bg-[#0F213D] dark:open:border-[#60A5FA]/40">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-xl px-5 py-4 font-semibold text-[#183153] hover:bg-[#EEF3F8]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-slate-100 dark:hover:bg-white/[0.03] [&::-webkit-details-marker]:hidden">
                 {pregunta}
-                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden="true" />
+                <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#2E6BA8]/10 text-[#2E6BA8] transition-transform group-open:rotate-180 dark:bg-[#60A5FA]/10 dark:text-[#93C5FD]">
+                  <ChevronDown className="h-4 w-4" />
+                </span>
               </summary>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">{respuesta}</p>
+              <p className="px-5 pb-4 text-sm leading-6 text-muted-foreground">{respuesta}</p>
             </details>
           ))}
         </div>
       </section>
 
-      <p className="mt-10 text-sm text-muted-foreground">
-        ¿No encontraste lo que buscabas?{" "}
-        <Link to="/contacto" className="font-semibold text-accent hover:underline">Contacto</Link>
-      </p>
+      <div className="flex flex-col items-start gap-4 rounded-2xl border border-slate-200 bg-gradient-to-r from-[#EEF3F8] to-white p-5 shadow-sm dark:border-white/10 dark:from-[#10213B] dark:to-[#0F213D] sm:flex-row sm:items-center sm:p-6">
+        <span aria-hidden="true" className={ICONO_TARJETA}><Mail className="h-5 w-5" /></span>
+        <p className="text-sm text-muted-foreground">
+          <span className="block text-base font-semibold text-[#183153] dark:text-slate-50">¿No encontraste lo que buscabas?</span>
+          Escríbenos desde la página de contacto.
+        </p>
+        <Link to="/contacto" className="inline-flex items-center gap-1.5 rounded-lg bg-[#FACC15] px-4 py-2 text-sm font-bold text-[#183153] shadow-sm hover:bg-[#EAB308] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:ml-auto">
+          Contacto
+        </Link>
+      </div>
     </div>
   )
 }

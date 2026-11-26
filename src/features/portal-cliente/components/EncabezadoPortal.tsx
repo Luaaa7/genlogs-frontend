@@ -18,13 +18,15 @@ interface EncabezadoPortalProps {
   ilustracion?: IlustracionEncabezado
   /** Píldoras con totales reales bajo la descripción; sin datos no se muestran. No usa listas, para no mezclarse con las tarjetas. */
   resumen?: DatoResumen[]
+  /** Texto de la etiqueta dorada; por defecto «Portal del cliente». */
+  etiqueta?: string
 }
 
 /**
  * Encabezado del portal con el lenguaje de Repuestos: azul acero suave, retícula técnica, la cordillera de
  * GenLogs, la etiqueta dorada y, opcionalmente, la ilustración de la sección y un resumen con cifras reales.
  */
-export function EncabezadoPortal({ titulo, descripcion, accion, ilustracion, resumen }: EncabezadoPortalProps) {
+export function EncabezadoPortal({ titulo, descripcion, accion, ilustracion, resumen, etiqueta }: EncabezadoPortalProps) {
   return (
     <header className="relative isolate overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-[#EEF3F8] via-[#F4F7FB] to-[#E3ECF6] px-5 py-7 shadow-sm dark:border-white/10 dark:from-[#10213B] dark:via-[#0D1C36] dark:to-[#0B1830] sm:px-8 sm:py-8">
       <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 -z-10 w-full sm:w-[70%] lg:w-[55%]">
@@ -40,7 +42,7 @@ export function EncabezadoPortal({ titulo, descripcion, accion, ilustracion, res
       <div aria-hidden="true" className="pointer-events-none absolute -left-24 -top-24 -z-10 h-64 w-64 rounded-full bg-[#2E6BA8]/10 blur-3xl dark:bg-[#2E6BA8]/25" />
       <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div className="max-w-2xl">
-          <EtiquetaPortal />
+          <EtiquetaPortal texto={etiqueta} />
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#183153] dark:text-foreground sm:text-4xl">{titulo}</h1>
           {descripcion && <p className="mt-2 text-muted-foreground sm:text-lg">{descripcion}</p>}
           {resumen && resumen.length > 0 && (

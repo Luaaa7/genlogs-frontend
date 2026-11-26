@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 
-export type IlustracionVacia = "pedidos" | "cotizaciones" | "comprobantes" | "despachos" | "repuestos" | "busqueda"
+export type IlustracionVacia = "pedidos" | "cotizaciones" | "comprobantes" | "despachos" | "repuestos" | "busqueda" | "reclamos"
 
 // Azul acero para los trazos y ámbar para el detalle; en oscuro los trazos aclaran para no perderse.
 const TRAZO = "fill-none stroke-[#1E3A5F] dark:stroke-slate-300"
@@ -50,6 +50,15 @@ function Dibujo({ tipo }: { tipo: IlustracionVacia }) {
           <circle cx="80" cy="60" r="26" className={TRAZO} strokeWidth="9" strokeDasharray="7 6" />
           <circle cx="80" cy="60" r="19" className={`${SUAVE} ${TRAZO}`} strokeWidth="2" />
           <circle cx="80" cy="60" r="7" className={AMBAR} strokeWidth="2" />
+        </>
+      )
+    case "reclamos":
+      return (
+        <>
+          <path d="M50 20h56a8 8 0 0 1 8 8v34a8 8 0 0 1-8 8H78l-16 14 3-14H50a8 8 0 0 1-8-8V28a8 8 0 0 1 8-8z" className={`${SUAVE} ${TRAZO}`} strokeWidth="2" strokeLinejoin="round" />
+          <path d="M78 30v18" className={TRAZO} strokeWidth="4" strokeLinecap="round" />
+          <circle cx="78" cy="58" r="2.5" className="fill-[#1E3A5F] dark:fill-slate-300" />
+          <circle cx="112" cy="24" r="8" className={AMBAR} strokeWidth="2" />
         </>
       )
     case "busqueda":

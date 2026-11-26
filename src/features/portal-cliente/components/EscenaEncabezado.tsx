@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils/utils"
 
-export type IlustracionEncabezado = "pedidos" | "cotizaciones" | "comprobantes" | "despachos"
+export type IlustracionEncabezado = "pedidos" | "cotizaciones" | "comprobantes" | "despachos" | "reclamos" | "ayuda" | "contacto"
 
 /**
  * Fondo del encabezado del portal: retícula técnica y cordillera de GenLogs. El objeto de cada sección
@@ -28,6 +28,9 @@ const VISTA: Record<IlustracionEncabezado, string> = {
   cotizaciones: "0 0 132 146",
   comprobantes: "0 0 146 152",
   despachos: "-32 -4 234 118",
+  reclamos: "0 0 190 150",
+  ayuda: "0 0 190 150",
+  contacto: "0 0 190 150",
 }
 
 /** Objeto de la sección (portapapeles, cotización, comprobante o camión), con su propio tamaño. */
@@ -38,6 +41,9 @@ export function ObjetoEncabezado({ ilustracion, className }: { ilustracion: Ilus
       {ilustracion === "cotizaciones" && <Cotizacion />}
       {ilustracion === "comprobantes" && <Comprobante />}
       {ilustracion === "despachos" && <Camion />}
+      {ilustracion === "reclamos" && <Reclamo />}
+      {ilustracion === "ayuda" && <Ayuda />}
+      {ilustracion === "contacto" && <Contacto />}
     </svg>
   )
 }
@@ -123,6 +129,56 @@ function Camion() {
         </g>
       ))}
       <path d="M-30 110h250" className="stroke-[#1E3A5F]/25 dark:stroke-white/15" strokeWidth="2" />
+    </g>
+  )
+}
+
+/** Globo de aviso con «!» sobre un camión pequeño: algo pasó con un pedido. */
+function Reclamo() {
+  return (
+    <g>
+      <g transform="translate(70 92) scale(0.48)">
+        <Camion />
+      </g>
+      <path d="M14 8h96a12 12 0 0 1 12 12v50a12 12 0 0 1-12 12H58l-24 20 4-20H14A12 12 0 0 1 2 70V20A12 12 0 0 1 14 8z" className={PAPEL} />
+      <path d="M14 8h96a12 12 0 0 1 12 12v50a12 12 0 0 1-12 12H58l-24 20 4-20H14A12 12 0 0 1 2 70V20A12 12 0 0 1 14 8z" fill="none" className="stroke-[#1E3A5F] dark:stroke-[#93C5FD]" strokeWidth="4" />
+      <rect x="56" y="22" width="12" height="34" rx="6" className="fill-[#1E3A5F] dark:fill-[#0B1830]" />
+      <circle cx="62" cy="68" r="7" className="fill-[#1E3A5F] dark:fill-[#0B1830]" />
+      <circle cx="122" cy="14" r="11" className={AMARILLO} />
+    </g>
+  )
+}
+
+/** Libro abierto con una moneda «?»: guías para resolver dudas. */
+function Ayuda() {
+  return (
+    <g>
+      <path d="M10 44c26-10 52-10 76 6v92c-24-16-50-16-76-6z" className={AZUL} />
+      <path d="M162 44c-26-10-52-10-76 6v92c24-16 50-16 76-6z" className="fill-[#1E3A5F] dark:fill-[#24497A]" />
+      <path d="M18 40c24-8 46-6 66 8v86c-20-12-42-14-66-6z" className={PAPEL} />
+      <path d="M154 40c-24-8-46-6-66 8v86c20-12 42-14 66-6z" className={PAPEL} />
+      {[62, 76, 90, 104].map((y) => (
+        <g key={y}>
+          <path d={`M30 ${y - 4}c14-4 28-3 44 3`} fill="none" className={LINEA} strokeWidth="3" strokeLinecap="round" />
+          <path d={`M142 ${y - 4}c-14-4-28-3-44 3`} fill="none" className={LINEA} strokeWidth="3" strokeLinecap="round" />
+        </g>
+      ))}
+      <circle cx="150" cy="30" r="26" className={AMARILLO} />
+      <path d="M141 23a9 9 0 1 1 13 8c-3 2-4 4-4 7" fill="none" className="stroke-[#1E3A5F]" strokeWidth="5" strokeLinecap="round" />
+      <circle cx="150" cy="46" r="3.5" className="fill-[#1E3A5F]" />
+    </g>
+  )
+}
+
+/** Sobre de correo y globo de conversación: escríbenos. */
+function Contacto() {
+  return (
+    <g>
+      <rect x="8" y="46" width="128" height="88" rx="10" className={AZUL} />
+      <rect x="16" y="54" width="112" height="72" rx="6" className={PAPEL} />
+      <path d="M16 60l56 40 56-40" fill="none" className="stroke-[#2E6BA8] dark:stroke-[#3B82F6]" strokeWidth="6" strokeLinejoin="round" />
+      <path d="M118 6h56a12 12 0 0 1 12 12v34a12 12 0 0 1-12 12h-22l-18 16 3-16h-19a12 12 0 0 1-12-12V18a12 12 0 0 1 12-12z" className={AMARILLO} />
+      {[132, 146, 160].map((x) => <circle key={x} cx={x} cy="35" r="5" className="fill-[#1E3A5F]" />)}
     </g>
   )
 }
