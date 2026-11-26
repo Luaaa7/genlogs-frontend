@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
-import { ArrowRight, Building2, Check, Loader2, Lock, Search, ShieldCheck } from "lucide-react"
+import { ArrowRight, Building2, Check, Loader2, Lock, Search, ShieldCheck, UserRound } from "lucide-react"
 import { leerVolver } from "@/api/contratos/registro"
 import { ErrorBanner } from "@/components/ui/ErrorBanner"
 import { Input } from "@/components/ui/input"
@@ -10,6 +10,7 @@ import { AvisoServidorLento } from "@/components/ui/AvisoServidorLento"
 import { cerrarSesionCliente, leerSesionCliente, marcarPerfilCompleto } from "@/lib/sesiones"
 import { useFormularioEmpresa, type EstadoRuc } from "../hooks/useFormularioEmpresa"
 import { LineasTopograficas } from "../components/LineasTopograficas"
+import { SelectorTipoDocumento } from "../components/SelectorTipoDocumento"
 
 const PASOS = [
   { titulo: "Tu cuenta", estado: "hecho" },
@@ -29,8 +30,10 @@ export function CompletarEmpresaPage() {
   const [pendiente, setPendiente] = useState("")
   const nombreSesion = leerSesionCliente()?.nombre ?? ""
   const {
-    error, cargando, tardaMucho, razonSocial, avisoRuc, rucConsultado, estadoRuc, cambiarRuc, cambiarRazonSocial, enviar,
+    error, cargando, tardaMucho, tipo, documento, contacto, razonSocial, avisoRuc, rucConsultado, estadoRuc,
+    cambiarTipo, cambiarRuc, cambiarContacto, cambiarRazonSocial, enviar,
   } = useFormularioEmpresa({
+    nombreInicial: nombreSesion,
     alGuardar: (nombreContacto) => {
       marcarPerfilCompleto(nombreContacto)
       navigate(leerVolver(location.search, "/portal/solicitud"), { replace: true })
@@ -51,7 +54,8 @@ export function CompletarEmpresaPage() {
     )
   }
 
-  const bordeRuc = estadoRuc === "encontrado" ? "border-2 border-success" : ""
+  const esDni = tipo === "DNI"
+  const bordeRuc = !esDni && estadoRuc === "encontrado" ? "border-2 border-success" : ""
 
   return (
     <div className="space-y-0">
@@ -98,12 +102,16 @@ export function CompletarEmpresaPage() {
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-accent-foreground" aria-hidden="true"><Building2 className="h-5 w-5" /></span>
             <div>
               <h2 className="text-lg font-semibold">Identificación</h2>
-              <p className="text-sm text-muted-foreground">Escribe tu RUC y completamos la razón social por ti</p>
+              <p className="text-sm text-muted-foreground">
+                {esDni ? "Escribe tu DNI y tu nombre completo" : "Escribe tu RUC y completamos la razón social por ti"}
+              </p>
             </div>
           </div>
 
+          <SelectorTipoDocumento valor={tipo} alCambiar={cambiarTipo} prefijo="empresa" />
+
           <div>
-            <Label htmlFor="empresa-ruc">RUC</Label>
+            <Label htmlFor="empresa-ruc">{esDni ? "DNI" : "RUC"}</Label>
             <div className="relative mt-2">
               <Search className="pointer-events-none absolute left-3.5 top-6 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
               <Input
@@ -111,19 +119,20 @@ export function CompletarEmpresaPage() {
                 name="ruc"
                 inputMode="numeric"
                 autoComplete="off"
-                maxLength={11}
+                maxLength={esDni ? 8 : 11}
+                value={documento}
                 className={`h-12 pl-10 pr-3 text-lg sm:pr-44 font-semibold tracking-wider tabular-nums transition-colors ${bordeRuc}`}
                 onChange={(e) => cambiarRuc(e.target.value)}
-                aria-describedby={avisoRuc ? "empresa-ruc-aviso" : undefined}
+                aria-describedby={avisoRuc && !esDni ? "empresa-ruc-aviso" : undefined}
                 required
               />
               <span className="mt-2 flex sm:absolute sm:right-2.5 sm:top-6 sm:mt-0 sm:-translate-y-1/2">
-                {estadoRuc === "buscando" && (
+                {!esDni && estadoRuc === "buscando" && (
                   <span className="flex h-7 items-center gap-1.5 rounded-full bg-accent/10 px-2.5 text-xs font-semibold text-accent">
                     <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />Buscando…
                   </span>
                 )}
-                {estadoRuc === "encontrado" && (
+                {!esDni && estadoRuc === "encontrado" && (
                   <span className="portal-aparece flex h-7 items-center gap-1 rounded-full bg-success px-2.5 text-xs font-semibold text-success-foreground">
                     <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />Encontrado en SUNAT
                   </span>
@@ -132,6 +141,7 @@ export function CompletarEmpresaPage() {
             </div>
           </div>
 
+          {!esDni && (
           <div>
             <Label htmlFor="empresa-razon">Razón social</Label>
             <Input
@@ -146,16 +156,18 @@ export function CompletarEmpresaPage() {
             />
             {avisoRuc && <p id="empresa-ruc-aviso" role="status" className="mt-1.5 text-xs text-muted-foreground">{avisoRuc}</p>}
           </div>
+          )}
 
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
-              <Label htmlFor="empresa-contacto">Persona de contacto</Label>
+              <Label htmlFor="empresa-contacto">{esDni ? "Nombres y apellidos" : "Persona de contacto"}</Label>
               <Input
                 id="empresa-contacto"
                 name="nombreContacto"
                 autoComplete="name"
                 maxLength={150}
-                defaultValue={nombreSesion}
+                value={contacto}
+                onChange={(e) => cambiarContacto(e.target.value)}
                 className="mt-2 h-11"
                 required
               />
@@ -168,7 +180,11 @@ export function CompletarEmpresaPage() {
 
           <div className="flex items-start gap-3 rounded-xl bg-accent/10 px-4 py-3.5">
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground" aria-hidden="true"><ShieldCheck className="h-4 w-4" /></span>
-            <p className="text-sm leading-relaxed">Validamos el RUC en SUNAT. Si tu empresa ya tiene cuenta en el portal, GENLOGS revisará tu acceso y te avisará por correo.</p>
+            <p className="text-sm leading-relaxed">
+              {esDni
+                ? "Para compras con DNI emitimos boleta de venta y no se requiere orden de compra."
+                : "Validamos el RUC en SUNAT. Si tu empresa ya tiene cuenta en el portal, GENLOGS revisará tu acceso y te avisará por correo."}
+            </p>
           </div>
 
           {error && <ErrorBanner message={error} />}
@@ -184,7 +200,9 @@ export function CompletarEmpresaPage() {
           </div>
         </form>
 
-        <ResumenEmpresa ruc={rucConsultado} razonSocial={razonSocial} estado={estadoRuc} />
+        {esDni
+          ? <ResumenTitular dni={documento} nombre={contacto} />
+          : <ResumenEmpresa ruc={rucConsultado} razonSocial={razonSocial} estado={estadoRuc} />}
       </div>
     </div>
   )
@@ -227,6 +245,44 @@ function ResumenEmpresa({ ruc, razonSocial, estado }: { ruc: string; razonSocial
           </span>
           <p className="font-semibold">{estado === "buscando" ? "Buscando tu empresa…" : "Escribe tu RUC"}</p>
           <p className="max-w-[220px] text-sm leading-relaxed text-muted-foreground">Aquí verás el nombre de tu empresa y su RUC.</p>
+        </div>
+      )}
+      <p className="mx-5 mb-5 flex items-center gap-2.5 rounded-xl bg-muted px-3.5 py-3 text-xs leading-relaxed text-muted-foreground">
+        <Lock className="h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
+        Solo usamos estos datos para tus cotizaciones y comprobantes.
+      </p>
+    </aside>
+  )
+}
+
+/** Lo que la persona ve de sí misma mientras llena el formulario con DNI (persona natural). */
+function ResumenTitular({ dni, nombre }: { dni: string; nombre: string }) {
+  const titular = nombre.trim()
+  const conDatos = dni.length === 8
+
+  return (
+    <aside aria-label="Resumen de tus datos" className="portal-sube portal-retraso-3 overflow-hidden rounded-2xl bg-card shadow-xl">
+      {conDatos ? (
+        <div className="portal-sube">
+          <div className="space-y-3.5 bg-brand-blue p-5 text-white">
+            <p className="text-xs font-semibold tracking-[0.06em] text-white/80">TITULAR</p>
+            <div className="flex items-center gap-3.5">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white text-lg font-bold text-brand-navy" aria-hidden="true">{iniciales(titular) || "—"}</span>
+              <div className="min-w-0">
+                <p className="break-words font-bold leading-snug">{titular || "Escribe tu nombre completo"}</p>
+                <p className="text-sm tabular-nums text-white/80">DNI {dni}</p>
+              </div>
+            </div>
+          </div>
+          <p className="px-5 py-4 text-sm">Persona natural: emitimos boleta de venta.</p>
+        </div>
+      ) : (
+        <div className="m-5 flex flex-col items-center gap-3 rounded-xl border-2 border-dashed border-border px-5 py-7 text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-muted-foreground" aria-hidden="true">
+            <UserRound className="h-6 w-6" />
+          </span>
+          <p className="font-semibold">Escribe tu DNI</p>
+          <p className="max-w-[220px] text-sm leading-relaxed text-muted-foreground">Aquí verás tu nombre y tu DNI.</p>
         </div>
       )}
       <p className="mx-5 mb-5 flex items-center gap-2.5 rounded-xl bg-muted px-3.5 py-3 text-xs leading-relaxed text-muted-foreground">

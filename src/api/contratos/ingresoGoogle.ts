@@ -32,9 +32,17 @@ export interface CuentaPortalResponse {
   empresa?: string | null
 }
 
+/** Tipo de documento con el que se registra la cuenta: empresa o persona con negocio (RUC) o persona natural (DNI). */
+export type TipoDocumentoPortal = "RUC" | "DNI"
+
+/**
+ * `ruc` lleva el número del documento (RUC de 11 dígitos o DNI de 8). Sin `tipoDocumento` el servidor
+ * entiende RUC. Con DNI no hay razón social: el titular es `nombreContacto`.
+ */
 export interface CompletarEmpresaRequest {
+  tipoDocumento?: TipoDocumentoPortal
   ruc: string
-  razonSocial: string
+  razonSocial?: string
   nombreContacto: string
   telefono?: string
 }
@@ -42,6 +50,11 @@ export interface CompletarEmpresaRequest {
 export interface CompletarEmpresaResponse {
   pendiente: boolean
   mensaje: string
+}
+
+/** DNI de persona natural: 8 dígitos, igual que el backend. */
+export function dniValido(dni: string): boolean {
+  return /^\d{8}$/.test(dni)
 }
 
 /** RUC de empresa (20) o de persona con negocio (10), igual que el backend. */
