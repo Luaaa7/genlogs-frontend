@@ -137,7 +137,11 @@ export const ordenesCompraApi = {
   },
   confirmarOc: (id: number, body: ConfirmarOcCliente) => {
     if (usarMock) return Promise.resolve(reemplazar(id, { ...body, ocConfirmadaPor: 1 }))
-    return axiosClient.patch<OrdenCompra>(`/ordenes-compra/${id}/confirmar-oc`, body).then((r) => r.data)
+    return axiosClient.patch<OrdenCompra>(`/ordenes-compra/${id}/confirmar-oc`, {
+      numeroOc: body.numeroOcCliente,
+      fechaEmision: body.fechaEmisionCliente,
+      monto: body.montoOcCliente,
+    }).then((r) => r.data)
   },
     seguimiento: (id: number) =>
     axiosClient.get<SeguimientoOrdenCompra[]>(`/ordenes-compra/${id}/seguimiento`).then((r) => r.data),

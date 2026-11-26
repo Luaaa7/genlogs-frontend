@@ -479,9 +479,9 @@ describe('respuesta del cliente en el detalle', () => {
     fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '118' } })
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }))
     await waitFor(() => expect(http.patch).toHaveBeenCalledWith('/ordenes-compra/15/confirmar-oc', {
-      numeroOcCliente: '0207-40',
-      fechaEmisionCliente: '2026-11-20',
-      montoOcCliente: 118,
+      numeroOc: '0207-40',
+      fechaEmision: '2026-11-20',
+      monto: 118,
     }))
     expect(http.post).not.toHaveBeenCalled()
     expect(screen.queryByText('Esta cotización ya tiene una orden de compra registrada')).toBeNull()
