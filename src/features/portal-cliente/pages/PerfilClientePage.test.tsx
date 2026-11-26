@@ -142,6 +142,36 @@ describe("PerfilClientePage (/portal/perfil)", () => {
       expect(leerSesionCliente()?.perfilCompleto).toBe(true)
     })
 
+    it("con Persona natural (DNI) oculta la razón social y guarda con tipoDocumento DNI", async () => {
+      vi.mocked(obtenerCuentaPortal).mockResolvedValueOnce(sinEmpresa)
+      vi.mocked(obtenerCuentaPortal).mockResolvedValue(cuenta)
+      vi.mocked(completarEmpresa).mockResolvedValue({ pendiente: false, mensaje: "ok" })
+      pintar()
+      const tarjeta = await screen.findByRole("region", { name: /completa los datos de tu empresa/i })
+      fireEvent.click(within(tarjeta).getByLabelText("Persona natural (DNI)"))
+
+      expect(within(tarjeta).queryByLabelText("Razón social")).toBeNull()
+      expect(within(tarjeta).getByText("Para compras con DNI emitimos boleta de venta y no se requiere orden de compra.")).toBeTruthy()
+      fireEvent.change(within(tarjeta).getByLabelText("DNI"), { target: { value: "12345678" } })
+      fireEvent.change(within(tarjeta).getByLabelText("Nombres y apellidos"), { target: { value: "Rosa Quispe" } })
+      fireEvent.click(screen.getByRole("button", { name: "Guardar datos" }))
+
+      await waitFor(() => expect(completarEmpresa).toHaveBeenCalledWith({ tipoDocumento: "DNI", ruc: "12345678", nombreContacto: "Rosa Quispe", telefono: "" }))
+      expect(leerSesionCliente()?.perfilCompleto).toBe(true)
+    })
+
+    it("con DNI de menos de 8 dígitos avisa y no llama al servidor", async () => {
+      vi.mocked(obtenerCuentaPortal).mockResolvedValue(sinEmpresa)
+      pintar()
+      const tarjeta = await screen.findByRole("region", { name: /completa los datos de tu empresa/i })
+      fireEvent.click(within(tarjeta).getByLabelText("Persona natural (DNI)"))
+      fireEvent.change(within(tarjeta).getByLabelText("DNI"), { target: { value: "123" } })
+      fireEvent.click(screen.getByRole("button", { name: "Guardar datos" }))
+
+      expect(screen.getByText("El DNI debe tener 8 dígitos.")).toBeTruthy()
+      expect(completarEmpresa).not.toHaveBeenCalled()
+    })
+
     it("si la empresa ya es cliente: cierra la sesión y muestra el mensaje de acceso pendiente", async () => {
       vi.mocked(obtenerCuentaPortal).mockResolvedValue(sinEmpresa)
       vi.mocked(completarEmpresa).mockResolvedValue({ pendiente: true, mensaje: "Tu acceso está pendiente de aprobación." })

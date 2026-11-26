@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cerrarSesionCliente, marcarPerfilCompleto } from "@/lib/sesiones"
 import { useFormularioEmpresa } from "@/features/acceso-cliente/hooks/useFormularioEmpresa"
+import { SelectorTipoDocumento } from "@/features/acceso-cliente/components/SelectorTipoDocumento"
 import { CLAVE_CUENTA_PORTAL } from "../hooks/useCuentaPortal"
 import { BotonCargando } from "./BotonCargando"
 
@@ -24,8 +25,12 @@ const FOCO = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring
 export function TarjetaDatosEmpresa({ nombreSesion }: Props) {
   const queryClient = useQueryClient()
   const [pendiente, setPendiente] = useState("")
-  const { error, cargando, tardaMucho, razonSocial, avisoRuc, estadoRuc, cambiarRuc, cambiarRazonSocial, enviar } =
+  const {
+    error, cargando, tardaMucho, tipo, documento, contacto, razonSocial, avisoRuc, estadoRuc,
+    cambiarTipo, cambiarRuc, cambiarContacto, cambiarRazonSocial, enviar,
+  } =
     useFormularioEmpresa({
+      nombreInicial: nombreSesion,
       alGuardar: (nombreContacto) => {
         marcarPerfilCompleto(nombreContacto)
         void queryClient.invalidateQueries({ queryKey: CLAVE_CUENTA_PORTAL })
@@ -45,7 +50,8 @@ export function TarjetaDatosEmpresa({ nombreSesion }: Props) {
     )
   }
 
-  const bordeRuc = estadoRuc === "encontrado" ? "border-2 border-success" : ""
+  const esDni = tipo === "DNI"
+  const bordeRuc = !esDni && estadoRuc === "encontrado" ? "border-2 border-success" : ""
 
   return (
     <section
@@ -57,25 +63,30 @@ export function TarjetaDatosEmpresa({ nombreSesion }: Props) {
         Completa los datos de tu empresa
       </h3>
       <p className="mt-1 text-sm text-amber-900 dark:text-amber-200/90">
-        Con tu RUC y Razón Social podrás emitir y aprobar tus cotizaciones. Te los pedimos una sola vez.
+        {esDni
+          ? "Con tu DNI y tu nombre podrás emitir y aprobar tus cotizaciones. Te los pedimos una sola vez."
+          : "Con tu RUC y Razón Social podrás emitir y aprobar tus cotizaciones. Te los pedimos una sola vez."}
       </p>
 
       <form onSubmit={enviar} className="mt-4 space-y-4">
+        <SelectorTipoDocumento valor={tipo} alCambiar={cambiarTipo} prefijo="perfil" />
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <Label htmlFor="perfil-ruc">RUC</Label>
+            <Label htmlFor="perfil-ruc">{esDni ? "DNI" : "RUC"}</Label>
             <Input
               id="perfil-ruc"
               name="ruc"
               inputMode="numeric"
               autoComplete="off"
-              maxLength={11}
+              maxLength={esDni ? 8 : 11}
+              value={documento}
               className={`mt-2 h-11 bg-white font-semibold tracking-wider tabular-nums dark:bg-background ${bordeRuc}`}
               onChange={(e) => cambiarRuc(e.target.value)}
-              aria-describedby={avisoRuc ? "perfil-ruc-aviso" : undefined}
+              aria-describedby={avisoRuc && !esDni ? "perfil-ruc-aviso" : undefined}
               required
             />
           </div>
+          {!esDni && (
           <div>
             <Label htmlFor="perfil-razon">Razón social</Label>
             <Input
@@ -89,8 +100,9 @@ export function TarjetaDatosEmpresa({ nombreSesion }: Props) {
               required
             />
           </div>
+          )}
         </div>
-        {avisoRuc && (
+        {avisoRuc && !esDni && (
           <p id="perfil-ruc-aviso" role="status" className="flex items-center gap-1.5 text-xs text-amber-900 dark:text-amber-200/90">
             {estadoRuc === "encontrado" && <Check className="h-3.5 w-3.5 text-success" strokeWidth={3} aria-hidden="true" />}
             {avisoRuc}
@@ -99,8 +111,8 @@ export function TarjetaDatosEmpresa({ nombreSesion }: Props) {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <Label htmlFor="perfil-contacto">Persona de contacto</Label>
-            <Input id="perfil-contacto" name="nombreContacto" autoComplete="name" maxLength={150} defaultValue={nombreSesion} className="mt-2 h-11 bg-white dark:bg-background" required />
+            <Label htmlFor="perfil-contacto">{esDni ? "Nombres y apellidos" : "Persona de contacto"}</Label>
+            <Input id="perfil-contacto" name="nombreContacto" autoComplete="name" maxLength={150} value={contacto} onChange={(e) => cambiarContacto(e.target.value)} className="mt-2 h-11 bg-white dark:bg-background" required />
           </div>
           <div>
             <Label htmlFor="perfil-telefono">Teléfono (opcional)</Label>
@@ -108,6 +120,11 @@ export function TarjetaDatosEmpresa({ nombreSesion }: Props) {
           </div>
         </div>
 
+        {esDni && (
+          <p className="text-sm text-amber-900 dark:text-amber-200/90">
+            Para compras con DNI emitimos boleta de venta y no se requiere orden de compra.
+          </p>
+        )}
         {error && <ErrorBanner message={error} />}
         {tardaMucho && <AvisoServidorLento />}
         <div className="flex justify-end">

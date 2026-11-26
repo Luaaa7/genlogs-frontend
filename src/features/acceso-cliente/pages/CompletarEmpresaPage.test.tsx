@@ -165,4 +165,94 @@ describe("CompletarEmpresaPage", () => {
       vi.useRealTimers()
     }
   })
+
+  describe("persona natural (DNI)", () => {
+    function elegirDni() {
+      fireEvent.click(screen.getByLabelText("Persona natural (DNI)"))
+    }
+
+    it("ofrece Empresa (RUC) marcado por defecto y Persona natural (DNI)", () => {
+      renderPagina()
+      expect((screen.getByLabelText("Empresa (RUC)") as HTMLInputElement).checked).toBe(true)
+      expect((screen.getByLabelText("Persona natural (DNI)") as HTMLInputElement).checked).toBe(false)
+      expect(screen.getByLabelText("Razón social")).toBeTruthy()
+    })
+
+    it("con DNI oculta la razón social, pide 8 dígitos y explica que se emite boleta", () => {
+      renderPagina()
+      elegirDni()
+
+      expect(screen.queryByLabelText("Razón social")).toBeNull()
+      expect((screen.getByLabelText("DNI") as HTMLInputElement).maxLength).toBe(8)
+      expect(screen.getByLabelText("Nombres y apellidos")).toBeTruthy()
+      expect(screen.getByText("Para compras con DNI emitimos boleta de venta y no se requiere orden de compra.")).toBeTruthy()
+      expect(screen.queryByText(/Validamos el RUC en SUNAT/)).toBeNull()
+    })
+
+    it("no consulta SUNAT con un DNI", () => {
+      renderPagina()
+      elegirDni()
+      fireEvent.change(screen.getByLabelText("DNI"), { target: { value: "12345678" } })
+      expect(publicApi.consultarRazonSocial).not.toHaveBeenCalled()
+    })
+
+    it("guarda con tipoDocumento DNI, el número y el nombre, sin razón social", async () => {
+      vi.mocked(completarEmpresa).mockResolvedValue({ pendiente: false, mensaje: "Listo" })
+      renderPagina()
+      elegirDni()
+      fireEvent.change(screen.getByLabelText("DNI"), { target: { value: "12345678" } })
+      fireEvent.change(screen.getByLabelText("Nombres y apellidos"), { target: { value: "Rosa Quispe Mamani" } })
+      fireEvent.click(screen.getByRole("button", { name: "Guardar y continuar" }))
+
+      expect(await screen.findByText("Nueva solicitud")).toBeTruthy()
+      expect(completarEmpresa).toHaveBeenCalledWith({
+        tipoDocumento: "DNI", ruc: "12345678", nombreContacto: "Rosa Quispe Mamani", telefono: "",
+      })
+      expect(leerSesionCliente()).toEqual({ nombre: "Rosa Quispe Mamani", rol: "CLIENTE", perfilCompleto: true })
+    })
+
+    it("un DNI que no tiene 8 dígitos avisa sin llamar al servidor", () => {
+      renderPagina()
+      elegirDni()
+      fireEvent.change(screen.getByLabelText("DNI"), { target: { value: "1234567" } })
+      fireEvent.click(screen.getByRole("button", { name: "Guardar y continuar" }))
+
+      expect(screen.getByText("El DNI debe tener 8 dígitos.")).toBeTruthy()
+      expect(completarEmpresa).not.toHaveBeenCalled()
+    })
+
+    it("el resumen muestra el titular y su DNI en cuanto están los 8 dígitos", () => {
+      renderPagina()
+      elegirDni()
+      const resumen = screen.getByRole("complementary", { name: "Resumen de tus datos" })
+      expect(within(resumen).getByText("Escribe tu DNI")).toBeTruthy()
+
+      fireEvent.change(screen.getByLabelText("DNI"), { target: { value: "12345678" } })
+      fireEvent.change(screen.getByLabelText("Nombres y apellidos"), { target: { value: "Rosa Quispe" } })
+      expect(within(resumen).getByText("Rosa Quispe")).toBeTruthy()
+      expect(within(resumen).getByText("DNI 12345678")).toBeTruthy()
+    })
+
+    it("al cambiar de tipo se limpia el número y volver a RUC trae la razón social", () => {
+      renderPagina()
+      fireEvent.change(screen.getByLabelText("RUC"), { target: { value: "20123456789" } })
+      elegirDni()
+      expect((screen.getByLabelText("DNI") as HTMLInputElement).value).toBe("")
+      fireEvent.click(screen.getByLabelText("Empresa (RUC)"))
+      expect((screen.getByLabelText("RUC") as HTMLInputElement).value).toBe("")
+      expect(screen.getByLabelText("Razón social")).toBeTruthy()
+    })
+
+    it("si el DNI ya es cliente: cierra la sesión y avisa que el acceso está pendiente", async () => {
+      vi.mocked(completarEmpresa).mockResolvedValue({ pendiente: true, mensaje: "Tu acceso quedó pendiente." })
+      renderPagina()
+      elegirDni()
+      fireEvent.change(screen.getByLabelText("DNI"), { target: { value: "12345678" } })
+      fireEvent.change(screen.getByLabelText("Nombres y apellidos"), { target: { value: "Rosa Quispe" } })
+      fireEvent.click(screen.getByRole("button", { name: "Guardar y continuar" }))
+
+      expect(await screen.findByText("Tu acceso quedó pendiente.")).toBeTruthy()
+      expect(localStorage.getItem("cliente_access_token")).toBeNull()
+    })
+  })
 })
