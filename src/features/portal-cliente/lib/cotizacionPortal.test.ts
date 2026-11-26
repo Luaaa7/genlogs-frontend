@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { cantidadConUnidad, estaAceptada, puedeDecidir, tonoEstadoCotizacion } from "./cotizacionPortal"
+import { cantidadConUnidad, diasParaVencer, estaAceptada, puedeDecidir, tonoEstadoCotizacion } from "./cotizacionPortal"
 
 const hoy = new Date("2026-11-12T10:00:00")
 
@@ -80,5 +80,22 @@ describe("estaAceptada", () => {
   })
   it.each(["Enviada", "Rechazada", "Anulada", "Vencida"])("«%s» no", (estado) => {
     expect(estaAceptada({ estado })).toBe(false)
+  })
+})
+
+describe("diasParaVencer", () => {
+  // 26/11/2026 10:00 en Lima (15:00 UTC).
+  const ahora = new Date("2026-11-26T15:00:00Z")
+  it("cuenta días calendario de Lima hasta la fecha de validez", () => {
+    expect(diasParaVencer("2026-11-26", ahora)).toBe(0)
+    expect(diasParaVencer("2026-11-29", ahora)).toBe(3)
+    expect(diasParaVencer("2026-11-20", ahora)).toBe(-6)
+  })
+  it("a las 23:30 de Lima todavía es el mismo día", () => {
+    expect(diasParaVencer("2026-11-26", new Date("2026-11-27T04:30:00Z"))).toBe(0)
+  })
+  it("sin fecha devuelve null", () => {
+    expect(diasParaVencer(null, ahora)).toBeNull()
+    expect(diasParaVencer(undefined, ahora)).toBeNull()
   })
 })

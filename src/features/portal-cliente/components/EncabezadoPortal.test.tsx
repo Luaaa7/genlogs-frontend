@@ -14,4 +14,11 @@ describe("EncabezadoPortal", () => {
     render(<EncabezadoPortal titulo="Mis pedidos" accion={<button type="button">Acción</button>} />)
     expect(screen.getByRole("button", { name: "Acción" })).toBeTruthy()
   })
+
+  it("muestra el resumen con cifras reales sin usar listas", () => {
+    render(<EncabezadoPortal titulo="Mis despachos" resumen={[{ icono: null, valor: 2, texto: "en camino" }]} />)
+    const resumen = screen.getByRole("group", { name: "Resumen de mis despachos" })
+    expect(resumen.textContent).toContain("2 en camino")
+    expect(screen.queryByRole("listitem")).toBeNull()
+  })
 })

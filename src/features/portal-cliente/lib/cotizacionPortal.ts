@@ -33,6 +33,18 @@ export function puedeDecidir(
   return CODIGOS_ABIERTOS.has(codigo)
 }
 
+/**
+ * Cuánto falta para que venza la oferta, en días calendario de America/Lima (0 = vence hoy;
+ * negativo = ya venció). null si la cotización no trae fecha de validez.
+ */
+export function diasParaVencer(fechaValidez: string | null | undefined, hoy: Date = new Date()): number | null {
+  if (!fechaValidez) return null
+  const [a, m, d] = diaEnLima(hoy).split("-").map(Number)
+  const [va, vm, vd] = fechaValidez.slice(0, 10).split("-").map(Number)
+  if ([a, m, d, va, vm, vd].some((n) => Number.isNaN(n))) return null
+  return Math.round((Date.UTC(va, vm - 1, vd) - Date.UTC(a, m - 1, d)) / 86_400_000)
+}
+
 /** ANULADA por código o por el nombre que muestra el portal ("Anulada"). */
 export function esCotizacionAnulada(
   cotizacion: Pick<CotizacionPortal, "estado" | "codigoEstado">,

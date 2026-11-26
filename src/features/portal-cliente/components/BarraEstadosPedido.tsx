@@ -1,10 +1,5 @@
 import { Check } from "lucide-react"
-import { ETAPAS_PEDIDO, esEstadoFinalSinCotizar, etapaDelPedido, etiquetaEstado } from "../lib/estadoPedido"
-
-const AVISO_FINAL: Record<string, string> = {
-  CANCELADA: "Si aún necesitas el repuesto, envía una nueva solicitud.",
-  RECHAZADA: "Te escribimos por correo con el motivo y, si existe, una alternativa.",
-}
+import { ETAPAS_PEDIDO, avisoEstadoFinal, esEstadoFinalSinCotizar, etapaDelPedido, etiquetaEstado } from "../lib/estadoPedido"
 
 /** Barra de seguimiento del pedido para el cliente: solo estados, sin fechas, horas ni colores de alerta (P9). */
 export function BarraEstadosPedido({ estado }: { estado: string }) {
@@ -12,7 +7,7 @@ export function BarraEstadosPedido({ estado }: { estado: string }) {
     return (
       <p role="status" className="rounded-lg border border-border bg-muted px-4 py-3 text-sm">
         <span className="font-semibold">{etiquetaEstado(estado)}.</span>{" "}
-        {AVISO_FINAL[estado]}
+        {avisoEstadoFinal(estado)}
       </p>
     )
   }

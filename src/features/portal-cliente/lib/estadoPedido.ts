@@ -21,6 +21,16 @@ const FINALES_SIN_COTIZAR: Record<string, string> = {
 /** Estados para filtrar "Mis pedidos", en el orden en que avanzan. */
 export const ESTADOS_PEDIDO: EstadoPedido[] = [...ETAPAS_PEDIDO.map((e) => e.estado), "RECHAZADA", "CANCELADA"]
 
+const AVISO_FINAL: Record<string, string> = {
+  CANCELADA: "Si aún necesitas el repuesto, envía una nueva solicitud.",
+  RECHAZADA: "Te escribimos por correo con el motivo y, si existe, una alternativa.",
+}
+
+/** Qué hacer cuando la solicitud terminó sin cotizar (cancelada o no se pudo cotizar); vacío en los demás estados. */
+export function avisoEstadoFinal(estado: string): string {
+  return AVISO_FINAL[estado] ?? ""
+}
+
 export function esEstadoFinalSinCotizar(estado: string): boolean {
   return estado in FINALES_SIN_COTIZAR
 }
