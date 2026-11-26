@@ -45,6 +45,12 @@ describe("IngresoClientePage", () => {
     expect(ingresarCliente).toHaveBeenCalledWith({ correo: "compras@minera.pe", password: "secreta123" })
   })
 
+  it("usa el encabezado homologado del portal y la nota de Google", () => {
+    renderIngreso("/portal/ingreso")
+    expect(screen.getByTestId("etiqueta-portal").textContent).toBe("Portal del cliente")
+    expect(screen.getByText(/antes de tu primera cotización/i)).toBeTruthy()
+  })
+
   it("sin ?volver= va a Mis pedidos", async () => {
     vi.mocked(ingresarCliente).mockResolvedValue({ token: "tok", nombreRol: "CLIENTE" })
     renderIngreso("/portal/ingreso")

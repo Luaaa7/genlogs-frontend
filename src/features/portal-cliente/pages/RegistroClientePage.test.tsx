@@ -31,6 +31,14 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+describe("RegistroClientePage: encabezado y acceso con Google", () => {
+  it("usa el encabezado homologado del portal y la nota de Google", () => {
+    renderizar()
+    expect(screen.getByTestId("etiqueta-portal").textContent).toBe("Portal del cliente")
+    expect(screen.getByText(/antes de tu primera cotización/i)).toBeTruthy()
+  })
+})
+
 describe("RegistroClientePage: RUC → razón social (7.1)", () => {
   it("con un RUC que no empieza con 10 o 20 avisa y no consulta", () => {
     const consulta = vi.spyOn(publicApi, "consultarRazonSocial")

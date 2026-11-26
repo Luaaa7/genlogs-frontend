@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { EtiquetaPortal } from "./EtiquetaPortal"
 
 interface EncabezadoPortalProps {
   titulo: string
@@ -23,10 +24,7 @@ export function EncabezadoPortal({ titulo, descripcion, accion }: EncabezadoPort
       </svg>
       <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="inline-flex items-center gap-2 text-[13px] font-bold uppercase tracking-[0.14em] text-dorado dark:text-amarillo">
-            <span className="h-[3px] w-[22px] rounded-sm bg-dorado dark:bg-amarillo" aria-hidden="true" />
-            Portal del cliente
-          </p>
+          <EtiquetaPortal />
           <h1 className="mt-2 text-3xl font-bold text-[#183153] dark:text-foreground">{titulo}</h1>
           {descripcion && <p className="mt-2 text-muted-foreground">{descripcion}</p>}
         </div>

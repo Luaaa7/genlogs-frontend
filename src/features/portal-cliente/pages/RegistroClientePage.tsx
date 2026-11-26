@@ -14,6 +14,7 @@ import { AvisoCarritoPublico } from "@/features/acceso-cliente/components/AvisoC
 import { CampoPassword } from "@/features/acceso-cliente/components/CampoPassword"
 import { IngresoConGoogle } from "@/features/acceso-cliente/components/IngresoConGoogle"
 import { SeparadorO } from "@/features/acceso-cliente/components/SeparadorO"
+import { EtiquetaPortal } from "../components/EtiquetaPortal"
 import { iniciarSesionCliente } from "@/lib/sesiones"
 import { cn } from "@/lib/utils/utils"
 import { mensajeErrorAcceso } from "@/features/acceso-cliente/api/ingresoClienteApi"
@@ -185,7 +186,7 @@ export function RegistroClientePage() {
   return (
     <div className="mx-auto max-w-xl px-4 py-16">
       <div data-testid="tarjeta-registro" className="rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
-      <p className="text-sm font-semibold uppercase tracking-wide text-accent">Portal del cliente</p>
+      <EtiquetaPortal />
       <h1 className="mt-2 text-3xl font-bold">Crea tu acceso</h1>
       <p className="mt-2 text-muted-foreground">Registra tu empresa para consultar pedidos y enviar solicitudes.</p>
       <AvisoCarritoPublico className="mt-5" />
