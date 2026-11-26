@@ -48,3 +48,41 @@ export function tonoEstadoCotizacion(estado: string): EstadoBadgeTono {
   if (e.startsWith("VENCIDA")) return "neutral"
   return "warning"
 }
+
+/** La cotización ya fue aprobada o aceptada (por código o por el nombre del estado). */
+export function estaAceptada(cotizacion: Pick<CotizacionPortal, "estado" | "codigoEstado">): boolean {
+  const codigo = (cotizacion.codigoEstado ?? "").toUpperCase()
+  if (codigo === "APROBADA" || codigo === "ACEPTADA") return true
+  const e = normalizar(cotizacion.estado ?? "")
+  return e.startsWith("APROBADA") || e.startsWith("ACEPTADA")
+}
+
+const ABREVIATURAS = new Set(["und", "pza", "pzs", "mts", "lts", "gln", "jgo", "kgs", "glb", "cja", "rll"])
+
+/** «UND», «kg», «und.», «m»: abreviaturas que no se pluralizan. «Par» y «Juego» sí son palabras. */
+function esAbreviatura(unidad: string): boolean {
+  return unidad.length <= 2 || unidad.includes(".") || (unidad === unidad.toUpperCase() && unidad.length <= 4) || ABREVIATURAS.has(unidad.toLowerCase())
+}
+
+function pluralDe(palabra: string): string {
+  const mayusculas = palabra === palabra.toUpperCase()
+  const sufijo = (texto: string) => (mayusculas ? texto.toUpperCase() : texto)
+  const minus = palabra.toLowerCase()
+  if (minus.endsWith("ón")) return palabra.slice(0, -2) + sufijo("ones")
+  if (/[sx]$/.test(minus)) return palabra
+  if (minus.endsWith("z")) return palabra.slice(0, -1) + sufijo("ces")
+  if (/[aeiouáéíóú]$/.test(minus)) return palabra + sufijo("s")
+  return palabra + sufijo("es")
+}
+
+/**
+ * «1 Unidad», «2 Unidades», «60 Unidades». Las abreviaturas («UND», «kg», «und.») no se tocan; si la unidad
+ * tiene varias palabras («Juego de llaves») solo la primera cambia. Sin unidad, solo la cantidad.
+ */
+export function cantidadConUnidad(cantidad: number, unidad?: string | null): string {
+  const limpia = unidad?.trim()
+  if (!limpia) return String(cantidad)
+  if (cantidad === 1 || esAbreviatura(limpia)) return `${cantidad} ${limpia}`
+  const [primera, ...resto] = limpia.split(/\s+/)
+  return [String(cantidad), pluralDe(primera), ...resto].join(" ")
+}

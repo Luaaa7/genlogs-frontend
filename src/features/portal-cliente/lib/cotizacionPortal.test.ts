@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { puedeDecidir, tonoEstadoCotizacion } from "./cotizacionPortal"
+import { cantidadConUnidad, estaAceptada, puedeDecidir, tonoEstadoCotizacion } from "./cotizacionPortal"
 
 const hoy = new Date("2026-11-12T10:00:00")
 
@@ -41,5 +41,44 @@ describe("tonoEstadoCotizacion", () => {
     expect(tonoEstadoCotizacion("Rechazada")).toBe("destructive")
     expect(tonoEstadoCotizacion("Vencida")).toBe("neutral")
     expect(tonoEstadoCotizacion("Enviada")).toBe("warning")
+  })
+})
+
+describe("cantidadConUnidad (singular y plural)", () => {
+  it.each([
+    [1, "Unidad", "1 Unidad"],
+    [2, "Unidad", "2 Unidades"],
+    [60, "Unidad", "60 Unidades"],
+    [0, "Unidad", "0 Unidades"],
+    [2, "Juego", "2 Juegos"],
+    [2, "Par", "2 Pares"],
+    [3, "Caja", "3 Cajas"],
+    [2, "Galón", "2 Galones"],
+    [2, "Juego de llaves", "2 Juegos de llaves"],
+    [2, "UNIDAD", "2 UNIDADES"],
+    [2, "unidad", "2 unidades"],
+  ])("%s %s → %s", (cantidad, unidad, esperado) => {
+    expect(cantidadConUnidad(cantidad, unidad)).toBe(esperado)
+  })
+
+  it.each([[2, "UND"], [5, "kg"], [4, "und."], [3, "m"]])("la abreviatura %s %s no se pluraliza", (cantidad, unidad) => {
+    expect(cantidadConUnidad(cantidad, unidad)).toBe(`${cantidad} ${unidad}`)
+  })
+
+  it("sin unidad muestra solo la cantidad", () => {
+    expect(cantidadConUnidad(3)).toBe("3")
+    expect(cantidadConUnidad(3, "  ")).toBe("3")
+  })
+})
+
+describe("estaAceptada", () => {
+  it.each(["Aceptada por el cliente", "Aprobada", "APROBADA"])("«%s» sí", (estado) => {
+    expect(estaAceptada({ estado })).toBe(true)
+  })
+  it("por código del estado", () => {
+    expect(estaAceptada({ estado: "x", codigoEstado: "ACEPTADA" })).toBe(true)
+  })
+  it.each(["Enviada", "Rechazada", "Anulada", "Vencida"])("«%s» no", (estado) => {
+    expect(estaAceptada({ estado })).toBe(false)
   })
 })

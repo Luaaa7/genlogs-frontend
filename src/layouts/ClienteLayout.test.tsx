@@ -52,6 +52,14 @@ describe("Menú del portal del cliente", () => {
     vi.doUnmock("@/features/acceso-cliente/api/ingresoGoogleApi")
   })
 
+  describe("impresión", () => {
+    it("la barra superior y el pie no salen al imprimir", async () => {
+      await renderLayout(false, true)
+      expect(screen.getByRole("banner").className).toContain("print:hidden")
+      expect(screen.getByRole("contentinfo").className).toContain("print:hidden")
+    })
+  })
+
   describe("indicador de cotización (carrito compartido)", () => {
     const sembrar = (n: number) =>
       localStorage.setItem("genlogs_public_cart", JSON.stringify(Array.from({ length: n }, (_, i) => ({ id: i + 1, nombre: `Repuesto ${i + 1}`, marca: "CAT", numeroParte: `P${i}`, cantidad: 3 }))))

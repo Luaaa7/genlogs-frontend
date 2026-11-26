@@ -129,7 +129,7 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-foreground dark:bg-background">
-      <header className="relative border-b border-slate-200 bg-white dark:border-border dark:bg-card">
+      <header className="relative border-b border-slate-200 bg-white dark:border-border dark:bg-card print:hidden">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
           <Link to={conSesion ? "/portal/pedidos" : "/"} className={`shrink-0 rounded-lg ${foco}`}>
             <img src={logoGenlogs} alt="GenLogs S.A.C." width={140} height={58} className="-my-2 h-14 w-auto object-contain dark:brightness-0 dark:invert" />
@@ -296,8 +296,8 @@ export function ClienteLayout({ children }: { children?: ReactNode }) {
           </nav>
         )}
       </header>
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">{children ?? <Outlet />}</main>
-      <footer className="border-t border-slate-200 bg-muted/40 dark:border-border">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8 print:max-w-none print:p-0">{children ?? <Outlet />}</main>
+      <footer className="border-t border-slate-200 bg-muted/40 dark:border-border print:hidden">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-6 text-sm text-muted-foreground sm:px-6 lg:px-8">
           <p>© {new Date().getFullYear()} GenLogs S.A.C. Soluciones para minería.</p>
           <nav aria-label="Enlaces del pie" className="flex items-center gap-4">
