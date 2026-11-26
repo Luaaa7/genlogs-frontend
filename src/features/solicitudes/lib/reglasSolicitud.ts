@@ -1,12 +1,21 @@
 import axios from 'axios'
-import type { Rol } from '@/api/contratos'
+import type { EstadoSolicitud, Rol } from '@/api/contratos'
 import type { UsuarioResumen } from '@/api/contratos/solicitudes'
 import type { UsuarioResponse } from '@/types/usuario'
 import { hoyISO } from '@/lib/formatters/fechaLocal'
 import { mensajeError } from '@/lib/errores'
 
-/** Roles que entran a la pantalla. puedeVer('solicitudes') también deja pasar a otros. */
-export const ROLES_PANTALLA = ['ASISTENTE_LOGISTICO', 'JEFE_ADMINISTRATIVO', 'GERENTE_GENERAL'] as const satisfies readonly Rol[]
+/**
+ * Roles que entran a la pantalla: los que la matriz de permisos (Anexo 2) marca con C o V en
+ * «Solicitudes y plazos». Contador y SST no entran. Es lo mismo que acepta el backend para ver.
+ */
+export const ROLES_PANTALLA = ['ASISTENTE_LOGISTICO', 'JEFE_ADMINISTRATIVO', 'GERENTE_GENERAL', 'ASISTENTE_ADMINISTRATIVO'] as const satisfies readonly Rol[]
+
+/** Estados que devuelve la lista interna (solo abiertas). Cotizada, Rechazada y Cancelada no salen de ahí. */
+export const ESTADOS_ABIERTOS = ['PENDIENTE', 'EN_REVISION', 'EN_ESPERA_TERCERO'] as const satisfies readonly EstadoSolicitud[]
+
+/** Quiénes pueden pedir GET /usuarios (igual que el backend): sin ellos, el selector de asistente solo ofrece «Sin asignar». */
+export const ROLES_VEN_PERSONAL = ['JEFE_ADMINISTRATIVO', 'GERENTE_GENERAL'] as const satisfies readonly Rol[]
 
 export const ROLES_ACCION = ['ASISTENTE_LOGISTICO', 'JEFE_ADMINISTRATIVO'] as const satisfies readonly Rol[]
 
@@ -26,6 +35,10 @@ const ROLES_DE_ASIGNACION: readonly string[] = ROLES_ASIGNABLES
 
 export function entraALaPantalla(rol: Rol | null): boolean {
   return rol !== null && ROLES_DE_PANTALLA.includes(rol)
+}
+
+export function puedeVerPersonal(rol: Rol | null): boolean {
+  return rol !== null && (ROLES_VEN_PERSONAL as readonly Rol[]).includes(rol)
 }
 
 export function puedeActuar(rol: Rol | null): boolean {
@@ -50,10 +63,10 @@ export function filtrarAsignables(usuarios: UsuarioResponse[]): UsuarioResumen[]
     .map((u) => ({ idUsuario: u.idUsuario, nombreUsuario: u.nombreUsuario, nombres: u.nombres }))
 }
 
-/** El 403 de GET /usuarios no tumba la pantalla: el selector explica que BE-A aún no migró el rol. */
+/** El 403 de GET /usuarios no tumba la pantalla: el selector explica que falta el permiso. */
 export function mensajeCargaUsuarios(error: unknown): string {
   if (axios.isAxiosError(error) && error.response?.status === 403) {
-    return 'El listado de usuarios todavía no está habilitado para el Jefe. Quedará disponible cuando entre la migración de roles.'
+    return 'No tienes permiso para ver al personal interno.'
   }
   return mensajeError(error, 'No se pudo cargar el personal interno.')
 }

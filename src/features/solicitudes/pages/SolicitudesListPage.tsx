@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Inbox } from 'lucide-react'
-import { ESTADOS_SOLICITUD, TIPOS_PLAZO, type EstadoSolicitud, type TipoPlazo } from '@/api/contratos'
+import { TIPOS_PLAZO, type EstadoSolicitud, type TipoPlazo } from '@/api/contratos'
 import type { FiltrosSolicitudes, SolicitudInternaFila } from '@/api/contratos/solicitudes'
 import { ErrorBanner } from '@/components/ui/ErrorBanner'
 import { EstadoBadge, type EstadoBadgeTono } from '@/components/ui/EstadoBadge'
@@ -10,8 +10,13 @@ import { FiltroChips } from '@/components/ui/FiltroChips'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Paginacion, Tabla, TablaCard, Td, Th, controlClass, filaClass } from '@/components/ui/tabla'
 import { formatearFechaCorta } from '@/lib/formatters/fechaLocal'
+import { usePermisos } from '@/lib/permisos'
 import { useAsignables } from '../hooks/useAsignables'
 import { useSolicitudesInternas } from '../hooks/useSolicitudesInternas'
+import { ESTADOS_ABIERTOS, puedeVerPersonal } from '../lib/reglasSolicitud'
+
+/** Valor del selector para «Sin asignar» (los demás son el id del usuario). */
+const SIN_ASIGNAR = 'sin'
 
 const ESTADO: Record<EstadoSolicitud, { label: string; tono: EstadoBadgeTono }> = {
   PENDIENTE: { label: 'Recibida', tono: 'warning' },
@@ -28,7 +33,9 @@ const NOMBRE_SEMAFORO = { VERDE: 'Semáforo verde', AMARILLO: 'Semáforo ámbar'
 export function SolicitudesListPage() {
   const [filtros, setFiltros] = useState<FiltrosSolicitudes>({ page: 0, size: 10 })
   const { data, isLoading, isError, error, refetch } = useSolicitudesInternas(filtros)
-  const { usuarios } = useAsignables(true)
+  const { rol } = usePermisos()
+  // Solo el Jefe y el Gerente pueden pedir el personal; a los demás les basta con «Sin asignar».
+  const { usuarios } = useAsignables(puedeVerPersonal(rol))
   const filas = data?.content ?? []
 
   const cambiar = (parcial: Partial<FiltrosSolicitudes>) => {
@@ -42,7 +49,7 @@ export function SolicitudesListPage() {
         etiqueta="Filtrar por estado"
         valor={filtros.estado}
         onChange={(estado) => cambiar({ estado })}
-        opciones={[{ label: 'Todas' }, ...ESTADOS_SOLICITUD.map((estado) => ({ valor: estado, label: ESTADO[estado].label }))]}
+        opciones={[{ label: 'Todas' }, ...ESTADOS_ABIERTOS.map((estado) => ({ valor: estado, label: ESTADO[estado].label }))]}
       />
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex min-w-48 flex-1 flex-col gap-1 text-sm" htmlFor="sol-buscar">
@@ -58,8 +65,18 @@ export function SolicitudesListPage() {
         </label>
         <label className="flex flex-col gap-1 text-sm" htmlFor="sol-asistente">
           Asistente
-          <select id="sol-asistente" className={controlClass} value={filtros.idAsistente ?? ''} onChange={(e) => cambiar({ idAsistente: e.target.value ? Number(e.target.value) : undefined })}>
+          <select
+            id="sol-asistente"
+            className={controlClass}
+            value={filtros.sinAsignar ? SIN_ASIGNAR : filtros.idAsistente ?? ''}
+            onChange={(e) => {
+              const valor = e.target.value
+              if (valor === SIN_ASIGNAR) cambiar({ idAsistente: undefined, sinAsignar: true })
+              else cambiar({ idAsistente: valor ? Number(valor) : undefined, sinAsignar: undefined })
+            }}
+          >
             <option value="">Todos</option>
+            <option value={SIN_ASIGNAR}>Sin asignar</option>
             {usuarios.map((usuario) => <option key={usuario.idUsuario} value={usuario.idUsuario}>{usuario.nombres}</option>)}
           </select>
         </label>

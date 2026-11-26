@@ -14,7 +14,7 @@ describe('ruta /solicitudes/:id', () => {
   beforeEach(() => useAuthStore.setState({ nombreRol: null }))
 
   it('permisosDe deja fuera a quien puedeVer(solicitudes) dejaría pasar', () => {
-    for (const rol of ['ASISTENTE_ADMINISTRATIVO', 'CLIENTE']) {
+    for (const rol of ['CONTADOR_GENERAL', 'SUPERVISOR_SST', 'CLIENTE']) {
       useAuthStore.setState({ nombreRol: rol })
       const { unmount } = render(
         <MemoryRouter initialEntries={['/solicitudes/1']}>
@@ -31,8 +31,8 @@ describe('ruta /solicitudes/:id', () => {
     }
   })
 
-  it('RoleGuard y permisosDe abren el detalle solo a los tres roles', async () => {
-    for (const rol of ['ASISTENTE_LOGISTICO', 'JEFE_ADMINISTRATIVO', 'GERENTE_GENERAL']) {
+  it('RoleGuard y permisosDe abren el detalle a los cuatro roles de la matriz', async () => {
+    for (const rol of ['ASISTENTE_LOGISTICO', 'JEFE_ADMINISTRATIVO', 'GERENTE_GENERAL', 'ASISTENTE_ADMINISTRATIVO']) {
       useAuthStore.setState({ nombreRol: rol })
       const router = createMemoryRouter([
         ...rutasFeC.internas,
