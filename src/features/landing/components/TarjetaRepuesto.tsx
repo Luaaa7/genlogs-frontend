@@ -1,3 +1,4 @@
+import { textoPlazoEntrega } from "@/lib/plazoEntrega"
 import { useState } from "react"
 import { CheckCircle2, Clock, Minus, Plus } from "lucide-react"
 import type { RepuestoPublico } from "@/api/publicApi"
@@ -71,7 +72,7 @@ export function TarjetaRepuesto({ repuesto: r, enCotizacion, onAgregar, onSumar,
         </dl>
         <p className="mt-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
           <Clock className="h-4 w-4 text-accent" aria-hidden="true" />
-          {r.plazoEntrega}
+          {textoPlazoEntrega(r.plazoEntrega)}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">Disponible a pedido · sujeto a confirmación</p>
 
