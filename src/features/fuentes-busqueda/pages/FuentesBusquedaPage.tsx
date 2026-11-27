@@ -86,6 +86,13 @@ function mensajeDe(err: unknown, porDefecto: string) {
 }
 
 /**
+ * v3.4: tiendas que no se muestran. Amazon bloquea el acceso automatizado («Access restricted»),
+ * así que nunca pasa «Probar sesión». Se sigue usando a mano: el acceso rápido «Amazon» de cada
+ * repuesto y «Pegar URL». La fila queda en la base, apagada.
+ */
+const FUENTES_OCULTAS: readonly string[] = ['AMAZON']
+
+/**
  * L2 (v3.3, BPMN 9-A) · Configuración > Fuentes de búsqueda. Una tarjeta por tienda: el Jefe
  * Administrativo guarda la cuenta de búsqueda (D-38), prueba la sesión, enciende la tienda (D-37)
  * y fija pausa y límite diario. El Asistente Logístico solo ve el estado. La cuenta nunca se muestra.
@@ -109,7 +116,7 @@ export function FuentesBusquedaPage() {
         <ErrorBanner message="No se pudieron cargar las fuentes de búsqueda. Revisa tu conexión e inténtalo de nuevo." />
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
-          {fuentes.data.map((f) => (
+          {fuentes.data.filter((f) => !FUENTES_OCULTAS.includes(f.codigo.toUpperCase())).map((f) => (
             <TarjetaFuente
               key={`${f.codigo}:${f.pausaSegundos}:${f.limiteDiario}`}
               fuente={f}
